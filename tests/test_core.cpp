@@ -49,6 +49,119 @@ void require_throws(Fn&& fn, const std::string& message) {
     }
     throw std::runtime_error(message);
 }
+
+void require_checkpoint_samples_close(const pic::DiagnosticSample& a,
+                                      const pic::DiagnosticSample& b,
+                                      const std::string& label) {
+    require(a.step == b.step, label + ": step mismatch");
+    require_near(a.time, b.time, 1e-15, label + ": time mismatch");
+    require(a.live_particles == b.live_particles, label + ": live-particle mismatch");
+    require_near(a.kinetic_energy, b.kinetic_energy, 1e-12, label + ": kinetic-energy mismatch");
+    require_near(a.field_energy, b.field_energy, 1e-12, label + ": field-energy mismatch");
+    require_near(a.total_energy, b.total_energy, 1e-12, label + ": total-energy mismatch");
+    require_near(a.charge_l1, b.charge_l1, 1e-12, label + ": charge-l1 mismatch");
+}
+
+void require_checkpoint_samples_close(const pic::DiagnosticSample2D& a,
+                                      const pic::DiagnosticSample2D& b,
+                                      const std::string& label) {
+    require(a.step == b.step, label + ": step mismatch");
+    require_near(a.time, b.time, 1e-15, label + ": time mismatch");
+    require(a.live_particles == b.live_particles, label + ": live-particle mismatch");
+    require(a.live_particles_by_species == b.live_particles_by_species, label + ": per-species live-particle mismatch");
+    require(a.boundary_losses.absorbed_left == b.boundary_losses.absorbed_left &&
+            a.boundary_losses.absorbed_right == b.boundary_losses.absorbed_right &&
+            a.boundary_losses.absorbed_bottom == b.boundary_losses.absorbed_bottom &&
+            a.boundary_losses.absorbed_top == b.boundary_losses.absorbed_top,
+            label + ": boundary-loss mismatch");
+    require_near(a.kinetic_energy, b.kinetic_energy, 1e-12, label + ": kinetic-energy mismatch");
+    require_near(a.field_energy, b.field_energy, 1e-12, label + ": field-energy mismatch");
+    require_near(a.total_energy, b.total_energy, 1e-12, label + ": total-energy mismatch");
+    require_near(a.charge_l1, b.charge_l1, 1e-12, label + ": charge-l1 mismatch");
+}
+
+void require_checkpoint_samples_close(const pic::DiagnosticSample3D& a,
+                                      const pic::DiagnosticSample3D& b,
+                                      const std::string& label) {
+    require(a.step == b.step, label + ": step mismatch");
+    require_near(a.time, b.time, 1e-15, label + ": time mismatch");
+    require(a.live_particles == b.live_particles, label + ": live-particle mismatch");
+    require(a.live_particles_by_species == b.live_particles_by_species, label + ": per-species live-particle mismatch");
+    require(a.boundary_losses.absorbed_left == b.boundary_losses.absorbed_left &&
+            a.boundary_losses.absorbed_right == b.boundary_losses.absorbed_right &&
+            a.boundary_losses.absorbed_bottom == b.boundary_losses.absorbed_bottom &&
+            a.boundary_losses.absorbed_top == b.boundary_losses.absorbed_top &&
+            a.boundary_losses.absorbed_back == b.boundary_losses.absorbed_back &&
+            a.boundary_losses.absorbed_front == b.boundary_losses.absorbed_front,
+            label + ": boundary-loss mismatch");
+    require_near(a.kinetic_energy, b.kinetic_energy, 1e-12, label + ": kinetic-energy mismatch");
+    require_near(a.field_energy, b.field_energy, 1e-12, label + ": field-energy mismatch");
+    require_near(a.total_energy, b.total_energy, 1e-12, label + ": total-energy mismatch");
+    require_near(a.charge_l1, b.charge_l1, 1e-12, label + ": charge-l1 mismatch");
+}
+
+void require_species_close(const std::vector<pic::Species>& a,
+                           const std::vector<pic::Species>& b,
+                           const std::string& label) {
+    require(a.size() == b.size(), label + ": species-count mismatch");
+    for (std::size_t species_id = 0; species_id < a.size(); ++species_id) {
+        require(a[species_id].name() == b[species_id].name(), label + ": species-name mismatch");
+        const auto& pa = a[species_id].particles();
+        const auto& pb = b[species_id].particles();
+        require(pa.size() == pb.size(), label + ": particle-count mismatch");
+        for (std::size_t i = 0; i < pa.size(); ++i) {
+            require_near(pa[i].x, pb[i].x, 1e-12, label + ": particle x mismatch");
+            require_near(pa[i].v, pb[i].v, 1e-12, label + ": particle v mismatch");
+            require_near(pa[i].v_half, pb[i].v_half, 1e-12, label + ": particle v_half mismatch");
+            require(pa[i].alive == pb[i].alive, label + ": particle alive mismatch");
+        }
+    }
+}
+
+void require_species_close(const std::vector<pic::Species2D>& a,
+                           const std::vector<pic::Species2D>& b,
+                           const std::string& label) {
+    require(a.size() == b.size(), label + ": species-count mismatch");
+    for (std::size_t species_id = 0; species_id < a.size(); ++species_id) {
+        require(a[species_id].name() == b[species_id].name(), label + ": species-name mismatch");
+        const auto& pa = a[species_id].particles();
+        const auto& pb = b[species_id].particles();
+        require(pa.size() == pb.size(), label + ": particle-count mismatch");
+        for (std::size_t i = 0; i < pa.size(); ++i) {
+            require_near(pa[i].position.x, pb[i].position.x, 1e-12, label + ": particle x mismatch");
+            require_near(pa[i].position.y, pb[i].position.y, 1e-12, label + ": particle y mismatch");
+            require_near(pa[i].velocity.x, pb[i].velocity.x, 1e-12, label + ": particle vx mismatch");
+            require_near(pa[i].velocity.y, pb[i].velocity.y, 1e-12, label + ": particle vy mismatch");
+            require_near(pa[i].velocity_half.x, pb[i].velocity_half.x, 1e-12, label + ": particle vx_half mismatch");
+            require_near(pa[i].velocity_half.y, pb[i].velocity_half.y, 1e-12, label + ": particle vy_half mismatch");
+            require(pa[i].alive == pb[i].alive, label + ": particle alive mismatch");
+        }
+    }
+}
+
+void require_species_close(const std::vector<pic::Species3D>& a,
+                           const std::vector<pic::Species3D>& b,
+                           const std::string& label) {
+    require(a.size() == b.size(), label + ": species-count mismatch");
+    for (std::size_t species_id = 0; species_id < a.size(); ++species_id) {
+        require(a[species_id].name() == b[species_id].name(), label + ": species-name mismatch");
+        const auto& pa = a[species_id].particles();
+        const auto& pb = b[species_id].particles();
+        require(pa.size() == pb.size(), label + ": particle-count mismatch");
+        for (std::size_t i = 0; i < pa.size(); ++i) {
+            require_near(pa[i].position.x, pb[i].position.x, 1e-12, label + ": particle x mismatch");
+            require_near(pa[i].position.y, pb[i].position.y, 1e-12, label + ": particle y mismatch");
+            require_near(pa[i].position.z, pb[i].position.z, 1e-12, label + ": particle z mismatch");
+            require_near(pa[i].velocity.x, pb[i].velocity.x, 1e-12, label + ": particle vx mismatch");
+            require_near(pa[i].velocity.y, pb[i].velocity.y, 1e-12, label + ": particle vy mismatch");
+            require_near(pa[i].velocity.z, pb[i].velocity.z, 1e-12, label + ": particle vz mismatch");
+            require_near(pa[i].velocity_half.x, pb[i].velocity_half.x, 1e-12, label + ": particle vx_half mismatch");
+            require_near(pa[i].velocity_half.y, pb[i].velocity_half.y, 1e-12, label + ": particle vy_half mismatch");
+            require_near(pa[i].velocity_half.z, pb[i].velocity_half.z, 1e-12, label + ": particle vz_half mismatch");
+            require(pa[i].alive == pb[i].alive, label + ": particle alive mismatch");
+        }
+    }
+}
 }
 
 int main() {
@@ -1014,6 +1127,152 @@ int main() {
                 require(particle.position.y >= 0.0 && particle.position.y <= cfg.length_y, "2D top reflecting boundary left particle outside domain");
                 require(particle.velocity.y < 0.0, "2D top reflecting boundary did not reverse y velocity");
             }
+        }
+        {
+            const auto output_dir = std::filesystem::path("test_output_checkpoint_1d");
+            const auto checkpoint_path = output_dir / "manual.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Config cfg;
+            cfg.nx = 24;
+            cfg.length = 1.0;
+            cfg.dt = 0.003;
+            cfg.steps = 5;
+            cfg.output_interval = 5;
+            cfg.output_dir = output_dir.string();
+            cfg.seed = 99;
+            cfg.collisions.enabled = true;
+            cfg.collisions.frequency = 200.0;
+            cfg.collisions.neutral_temperature_velocity = 0.02;
+            cfg.species = {pic::SpeciesConfig{"e", -1.0, 1.0, 0.02, 48, 1.0, 0.03, 0.01, 0.0, -1.0},
+                           pic::SpeciesConfig{"i", 1.0, 1836.0, 0.02, 48, 1.0, -0.01, 0.0, 0.0, -1.0}};
+
+            pic::Simulation continuous(cfg);
+            continuous.initialize();
+            continuous.step();
+            continuous.step();
+            continuous.save_checkpoint(checkpoint_path);
+            require(std::filesystem::exists(checkpoint_path), "1D checkpoint file was not written");
+            for (std::size_t n = continuous.step_count(); n < cfg.steps; ++n) continuous.step();
+
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            require(restarted.step_count() == 2, "1D checkpoint did not restore step count");
+            require_near(restarted.time(), 2.0 * cfg.dt, 1e-15, "1D checkpoint did not restore time");
+            for (std::size_t n = restarted.step_count(); n < cfg.steps; ++n) restarted.step();
+
+            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "1D checkpoint restart");
+            require_species_close(continuous.species(), restarted.species(), "1D checkpoint restart");
+
+            require_throws([&] {
+                pic::Simulation2DConfig bad_cfg;
+                bad_cfg.species = {pic::Species2DConfig{"e", -1.0, 1.0, 0.02, 48, 0.03, 0.0, 0.01, 0.0, -1.0, 0.0, -1.0},
+                                   pic::Species2DConfig{"i", 1.0, 1836.0, 0.02, 48, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0}};
+                pic::Simulation2D bad(bad_cfg);
+                bad.load_checkpoint(checkpoint_path);
+            }, "loading 1D checkpoint into 2D simulation did not throw");
+        }
+        {
+            const auto output_dir = std::filesystem::path("test_output_checkpoint_2d");
+            const auto checkpoint_path = output_dir / "manual.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 10;
+            cfg.ny = 8;
+            cfg.length_x = 1.0;
+            cfg.length_y = 0.8;
+            cfg.dt = 0.002;
+            cfg.steps = 5;
+            cfg.output_interval = 5;
+            cfg.output_dir = output_dir;
+            cfg.seed = 123;
+            cfg.boundary = pic::Boundary::Periodic;
+            cfg.species = {pic::Species2DConfig{"e2", -1.0, 1.0, 0.02, 48, 0.03, -0.02, 0.01, 0.0, -1.0, 0.0, -1.0},
+                           pic::Species2DConfig{"i2", 1.0, 1836.0, 0.02, 48, -0.01, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0}};
+
+            pic::Simulation2D continuous(cfg);
+            continuous.initialize();
+            continuous.step();
+            continuous.step();
+            continuous.save_checkpoint(checkpoint_path);
+            require(std::filesystem::exists(checkpoint_path), "2D checkpoint file was not written");
+            for (std::size_t n = continuous.step_count(); n < cfg.steps; ++n) continuous.step();
+
+            pic::Simulation2D restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            require(restarted.step_count() == 2, "2D checkpoint did not restore step count");
+            require_near(restarted.time(), 2.0 * cfg.dt, 1e-15, "2D checkpoint did not restore time");
+            for (std::size_t n = restarted.step_count(); n < cfg.steps; ++n) restarted.step();
+
+            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "2D checkpoint restart");
+            require_species_close(continuous.species(), restarted.species(), "2D checkpoint restart");
+
+            auto run_cfg = cfg;
+            run_cfg.output_dir = output_dir / "run";
+            run_cfg.steps = 3;
+            run_cfg.output_interval = 2;
+            run_cfg.checkpoint_output = true;
+            run_cfg.checkpoint_interval = 2;
+            std::filesystem::remove_all(run_cfg.output_dir);
+            pic::Simulation2D run_sim(run_cfg);
+            auto summary = run_sim.run();
+            require(summary.steps_completed == 3, "2D checkpoint run did not complete");
+            require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_0.apc"), "2D run did not write initial checkpoint");
+            require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_2.apc"), "2D run did not write interval checkpoint");
+            require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_3.apc"), "2D run did not write final checkpoint");
+        }
+        {
+            const auto output_dir = std::filesystem::path("test_output_checkpoint_3d");
+            const auto checkpoint_path = output_dir / "manual.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Simulation3DConfig cfg;
+            cfg.nx = 6;
+            cfg.ny = 5;
+            cfg.nz = 4;
+            cfg.length_x = 1.0;
+            cfg.length_y = 0.8;
+            cfg.length_z = 0.6;
+            cfg.dt = 0.0015;
+            cfg.steps = 5;
+            cfg.output_interval = 5;
+            cfg.output_dir = output_dir;
+            cfg.seed = 321;
+            cfg.boundary = pic::Boundary::Periodic;
+            cfg.species = {pic::Species3DConfig{"e3", -1.0, 1.0, 0.02, 36, 0.02, -0.01, 0.005, 0.01, 0.0, -1.0, 0.0, -1.0, 0.0, -1.0},
+                           pic::Species3DConfig{"i3", 1.0, 1836.0, 0.02, 36, -0.005, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0, -1.0}};
+
+            pic::Simulation3D continuous(cfg);
+            continuous.initialize();
+            continuous.step();
+            continuous.step();
+            continuous.save_checkpoint(checkpoint_path);
+            require(std::filesystem::exists(checkpoint_path), "3D checkpoint file was not written");
+            for (std::size_t n = continuous.step_count(); n < cfg.steps; ++n) continuous.step();
+
+            pic::Simulation3D restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            require(restarted.step_count() == 2, "3D checkpoint did not restore step count");
+            require_near(restarted.time(), 2.0 * cfg.dt, 1e-15, "3D checkpoint did not restore time");
+            for (std::size_t n = restarted.step_count(); n < cfg.steps; ++n) restarted.step();
+
+            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "3D checkpoint restart");
+            require_species_close(continuous.species(), restarted.species(), "3D checkpoint restart");
+
+            auto run_cfg = cfg;
+            run_cfg.output_dir = output_dir / "run";
+            run_cfg.steps = 3;
+            run_cfg.output_interval = 2;
+            run_cfg.checkpoint_output = true;
+            run_cfg.checkpoint_interval = 2;
+            std::filesystem::remove_all(run_cfg.output_dir);
+            pic::Simulation3D run_sim(run_cfg);
+            auto summary = run_sim.run();
+            require(summary.steps_completed == 3, "3D checkpoint run did not complete");
+            require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_0.apc"), "3D run did not write initial checkpoint");
+            require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_2.apc"), "3D run did not write interval checkpoint");
+            require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_3.apc"), "3D run did not write final checkpoint");
         }
         return 0;
     } catch (const std::exception& e) {

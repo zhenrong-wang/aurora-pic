@@ -43,6 +43,10 @@ struct Config {
     std::size_t steady_window{25};
     std::size_t max_steps{10000};
     CollisionConfig collisions{};
+    bool checkpoint_output{false};
+    std::size_t checkpoint_interval{0}; // zero inherits output_interval
+    std::string checkpoint_path{};      // empty writes output_dir/checkpoint_<step>.apc
+    std::string restart_path{};
     std::vector<SpeciesConfig> species{};
 };
 

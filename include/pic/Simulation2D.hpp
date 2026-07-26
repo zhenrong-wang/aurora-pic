@@ -39,6 +39,10 @@ struct Simulation2DConfig {
     std::size_t particle_output_interval{0}; // zero inherits output_interval
     std::size_t particle_output_stride{1};
     std::size_t particle_sample_count{0}; // zero writes all stride-selected particles
+    bool checkpoint_output{false};
+    std::size_t checkpoint_interval{0}; // zero inherits output_interval
+    std::filesystem::path checkpoint_path{}; // empty writes output_dir/checkpoint_<step>.apc
+    std::filesystem::path restart_path{};
     std::vector<Species2DConfig> species{};
 };
 
@@ -50,6 +54,8 @@ public:
     void initialize();
     void step();
     RunSummary2D run();
+    void save_checkpoint(const std::filesystem::path& path) const;
+    void load_checkpoint(const std::filesystem::path& path);
     DiagnosticSample2D sample() const;
     const Mesh2D& mesh() const { return mesh_; }
     const ParticleBoundaryConfig2D& particle_boundary_config() const { return cfg_.particle_boundary_config; }

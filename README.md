@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, and steady-state convergence mode. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, VTK field output, scalar histories, and optional particle inspection CSVs. A structured `3D3V` electrostatic path (`Mesh3D`, `Species3D`, and `Simulation3D`) is now available for periodic/grounded-Dirichlet Cartesian domains, strict config loading, CLI execution, VTK field output, scalar histories, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, steady-state convergence mode, and text checkpoint/restart files. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, VTK field output, scalar histories, checkpoint/restart, and optional particle inspection CSVs. A structured `3D3V` electrostatic path (`Mesh3D`, `Species3D`, and `Simulation3D`) is now available for periodic/grounded-Dirichlet Cartesian domains, strict config loading, CLI execution, VTK field output, scalar histories, checkpoint/restart, and optional particle inspection CSVs.
 
 ## Why this methodology
 
@@ -149,6 +149,9 @@ particle_boundary = absorbing
 particle_boundary_right = reflecting
 output_interval = 10
 output_dir = output/electrode_2d
+checkpoint_output = true
+checkpoint_interval = 25
+# restart_path = output/electrode_2d/checkpoint_50.apc
 vtk_output = true
 particle_output = true
 particle_output_interval = 10
@@ -185,6 +188,9 @@ boundary = periodic
 particle_boundary = auto
 output_interval = 10
 output_dir = output/plasma_3d
+checkpoint_output = true
+checkpoint_interval = 25
+# restart_path = output/plasma_3d/checkpoint_50.apc
 vtk_output = true
 particle_output = true
 particle_output_interval = 10
@@ -208,6 +214,15 @@ init_z_min = 0.0
 init_z_max = 1.0
 ```
 
+## Checkpoint/restart controls
+
+All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Loading a checkpoint validates the format dimension plus species count/name metadata against the active config before repopulating particles and recomputing mesh fields.
+
+- `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
+- `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.
+- `checkpoint_path`: optional fixed checkpoint file path. If omitted, checkpoints are written as `output_dir/checkpoint_<step>.apc`. If provided, each checkpoint write updates that same path.
+- `restart_path`: optional checkpoint file to load before the run loop starts. The run resumes from the checkpoint step/time and continues until the configured `steps`/`max_steps` limit.
+
 2D/3D particle-boundary controls:
 
 - `particle_boundary`: default particle policy for all sides; one of `auto`, `absorbing`, `reflecting`, or `periodic`.
@@ -217,6 +232,6 @@ init_z_max = 1.0
 - `reflecting`: mirrors escaped particles back into the domain and reverses the normal velocity component.
 - `periodic`: wraps escaped particles across that coordinate direction.
 
-The parser is intentionally strict: unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, non-positive `particle_output_stride`, empty 2D boundary tags, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+The parser is intentionally strict: unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive `particle_output_stride`, empty 2D boundary tags, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, no checkpoint/restart format yet, simplified collision model, no magnetic-field/Boris rotation yet, and no geometry/import workflow beyond structured Cartesian grids. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current particle CSV output is for inspection and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, simplified collision model, no magnetic-field/Boris rotation yet, and no geometry/import workflow beyond structured Cartesian grids. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.

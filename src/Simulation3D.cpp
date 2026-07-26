@@ -2,11 +2,17 @@
 #include "pic/Pusher.hpp"
 #include "pic/VTKWriter.hpp"
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 namespace pic {
 namespace {
+constexpr const char* kCheckpointMagic = "AuroraPIC-checkpoint-v1";
+
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
 }
@@ -71,13 +77,32 @@ bool apply_upper_boundary(double& coordinate,
     }
     return true;
 }
+
+std::filesystem::path checkpoint_path_for_step(const Simulation3DConfig& cfg, std::size_t step) {
+    if (!cfg.checkpoint_path.empty()) return cfg.checkpoint_path;
+    return cfg.output_dir / ("checkpoint_" + std::to_string(step) + ".apc");
 }
+
+void ensure_parent_directory(const std::filesystem::path& path) {
+    const auto parent = path.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent);
+}
+
+template <typename T>
+void require_stream(T& stream, const std::string& message) {
+    if (!stream) throw std::runtime_error(message);
+}
+} // namespace
 
 Simulation3D::Simulation3D(Simulation3DConfig cfg)
     : cfg_(std::move(cfg)), mesh_(cfg_.nx, cfg_.ny, cfg_.nz, cfg_.length_x, cfg_.length_y, cfg_.length_z, cfg_.boundary), rng_(cfg_.seed) {
+    if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     if (cfg_.dt <= 0.0) throw std::invalid_argument("3D simulation dt must be positive");
     if (cfg_.output_interval == 0) throw std::invalid_argument("3D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("3D particle_output_stride must be positive");
+    if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
+        throw std::invalid_argument("3D checkpoint_interval must be positive when checkpoint_output is enabled");
+    }
     cfg_.particle_boundary_config.left = resolve_particle_boundary(cfg_.particle_boundary_config.left, cfg_.boundary);
     cfg_.particle_boundary_config.right = resolve_particle_boundary(cfg_.particle_boundary_config.right, cfg_.boundary);
     cfg_.particle_boundary_config.bottom = resolve_particle_boundary(cfg_.particle_boundary_config.bottom, cfg_.boundary);
@@ -165,19 +190,99 @@ void Simulation3D::step() {
     time_ += cfg_.dt;
 }
 
+void Simulation3D::save_checkpoint(const std::filesystem::path& path) const {
+    ensure_parent_directory(path);
+    std::ofstream out(path);
+    if (!out) throw std::runtime_error("cannot open 3D checkpoint for writing: " + path.string());
+    out << std::setprecision(17);
+    out << kCheckpointMagic << '\n';
+    out << "dimension 3\n";
+    out << "step " << step_ << "\n";
+    out << "time " << time_ << "\n";
+    out << "boundary_losses " << boundary_losses_.absorbed_left << ' ' << boundary_losses_.absorbed_right << ' '
+        << boundary_losses_.absorbed_bottom << ' ' << boundary_losses_.absorbed_top << ' '
+        << boundary_losses_.absorbed_back << ' ' << boundary_losses_.absorbed_front << "\n";
+    out << "species_count " << species_.size() << "\n";
+    out << "rng " << rng_ << "\n";
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        const auto& sp = species_[species_id];
+        out << "species " << species_id << ' ' << sp.name() << ' ' << sp.particles().size() << "\n";
+        for (const auto& p : sp.particles()) {
+            out << p.position.x << ' ' << p.position.y << ' ' << p.position.z << ' '
+                << p.velocity.x << ' ' << p.velocity.y << ' ' << p.velocity.z << ' '
+                << p.velocity_half.x << ' ' << p.velocity_half.y << ' ' << p.velocity_half.z << ' '
+                << (p.alive ? 1 : 0) << "\n";
+        }
+    }
+    require_stream(out, "failed while writing 3D checkpoint: " + path.string());
+}
+
+void Simulation3D::load_checkpoint(const std::filesystem::path& path) {
+    std::ifstream in(path);
+    if (!in) throw std::runtime_error("cannot open 3D checkpoint for reading: " + path.string());
+    std::string magic;
+    std::getline(in, magic);
+    if (magic != kCheckpointMagic) throw std::runtime_error("invalid checkpoint magic in: " + path.string());
+
+    std::string key;
+    unsigned dimension = 0;
+    in >> key >> dimension;
+    if (key != "dimension" || dimension != 3) throw std::runtime_error("checkpoint dimension does not match 3D simulation");
+    in >> key >> step_;
+    if (key != "step") throw std::runtime_error("checkpoint missing step");
+    in >> key >> time_;
+    if (key != "time") throw std::runtime_error("checkpoint missing time");
+    in >> key >> boundary_losses_.absorbed_left >> boundary_losses_.absorbed_right
+       >> boundary_losses_.absorbed_bottom >> boundary_losses_.absorbed_top
+       >> boundary_losses_.absorbed_back >> boundary_losses_.absorbed_front;
+    if (key != "boundary_losses") throw std::runtime_error("checkpoint missing 3D boundary loss counters");
+    std::size_t species_count = 0;
+    in >> key >> species_count;
+    if (key != "species_count" || species_count != species_.size()) throw std::runtime_error("checkpoint species count does not match 3D config");
+    in >> key;
+    if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
+    in >> rng_;
+
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        std::size_t stored_species_id = 0;
+        std::string stored_name;
+        std::size_t particle_count = 0;
+        in >> key >> stored_species_id >> stored_name >> particle_count;
+        if (key != "species" || stored_species_id != species_id || stored_name != species_[species_id].name()) {
+            throw std::runtime_error("checkpoint species metadata does not match 3D config");
+        }
+        auto& particles = species_[species_id].particles();
+        particles.resize(particle_count);
+        for (auto& p : particles) {
+            int alive = 0;
+            in >> p.position.x >> p.position.y >> p.position.z
+               >> p.velocity.x >> p.velocity.y >> p.velocity.z
+               >> p.velocity_half.x >> p.velocity_half.y >> p.velocity_half.z
+               >> alive;
+            p.alive = alive != 0;
+        }
+    }
+    require_stream(in, "failed while reading 3D checkpoint: " + path.string());
+    deposit_and_solve();
+    initialized_ = true;
+}
+
 RunSummary3D Simulation3D::run() {
-    initialize();
+    if (!cfg_.restart_path.empty()) load_checkpoint(cfg_.restart_path);
+    else initialize();
+
     Diagnostics3D diag(cfg_.output_dir, species_);
     diag.write_header();
     auto s0 = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
     diag.write_sample(s0);
-    if (cfg_.vtk_output) write_legacy_vtk(mesh_, cfg_.output_dir / "fields_0.vtk");
+    if (cfg_.vtk_output) write_legacy_vtk(mesh_, cfg_.output_dir / ("fields_" + std::to_string(step_) + ".vtk"));
     if (cfg_.particle_output) {
         diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
     }
+    if (cfg_.checkpoint_output) save_checkpoint(checkpoint_path_for_step(cfg_, step_));
 
     const std::size_t particle_interval = cfg_.particle_output_interval == 0 ? cfg_.output_interval : cfg_.particle_output_interval;
-    for (std::size_t n = 0; n < cfg_.steps; ++n) {
+    while (step_ < cfg_.steps) {
         step();
         if (step_ % cfg_.output_interval == 0 || step_ == cfg_.steps) {
             auto s = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
@@ -189,11 +294,15 @@ RunSummary3D Simulation3D::run() {
         if (cfg_.particle_output && (step_ % particle_interval == 0 || step_ == cfg_.steps)) {
             diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
         }
+        if (cfg_.checkpoint_output && (step_ % cfg_.checkpoint_interval == 0 || step_ == cfg_.steps)) {
+            save_checkpoint(checkpoint_path_for_step(cfg_, step_));
+        }
     }
     RunSummary3D summary;
     summary.steps_completed = step_;
     summary.final_time = time_;
     summary.final_sample = diag.history().empty() ? sample() : diag.history().back();
+    if (summary.final_sample.step != step_) summary.final_sample = sample();
     return summary;
 }
 

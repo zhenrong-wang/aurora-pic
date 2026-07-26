@@ -286,7 +286,8 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
-        "boundary", "mode", "dimension"
+        "boundary", "mode", "dimension", "checkpoint_output", "checkpoint_interval",
+        "checkpoint_path", "restart_path"
     };
     static const std::unordered_set<std::string> collision_keys{
         "enabled", "frequency", "neutral_temperature_velocity"
@@ -321,6 +322,10 @@ Config load_config(const std::string& path) {
     cfg.collisions.enabled = parse_bool(collision, "enabled", cfg.collisions.enabled);
     cfg.collisions.frequency = as<double>(collision, "frequency", cfg.collisions.frequency);
     cfg.collisions.neutral_temperature_velocity = as<double>(collision, "neutral_temperature_velocity", cfg.collisions.neutral_temperature_velocity);
+    cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
+    cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
+    cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path);
+    cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path);
 
     cfg.species.clear();
     for (const auto& block : blocks.species_blocks) {
@@ -343,6 +348,7 @@ Config load_config(const std::string& path) {
         cfg.species.push_back(s);
     }
     if (cfg.species.empty()) cfg.species.push_back(SpeciesConfig{});
+    if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config(cfg);
     return cfg;
 }
@@ -381,6 +387,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "dimension", "nx", "ny", "length_x", "length_y", "dt", "steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
+        "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
@@ -415,6 +422,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.particle_output_interval = as<std::size_t>(global, "particle_output_interval", cfg.particle_output_interval);
     cfg.particle_output_stride = as<std::size_t>(global, "particle_output_stride", cfg.particle_output_stride);
     cfg.particle_sample_count = as<std::size_t>(global, "particle_sample_count", cfg.particle_sample_count);
+    cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
+    cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
+    cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
+    cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
     cfg.particle_boundary_config.right = parse_particle_boundary(global, "particle_boundary_right", default_particle_boundary);
@@ -456,6 +467,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         cfg.species.push_back(s);
     }
     if (cfg.species.empty()) cfg.species.push_back(Species2DConfig{});
+    if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config_2d(cfg);
     return cfg;
 }
@@ -465,6 +477,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "dimension", "nx", "ny", "nz", "length_x", "length_y", "length_z", "dt", "steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
+        "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top", "particle_boundary_back", "particle_boundary_front"
     };
@@ -499,6 +512,10 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.particle_output_interval = as<std::size_t>(global, "particle_output_interval", cfg.particle_output_interval);
     cfg.particle_output_stride = as<std::size_t>(global, "particle_output_stride", cfg.particle_output_stride);
     cfg.particle_sample_count = as<std::size_t>(global, "particle_sample_count", cfg.particle_sample_count);
+    cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
+    cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
+    cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
+    cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
     cfg.particle_boundary_config.right = parse_particle_boundary(global, "particle_boundary_right", default_particle_boundary);
@@ -539,6 +556,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         cfg.species.push_back(s);
     }
     if (cfg.species.empty()) cfg.species.push_back(Species3DConfig{});
+    if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config_3d(cfg);
     return cfg;
 }
