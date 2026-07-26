@@ -2,10 +2,12 @@
 #include "pic/FieldSolver.hpp"
 #include "pic/Grid.hpp"
 #include "pic/Mesh2D.hpp"
+#include "pic/Mesh3D.hpp"
 #include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/VTKWriter.hpp"
+#include "pic/Species3D.hpp"
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -251,6 +253,22 @@ int main() {
             require(std::abs(mesh.rho()[mesh.index(0, 1)] - 4.0) < 1e-12, "2D CIC lower-y weight is wrong");
         }
         {
+            pic::Mesh3D mesh(4, 4, 4, 1.0, 1.0, 1.0, pic::Boundary::Periodic);
+            const std::vector<pic::Particle3D> particles{
+                pic::Particle3D{pic::Vec3{0.125, 0.125, 0.125}, pic::Vec3{}, true},
+                pic::Particle3D{pic::Vec3{1.125, -0.125, 0.875}, pic::Vec3{}, true},
+                pic::Particle3D{pic::Vec3{0.5, 0.5, 0.5}, pic::Vec3{}, false},
+            };
+            pic::deposit_charge_cic(mesh, particles, 2.0, 0.5);
+            double total_charge = 0.0;
+            for (double rho : mesh.rho()) total_charge += rho * mesh.dx() * mesh.dy() * mesh.dz();
+            require(std::abs(total_charge - 2.0) < 1e-12, "3D CIC deposition did not conserve live-particle charge");
+            require(std::abs(mesh.rho()[mesh.index(0, 0, 0)] - 16.0) < 1e-12, "3D CIC wrapped corner weight is wrong");
+            require(std::abs(mesh.rho()[mesh.index(1, 0, 0)] - 16.0) < 1e-12, "3D CIC wrapped x weight is wrong");
+            require(std::abs(mesh.rho()[mesh.index(0, 1, 0)] - 8.0) < 1e-12, "3D CIC lower-y weight is wrong");
+            require(std::abs(mesh.rho()[mesh.index(0, 0, 3)] - 8.0) < 1e-12, "3D CIC wrapped z weight is wrong");
+        }
+        {
             pic::Grid periodic_grid(4, 1.0, pic::Boundary::Periodic);
             double periodic_volume = 0.0;
             for (std::size_t i = 0; i < periodic_grid.nx(); ++i) periodic_volume += periodic_grid.node_volume(i);
@@ -280,6 +298,28 @@ int main() {
                     "Dirichlet mesh nodal areas do not sum to domain area");
             require(std::abs(dirichlet_mesh.node_area(0, 0) - 0.25 * dirichlet_mesh.dx() * dirichlet_mesh.dy()) < 1e-15,
                     "Dirichlet mesh corner node area is wrong");
+
+            pic::Mesh3D periodic_mesh3d(4, 5, 6, 1.0, 2.0, 3.0, pic::Boundary::Periodic);
+            double periodic_volume3d = 0.0;
+            for (std::size_t k = 0; k < periodic_mesh3d.nz(); ++k) {
+                for (std::size_t j = 0; j < periodic_mesh3d.ny(); ++j) {
+                    for (std::size_t i = 0; i < periodic_mesh3d.nx(); ++i) periodic_volume3d += periodic_mesh3d.node_volume(i, j, k);
+                }
+            }
+            require(std::abs(periodic_volume3d - periodic_mesh3d.length_x() * periodic_mesh3d.length_y() * periodic_mesh3d.length_z()) < 1e-12,
+                    "periodic 3D mesh nodal volumes do not sum to domain volume");
+
+            pic::Mesh3D dirichlet_mesh3d(5, 4, 6, 1.0, 2.0, 3.0, pic::Boundary::Dirichlet);
+            double dirichlet_volume3d = 0.0;
+            for (std::size_t k = 0; k < dirichlet_mesh3d.nz(); ++k) {
+                for (std::size_t j = 0; j < dirichlet_mesh3d.ny(); ++j) {
+                    for (std::size_t i = 0; i < dirichlet_mesh3d.nx(); ++i) dirichlet_volume3d += dirichlet_mesh3d.node_volume(i, j, k);
+                }
+            }
+            require(std::abs(dirichlet_volume3d - dirichlet_mesh3d.length_x() * dirichlet_mesh3d.length_y() * dirichlet_mesh3d.length_z()) < 1e-12,
+                    "Dirichlet 3D mesh nodal volumes do not sum to domain volume");
+            require(std::abs(dirichlet_mesh3d.node_volume(0, 0, 0) - 0.125 * dirichlet_mesh3d.dx() * dirichlet_mesh3d.dy() * dirichlet_mesh3d.dz()) < 1e-15,
+                    "Dirichlet 3D mesh corner node volume is wrong");
         }
         {
             pic::Grid grid(5, 1.0, pic::Boundary::Dirichlet);
@@ -313,6 +353,63 @@ int main() {
             require(std::abs(sample.charge_l1 - 1.0) < 1e-12, "2D diagnostics charge_l1 did not use nodal control volumes");
             require(std::abs(sample.field_energy - 0.03125) < 1e-12, "2D diagnostics field energy did not use nodal control volumes");
             std::filesystem::remove_all("test_output_quadrature");
+        }
+        {
+            pic::Mesh3D mesh(5, 5, 5, 1.0, 1.0, 1.0, pic::Boundary::Dirichlet);
+            const std::vector<pic::Particle3D> particles{pic::Particle3D{pic::Vec3{0.0, 0.0, 0.0}, pic::Vec3{}, true}};
+            pic::deposit_charge_cic(mesh, particles, 2.0, 0.5);
+            double deposited_charge = 0.0;
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) deposited_charge += mesh.rho()[mesh.index(i, j, k)] * mesh.node_volume(i, j, k);
+                }
+            }
+            require(std::abs(deposited_charge - 1.0) < 1e-12, "3D Dirichlet CIC deposition did not conserve corner-node charge");
+            require(std::abs(mesh.rho()[mesh.index(0, 0, 0)] - 512.0) < 1e-12, "3D Dirichlet corner density did not use eighth control volume");
+        }
+        {
+            pic::Mesh3D mesh(5, 5, 5, 1.0, 1.0, 1.0, pic::Boundary::Dirichlet);
+            pic::Species3DConfig cfg;
+            cfg.mass = 2.0;
+            cfg.weight = 0.25;
+            cfg.particles = 3;
+            cfg.drift_velocity_x = 1.0;
+            cfg.drift_velocity_y = -2.0;
+            cfg.drift_velocity_z = 0.5;
+            cfg.thermal_velocity = 0.0;
+            cfg.init_x_min = 0.1;
+            cfg.init_x_max = 0.2;
+            cfg.init_y_min = 0.3;
+            cfg.init_y_max = 0.4;
+            cfg.init_z_min = 0.5;
+            cfg.init_z_max = 0.6;
+            pic::Species3D species(cfg);
+            std::mt19937_64 rng(1234);
+            species.initialize(mesh, rng);
+            require(species.live_count() == 3, "3D species did not initialize all particles as live");
+            for (const auto& particle : species.particles()) {
+                require(particle.position.x >= 0.1 && particle.position.x <= 0.2, "3D species x initialization interval was not honored");
+                require(particle.position.y >= 0.3 && particle.position.y <= 0.4, "3D species y initialization interval was not honored");
+                require(particle.position.z >= 0.5 && particle.position.z <= 0.6, "3D species z initialization interval was not honored");
+                require_near(particle.velocity.x, 1.0, 1e-15, "3D species vx drift initialization is wrong");
+                require_near(particle.velocity.y, -2.0, 1e-15, "3D species vy drift initialization is wrong");
+                require_near(particle.velocity.z, 0.5, 1e-15, "3D species vz drift initialization is wrong");
+                require_near(particle.velocity_half.x, particle.velocity.x, 1e-15, "3D species half-step vx initialization is wrong");
+                require_near(particle.velocity_half.y, particle.velocity.y, 1e-15, "3D species half-step vy initialization is wrong");
+                require_near(particle.velocity_half.z, particle.velocity.z, 1e-15, "3D species half-step vz initialization is wrong");
+            }
+            require_near(species.kinetic_energy(), 3.0 * 0.5 * cfg.mass * cfg.weight * (1.0 + 4.0 + 0.25), 1e-15,
+                         "3D species kinetic energy is wrong");
+            mesh.clear_charge();
+            species.deposit_charge(mesh);
+            double deposited_charge = 0.0;
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) deposited_charge += mesh.rho()[mesh.index(i, j, k)] * mesh.node_volume(i, j, k);
+                }
+            }
+            require(std::abs(deposited_charge - cfg.charge * cfg.weight * static_cast<double>(cfg.particles)) < 1e-12,
+                    "3D species deposition did not conserve charge");
         }
         {
             const auto output_dir = std::filesystem::path("test_output_vtk");

@@ -39,6 +39,12 @@ struct Vec2 {
     double y{0.0};
 };
 
+struct Vec3 {
+    double x{0.0};
+    double y{0.0};
+    double z{0.0};
+};
+
 struct Particle {
     double x{0.0};
     double v{0.0};          // time-centered velocity used for diagnostics/output
@@ -51,5 +57,12 @@ struct Particle2D {
     Vec2 velocity{};        // time-centered velocity used for diagnostics/output
     bool alive{true};
     Vec2 velocity_half{};   // leapfrog velocity at the adjacent half time step
+};
+
+struct Particle3D {
+    Vec3 position{};
+    Vec3 velocity{};        // time-centered velocity used for diagnostics/output
+    bool alive{true};
+    Vec3 velocity_half{};   // leapfrog velocity at the adjacent half time step
 };
 }

@@ -12,11 +12,13 @@ add_library(aurorapic
   src/FieldSolver.cpp
   src/Grid.cpp
   src/Mesh2D.cpp
+  src/Mesh3D.cpp
   src/Pusher.cpp
   src/Simulation.cpp
   src/Simulation2D.cpp
   src/Species.cpp
   src/Species2D.cpp
+  src/Species3D.cpp
   src/VTKWriter.cpp
 )
 target_include_directories(aurorapic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

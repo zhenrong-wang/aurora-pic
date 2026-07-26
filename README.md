@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, and steady-state convergence mode. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, VTK field output, scalar histories, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, and steady-state convergence mode. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, VTK field output, scalar histories, and optional particle inspection CSVs. A minimal structured 3D foundation (`Mesh3D`, `Species3D`, and trilinear CIC deposition) is available for API and deposition regression work; a 3D Poisson solver and CLI runtime are still future work.
 
 ## Why this methodology
 
@@ -64,6 +64,18 @@ Particle-output controls:
 - `particle_output_interval`: particle CSV interval; `0` inherits `output_interval`.
 - `particle_output_stride`: write every Nth particle per species traversal; must be positive.
 - `particle_sample_count`: maximum rows across all species for each file; `0` writes all stride-selected particles.
+
+## 3D foundation status
+
+AuroraPIC includes an early structured 3D API for the next multidimensional milestone:
+
+- `Vec3` and `Particle3D` mirror the 2D particle state contract, including time-centered diagnostic velocity and leapfrog half-step velocity storage.
+- `Mesh3D` stores node-centered `rho`, `phi`, and electric-field components on periodic or Dirichlet Cartesian grids.
+- `node_volume(i, j, k)` returns full periodic control volumes and half-face/quarter-edge/eighth-corner Dirichlet control volumes so deposited charge integrates correctly.
+- `deposit_charge_cic(Mesh3D&, ...)` performs trilinear CIC deposition, wraps periodic coordinates, clamps Dirichlet coordinates, ignores inactive particles, and preserves live-particle charge under nodal quadrature.
+- `Species3D` supports bounded random initialization, charge deposition, kinetic-energy accounting, and live-particle counts.
+
+This is intentionally a foundation only: there is not yet a 3D config loader, 3D Poisson solver, 3D diagnostics writer, or CLI simulation path.
 
 ## Configuration format
 
