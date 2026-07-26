@@ -12,6 +12,7 @@ add_library(aurorapic
   src/FieldSolver.cpp
   src/Grid.cpp
   src/Mesh2D.cpp
+  src/Pusher.cpp
   src/Simulation.cpp
   src/Simulation2D.cpp
   src/Species.cpp

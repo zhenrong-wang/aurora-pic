@@ -1,8 +1,8 @@
 #include "pic/Simulation.hpp"
+#include "pic/Pusher.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
-#include <utility>
 
 namespace pic {
 namespace {
@@ -34,14 +34,25 @@ void Simulation::initialize() {
     grid_.clear_charge();
     for (const auto& sp : species_) sp.deposit_charge(grid_);
     solver_.solve(grid_, cfg_.phi_left, cfg_.phi_right);
+    for (auto& sp : species_) {
+        const double qm = sp.charge() / sp.mass();
+        for (auto& p : sp.particles()) {
+            if (p.alive) initialize_leapfrog_half_step(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
+        }
+    }
 }
 
 void Simulation::apply_collisions(Species& sp) {
     if (!cfg_.collisions.enabled || cfg_.collisions.frequency <= 0.0) return;
     const double p = 1.0 - std::exp(-cfg_.collisions.frequency * cfg_.dt);
+    const double qm = sp.charge() / sp.mass();
     std::uniform_real_distribution<double> u(0.0, 1.0);
     std::normal_distribution<double> nv(0.0, cfg_.collisions.neutral_temperature_velocity);
-    for (auto& part : sp.particles()) if (part.alive && u(rng_) < p) part.v = nv(rng_);
+    for (auto& part : sp.particles()) {
+        if (!part.alive || u(rng_) >= p) continue;
+        part.v = nv(rng_);
+        initialize_leapfrog_half_step(part, interpolate_electric(grid_, part.x), qm, cfg_.dt);
+    }
 }
 
 void Simulation::step() {
@@ -49,20 +60,25 @@ void Simulation::step() {
         const double qm = sp.charge() / sp.mass();
         for (auto& p : sp.particles()) {
             if (!p.alive) continue;
-            const double E = interpolate_electric(grid_, p.x);
-            p.v += qm * E * cfg_.dt;
-            p.x += p.v * cfg_.dt;
+            kick_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
+            drift_leapfrog(p, cfg_.dt);
             if (grid_.boundary() == Boundary::Periodic) {
                 p.x = std::fmod(std::fmod(p.x, grid_.length()) + grid_.length(), grid_.length());
             } else if (p.x < 0.0 || p.x > grid_.length()) {
                 p.alive = false;
             }
         }
-        apply_collisions(sp);
     }
     grid_.clear_charge();
     for (const auto& sp : species_) sp.deposit_charge(grid_);
     solver_.solve(grid_, cfg_.phi_left, cfg_.phi_right);
+    for (auto& sp : species_) {
+        const double qm = sp.charge() / sp.mass();
+        for (auto& p : sp.particles()) {
+            if (p.alive) synchronize_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
+        }
+        apply_collisions(sp);
+    }
     ++step_;
     time_ += cfg_.dt;
 }

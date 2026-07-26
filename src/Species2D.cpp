@@ -40,6 +40,7 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
         }
         particle.velocity.x = vx(rng);
         particle.velocity.y = vy(rng);
+        particle.velocity_half = particle.velocity;
         particle.alive = true;
     }
 }

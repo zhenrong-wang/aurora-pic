@@ -19,7 +19,7 @@ in normalized units with `eps0 = 1`.
 
 ## Particle advance and steady state
 
-The first release uses an explicit kick-drift electrostatic update. This is clear and testable; a leapfrog/Boris variant is the next planned high-fidelity extension. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
+AuroraPIC advances particles with a time-centered electrostatic leapfrog update. Each step deposits charge at particle positions, solves Poisson's equation for `E^n`, kicks stored half-step velocities, drifts positions to the next time level, reapplies particle boundaries, redeposits charge, resolves fields, and synchronizes the public velocity fields used by diagnostics/output. In 2D, reflecting particle boundaries reverse the normal half-step velocity so subsequent diagnostics remain consistent after synchronization. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
 
 ## Collisions
 

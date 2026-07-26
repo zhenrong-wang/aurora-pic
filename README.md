@@ -38,7 +38,7 @@ The full smoke suite builds the project, runs the CTest regression executable, a
 
 - `Mesh2D`: rectangular node-centered mesh with periodic or Dirichlet field boundary mode plus side boundary tags/potentials for electrode-style Dirichlet domains.
 - `Species2D`: explicit `Particle2D` storage with 2D position/velocity initialization, CIC deposition, kinetic-energy accounting, and live-particle accounting.
-- `Simulation2D`: deposit -> solve -> interpolate -> explicit push loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`).
+- `Simulation2D`: deposit -> solve -> leapfrog kick/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`).
 - `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
 - `write_legacy_vtk`: structured-grid VTK writer for `rho`, `phi`, and electric-field vectors on `Mesh2D`.
 
@@ -155,4 +155,4 @@ The parser is intentionally strict: unknown sections/keys, invalid enum values, 
 
 ## Current limitations
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, no 3D solver/CLI yet, no checkpoint/restart format yet, simplified collision model, and an explicit kick-drift pusher rather than a production leapfrog/Boris integrator. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current particle CSV output is for inspection and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, no 3D solver/CLI yet, no checkpoint/restart format yet, simplified collision model, and no magnetic-field/Boris rotation yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current particle CSV output is for inspection and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.

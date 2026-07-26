@@ -4,6 +4,7 @@
 #include "pic/Mesh2D.hpp"
 #include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
+#include "pic/Pusher.hpp"
 #include "pic/VTKWriter.hpp"
 #include <algorithm>
 #include <cmath>
@@ -20,6 +21,12 @@
 namespace {
 void require(bool condition, const std::string& message) {
     if (!condition) throw std::runtime_error(message);
+}
+
+void require_near(double actual, double expected, double tolerance, const std::string& message) {
+    if (std::abs(actual - expected) > tolerance) {
+        throw std::runtime_error(message);
+    }
 }
 
 std::string read_file_text(const std::filesystem::path& path) {
@@ -56,6 +63,63 @@ int main() {
                 max_err = std::max(max_err, std::abs(g.electric()[i] - expected));
             }
             require(max_err < 1e-12, "periodic Poisson solve exceeded analytic error tolerance");
+        }
+        {
+            constexpr double dt = 0.125;
+            constexpr double acceleration = 2.5;
+            pic::Particle particle{};
+            particle.x = 0.2;
+            particle.v = -0.4;
+            pic::initialize_leapfrog_half_step(particle, acceleration, 1.0, dt);
+            for (std::size_t n = 0; n < 8; ++n) {
+                pic::kick_leapfrog(particle, acceleration, 1.0, dt);
+                pic::drift_leapfrog(particle, dt);
+                pic::synchronize_leapfrog(particle, acceleration, 1.0, dt);
+            }
+            const double t = 8.0 * dt;
+            require_near(particle.x, 0.2 + (-0.4) * t + 0.5 * acceleration * t * t, 1e-14,
+                         "1D leapfrog pusher does not match constant-acceleration position");
+            require_near(particle.v, -0.4 + acceleration * t, 1e-14,
+                         "1D leapfrog pusher does not match constant-acceleration velocity");
+        }
+        {
+            constexpr double dt = 0.1;
+            const pic::Vec2 acceleration{1.5, -0.75};
+            pic::Particle2D particle{};
+            particle.position = pic::Vec2{0.25, 0.75};
+            particle.velocity = pic::Vec2{-0.2, 0.3};
+            pic::initialize_leapfrog_half_step(particle, acceleration, 1.0, dt);
+            for (std::size_t n = 0; n < 6; ++n) {
+                pic::kick_leapfrog(particle, acceleration, 1.0, dt);
+                pic::drift_leapfrog(particle, dt);
+                pic::synchronize_leapfrog(particle, acceleration, 1.0, dt);
+            }
+            const double t = 6.0 * dt;
+            require_near(particle.position.x, 0.25 + (-0.2) * t + 0.5 * acceleration.x * t * t, 1e-14,
+                         "2D leapfrog pusher does not match constant-acceleration x position");
+            require_near(particle.position.y, 0.75 + 0.3 * t + 0.5 * acceleration.y * t * t, 1e-14,
+                         "2D leapfrog pusher does not match constant-acceleration y position");
+            require_near(particle.velocity.x, -0.2 + acceleration.x * t, 1e-14,
+                         "2D leapfrog pusher does not match constant-acceleration x velocity");
+            require_near(particle.velocity.y, 0.3 + acceleration.y * t, 1e-14,
+                         "2D leapfrog pusher does not match constant-acceleration y velocity");
+        }
+        {
+            constexpr double dt = 0.02;
+            pic::Particle particle{};
+            particle.x = 1.0;
+            particle.v = 0.0;
+            pic::initialize_leapfrog_half_step(particle, -particle.x, 1.0, dt);
+            const double initial_energy = 0.5 * (particle.x * particle.x + particle.v * particle.v);
+            double max_energy_error = 0.0;
+            for (std::size_t n = 0; n < 5000; ++n) {
+                pic::kick_leapfrog(particle, -particle.x, 1.0, dt);
+                pic::drift_leapfrog(particle, dt);
+                pic::synchronize_leapfrog(particle, -particle.x, 1.0, dt);
+                const double energy = 0.5 * (particle.x * particle.x + particle.v * particle.v);
+                max_energy_error = std::max(max_energy_error, std::abs(energy - initial_energy));
+            }
+            require(max_energy_error < 1e-3, "1D leapfrog pusher harmonic oscillator energy is not bounded");
         }
         {
             pic::Mesh2D mesh(16, 20, 1.0, 1.5, pic::Boundary::Periodic);

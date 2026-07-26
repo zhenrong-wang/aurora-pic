@@ -26,6 +26,7 @@ void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
             p.x = std::clamp(p.x, 0.0, grid.length());
         }
         p.v = nv(rng);
+        p.v_half = p.v;
         p.alive = true;
     }
 }

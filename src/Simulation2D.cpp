@@ -1,8 +1,8 @@
 #include "pic/Simulation2D.hpp"
+#include "pic/Pusher.hpp"
 #include "pic/VTKWriter.hpp"
 #include <cmath>
 #include <stdexcept>
-#include <string>
 #include <utility>
 
 namespace pic {
@@ -92,6 +92,12 @@ void Simulation2D::initialize() {
     boundary_losses_ = {};
     for (auto& sp : species_) sp.initialize(mesh_, rng_);
     deposit_and_solve();
+    for (auto& sp : species_) {
+        const double qm = sp.charge() / sp.mass();
+        for (auto& particle : sp.particles()) {
+            if (particle.alive) initialize_leapfrog_half_step(particle, interpolate_electric(mesh_, particle.position), qm, cfg_.dt);
+        }
+    }
     initialized_ = true;
 }
 
@@ -102,22 +108,22 @@ void Simulation2D::deposit_and_solve() {
 }
 
 void Simulation2D::apply_particle_boundaries(Particle2D& particle) {
-    if (!apply_lower_boundary(particle.position.x, particle.velocity.x, mesh_.length_x(),
+    if (!apply_lower_boundary(particle.position.x, particle.velocity_half.x, mesh_.length_x(),
                               cfg_.particle_boundary_config.left, boundary_losses_.absorbed_left)) {
         particle.alive = false;
         return;
     }
-    if (!apply_upper_boundary(particle.position.x, particle.velocity.x, mesh_.length_x(),
+    if (!apply_upper_boundary(particle.position.x, particle.velocity_half.x, mesh_.length_x(),
                               cfg_.particle_boundary_config.right, boundary_losses_.absorbed_right)) {
         particle.alive = false;
         return;
     }
-    if (!apply_lower_boundary(particle.position.y, particle.velocity.y, mesh_.length_y(),
+    if (!apply_lower_boundary(particle.position.y, particle.velocity_half.y, mesh_.length_y(),
                               cfg_.particle_boundary_config.bottom, boundary_losses_.absorbed_bottom)) {
         particle.alive = false;
         return;
     }
-    if (!apply_upper_boundary(particle.position.y, particle.velocity.y, mesh_.length_y(),
+    if (!apply_upper_boundary(particle.position.y, particle.velocity_half.y, mesh_.length_y(),
                               cfg_.particle_boundary_config.top, boundary_losses_.absorbed_top)) {
         particle.alive = false;
         return;
@@ -130,16 +136,19 @@ void Simulation2D::step() {
         const double qm = sp.charge() / sp.mass();
         for (auto& particle : sp.particles()) {
             if (!particle.alive) continue;
-            const Vec2 electric = interpolate_electric(mesh_, particle.position);
-            particle.velocity.x += qm * electric.x * cfg_.dt;
-            particle.velocity.y += qm * electric.y * cfg_.dt;
-            particle.position.x += particle.velocity.x * cfg_.dt;
-            particle.position.y += particle.velocity.y * cfg_.dt;
+            kick_leapfrog(particle, interpolate_electric(mesh_, particle.position), qm, cfg_.dt);
+            drift_leapfrog(particle, cfg_.dt);
             apply_particle_boundaries(particle);
         }
     }
 
     deposit_and_solve();
+    for (auto& sp : species_) {
+        const double qm = sp.charge() / sp.mass();
+        for (auto& particle : sp.particles()) {
+            if (particle.alive) synchronize_leapfrog(particle, interpolate_electric(mesh_, particle.position), qm, cfg_.dt);
+        }
+    }
     ++step_;
     time_ += cfg_.dt;
 }
