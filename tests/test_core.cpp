@@ -158,6 +158,51 @@ int main() {
             require(max_ey_err < 1e-12, "2D periodic Poisson Ey exceeded analytic error tolerance");
         }
         {
+            pic::Mesh3D mesh(8, 10, 12, 1.0, 1.25, 1.5, pic::Boundary::Periodic);
+            const double kx = 2.0 * std::numbers::pi / mesh.length_x();
+            const double ky = 4.0 * std::numbers::pi / mesh.length_y();
+            const double kz = 6.0 * std::numbers::pi / mesh.length_z();
+            const double k2 = kx * kx + ky * ky + kz * kz;
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const double x = mesh.node_x(i);
+                        const double y = mesh.node_y(j);
+                        const double z = mesh.node_z(k);
+                        mesh.rho()[mesh.index(i, j, k)] = std::sin(kx * x) * std::cos(ky * y) * std::sin(kz * z);
+                    }
+                }
+            }
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double max_phi_err = 0.0;
+            double max_ex_err = 0.0;
+            double max_ey_err = 0.0;
+            double max_ez_err = 0.0;
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const double x = mesh.node_x(i);
+                        const double y = mesh.node_y(j);
+                        const double z = mesh.node_z(k);
+                        const auto idx = mesh.index(i, j, k);
+                        const double expected_phi = std::sin(kx * x) * std::cos(ky * y) * std::sin(kz * z) / k2;
+                        const double expected_ex = -kx * std::cos(kx * x) * std::cos(ky * y) * std::sin(kz * z) / k2;
+                        const double expected_ey = ky * std::sin(kx * x) * std::sin(ky * y) * std::sin(kz * z) / k2;
+                        const double expected_ez = -kz * std::sin(kx * x) * std::cos(ky * y) * std::cos(kz * z) / k2;
+                        max_phi_err = std::max(max_phi_err, std::abs(mesh.phi()[idx] - expected_phi));
+                        max_ex_err = std::max(max_ex_err, std::abs(mesh.electric_x()[idx] - expected_ex));
+                        max_ey_err = std::max(max_ey_err, std::abs(mesh.electric_y()[idx] - expected_ey));
+                        max_ez_err = std::max(max_ez_err, std::abs(mesh.electric_z()[idx] - expected_ez));
+                    }
+                }
+            }
+            require(max_phi_err < 1e-12, "3D periodic Poisson potential exceeded analytic error tolerance");
+            require(max_ex_err < 1e-12, "3D periodic Poisson Ex exceeded analytic error tolerance");
+            require(max_ey_err < 1e-12, "3D periodic Poisson Ey exceeded analytic error tolerance");
+            require(max_ez_err < 1e-12, "3D periodic Poisson Ez exceeded analytic error tolerance");
+        }
+        {
             pic::Mesh2D mesh(18, 14, 1.2, 0.8, pic::Boundary::Dirichlet);
             const double kx = std::numbers::pi / mesh.length_x();
             const double ky = std::numbers::pi / mesh.length_y();
@@ -209,6 +254,77 @@ int main() {
             require(max_phi_err < 1e-8, "2D Dirichlet Poisson potential exceeded discrete analytic tolerance");
             require(max_ex_err < 1e-8, "2D Dirichlet Poisson Ex exceeded discrete analytic tolerance");
             require(max_ey_err < 1e-8, "2D Dirichlet Poisson Ey exceeded discrete analytic tolerance");
+        }
+        {
+            pic::Mesh3D mesh(8, 7, 6, 1.1, 0.9, 0.7, pic::Boundary::Dirichlet);
+            const double kx = std::numbers::pi / mesh.length_x();
+            const double ky = std::numbers::pi / mesh.length_y();
+            const double kz = std::numbers::pi / mesh.length_z();
+            const double inv_dx2 = 1.0 / (mesh.dx() * mesh.dx());
+            const double inv_dy2 = 1.0 / (mesh.dy() * mesh.dy());
+            const double inv_dz2 = 1.0 / (mesh.dz() * mesh.dz());
+            std::vector<double> expected(mesh.size(), 0.0);
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const double x = mesh.node_x(i);
+                        const double y = mesh.node_y(j);
+                        const double z = mesh.node_z(k);
+                        expected[mesh.index(i, j, k)] = std::sin(kx * x) * std::sin(ky * y) * std::sin(kz * z);
+                    }
+                }
+            }
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const auto idx = mesh.index(i, j, k);
+                        if (i == 0 || j == 0 || k == 0 || i + 1 == mesh.nx() || j + 1 == mesh.ny() || k + 1 == mesh.nz()) {
+                            mesh.phi()[idx] = expected[idx];
+                        } else {
+                            mesh.rho()[idx] = pic::EPS0 * ((2.0 * inv_dx2 + 2.0 * inv_dy2 + 2.0 * inv_dz2) * expected[idx]
+                                          - inv_dx2 * (expected[mesh.index(i - 1, j, k)] + expected[mesh.index(i + 1, j, k)])
+                                          - inv_dy2 * (expected[mesh.index(i, j - 1, k)] + expected[mesh.index(i, j + 1, k)])
+                                          - inv_dz2 * (expected[mesh.index(i, j, k - 1)] + expected[mesh.index(i, j, k + 1)]));
+                        }
+                    }
+                }
+            }
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double max_phi_err = 0.0;
+            double max_ex_err = 0.0;
+            double max_ey_err = 0.0;
+            double max_ez_err = 0.0;
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const auto idx = mesh.index(i, j, k);
+                        max_phi_err = std::max(max_phi_err, std::abs(mesh.phi()[idx] - expected[idx]));
+                        const double expected_ex = (i == 0)
+                            ? -(expected[mesh.index(1, j, k)] - expected[idx]) / mesh.dx()
+                            : (i + 1 == mesh.nx())
+                                ? -(expected[idx] - expected[mesh.index(i - 1, j, k)]) / mesh.dx()
+                                : -(expected[mesh.index(i + 1, j, k)] - expected[mesh.index(i - 1, j, k)]) / (2.0 * mesh.dx());
+                        const double expected_ey = (j == 0)
+                            ? -(expected[mesh.index(i, 1, k)] - expected[idx]) / mesh.dy()
+                            : (j + 1 == mesh.ny())
+                                ? -(expected[idx] - expected[mesh.index(i, j - 1, k)]) / mesh.dy()
+                                : -(expected[mesh.index(i, j + 1, k)] - expected[mesh.index(i, j - 1, k)]) / (2.0 * mesh.dy());
+                        const double expected_ez = (k == 0)
+                            ? -(expected[mesh.index(i, j, 1)] - expected[idx]) / mesh.dz()
+                            : (k + 1 == mesh.nz())
+                                ? -(expected[idx] - expected[mesh.index(i, j, k - 1)]) / mesh.dz()
+                                : -(expected[mesh.index(i, j, k + 1)] - expected[mesh.index(i, j, k - 1)]) / (2.0 * mesh.dz());
+                        max_ex_err = std::max(max_ex_err, std::abs(mesh.electric_x()[idx] - expected_ex));
+                        max_ey_err = std::max(max_ey_err, std::abs(mesh.electric_y()[idx] - expected_ey));
+                        max_ez_err = std::max(max_ez_err, std::abs(mesh.electric_z()[idx] - expected_ez));
+                    }
+                }
+            }
+            require(max_phi_err < 1e-8, "3D Dirichlet Poisson potential exceeded discrete analytic tolerance");
+            require(max_ex_err < 1e-8, "3D Dirichlet Poisson Ex exceeded discrete analytic tolerance");
+            require(max_ey_err < 1e-8, "3D Dirichlet Poisson Ey exceeded discrete analytic tolerance");
+            require(max_ez_err < 1e-8, "3D Dirichlet Poisson Ez exceeded discrete analytic tolerance");
         }
         {
             pic::BoundaryConfig2D electrodes;
@@ -267,6 +383,35 @@ int main() {
             require(std::abs(mesh.rho()[mesh.index(1, 0, 0)] - 16.0) < 1e-12, "3D CIC wrapped x weight is wrong");
             require(std::abs(mesh.rho()[mesh.index(0, 1, 0)] - 8.0) < 1e-12, "3D CIC lower-y weight is wrong");
             require(std::abs(mesh.rho()[mesh.index(0, 0, 3)] - 8.0) < 1e-12, "3D CIC wrapped z weight is wrong");
+        }
+        {
+            pic::Mesh3D mesh(5, 4, 3, 1.0, 0.8, 0.6, pic::Boundary::Periodic);
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const double x = mesh.node_x(i);
+                        const double y = mesh.node_y(j);
+                        const double z = mesh.node_z(k);
+                        const auto idx = mesh.index(i, j, k);
+                        mesh.electric_x()[idx] = 1.0 + 2.0 * x - 3.0 * y + 0.5 * z;
+                        mesh.electric_y()[idx] = -0.25 + 0.75 * x + 1.5 * y - 2.0 * z;
+                        mesh.electric_z()[idx] = 3.0 - x + 0.25 * y + 4.0 * z;
+                    }
+                }
+            }
+            const pic::Vec3 position{0.37, 0.31, 0.26};
+            const pic::Vec3 electric = pic::interpolate_electric(mesh, position);
+            require(std::abs(electric.x - (1.0 + 2.0 * position.x - 3.0 * position.y + 0.5 * position.z)) < 1e-12,
+                    "3D electric interpolation Ex is not trilinear-exact for affine fields");
+            require(std::abs(electric.y - (-0.25 + 0.75 * position.x + 1.5 * position.y - 2.0 * position.z)) < 1e-12,
+                    "3D electric interpolation Ey is not trilinear-exact for affine fields");
+            require(std::abs(electric.z - (3.0 - position.x + 0.25 * position.y + 4.0 * position.z)) < 1e-12,
+                    "3D electric interpolation Ez is not trilinear-exact for affine fields");
+
+            const pic::Vec3 wrapped = pic::interpolate_electric(mesh, pic::Vec3{position.x + mesh.length_x(), position.y - mesh.length_y(), position.z});
+            require(std::abs(wrapped.x - electric.x) < 1e-12, "3D periodic electric interpolation did not wrap x/y coordinates");
+            require(std::abs(wrapped.y - electric.y) < 1e-12, "3D periodic electric interpolation did not wrap x/y coordinates");
+            require(std::abs(wrapped.z - electric.z) < 1e-12, "3D periodic electric interpolation did not wrap x/y coordinates");
         }
         {
             pic::Grid periodic_grid(4, 1.0, pic::Boundary::Periodic);

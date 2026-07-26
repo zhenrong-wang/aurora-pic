@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, and steady-state convergence mode. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, VTK field output, scalar histories, and optional particle inspection CSVs. A minimal structured 3D foundation (`Mesh3D`, `Species3D`, and trilinear CIC deposition) is available for API and deposition regression work; a 3D Poisson solver and CLI runtime are still future work.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, and steady-state convergence mode. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, VTK field output, scalar histories, and optional particle inspection CSVs. A structured 3D API (`Mesh3D`, `Species3D`, trilinear CIC deposition, electrostatic Poisson solve, and electric-field interpolation) is available for API-level multidimensional development; a full 3D config/CLI simulation runtime remains future work.
 
 ## Why this methodology
 
@@ -65,17 +65,19 @@ Particle-output controls:
 - `particle_output_stride`: write every Nth particle per species traversal; must be positive.
 - `particle_sample_count`: maximum rows across all species for each file; `0` writes all stride-selected particles.
 
-## 3D foundation status
+## 3D API status
 
-AuroraPIC includes an early structured 3D API for the next multidimensional milestone:
+AuroraPIC includes a structured 3D API for the next multidimensional milestone:
 
 - `Vec3` and `Particle3D` mirror the 2D particle state contract, including time-centered diagnostic velocity and leapfrog half-step velocity storage.
 - `Mesh3D` stores node-centered `rho`, `phi`, and electric-field components on periodic or Dirichlet Cartesian grids.
 - `node_volume(i, j, k)` returns full periodic control volumes and half-face/quarter-edge/eighth-corner Dirichlet control volumes so deposited charge integrates correctly.
 - `deposit_charge_cic(Mesh3D&, ...)` performs trilinear CIC deposition, wraps periodic coordinates, clamps Dirichlet coordinates, ignores inactive particles, and preserves live-particle charge under nodal quadrature.
+- `FieldSolver::solve(Mesh3D&)` provides an API-level 3D electrostatic Poisson solve: periodic domains use a spectral solver, and Dirichlet domains use a grounded-boundary SOR solve.
+- `interpolate_electric(const Mesh3D&, Vec3)` returns trilinear CIC electric-field interpolation with periodic wrap or Dirichlet clamp semantics.
 - `Species3D` supports bounded random initialization, charge deposition, kinetic-energy accounting, and live-particle counts.
 
-This is intentionally a foundation only: there is not yet a 3D config loader, 3D Poisson solver, 3D diagnostics writer, or CLI simulation path.
+Remaining 3D work is the full simulation layer around this API: config loading, CLI time integration, diagnostics output, and richer boundary configuration beyond grounded Dirichlet field boundaries.
 
 ## Configuration format
 
@@ -165,6 +167,6 @@ init_y_max = 1.0
 
 The parser is intentionally strict: unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, non-positive `particle_output_stride`, empty 2D boundary tags, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
 
-## Current limitations
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, no full 3D simulation CLI yet, no checkpoint/restart format yet, simplified collision model, and no magnetic-field/Boris rotation yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current particle CSV output is for inspection and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.
 
 This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, no 3D solver/CLI yet, no checkpoint/restart format yet, simplified collision model, and no magnetic-field/Boris rotation yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current particle CSV output is for inspection and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.
