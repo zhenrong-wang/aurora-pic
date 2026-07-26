@@ -905,6 +905,12 @@ int main() {
                 std::filesystem::remove(path);
             }, "invalid 2D particle boundary validation did not throw");
             require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_2d_magnetic_field.ini");
+                { std::ofstream out(path); out << "dimension = 2\nmagnetic_field_z = nan\n"; }
+                try { (void)pic::load_config_2d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 2D magnetic field validation did not throw");
+            require_throws([] {
                 const auto path = std::filesystem::path("test_invalid_key.ini");
                 { std::ofstream out(path); out << "nx = 16\nunknown = 7\n"; }
                 try { (void)pic::load_config(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
@@ -999,6 +1005,12 @@ int main() {
                 try { (void)pic::load_config_3d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
                 std::filesystem::remove(path);
             }, "missing 3D dimension validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_3d_magnetic_field.ini");
+                { std::ofstream out(path); out << "dimension = 3\nmagnetic_field_y = inf\n"; }
+                try { (void)pic::load_config_3d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 3D magnetic field validation did not throw");
             require_throws([] {
                 const auto path = std::filesystem::path("test_invalid_3d_particle_boundary.ini");
                 { std::ofstream out(path); out << "dimension = 3\nparticle_boundary_front = bounce\n"; }
