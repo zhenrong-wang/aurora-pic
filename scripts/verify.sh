@@ -4,8 +4,4 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ctest --test-dir build --output-on-failure
 python3 scripts/validate_pushers.py
-./build/aurorapic_cli examples/two_stream.cfg
-./build/aurorapic_cli examples/sheath_steady.cfg
-./build/aurorapic_cli examples/plasma_2d.cfg
-./build/aurorapic_cli examples/electrode_2d.cfg
-./build/aurorapic_cli examples/plasma_3d.cfg
+python3 scripts/verify_examples.py build/aurorapic_cli

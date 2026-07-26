@@ -23,14 +23,10 @@ ctest --test-dir build --output-on-failure
 scripts/verify.sh
 ```
 
-The full smoke suite builds the project, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), and runs the included 1D/2D/3D examples:
+The full smoke suite builds the project, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), and runs isolated CLI smoke tests for the included 1D/2D/3D examples. The example smoke tests copy each config to a temporary `test_output_aurorapic_verify/` directory, rewrite only `output_dir`, run `aurorapic_cli`, and assert the expected scalar, field, VTK, and particle-inspection files are structurally valid. Temporary smoke outputs are removed on success; set `KEEP_VERIFY_OUTPUTS=1` or pass `--keep-output` to `scripts/verify_examples.py` to retain them for debugging:
 
 ```sh
-./build/aurorapic_cli examples/two_stream.cfg
-./build/aurorapic_cli examples/sheath_steady.cfg
-./build/aurorapic_cli examples/plasma_2d.cfg
-./build/aurorapic_cli examples/electrode_2d.cfg
-./build/aurorapic_cli examples/plasma_3d.cfg
+python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 ```
 
 ## 2D status
