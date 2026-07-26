@@ -1382,6 +1382,85 @@ int main() {
             require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_3.apc"), "3D run did not write final checkpoint");
         }
         {
+            pic::Simulation2DConfig zero_cfg;
+            zero_cfg.nx = 8;
+            zero_cfg.ny = 8;
+            zero_cfg.length_x = 1.0;
+            zero_cfg.length_y = 1.0;
+            zero_cfg.dt = 0.1;
+            zero_cfg.steps = 1;
+            zero_cfg.boundary = pic::Boundary::Periodic;
+            zero_cfg.seed = 19;
+            zero_cfg.output_interval = 1;
+            zero_cfg.species = {pic::Species2DConfig{"probe2", 1.0, 1.0, 1e-30, 1, 1.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5}};
+
+            auto boris_cfg = zero_cfg;
+            boris_cfg.magnetic_field_z = 2.0;
+
+            pic::Simulation2D zero_b(zero_cfg);
+            pic::Simulation2D with_b(boris_cfg);
+            zero_b.step();
+            with_b.step();
+
+            const auto& zero_particle = zero_b.species().front().particles().front();
+            const auto& boris_particle = with_b.species().front().particles().front();
+            const double angle = boris_rotation_angle(std::abs(boris_cfg.magnetic_field_z), 1.0, boris_cfg.dt);
+            require_near(zero_particle.velocity.x, 1.0, 1e-12, "2D zero-B simulation changed x velocity unexpectedly");
+            require_near(zero_particle.velocity.y, 0.0, 1e-12, "2D zero-B simulation changed y velocity unexpectedly");
+            require_near(boris_particle.velocity.x, std::cos(angle), 1e-12,
+                         "Simulation2D did not activate Boris x-velocity rotation");
+            require_near(boris_particle.velocity.y, std::sin(angle), 1e-12,
+                         "Simulation2D did not activate Boris y-velocity rotation");
+            require(std::abs(boris_particle.velocity.y - zero_particle.velocity.y) > 1e-3,
+                    "Simulation2D magnetic-field run did not diverge from zero-B velocity evolution");
+        }
+        {
+            pic::Simulation3DConfig zero_cfg;
+            zero_cfg.nx = 8;
+            zero_cfg.ny = 8;
+            zero_cfg.nz = 8;
+            zero_cfg.length_x = 1.0;
+            zero_cfg.length_y = 1.0;
+            zero_cfg.length_z = 1.0;
+            zero_cfg.dt = 0.05;
+            zero_cfg.steps = 1;
+            zero_cfg.boundary = pic::Boundary::Periodic;
+            zero_cfg.seed = 23;
+            zero_cfg.output_interval = 1;
+            const pic::Vec3 initial_velocity{0.6, -0.25, 0.9};
+            zero_cfg.species = {pic::Species3DConfig{"probe3", 1.0, 1.0, 1e-30, 1,
+                                                      initial_velocity.x, initial_velocity.y, initial_velocity.z,
+                                                      0.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5}};
+
+            auto boris_cfg = zero_cfg;
+            boris_cfg.magnetic_field = pic::Vec3{0.4, -0.8, 1.1};
+
+            pic::Simulation3D zero_b(zero_cfg);
+            pic::Simulation3D with_b(boris_cfg);
+            zero_b.step();
+            with_b.step();
+
+            const auto& zero_particle = zero_b.species().front().particles().front();
+            const auto& boris_particle = with_b.species().front().particles().front();
+            const double magnetic_magnitude = norm(boris_cfg.magnetic_field);
+            const pic::Vec3 axis = scale(boris_cfg.magnetic_field, 1.0 / magnetic_magnitude);
+            const double angle = boris_rotation_angle(magnetic_magnitude, 1.0, boris_cfg.dt);
+            const pic::Vec3 expected = rotate_about_axis(initial_velocity, axis, angle);
+            require_near(zero_particle.velocity.x, initial_velocity.x, 1e-12, "3D zero-B simulation changed x velocity unexpectedly");
+            require_near(zero_particle.velocity.y, initial_velocity.y, 1e-12, "3D zero-B simulation changed y velocity unexpectedly");
+            require_near(zero_particle.velocity.z, initial_velocity.z, 1e-12, "3D zero-B simulation changed z velocity unexpectedly");
+            require_near(boris_particle.velocity.x, expected.x, 1e-12,
+                         "Simulation3D did not activate Boris x-velocity rotation");
+            require_near(boris_particle.velocity.y, expected.y, 1e-12,
+                         "Simulation3D did not activate Boris y-velocity rotation");
+            require_near(boris_particle.velocity.z, expected.z, 1e-12,
+                         "Simulation3D did not activate Boris z-velocity rotation");
+            require(norm(pic::Vec3{boris_particle.velocity.x - zero_particle.velocity.x,
+                                   boris_particle.velocity.y - zero_particle.velocity.y,
+                                   boris_particle.velocity.z - zero_particle.velocity.z}) > 1e-3,
+                    "Simulation3D magnetic-field run did not diverge from zero-B velocity evolution");
+        }
+        {
             const double qm = 1.0;
             const double magnetic_z = 2.0;
             const double dt = 0.1;
