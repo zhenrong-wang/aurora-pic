@@ -3,6 +3,7 @@ set -eu
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ctest --test-dir build --output-on-failure
+python3 scripts/validate_leapfrog.py
 ./build/aurorapic_cli examples/two_stream.cfg
 ./build/aurorapic_cli examples/sheath_steady.cfg
 ./build/aurorapic_cli examples/plasma_2d.cfg
