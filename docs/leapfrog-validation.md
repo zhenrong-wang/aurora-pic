@@ -27,7 +27,7 @@ The automated CTest suite covers the core pusher behavior directly:
 - A 1D harmonic oscillator regression keeps the maximum time-centered energy error below `1e-3` for `dt = 0.02` over 5000 steps.
 - 2D and 3D Boris cyclotron regressions verify constant-B rotation angle, perpendicular-speed conservation, and preservation of parallel velocity in 3D.
 
-The standalone validation script `scripts/validate_leapfrog.py` repeats the leapfrog checks without depending on the C++ test binary and also reports harmonic-oscillator energy drift over a small timestep sweep. It is included in `scripts/verify.sh` so smoke verification fails if the baseline pusher contract regresses.
+The standalone validation script `scripts/validate_pushers.py` repeats the leapfrog checks without depending on the C++ test binary, adds dependency-free 2D/3D Boris rotation checks, and reports harmonic-oscillator energy drift over a small timestep sweep. It is included in `scripts/verify.sh` so smoke verification fails if the baseline pusher contract regresses.
 
 ## Current scope
 

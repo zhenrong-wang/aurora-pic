@@ -23,7 +23,7 @@ ctest --test-dir build --output-on-failure
 scripts/verify.sh
 ```
 
-The full smoke suite builds the project, runs the CTest regression executable, runs the standalone leapfrog validation script, and runs the included 1D/2D/3D examples:
+The full smoke suite builds the project, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), and runs the included 1D/2D/3D examples:
 
 ```sh
 ./build/aurorapic_cli examples/two_stream.cfg
