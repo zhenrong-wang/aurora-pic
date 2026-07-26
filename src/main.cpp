@@ -1,0 +1,42 @@
+#include "pic/Config.hpp"
+#include "pic/Simulation.hpp"
+#include "pic/Simulation2D.hpp"
+#include <exception>
+#include <iostream>
+#include <utility>
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "usage: aurorapic_cli <config.cfg>\n";
+        return 2;
+    }
+    try {
+        const unsigned dimension = pic::detect_config_dimension(argv[1]);
+        if (dimension == 2) {
+            auto cfg = pic::load_config_2d(argv[1]);
+            std::cout << "AuroraPIC 2D: nx=" << cfg.nx << " ny=" << cfg.ny
+                      << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
+                      << " dt=" << cfg.dt << " boundary=" << pic::to_string(cfg.boundary)
+                      << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
+            pic::Simulation2D sim(std::move(cfg));
+            auto summary = sim.run();
+            std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
+                      << " live_particles=" << summary.final_sample.live_particles
+                      << " total_energy=" << summary.final_sample.total_energy << "\n";
+            return summary.steps_completed > 0 ? 0 : 1;
+        }
+
+        auto cfg = pic::load_config(argv[1]);
+        std::cout << "AuroraPIC 1D: nx=" << cfg.nx << " length=" << cfg.length << " dt=" << cfg.dt
+                  << " mode=" << pic::to_string(cfg.mode) << " boundary=" << pic::to_string(cfg.boundary) << "\n";
+        pic::Simulation sim(std::move(cfg));
+        auto summary = sim.run();
+        std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
+                  << " steady=" << (summary.steady_state_reached ? "yes" : "no")
+                  << " total_energy=" << summary.final_sample.total_energy << "\n";
+        return summary.steady_state_reached || summary.steps_completed > 0 ? 0 : 1;
+    } catch (const std::exception& e) {
+        std::cerr << "error: " << e.what() << "\n";
+        return 1;
+    }
+}
