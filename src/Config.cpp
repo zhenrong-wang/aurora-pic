@@ -131,10 +131,17 @@ ParticleBoundary parse_particle_boundary(const KeyValue& kv, const std::string& 
 }
 
 void validate_positive(double value, const std::string& name) {
-    if (!(value > 0.0)) throw std::runtime_error(name + " must be positive");
+    if (!std::isfinite(value) || !(value > 0.0)) throw std::runtime_error(name + " must be positive and finite");
 }
 void validate_non_negative(double value, const std::string& name) {
-    if (value < 0.0) throw std::runtime_error(name + " must be non-negative");
+    if (!std::isfinite(value) || value < 0.0) throw std::runtime_error(name + " must be non-negative and finite");
+}
+
+void require_species_scale_source(const KeyValue& block, const std::string& species_name, const std::string& dimension_label) {
+    if (!block.count("weight") && !block.count("density")) {
+        const std::string prefix = dimension_label.empty() ? "species" : dimension_label + " species";
+        throw std::runtime_error(prefix + " '" + species_name + "' must specify positive weight or density");
+    }
 }
 
 void validate_config(const Config& cfg) {
@@ -343,6 +350,7 @@ Config load_config(const std::string& path) {
         s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
+        require_species_scale_source(block, s.name, "");
         if (block.count("weight")) {
             s.weight = as<double>(block, "weight", s.weight);
         } else if (block.count("density")) {
@@ -460,6 +468,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         s.init_y_min = as<double>(block, "init_y_min", s.init_y_min);
         s.init_y_max = as<double>(block, "init_y_max", s.init_y_max);
+        require_species_scale_source(block, s.name, "2D");
         if (block.count("density")) {
             const double density = as<double>(block, "density", 1.0);
             validate_positive(density, "2D species '" + s.name + "' density");
@@ -551,6 +560,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         s.init_y_max = as<double>(block, "init_y_max", s.init_y_max);
         s.init_z_min = as<double>(block, "init_z_min", s.init_z_min);
         s.init_z_max = as<double>(block, "init_z_max", s.init_z_max);
+        require_species_scale_source(block, s.name, "3D");
         if (block.count("density")) {
             const double density = as<double>(block, "density", 1.0);
             validate_positive(density, "3D species '" + s.name + "' density");

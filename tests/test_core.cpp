@@ -812,6 +812,48 @@ int main() {
             require(std::abs(cfg.species[0].weight - 0.5) < 1e-15, "density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_path);
 
+            auto require_config_rejects = [](const std::filesystem::path& path,
+                                             const std::string& text,
+                                             auto loader,
+                                             const std::string& message) {
+                require_throws([&] {
+                    { std::ofstream out(path); out << text; }
+                    try { (void)loader(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                    std::filesystem::remove(path);
+                }, message);
+            };
+
+            require_config_rejects(
+                "test_missing_scale_1d.ini",
+                "nx = 16\nlength = 1\ndt = 0.01\n[species]\nname = missing_scale\ncharge = -1\nmass = 1\nparticles = 10\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D species without weight or density validation did not throw");
+            require_config_rejects(
+                "test_nonfinite_weight_1d.ini",
+                "nx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_weight\ncharge = -1\nmass = 1\nweight = inf\nparticles = 10\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D non-finite species weight validation did not throw");
+            require_config_rejects(
+                "test_missing_scale_2d.ini",
+                "dimension = 2\nnx = 8\nny = 6\nlength_x = 2\nlength_y = 1\ndt = 0.01\n[species.electrons]\ncharge = -1\nmass = 1\nparticles = 12\n",
+                [](const std::string& path) { return pic::load_config_2d(path); },
+                "2D species without weight or density validation did not throw");
+            require_config_rejects(
+                "test_nonfinite_density_2d.ini",
+                "dimension = 2\nnx = 8\nny = 6\nlength_x = 2\nlength_y = 1\ndt = 0.01\n[species.electrons]\ncharge = -1\nmass = 1\ndensity = nan\nparticles = 12\n",
+                [](const std::string& path) { return pic::load_config_2d(path); },
+                "2D non-finite species density validation did not throw");
+            require_config_rejects(
+                "test_missing_scale_3d.ini",
+                "dimension = 3\nnx = 6\nny = 5\nnz = 4\nlength_x = 2\nlength_y = 1\nlength_z = 1\ndt = 0.01\n[species.electrons]\ncharge = -1\nmass = 1\nparticles = 12\n",
+                [](const std::string& path) { return pic::load_config_3d(path); },
+                "3D species without weight or density validation did not throw");
+            require_config_rejects(
+                "test_nonfinite_weight_3d.ini",
+                "dimension = 3\nnx = 6\nny = 5\nnz = 4\nlength_x = 2\nlength_y = 1\nlength_z = 1\ndt = 0.01\n[species.electrons]\ncharge = -1\nmass = 1\nweight = inf\nparticles = 12\n",
+                [](const std::string& path) { return pic::load_config_3d(path); },
+                "3D non-finite species weight validation did not throw");
+
             const auto config_2d_path = std::filesystem::path("test_2d_config.ini");
             {
                 std::ofstream out(config_2d_path);
