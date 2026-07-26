@@ -162,6 +162,37 @@ void require_species_close(const std::vector<pic::Species3D>& a,
         }
     }
 }
+double dot(pic::Vec3 a, pic::Vec3 b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+double norm(pic::Vec3 v) {
+    return std::sqrt(dot(v, v));
+}
+
+pic::Vec3 scale(pic::Vec3 v, double factor) {
+    return pic::Vec3{factor * v.x, factor * v.y, factor * v.z};
+}
+
+pic::Vec3 cross(pic::Vec3 a, pic::Vec3 b) {
+    return pic::Vec3{a.y * b.z - a.z * b.y,
+                     a.z * b.x - a.x * b.z,
+                     a.x * b.y - a.y * b.x};
+}
+
+pic::Vec3 rotate_about_axis(pic::Vec3 v, pic::Vec3 axis, double angle) {
+    const double c = std::cos(angle);
+    const double s = std::sin(angle);
+    const pic::Vec3 axis_cross_v = cross(axis, v);
+    const double axis_dot_v = dot(axis, v);
+    return pic::Vec3{v.x * c + axis_cross_v.x * s + axis.x * axis_dot_v * (1.0 - c),
+                     v.y * c + axis_cross_v.y * s + axis.y * axis_dot_v * (1.0 - c),
+                     v.z * c + axis_cross_v.z * s + axis.z * axis_dot_v * (1.0 - c)};
+}
+
+double boris_rotation_angle(double magnetic_magnitude, double charge_to_mass, double dt) {
+    return -2.0 * std::atan(0.5 * charge_to_mass * magnetic_magnitude * dt);
+}
 }
 
 int main() {
@@ -219,6 +250,62 @@ int main() {
                          "2D leapfrog pusher does not match constant-acceleration x velocity");
             require_near(particle.velocity.y, 0.3 + acceleration.y * t, 1e-14,
                          "2D leapfrog pusher does not match constant-acceleration y velocity");
+        }
+        {
+            constexpr double dt = 0.04;
+            constexpr std::size_t steps = 37;
+            constexpr double charge_to_mass = 1.25;
+            constexpr double magnetic_z = 1.7;
+            const pic::Vec2 initial_velocity{0.8, -0.35};
+            pic::Particle2D particle{};
+            particle.velocity = initial_velocity;
+            const pic::Vec2 electric{0.0, 0.0};
+            pic::initialize_boris_half_step(particle, electric, magnetic_z, charge_to_mass, dt);
+            for (std::size_t n = 0; n < steps; ++n) {
+                pic::kick_boris(particle, electric, magnetic_z, charge_to_mass, dt);
+            }
+            pic::synchronize_boris(particle, electric, magnetic_z, charge_to_mass, dt);
+
+            const double angle = static_cast<double>(steps) * boris_rotation_angle(std::abs(magnetic_z), charge_to_mass, dt);
+            const double expected_x = initial_velocity.x * std::cos(angle) - initial_velocity.y * std::sin(angle);
+            const double expected_y = initial_velocity.x * std::sin(angle) + initial_velocity.y * std::cos(angle);
+            require_near(particle.velocity.x, expected_x, 1e-13,
+                         "2D Boris pusher does not match cyclotron x-velocity rotation");
+            require_near(particle.velocity.y, expected_y, 1e-13,
+                         "2D Boris pusher does not match cyclotron y-velocity rotation");
+            const double initial_speed = std::sqrt(initial_velocity.x * initial_velocity.x + initial_velocity.y * initial_velocity.y);
+            const double final_speed = std::sqrt(particle.velocity.x * particle.velocity.x + particle.velocity.y * particle.velocity.y);
+            require_near(final_speed, initial_speed, 1e-13, "2D Boris pusher did not conserve perpendicular speed");
+        }
+        {
+            constexpr double dt = 0.03;
+            constexpr std::size_t steps = 29;
+            constexpr double charge_to_mass = -0.75;
+            const pic::Vec3 magnetic{0.4, -0.8, 1.1};
+            const pic::Vec3 initial_velocity{0.6, -0.25, 0.9};
+            pic::Particle3D particle{};
+            particle.velocity = initial_velocity;
+            const pic::Vec3 electric{0.0, 0.0, 0.0};
+            pic::initialize_boris_half_step(particle, electric, magnetic, charge_to_mass, dt);
+            for (std::size_t n = 0; n < steps; ++n) {
+                pic::kick_boris(particle, electric, magnetic, charge_to_mass, dt);
+            }
+            pic::synchronize_boris(particle, electric, magnetic, charge_to_mass, dt);
+
+            const double magnetic_magnitude = norm(magnetic);
+            const pic::Vec3 axis = scale(magnetic, 1.0 / magnetic_magnitude);
+            const double angle = static_cast<double>(steps) * boris_rotation_angle(magnetic_magnitude, charge_to_mass, dt);
+            const pic::Vec3 expected = rotate_about_axis(initial_velocity, axis, angle);
+            require_near(particle.velocity.x, expected.x, 1e-13,
+                         "3D Boris pusher does not match arbitrary-axis x-velocity rotation");
+            require_near(particle.velocity.y, expected.y, 1e-13,
+                         "3D Boris pusher does not match arbitrary-axis y-velocity rotation");
+            require_near(particle.velocity.z, expected.z, 1e-13,
+                         "3D Boris pusher does not match arbitrary-axis z-velocity rotation");
+            require_near(norm(particle.velocity), norm(initial_velocity), 1e-13,
+                         "3D Boris pusher did not conserve speed");
+            require_near(dot(particle.velocity, axis), dot(initial_velocity, axis), 1e-13,
+                         "3D Boris pusher did not conserve parallel velocity");
         }
         {
             constexpr double dt = 0.02;
