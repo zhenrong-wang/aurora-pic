@@ -8,3 +8,4 @@ python3 scripts/validate_leapfrog.py
 ./build/aurorapic_cli examples/sheath_steady.cfg
 ./build/aurorapic_cli examples/plasma_2d.cfg
 ./build/aurorapic_cli examples/electrode_2d.cfg
+./build/aurorapic_cli examples/plasma_3d.cfg

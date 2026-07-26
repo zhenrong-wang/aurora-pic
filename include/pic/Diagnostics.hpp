@@ -1,8 +1,10 @@
 #pragma once
 #include "pic/Grid.hpp"
 #include "pic/Mesh2D.hpp"
+#include "pic/Mesh3D.hpp"
 #include "pic/Species.hpp"
 #include "pic/Species2D.hpp"
+#include "pic/Species3D.hpp"
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -26,6 +28,15 @@ struct BoundaryLoss2D {
     std::size_t absorbed_top{0};
 };
 
+struct BoundaryLoss3D {
+    std::size_t absorbed_left{0};
+    std::size_t absorbed_right{0};
+    std::size_t absorbed_bottom{0};
+    std::size_t absorbed_top{0};
+    std::size_t absorbed_back{0};
+    std::size_t absorbed_front{0};
+};
+
 struct DiagnosticSample2D {
     std::size_t step{0};
     double time{0.0};
@@ -35,6 +46,18 @@ struct DiagnosticSample2D {
     double charge_l1{0.0};
     std::size_t live_particles{0};
     BoundaryLoss2D boundary_losses{};
+    std::vector<std::size_t> live_particles_by_species{};
+};
+
+struct DiagnosticSample3D {
+    std::size_t step{0};
+    double time{0.0};
+    double kinetic_energy{0.0};
+    double field_energy{0.0};
+    double total_energy{0.0};
+    double charge_l1{0.0};
+    std::size_t live_particles{0};
+    BoundaryLoss3D boundary_losses{};
     std::vector<std::size_t> live_particles_by_species{};
 };
 
@@ -72,5 +95,27 @@ private:
     std::ofstream scalar_file_;
     std::vector<std::string> species_names_;
     std::vector<DiagnosticSample2D> history_;
+};
+
+class Diagnostics3D {
+public:
+    Diagnostics3D(std::filesystem::path output_dir, const std::vector<Species3D>& species);
+    void write_header();
+    DiagnosticSample3D sample(std::size_t step,
+                              double time,
+                              const Mesh3D& mesh,
+                              const std::vector<Species3D>& species,
+                              BoundaryLoss3D boundary_losses = {});
+    void write_sample(const DiagnosticSample3D& s);
+    void write_particle_sample(std::size_t step,
+                               const std::vector<Species3D>& species,
+                               std::size_t stride,
+                               std::size_t sample_count) const;
+    const std::vector<DiagnosticSample3D>& history() const { return history_; }
+private:
+    std::filesystem::path output_dir_;
+    std::ofstream scalar_file_;
+    std::vector<std::string> species_names_;
+    std::vector<DiagnosticSample3D> history_;
 };
 }

@@ -5,6 +5,7 @@
 #include "pic/Mesh3D.hpp"
 #include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
+#include "pic/Simulation3D.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/VTKWriter.hpp"
 #include "pic/Species3D.hpp"
@@ -725,6 +726,78 @@ int main() {
                 try { (void)pic::load_config(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
                 std::filesystem::remove(path);
             }, "invalid boolean validation did not throw");
+        {
+            const auto config_3d_path = std::filesystem::path("test_config_3d.ini");
+            {
+                std::ofstream out(config_3d_path);
+                out << "dimension = 3\n"
+                    << "nx = 6\n"
+                    << "ny = 5\n"
+                    << "nz = 4\n"
+                    << "length_x = 2.0\n"
+                    << "length_y = 1.5\n"
+                    << "length_z = 1.25\n"
+                    << "dt = 0.01\n"
+                    << "steps = 2\n"
+                    << "output_interval = 1\n"
+                    << "output_dir = test_output_config_3d\n"
+                    << "vtk_output = true\n"
+                    << "particle_output = true\n"
+                    << "particle_output_interval = 3\n"
+                    << "particle_output_stride = 2\n"
+                    << "particle_sample_count = 7\n"
+                    << "particle_boundary = reflecting\n"
+                    << "particle_boundary_left = absorbing\n"
+                    << "particle_boundary_right = periodic\n"
+                    << "particle_boundary_bottom = auto\n"
+                    << "particle_boundary_top = reflect\n"
+                    << "particle_boundary_back = absorbing\n"
+                    << "particle_boundary_front = periodic\n"
+                    << "boundary = periodic\n"
+                    << "[species.electrons]\n"
+                    << "charge = -1\n"
+                    << "mass = 1\n"
+                    << "density = 4\n"
+                    << "particles = 12\n"
+                    << "thermal_velocity = 0\n"
+                    << "init_x_min = 0.5\n"
+                    << "init_x_max = 1.5\n"
+                    << "init_y_min = 0.25\n"
+                    << "init_y_max = 1.25\n"
+                    << "init_z_min = 0.125\n"
+                    << "init_z_max = 0.625\n";
+            }
+            require(pic::detect_config_dimension(config_3d_path.string()) == 3, "3D config dimension was not detected");
+            auto cfg3 = pic::load_config_3d(config_3d_path.string());
+            require(cfg3.nx == 6 && cfg3.ny == 5 && cfg3.nz == 4, "3D config did not load mesh dimensions");
+            require(cfg3.vtk_output, "3D config did not load vtk_output");
+            require(cfg3.particle_output, "3D config did not load particle_output");
+            require(cfg3.particle_output_interval == 3, "3D config did not load particle_output_interval");
+            require(cfg3.particle_output_stride == 2, "3D config did not load particle_output_stride");
+            require(cfg3.particle_sample_count == 7, "3D config did not load particle_sample_count");
+            require(cfg3.particle_boundary_config.left == pic::ParticleBoundary::Absorbing, "3D config did not load left particle boundary");
+            require(cfg3.particle_boundary_config.right == pic::ParticleBoundary::Periodic, "3D config did not load right particle boundary");
+            require(cfg3.particle_boundary_config.bottom == pic::ParticleBoundary::Auto, "3D config did not load bottom particle boundary");
+            require(cfg3.particle_boundary_config.top == pic::ParticleBoundary::Reflecting, "3D config did not load top particle boundary");
+            require(cfg3.particle_boundary_config.back == pic::ParticleBoundary::Absorbing, "3D config did not load back particle boundary");
+            require(cfg3.particle_boundary_config.front == pic::ParticleBoundary::Periodic, "3D config did not load front particle boundary");
+            require(cfg3.species.size() == 1, "3D config did not load one species");
+            require(std::abs(cfg3.species[0].weight - (4.0 * 1.0 * 1.0 * 0.5 / 12.0)) < 1e-15,
+                    "3D density-derived macro-particle weight is wrong");
+            std::filesystem::remove(config_3d_path);
+            require_throws([] {
+                const auto path = std::filesystem::path("test_missing_3d_dimension.ini");
+                { std::ofstream out(path); out << "nx = 4\nny = 4\nnz = 4\nlength_x = 1\nlength_y = 1\nlength_z = 1\n"; }
+                try { (void)pic::load_config_3d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "missing 3D dimension validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_3d_particle_boundary.ini");
+                { std::ofstream out(path); out << "dimension = 3\nparticle_boundary_front = bounce\n"; }
+                try { (void)pic::load_config_3d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 3D particle boundary validation did not throw");
+        }
         }
         {
             const auto output_dir = std::filesystem::path("test_output");
@@ -795,6 +868,66 @@ int main() {
             require(count_lines(particles) == 6, "2D particle diagnostics did not honor sample_count");
             const auto vtk = read_file_text(cfg.output_dir / "fields_3.vtk");
             require(vtk.find("DIMENSIONS 16 12 1") != std::string::npos, "2D simulation VTK dimensions are wrong");
+        }
+        {
+            pic::Simulation3DConfig cfg;
+            cfg.nx = 8;
+            cfg.ny = 6;
+            cfg.nz = 5;
+            cfg.length_x = 1.0;
+            cfg.length_y = 0.75;
+            cfg.length_z = 0.5;
+            cfg.dt = 0.001;
+            cfg.steps = 3;
+            cfg.boundary = pic::Boundary::Periodic;
+            cfg.seed = 11;
+            cfg.vtk_output = true;
+            cfg.particle_output = true;
+            cfg.output_interval = 2;
+            cfg.particle_output_interval = 2;
+            cfg.particle_output_stride = 2;
+            cfg.particle_sample_count = 5;
+            cfg.output_dir = "test_output_3d";
+            std::filesystem::remove_all(cfg.output_dir);
+            cfg.species = {pic::Species3DConfig{"e3", -1.0, 1.0, 0.01, 64, 0.01, -0.005, 0.002, 0.001, 0.0, -1.0, 0.0, -1.0, 0.0, -1.0},
+                           pic::Species3DConfig{"i3", 1.0, 1836.0, 0.01, 64, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0, -1.0}};
+            pic::Simulation3D sim(cfg);
+            auto s = sim.run();
+            require(s.steps_completed == cfg.steps, "3D simulation did not complete requested transient steps");
+            require(std::abs(s.final_time - cfg.dt * static_cast<double>(cfg.steps)) < 1e-15, "3D simulation final time is wrong");
+            require(s.final_sample.live_particles == 128, "3D periodic simulation lost live particles");
+            require(s.final_sample.boundary_losses.absorbed_left == 0 && s.final_sample.boundary_losses.absorbed_right == 0 &&
+                    s.final_sample.boundary_losses.absorbed_bottom == 0 && s.final_sample.boundary_losses.absorbed_top == 0 &&
+                    s.final_sample.boundary_losses.absorbed_back == 0 && s.final_sample.boundary_losses.absorbed_front == 0,
+                    "3D periodic simulation reported unexpected boundary losses");
+
+            double total_charge = 0.0;
+            for (std::size_t k = 0; k < sim.mesh().nz(); ++k) {
+                for (std::size_t j = 0; j < sim.mesh().ny(); ++j) {
+                    for (std::size_t i = 0; i < sim.mesh().nx(); ++i) {
+                        total_charge += sim.mesh().rho()[sim.mesh().index(i, j, k)] * sim.mesh().node_volume(i, j, k);
+                    }
+                }
+            }
+            require(std::abs(total_charge) < 1e-12, "3D simulation did not conserve net neutral charge");
+            require(std::filesystem::exists(cfg.output_dir / "fields_0.vtk"), "3D simulation did not write initial VTK fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_2.vtk"), "3D simulation did not write interval VTK fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_3.vtk"), "3D simulation did not write final VTK fields");
+            require(!std::filesystem::exists(cfg.output_dir / "fields_1.vtk"), "3D simulation wrote an unexpected VTK interval");
+            require(std::filesystem::exists(cfg.output_dir / "scalars.csv"), "3D simulation did not write scalar diagnostics");
+            const auto scalars3d = read_file_text(cfg.output_dir / "scalars.csv");
+            require(scalars3d.find("step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,absorbed_left,absorbed_right,absorbed_bottom,absorbed_top,absorbed_back,absorbed_front,live_particles_e3,live_particles_i3\n") == 0,
+                    "3D scalar diagnostics header is wrong");
+            require(count_lines(scalars3d) == 4, "3D scalar diagnostics wrote unexpected number of rows");
+            require(std::filesystem::exists(cfg.output_dir / "particles_0.csv"), "3D simulation did not write initial particle sample");
+            require(std::filesystem::exists(cfg.output_dir / "particles_2.csv"), "3D simulation did not write interval particle sample");
+            require(std::filesystem::exists(cfg.output_dir / "particles_3.csv"), "3D simulation did not write final particle sample");
+            require(!std::filesystem::exists(cfg.output_dir / "particles_1.csv"), "3D simulation wrote an unexpected particle sample interval");
+            const auto particles3d = read_file_text(cfg.output_dir / "particles_0.csv");
+            require(particles3d.find("species_id,species,x,y,z,vx,vy,vz,alive\n") == 0, "3D particle diagnostics header is wrong");
+            require(count_lines(particles3d) == 6, "3D particle diagnostics did not honor sample_count");
+            const auto vtk3d = read_file_text(cfg.output_dir / "fields_3.vtk");
+            require(vtk3d.find("DIMENSIONS 8 6 5") != std::string::npos, "3D simulation VTK dimensions are wrong");
         }
         {
             pic::Simulation2DConfig cfg;

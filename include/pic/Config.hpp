@@ -5,6 +5,9 @@
 #include <vector>
 
 namespace pic {
+struct Simulation2DConfig;
+struct Simulation3DConfig;
+
 struct SpeciesConfig {
     std::string name{"electrons"};
     double charge{-1.0};
@@ -42,7 +45,10 @@ struct Config {
     CollisionConfig collisions{};
     std::vector<SpeciesConfig> species{};
 };
+
 Config load_config(const std::string& path);
+Simulation2DConfig load_config_2d(const std::string& path);
+Simulation3DConfig load_config_3d(const std::string& path);
 unsigned detect_config_dimension(const std::string& path);
 std::string to_string(Boundary b);
 std::string to_string(RunMode m);

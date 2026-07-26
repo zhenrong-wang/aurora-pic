@@ -16,6 +16,7 @@ add_library(aurorapic
   src/Pusher.cpp
   src/Simulation.cpp
   src/Simulation2D.cpp
+  src/Simulation3D.cpp
   src/Species.cpp
   src/Species2D.cpp
   src/Species3D.cpp
