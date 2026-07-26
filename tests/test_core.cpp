@@ -1,4 +1,5 @@
 #include "pic/Config.hpp"
+#include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
 #include "pic/Grid.hpp"
 #include "pic/Mesh2D.hpp"
@@ -758,28 +759,88 @@ int main() {
                     "3D species deposition did not conserve charge");
         }
         {
-            const auto output_dir = std::filesystem::path("test_output_vtk");
+            const auto output_dir = std::filesystem::path("test_output_diagnostics");
             std::filesystem::remove_all(output_dir);
 
-            pic::Mesh2D mesh(3, 4, 1.0, 2.0, pic::Boundary::Dirichlet);
-            for (std::size_t j = 0; j < mesh.ny(); ++j) {
-                for (std::size_t i = 0; i < mesh.nx(); ++i) {
-                    const auto idx = mesh.index(i, j);
-                    mesh.rho()[idx] = static_cast<double>(idx);
-                    mesh.phi()[idx] = 10.0 + static_cast<double>(idx);
-                    mesh.electric_x()[idx] = 0.25 * static_cast<double>(i);
-                    mesh.electric_y()[idx] = -0.5 * static_cast<double>(j);
+            pic::Mesh2D mesh2d(3, 4, 1.0, 2.0, pic::Boundary::Dirichlet);
+            for (std::size_t j = 0; j < mesh2d.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh2d.nx(); ++i) {
+                    const auto idx = mesh2d.index(i, j);
+                    mesh2d.rho()[idx] = static_cast<double>(idx);
+                    mesh2d.phi()[idx] = 10.0 + static_cast<double>(idx);
+                    mesh2d.electric_x()[idx] = 0.25 * static_cast<double>(i);
+                    mesh2d.electric_y()[idx] = 0.5 * static_cast<double>(j);
                 }
             }
-            pic::write_legacy_vtk(mesh, output_dir / "manual_fields.vtk", "AuroraPIC test fields");
-            const auto vtk = read_file_text(output_dir / "manual_fields.vtk");
-            require(vtk.find("# vtk DataFile Version 3.0") != std::string::npos, "VTK header is missing");
-            require(vtk.find("DATASET STRUCTURED_GRID") != std::string::npos, "VTK dataset type is missing");
-            require(vtk.find("DIMENSIONS 3 4 1") != std::string::npos, "VTK dimensions are wrong");
-            require(vtk.find("POINT_DATA 12") != std::string::npos, "VTK point-data count is wrong");
-            require(vtk.find("SCALARS rho double 1") != std::string::npos, "VTK rho scalar is missing");
-            require(vtk.find("SCALARS phi double 1") != std::string::npos, "VTK phi scalar is missing");
-            require(vtk.find("VECTORS electric double") != std::string::npos, "VTK electric vector is missing");
+            pic::write_legacy_vtk(mesh2d, output_dir / "manual_fields_2d.vtk", "AuroraPIC 2D test fields");
+            const auto vtk2d = read_file_text(output_dir / "manual_fields_2d.vtk");
+            require(vtk2d.find("# vtk DataFile Version 3.0") != std::string::npos, "2D VTK header is missing");
+            require(vtk2d.find("DATASET STRUCTURED_GRID") != std::string::npos, "2D VTK dataset type is missing");
+            require(vtk2d.find("DIMENSIONS 3 4 1") != std::string::npos, "2D VTK dimensions are wrong");
+            require(vtk2d.find("POINTS 12 double") != std::string::npos, "2D VTK point count is wrong");
+            require(vtk2d.find("POINT_DATA 12") != std::string::npos, "2D VTK point-data count is wrong");
+            require(vtk2d.find("SCALARS rho double 1") != std::string::npos, "2D VTK rho scalar is missing");
+            require(vtk2d.find("SCALARS phi double 1") != std::string::npos, "2D VTK phi scalar is missing");
+            require(vtk2d.find("VECTORS electric double") != std::string::npos, "2D VTK electric vector is missing");
+            require(vtk2d.find("0 0 0\n0.5 0 0\n1 0 0") != std::string::npos, "2D VTK point ordering changed");
+            require(vtk2d.find("0 0 0\n0.25 0 0\n0.5 0 0") != std::string::npos, "2D VTK electric vector values are missing");
+
+            pic::Mesh3D mesh3d(3, 3, 4, 2.0, 2.0, 3.0, pic::Boundary::Dirichlet);
+            for (std::size_t k = 0; k < mesh3d.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh3d.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh3d.nx(); ++i) {
+                        const auto idx = mesh3d.index(i, j, k);
+                        mesh3d.rho()[idx] = -static_cast<double>(idx);
+                        mesh3d.phi()[idx] = 20.0 + static_cast<double>(idx);
+                        mesh3d.electric_x()[idx] = 0.5 * static_cast<double>(i);
+                        mesh3d.electric_y()[idx] = 0.25 * static_cast<double>(j);
+                        mesh3d.electric_z()[idx] = -0.125 * static_cast<double>(k);
+                    }
+                }
+            }
+            pic::write_legacy_vtk(mesh3d, output_dir / "manual_fields_3d.vtk", "AuroraPIC 3D test fields");
+            const auto vtk3d = read_file_text(output_dir / "manual_fields_3d.vtk");
+            require(vtk3d.find("DIMENSIONS 3 3 4") != std::string::npos, "3D VTK dimensions are wrong");
+            require(vtk3d.find("POINTS 36 double") != std::string::npos, "3D VTK point count is wrong");
+            require(vtk3d.find("POINT_DATA 36") != std::string::npos, "3D VTK point-data count is wrong");
+            require(vtk3d.find("SCALARS rho double 1") != std::string::npos, "3D VTK rho scalar is missing");
+            require(vtk3d.find("SCALARS phi double 1") != std::string::npos, "3D VTK phi scalar is missing");
+            require(vtk3d.find("VECTORS electric double") != std::string::npos, "3D VTK electric vector is missing");
+            require(vtk3d.find("0 0 0\n1 0 0\n2 0 0\n0 1 0") != std::string::npos, "3D VTK point ordering changed");
+            require(vtk3d.find("0 0 -0.125") != std::string::npos, "3D VTK electric z values are missing");
+
+            pic::Species2DConfig cfg2d;
+            cfg2d.name = "ions";
+            cfg2d.particles = 2;
+            pic::Species2D species2d(cfg2d);
+            species2d.particles() = {
+                pic::Particle2D{pic::Vec2{0.25, 0.5}, pic::Vec2{1.5, -0.25}, true, pic::Vec2{}},
+                pic::Particle2D{pic::Vec2{0.75, 1.5}, pic::Vec2{-0.5, 0.25}, false, pic::Vec2{}},
+            };
+            pic::Diagnostics2D diagnostics2d(output_dir / "particles2d", {species2d});
+            diagnostics2d.write_particle_sample(7, {species2d}, 1, 2);
+            const auto particles2d = read_file_text(output_dir / "particles2d" / "particles_7.csv");
+            require(particles2d.find("species_id,species,x,y,vx,vy,alive\n") == 0, "2D particle CSV header is wrong");
+            require(particles2d.find("0,ions,0.25,0.5,1.5,-0.25,1\n") != std::string::npos, "2D particle CSV live row is wrong");
+            require(particles2d.find("0,ions,0.75,1.5,-0.5,0.25,0\n") != std::string::npos, "2D particle CSV dead row is wrong");
+            require(count_lines(particles2d) == 3, "2D particle CSV sample count is wrong");
+
+            pic::Species3DConfig cfg3d;
+            cfg3d.name = "electrons";
+            cfg3d.particles = 2;
+            pic::Species3D species3d(cfg3d);
+            species3d.particles() = {
+                pic::Particle3D{pic::Vec3{0.25, 0.5, 0.75}, pic::Vec3{1.0, -1.0, 0.5}, true, pic::Vec3{}},
+                pic::Particle3D{pic::Vec3{0.75, 1.5, 2.25}, pic::Vec3{-0.25, 0.25, -0.5}, false, pic::Vec3{}},
+            };
+            pic::Diagnostics3D diagnostics3d(output_dir / "particles3d", {species3d});
+            diagnostics3d.write_particle_sample(9, {species3d}, 2, 0);
+            const auto particles3d = read_file_text(output_dir / "particles3d" / "particles_9.csv");
+            require(particles3d.find("species_id,species,x,y,z,vx,vy,vz,alive\n") == 0, "3D particle CSV header is wrong");
+            require(particles3d.find("0,electrons,0.25,0.5,0.75,1,-1,0.5,1\n") != std::string::npos, "3D particle CSV stride row is wrong");
+            require(particles3d.find("2.25") == std::string::npos, "3D particle CSV stride was not honored");
+            require(count_lines(particles3d) == 2, "3D particle CSV sample count is wrong");
+            std::filesystem::remove_all(output_dir);
         }
         {
             require_throws([] { pic::Grid(2, 1.0, pic::Boundary::Periodic); }, "grid nx validation did not throw");
