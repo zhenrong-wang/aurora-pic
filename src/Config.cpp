@@ -174,6 +174,7 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
     validate_positive(cfg.dt, "dt");
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
+    if (!std::isfinite(cfg.magnetic_field_z)) throw std::runtime_error("magnetic_field_z must be finite");
     validate_boundary_side(cfg.boundary_config.left, "left");
     validate_boundary_side(cfg.boundary_config.right, "right");
     validate_boundary_side(cfg.boundary_config.bottom, "bottom");
@@ -205,6 +206,9 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
     validate_positive(cfg.dt, "dt");
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
+    if (!std::isfinite(cfg.magnetic_field.x) || !std::isfinite(cfg.magnetic_field.y) || !std::isfinite(cfg.magnetic_field.z)) {
+        throw std::runtime_error("magnetic_field components must be finite");
+    }
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("3D species name must not be empty");
         validate_positive(s.mass, "3D species '" + s.name + "' mass");
@@ -388,6 +392,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
+        "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
@@ -426,6 +431,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
+    cfg.magnetic_field_z = as<double>(global, "magnetic_field_z", cfg.magnetic_field_z);
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
     cfg.particle_boundary_config.right = parse_particle_boundary(global, "particle_boundary_right", default_particle_boundary);
@@ -478,6 +484,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
+        "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top", "particle_boundary_back", "particle_boundary_front"
     };
@@ -516,6 +523,9 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
+    cfg.magnetic_field.x = as<double>(global, "magnetic_field_x", cfg.magnetic_field.x);
+    cfg.magnetic_field.y = as<double>(global, "magnetic_field_y", cfg.magnetic_field.y);
+    cfg.magnetic_field.z = as<double>(global, "magnetic_field_z", cfg.magnetic_field.z);
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
     cfg.particle_boundary_config.right = parse_particle_boundary(global, "particle_boundary_right", default_particle_boundary);

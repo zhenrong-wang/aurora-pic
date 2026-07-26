@@ -39,7 +39,7 @@ The full smoke suite builds the project, runs the CTest regression executable, r
 
 - `Mesh2D`: rectangular node-centered mesh with periodic or Dirichlet field boundary mode plus side boundary tags/potentials for electrode-style Dirichlet domains.
 - `Species2D`: explicit `Particle2D` storage with 2D position/velocity initialization, CIC deposition, kinetic-energy accounting, and live-particle accounting.
-- `Simulation2D`: deposit -> solve -> leapfrog kick/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`).
+- `Simulation2D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; nonzero `magnetic_field_z` switches particles to the Boris rotation/kick.
 - `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
 - `write_legacy_vtk`: structured-grid VTK writer for `rho`, `phi`, and electric-field vectors on `Mesh2D`.
 
@@ -72,7 +72,7 @@ Particle-output controls:
 
 - `Mesh3D`: node-centered Cartesian mesh with periodic or grounded Dirichlet field boundary mode.
 - `Species3D`: explicit `Particle3D` storage with 3D position/velocity initialization, trilinear CIC deposition, kinetic-energy accounting, and live-particle accounting.
-- `Simulation3D`: deposit -> solve -> leapfrog kick/drift -> redeposit/resolve loop using the 3D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`).
+- `Simulation3D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the 3D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; nonzero `magnetic_field_x/y/z` switches particles to the Boris rotation/kick.
 - `Diagnostics3D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
 - `write_legacy_vtk`: structured-grid VTK writer for `rho`, `phi`, and electric-field vectors on `Mesh3D`.
 
@@ -147,6 +147,8 @@ boundary_top_tag = grounded_wall
 # auto maps to periodic when boundary = periodic, and absorbing when boundary = dirichlet.
 particle_boundary = absorbing
 particle_boundary_right = reflecting
+# Optional uniform out-of-plane B field. Nonzero values use the Boris pusher.
+magnetic_field_z = 0.0
 output_interval = 10
 output_dir = output/electrode_2d
 checkpoint_output = true
@@ -186,6 +188,10 @@ dt = 0.001
 steps = 100
 boundary = periodic
 particle_boundary = auto
+# Optional uniform B field. Any nonzero component uses the Boris pusher.
+magnetic_field_x = 0.0
+magnetic_field_y = 0.0
+magnetic_field_z = 0.0
 output_interval = 10
 output_dir = output/plasma_3d
 checkpoint_output = true
@@ -232,6 +238,12 @@ All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for det
 - `reflecting`: mirrors escaped particles back into the domain and reverses the normal velocity component.
 - `periodic`: wraps escaped particles across that coordinate direction.
 
-The parser is intentionally strict: unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive `particle_output_stride`, empty 2D boundary tags, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+2D/3D magnetic-field controls:
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, simplified collision model, no magnetic-field/Boris rotation yet, and no geometry/import workflow beyond structured Cartesian grids. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.
+- 2D supports `magnetic_field_z`, a uniform out-of-plane magnetic field. It defaults to `0.0`; nonzero values activate the Boris pusher for 2D particles.
+- 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
+- Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
+
+The parser is intentionally strict: unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive `particle_output_stride`, empty 2D boundary tags, non-finite magnetic-field values, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/OpenMP backend yet, simplified collision model, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), and no geometry/import workflow beyond structured Cartesian grids. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.

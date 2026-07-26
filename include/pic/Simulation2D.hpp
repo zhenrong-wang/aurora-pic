@@ -31,6 +31,7 @@ struct Simulation2DConfig {
     Boundary boundary{Boundary::Periodic};
     BoundaryConfig2D boundary_config{};
     ParticleBoundaryConfig2D particle_boundary_config{};
+    double magnetic_field_z{0.0}; // uniform out-of-plane B used by the Boris pusher; zero keeps electrostatic leapfrog
     unsigned seed{12345};
     bool vtk_output{false};
     std::size_t output_interval{10};

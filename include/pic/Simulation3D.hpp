@@ -34,6 +34,7 @@ struct Simulation3DConfig {
     std::size_t steps{100};
     Boundary boundary{Boundary::Periodic};
     ParticleBoundaryConfig3D particle_boundary_config{};
+    Vec3 magnetic_field{}; // uniform B used by the Boris pusher; zero keeps electrostatic leapfrog
     unsigned seed{12345};
     bool vtk_output{false};
     std::size_t output_interval{10};

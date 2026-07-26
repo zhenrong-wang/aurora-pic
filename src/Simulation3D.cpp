@@ -92,6 +92,34 @@ template <typename T>
 void require_stream(T& stream, const std::string& message) {
     if (!stream) throw std::runtime_error(message);
 }
+
+bool has_magnetic_field(const Simulation3DConfig& cfg) {
+    return cfg.magnetic_field.x != 0.0 || cfg.magnetic_field.y != 0.0 || cfg.magnetic_field.z != 0.0;
+}
+
+void initialize_particle_pusher(Particle3D& particle, Vec3 electric, double charge_to_mass, const Simulation3DConfig& cfg) {
+    if (has_magnetic_field(cfg)) {
+        initialize_boris_half_step(particle, electric, cfg.magnetic_field, charge_to_mass, cfg.dt);
+    } else {
+        initialize_leapfrog_half_step(particle, electric, charge_to_mass, cfg.dt);
+    }
+}
+
+void kick_particle(Particle3D& particle, Vec3 electric, double charge_to_mass, const Simulation3DConfig& cfg) {
+    if (has_magnetic_field(cfg)) {
+        kick_boris(particle, electric, cfg.magnetic_field, charge_to_mass, cfg.dt);
+    } else {
+        kick_leapfrog(particle, electric, charge_to_mass, cfg.dt);
+    }
+}
+
+void synchronize_particle(Particle3D& particle, Vec3 electric, double charge_to_mass, const Simulation3DConfig& cfg) {
+    if (has_magnetic_field(cfg)) {
+        synchronize_boris(particle, electric, cfg.magnetic_field, charge_to_mass, cfg.dt);
+    } else {
+        synchronize_leapfrog(particle, electric, charge_to_mass, cfg.dt);
+    }
+}
 } // namespace
 
 Simulation3D::Simulation3D(Simulation3DConfig cfg)
@@ -122,7 +150,7 @@ void Simulation3D::initialize() {
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
         for (auto& particle : sp.particles()) {
-            if (particle.alive) initialize_leapfrog_half_step(particle, interpolate_electric(mesh_, particle.position), qm, cfg_.dt);
+            if (particle.alive) initialize_particle_pusher(particle, interpolate_electric(mesh_, particle.position), qm, cfg_);
         }
     }
     initialized_ = true;
@@ -173,7 +201,7 @@ void Simulation3D::step() {
         const double qm = sp.charge() / sp.mass();
         for (auto& particle : sp.particles()) {
             if (!particle.alive) continue;
-            kick_leapfrog(particle, interpolate_electric(mesh_, particle.position), qm, cfg_.dt);
+            kick_particle(particle, interpolate_electric(mesh_, particle.position), qm, cfg_);
             drift_leapfrog(particle, cfg_.dt);
             apply_particle_boundaries(particle);
         }
@@ -183,7 +211,7 @@ void Simulation3D::step() {
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
         for (auto& particle : sp.particles()) {
-            if (particle.alive) synchronize_leapfrog(particle, interpolate_electric(mesh_, particle.position), qm, cfg_.dt);
+            if (particle.alive) synchronize_particle(particle, interpolate_electric(mesh_, particle.position), qm, cfg_);
         }
     }
     ++step_;

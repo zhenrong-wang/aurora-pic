@@ -756,6 +756,7 @@ int main() {
                     << "boundary_right_tag = anode\n"
                     << "boundary_bottom_tag = lower_wall\n"
                     << "boundary_top_tag = upper_wall\n"
+                    << "magnetic_field_z = 1.75\n"
                     << "[species.electrons]\n"
                     << "charge = -1\n"
                     << "mass = 1\n"
@@ -788,6 +789,7 @@ int main() {
             require(cfg2.boundary_config.right.tag == "anode", "2D config did not load right boundary tag");
             require(cfg2.boundary_config.bottom.tag == "lower_wall", "2D config did not load bottom boundary tag");
             require(cfg2.boundary_config.top.tag == "upper_wall", "2D config did not load top boundary tag");
+            require(std::abs(cfg2.magnetic_field_z - 1.75) < 1e-15, "2D config did not load magnetic_field_z");
             require(cfg2.species.size() == 1, "2D config did not load one species");
             require(std::abs(cfg2.species[0].weight - (4.0 / 12.0)) < 1e-15, "2D density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_2d_path);
@@ -867,6 +869,9 @@ int main() {
                     << "particle_boundary_back = absorbing\n"
                     << "particle_boundary_front = periodic\n"
                     << "boundary = periodic\n"
+                    << "magnetic_field_x = 0.25\n"
+                    << "magnetic_field_y = -0.5\n"
+                    << "magnetic_field_z = 1.75\n"
                     << "[species.electrons]\n"
                     << "charge = -1\n"
                     << "mass = 1\n"
@@ -894,6 +899,9 @@ int main() {
             require(cfg3.particle_boundary_config.top == pic::ParticleBoundary::Reflecting, "3D config did not load top particle boundary");
             require(cfg3.particle_boundary_config.back == pic::ParticleBoundary::Absorbing, "3D config did not load back particle boundary");
             require(cfg3.particle_boundary_config.front == pic::ParticleBoundary::Periodic, "3D config did not load front particle boundary");
+            require(std::abs(cfg3.magnetic_field.x - 0.25) < 1e-15, "3D config did not load magnetic_field_x");
+            require(std::abs(cfg3.magnetic_field.y + 0.5) < 1e-15, "3D config did not load magnetic_field_y");
+            require(std::abs(cfg3.magnetic_field.z - 1.75) < 1e-15, "3D config did not load magnetic_field_z");
             require(cfg3.species.size() == 1, "3D config did not load one species");
             require(std::abs(cfg3.species[0].weight - (4.0 * 1.0 * 1.0 * 0.5 / 12.0)) < 1e-15,
                     "3D density-derived macro-particle weight is wrong");
@@ -1273,6 +1281,29 @@ int main() {
             require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_0.apc"), "3D run did not write initial checkpoint");
             require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_2.apc"), "3D run did not write interval checkpoint");
             require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_3.apc"), "3D run did not write final checkpoint");
+        }
+        {
+            const double qm = 1.0;
+            const double magnetic_z = 2.0;
+            const double dt = 0.1;
+            const double angle = -2.0 * std::atan(0.5 * qm * magnetic_z * dt);
+
+            pic::Particle2D p2;
+            p2.velocity_half = pic::Vec2{1.0, 0.0};
+            pic::kick_boris(p2, pic::Vec2{0.0, 0.0}, magnetic_z, qm, dt);
+            require_near(p2.velocity_half.x, std::cos(angle), 1e-15, "2D Boris cyclotron vx mismatch");
+            require_near(p2.velocity_half.y, std::sin(angle), 1e-15, "2D Boris cyclotron vy mismatch");
+            require_near(p2.velocity_half.x * p2.velocity_half.x + p2.velocity_half.y * p2.velocity_half.y,
+                         1.0, 1e-15, "2D Boris cyclotron speed was not conserved");
+
+            pic::Particle3D p3;
+            p3.velocity_half = pic::Vec3{1.0, 0.0, 0.25};
+            pic::kick_boris(p3, pic::Vec3{0.0, 0.0, 0.0}, pic::Vec3{0.0, 0.0, magnetic_z}, qm, dt);
+            require_near(p3.velocity_half.x, std::cos(angle), 1e-15, "3D Boris cyclotron vx mismatch");
+            require_near(p3.velocity_half.y, std::sin(angle), 1e-15, "3D Boris cyclotron vy mismatch");
+            require_near(p3.velocity_half.z, 0.25, 1e-15, "3D Boris cyclotron parallel velocity changed");
+            require_near(p3.velocity_half.x * p3.velocity_half.x + p3.velocity_half.y * p3.velocity_half.y,
+                         1.0, 1e-15, "3D Boris cyclotron perpendicular speed was not conserved");
         }
         return 0;
     } catch (const std::exception& e) {
