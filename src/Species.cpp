@@ -50,12 +50,11 @@ void Species::deposit_charge(Grid& grid) const {
             double g = xp / dx;
             auto i = static_cast<std::size_t>(std::min<double>(std::floor(g), grid.nx() - 2));
             double f = g - static_cast<double>(i);
-            rho[i] += qwdx * (1.0 - f);
-            rho[i + 1] += qwdx * f;
+            rho[i] += cfg_.charge * cfg_.weight * (1.0 - f) / grid.node_volume(i);
+            rho[i + 1] += cfg_.charge * cfg_.weight * f / grid.node_volume(i + 1);
         }
     }
 }
-
 double Species::kinetic_energy() const {
     double e = 0.0;
     for (const auto& p : particles_) if (p.alive) e += 0.5 * cfg_.mass * cfg_.weight * p.v * p.v;

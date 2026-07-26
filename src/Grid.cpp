@@ -21,4 +21,10 @@ Grid::Grid(std::size_t nx, double length, Boundary boundary)
       rho_(nx_, 0.0), phi_(nx_, 0.0), electric_(nx_, 0.0) {}
 
 void Grid::clear_charge() { std::fill(rho_.begin(), rho_.end(), 0.0); }
+
+double Grid::node_volume(std::size_t i) const {
+    if (i >= nx_) throw std::out_of_range("grid node index out of range");
+    if (boundary_ == Boundary::Periodic) return dx_;
+    return (i == 0 || i + 1 == nx_) ? 0.5 * dx_ : dx_;
+}
 }

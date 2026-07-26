@@ -187,6 +187,70 @@ int main() {
             require(std::abs(mesh.rho()[mesh.index(0, 1)] - 4.0) < 1e-12, "2D CIC lower-y weight is wrong");
         }
         {
+            pic::Grid periodic_grid(4, 1.0, pic::Boundary::Periodic);
+            double periodic_volume = 0.0;
+            for (std::size_t i = 0; i < periodic_grid.nx(); ++i) periodic_volume += periodic_grid.node_volume(i);
+            require(std::abs(periodic_volume - periodic_grid.length()) < 1e-15, "periodic grid nodal volumes do not sum to domain length");
+            require(std::abs(periodic_grid.node_volume(0) - periodic_grid.dx()) < 1e-15, "periodic grid node volume is wrong");
+
+            pic::Grid dirichlet_grid(5, 1.0, pic::Boundary::Dirichlet);
+            double dirichlet_volume = 0.0;
+            for (std::size_t i = 0; i < dirichlet_grid.nx(); ++i) dirichlet_volume += dirichlet_grid.node_volume(i);
+            require(std::abs(dirichlet_volume - dirichlet_grid.length()) < 1e-15, "Dirichlet grid nodal volumes do not sum to domain length");
+            require(std::abs(dirichlet_grid.node_volume(0) - 0.5 * dirichlet_grid.dx()) < 1e-15, "Dirichlet grid boundary node volume is wrong");
+
+            pic::Mesh2D periodic_mesh(4, 5, 1.0, 2.0, pic::Boundary::Periodic);
+            double periodic_area = 0.0;
+            for (std::size_t j = 0; j < periodic_mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < periodic_mesh.nx(); ++i) periodic_area += periodic_mesh.node_area(i, j);
+            }
+            require(std::abs(periodic_area - periodic_mesh.length_x() * periodic_mesh.length_y()) < 1e-15,
+                    "periodic mesh nodal areas do not sum to domain area");
+
+            pic::Mesh2D dirichlet_mesh(5, 4, 1.0, 2.0, pic::Boundary::Dirichlet);
+            double dirichlet_area = 0.0;
+            for (std::size_t j = 0; j < dirichlet_mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < dirichlet_mesh.nx(); ++i) dirichlet_area += dirichlet_mesh.node_area(i, j);
+            }
+            require(std::abs(dirichlet_area - dirichlet_mesh.length_x() * dirichlet_mesh.length_y()) < 1e-15,
+                    "Dirichlet mesh nodal areas do not sum to domain area");
+            require(std::abs(dirichlet_mesh.node_area(0, 0) - 0.25 * dirichlet_mesh.dx() * dirichlet_mesh.dy()) < 1e-15,
+                    "Dirichlet mesh corner node area is wrong");
+        }
+        {
+            pic::Grid grid(5, 1.0, pic::Boundary::Dirichlet);
+            pic::SpeciesConfig species_cfg;
+            species_cfg.charge = 2.0;
+            species_cfg.weight = 0.5;
+            species_cfg.particles = 1;
+            pic::Species species(species_cfg);
+            species.particles() = {pic::Particle{0.0, 0.0, true}};
+            species.deposit_charge(grid);
+            double deposited_charge = 0.0;
+            for (std::size_t i = 0; i < grid.nx(); ++i) deposited_charge += grid.rho()[i] * grid.node_volume(i);
+            require(std::abs(deposited_charge - 1.0) < 1e-12, "1D Dirichlet CIC deposition did not conserve boundary-node charge");
+            require(std::abs(grid.rho()[0] - 8.0) < 1e-12, "1D Dirichlet boundary-node density did not use half control volume");
+        }
+        {
+            pic::Mesh2D mesh(5, 5, 1.0, 1.0, pic::Boundary::Dirichlet);
+            const std::vector<pic::Particle2D> particles{pic::Particle2D{pic::Vec2{0.0, 0.0}, pic::Vec2{}, true}};
+            pic::deposit_charge_cic(mesh, particles, 2.0, 0.5);
+            double deposited_charge = 0.0;
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) deposited_charge += mesh.rho()[mesh.index(i, j)] * mesh.node_area(i, j);
+            }
+            require(std::abs(deposited_charge - 1.0) < 1e-12, "2D Dirichlet CIC deposition did not conserve corner-node charge");
+            require(std::abs(mesh.rho()[mesh.index(0, 0)] - 64.0) < 1e-12, "2D Dirichlet corner density did not use quarter control volume");
+
+            mesh.electric_x()[mesh.index(0, 0)] = 2.0;
+            mesh.rho()[mesh.index(0, 0)] = -64.0;
+            pic::Diagnostics2D diagnostics("test_output_quadrature", {});
+            auto sample = diagnostics.sample(0, 0.0, mesh, {});
+            require(std::abs(sample.charge_l1 - 1.0) < 1e-12, "2D diagnostics charge_l1 did not use nodal control volumes");
+            require(std::abs(sample.field_energy - 0.03125) < 1e-12, "2D diagnostics field energy did not use nodal control volumes");
+            std::filesystem::remove_all("test_output_quadrature");
+        }
+        {
             const auto output_dir = std::filesystem::path("test_output_vtk");
             std::filesystem::remove_all(output_dir);
 

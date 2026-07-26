@@ -17,8 +17,9 @@ DiagnosticSample Diagnostics::sample(std::size_t step, double time, const Grid& 
     DiagnosticSample s; s.step = step; s.time = time;
     for (const auto& sp : species) { s.kinetic_energy += sp.kinetic_energy(); s.live_particles += sp.live_count(); }
     for (std::size_t i = 0; i < grid.nx(); ++i) {
-        s.field_energy += 0.5 * EPS0 * grid.electric()[i] * grid.electric()[i] * grid.dx();
-        s.charge_l1 += std::abs(grid.rho()[i]) * grid.dx();
+        const double volume = grid.node_volume(i);
+        s.field_energy += 0.5 * EPS0 * grid.electric()[i] * grid.electric()[i] * volume;
+        s.charge_l1 += std::abs(grid.rho()[i]) * volume;
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
     history_.push_back(s);
@@ -66,11 +67,14 @@ DiagnosticSample2D Diagnostics2D::sample(std::size_t step,
         s.live_particles += live;
         s.live_particles_by_species.push_back(live);
     }
-    const double area = mesh.dx() * mesh.dy();
-    for (std::size_t idx = 0; idx < mesh.size(); ++idx) {
-        const double e2 = mesh.electric_x()[idx] * mesh.electric_x()[idx] + mesh.electric_y()[idx] * mesh.electric_y()[idx];
-        s.field_energy += 0.5 * EPS0 * e2 * area;
-        s.charge_l1 += std::abs(mesh.rho()[idx]) * area;
+    for (std::size_t j = 0; j < mesh.ny(); ++j) {
+        for (std::size_t i = 0; i < mesh.nx(); ++i) {
+            const auto idx = mesh.index(i, j);
+            const double e2 = mesh.electric_x()[idx] * mesh.electric_x()[idx] + mesh.electric_y()[idx] * mesh.electric_y()[idx];
+            const double area = mesh.node_area(i, j);
+            s.field_energy += 0.5 * EPS0 * e2 * area;
+            s.charge_l1 += std::abs(mesh.rho()[idx]) * area;
+        }
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
     history_.push_back(s);

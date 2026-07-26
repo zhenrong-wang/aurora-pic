@@ -187,11 +187,14 @@ DiagnosticSample2D Simulation2D::sample() const {
         s.live_particles += live;
         s.live_particles_by_species.push_back(live);
     }
-    const double area = mesh_.dx() * mesh_.dy();
-    for (std::size_t idx = 0; idx < mesh_.size(); ++idx) {
-        const double e2 = mesh_.electric_x()[idx] * mesh_.electric_x()[idx] + mesh_.electric_y()[idx] * mesh_.electric_y()[idx];
-        s.field_energy += 0.5 * EPS0 * e2 * area;
-        s.charge_l1 += std::abs(mesh_.rho()[idx]) * area;
+    for (std::size_t j = 0; j < mesh_.ny(); ++j) {
+        for (std::size_t i = 0; i < mesh_.nx(); ++i) {
+            const auto idx = mesh_.index(i, j);
+            const double e2 = mesh_.electric_x()[idx] * mesh_.electric_x()[idx] + mesh_.electric_y()[idx] * mesh_.electric_y()[idx];
+            const double area = mesh_.node_area(i, j);
+            s.field_energy += 0.5 * EPS0 * e2 * area;
+            s.charge_l1 += std::abs(mesh_.rho()[idx]) * area;
+        }
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
     return s;

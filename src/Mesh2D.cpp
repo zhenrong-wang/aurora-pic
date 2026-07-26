@@ -33,9 +33,19 @@ Mesh2D::Mesh2D(std::size_t nx, std::size_t ny, double length_x, double length_y,
 
 void Mesh2D::clear_charge() { std::fill(rho_.begin(), rho_.end(), 0.0); }
 
+double Mesh2D::node_area(std::size_t i, std::size_t j) const {
+    if (i >= nx_ || j >= ny_) throw std::out_of_range("2D mesh node index out of range");
+    if (boundary_ == Boundary::Periodic) return dx_ * dy_;
+
+    const double wx = (i == 0 || i + 1 == nx_) ? 0.5 * dx_ : dx_;
+    const double wy = (j == 0 || j + 1 == ny_) ? 0.5 * dy_ : dy_;
+    return wx * wy;
+}
+
 void deposit_charge_cic(Mesh2D& mesh, const std::vector<Particle2D>& particles, double charge, double weight) {
     auto& rho = mesh.rho();
-    const double q_over_area = charge * weight / (mesh.dx() * mesh.dy());
+    const double q = charge * weight;
+    const double q_over_area = q / (mesh.dx() * mesh.dy());
     for (const auto& particle : particles) {
         if (!particle.alive) continue;
 
@@ -70,10 +80,17 @@ void deposit_charge_cic(Mesh2D& mesh, const std::vector<Particle2D>& particles, 
             j1 = j + 1;
         }
 
-        rho[mesh.index(i0, j0)] += q_over_area * (1.0 - fx) * (1.0 - fy);
-        rho[mesh.index(i1, j0)] += q_over_area * fx * (1.0 - fy);
-        rho[mesh.index(i0, j1)] += q_over_area * (1.0 - fx) * fy;
-        rho[mesh.index(i1, j1)] += q_over_area * fx * fy;
+        if (mesh.boundary() == Boundary::Periodic) {
+            rho[mesh.index(i0, j0)] += q_over_area * (1.0 - fx) * (1.0 - fy);
+            rho[mesh.index(i1, j0)] += q_over_area * fx * (1.0 - fy);
+            rho[mesh.index(i0, j1)] += q_over_area * (1.0 - fx) * fy;
+            rho[mesh.index(i1, j1)] += q_over_area * fx * fy;
+        } else {
+            rho[mesh.index(i0, j0)] += q * (1.0 - fx) * (1.0 - fy) / mesh.node_area(i0, j0);
+            rho[mesh.index(i1, j0)] += q * fx * (1.0 - fy) / mesh.node_area(i1, j0);
+            rho[mesh.index(i0, j1)] += q * (1.0 - fx) * fy / mesh.node_area(i0, j1);
+            rho[mesh.index(i1, j1)] += q * fx * fy / mesh.node_area(i1, j1);
+        }
     }
 }
 }

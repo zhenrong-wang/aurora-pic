@@ -19,6 +19,7 @@ public:
     const std::vector<double>& electric() const { return electric_; }
     void clear_charge();
     double node_x(std::size_t i) const { return static_cast<double>(i) * dx_; }
+    double node_volume(std::size_t i) const;
 private:
     std::size_t nx_;
     double length_;

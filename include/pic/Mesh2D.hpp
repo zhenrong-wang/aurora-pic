@@ -35,6 +35,7 @@ public:
     std::size_t index(std::size_t i, std::size_t j) const { return j * nx_ + i; }
     double node_x(std::size_t i) const { return static_cast<double>(i) * dx_; }
     double node_y(std::size_t j) const { return static_cast<double>(j) * dy_; }
+    double node_area(std::size_t i, std::size_t j) const;
 
     std::vector<double>& rho() { return rho_; }
     std::vector<double>& phi() { return phi_; }
