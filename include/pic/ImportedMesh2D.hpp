@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,6 +41,12 @@ struct Gmsh2ImportLimits {
     std::size_t max_tags_per_element{64};
 };
 
+struct ImportedPointLocation2D {
+    std::size_t cell_id{0};
+    std::vector<std::size_t> node_ids;
+    std::vector<double> shape_weights;
+};
+
 class ImportedMesh2D {
 public:
     void add_node(ImportedMeshNode2D node);
@@ -63,6 +70,10 @@ public:
     Vec2 cell_centroid(std::size_t id) const;
     double boundary_face_length(std::size_t id) const;
     double total_area() const;
+    std::optional<ImportedPointLocation2D> cell_coordinates(std::size_t cell_id, Vec2 point,
+                                                            double relative_tolerance = 1e-12) const;
+    std::optional<ImportedPointLocation2D> locate_point(Vec2 point,
+                                                        double relative_tolerance = 1e-12) const;
     void validate() const;
 
 private:
@@ -70,6 +81,12 @@ private:
     std::vector<ImportedCell2D> cells_;
     std::vector<ImportedBoundaryFace2D> boundary_faces_;
     std::map<std::pair<int, int>, std::string> physical_names_;
+    std::map<std::size_t, std::size_t> node_indices_;
+    std::map<std::size_t, std::size_t> cell_indices_;
+    std::map<std::size_t, std::size_t> boundary_face_indices_;
+    Vec2 minimum_corner_{};
+    Vec2 maximum_corner_{};
+    bool has_bounds_{false};
 };
 
 ImportedMesh2D load_gmsh2_ascii_mesh2d(const std::filesystem::path& path,

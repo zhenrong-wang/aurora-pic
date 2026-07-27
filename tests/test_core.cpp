@@ -14,6 +14,7 @@
 #include "pic/Species.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/Species3D.hpp"
+#include "pic/UnstructuredMesh2D.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -2392,6 +2393,121 @@ int main() {
                          "M2 Gmsh importer quadrilateral centroid y mismatch");
             require_near(mesh.boundary_face_length(1), 0.5, 1e-15,
                          "M2 Gmsh importer boundary-face length mismatch");
+
+            const auto triangle_location = mesh.locate_point({1.0 / 6.0, 1.0 / 3.0});
+            require(triangle_location.has_value() && triangle_location->cell_id == 7,
+                    "imported triangle point location selected the wrong cell");
+            require(triangle_location->node_ids == std::vector<std::size_t>({1, 2, 6}),
+                    "imported triangle point location returned wrong connectivity");
+            for (const double weight : triangle_location->shape_weights) {
+                require_near(weight, 1.0 / 3.0, 1e-14,
+                             "imported triangle barycentric coordinate mismatch");
+            }
+
+            const auto quad_location = mesh.locate_point({0.8, 0.25});
+            require(quad_location.has_value() && quad_location->cell_id == 9,
+                    "imported quadrilateral point location selected the wrong cell");
+            const std::vector<double> expected_quad_weights{0.3, 0.45, 0.15, 0.1};
+            for (std::size_t i = 0; i < expected_quad_weights.size(); ++i) {
+                require_near(quad_location->shape_weights[i], expected_quad_weights[i], 1e-14,
+                             "imported quadrilateral shape coordinate mismatch");
+            }
+            require(!mesh.locate_point({1.1, 0.5}).has_value(),
+                    "imported mesh point location accepted an exterior point");
+            require_throws([&]() {
+                (void)mesh.locate_point({std::numeric_limits<double>::quiet_NaN(), 0.0});
+            }, "imported mesh point location accepted a non-finite query");
+
+            pic::UnstructuredMesh2D computational_mesh(mesh);
+            require(computational_mesh.size() == mesh.nodes().size(),
+                    "unstructured computational mesh node count mismatch");
+            require_near(computational_mesh.node_control_area(1), 1.0 / 12.0, 1e-14,
+                         "unstructured node 1 control area mismatch");
+            require_near(computational_mesh.node_control_area(2), 7.0 / 24.0, 1e-14,
+                         "unstructured node 2 control area mismatch");
+            double control_area_sum = 0.0;
+            for (const double area : computational_mesh.node_control_areas()) control_area_sum += area;
+            require_near(control_area_sum, mesh.total_area(), 1e-14,
+                         "unstructured lumped control areas do not recover domain area");
+
+            std::vector<pic::Particle2D> particles(4);
+            particles[0].position = {1.0 / 6.0, 1.0 / 3.0};
+            particles[1].position = {0.8, 0.25};
+            particles[2].position = {1.1, 0.5};
+            particles[3].position = {0.25, 0.25};
+            particles[3].alive = false;
+            const auto deposit = pic::deposit_charge_shape(computational_mesh, particles, -2.0, 0.5);
+            require(deposit.deposited_particles == 2,
+                    "unstructured charge deposition counted the wrong in-domain particles");
+            require(deposit.outside_particles == 1,
+                    "unstructured charge deposition did not report an exterior live particle");
+            require_near(deposit.deposited_charge, -2.0, 1e-15,
+                         "unstructured charge deposition summary mismatch");
+            double integrated_charge = 0.0;
+            for (std::size_t i = 0; i < computational_mesh.size(); ++i) {
+                integrated_charge +=
+                    computational_mesh.rho()[i] * computational_mesh.node_control_areas()[i];
+            }
+            require_near(integrated_charge, deposit.deposited_charge, 1e-14,
+                         "unstructured shape deposition did not conserve charge");
+            computational_mesh.clear_charge();
+            require(std::all_of(computational_mesh.rho().begin(), computational_mesh.rho().end(),
+                                [](double value) { return value == 0.0; }),
+                    "unstructured clear_charge did not reset all nodal densities");
+
+            for (const auto& node : mesh.nodes()) {
+                computational_mesh.electric()[computational_mesh.node_index(node.id)] = {
+                    2.0 * node.position.x - 3.0 * node.position.y + 1.0,
+                    -node.position.x + 4.0 * node.position.y - 2.0,
+                };
+            }
+            for (const pic::Vec2 point : {pic::Vec2{0.2, 0.2}, pic::Vec2{0.8, 0.25}}) {
+                const auto electric = pic::interpolate_electric(computational_mesh, point);
+                require(electric.has_value(), "unstructured field interpolation rejected an interior point");
+                require_near(electric->x, 2.0 * point.x - 3.0 * point.y + 1.0, 1e-14,
+                             "unstructured affine electric interpolation x mismatch");
+                require_near(electric->y, -point.x + 4.0 * point.y - 2.0, 1e-14,
+                             "unstructured affine electric interpolation y mismatch");
+            }
+            require(!pic::interpolate_electric(computational_mesh, {1.1, 0.5}).has_value(),
+                    "unstructured field interpolation accepted an exterior point");
+
+            {
+                pic::ImportedMesh2D distorted;
+                distorted.add_node({1, {0.0, 0.0}});
+                distorted.add_node({2, {2.0, 0.0}});
+                distorted.add_node({3, {1.5, 1.0}});
+                distorted.add_node({4, {0.0, 1.0}});
+                distorted.add_cell({5, pic::ImportedCellShape2D::Quadrilateral,
+                                    {1, 2, 3, 4}, 1, "plasma"});
+                distorted.add_boundary_face({6, {1, 2}, 1, "wall"});
+                distorted.add_boundary_face({7, {2, 3}, 1, "wall"});
+                distorted.add_boundary_face({8, {3, 4}, 1, "wall"});
+                distorted.add_boundary_face({9, {4, 1}, 1, "wall"});
+                distorted.validate();
+
+                const double xi = 0.2;
+                const double eta = -0.4;
+                const std::array<double, 4> weights{
+                    0.25 * (1.0 - xi) * (1.0 - eta),
+                    0.25 * (1.0 + xi) * (1.0 - eta),
+                    0.25 * (1.0 + xi) * (1.0 + eta),
+                    0.25 * (1.0 - xi) * (1.0 + eta),
+                };
+                pic::Vec2 mapped{};
+                for (std::size_t i = 0; i < weights.size(); ++i) {
+                    const auto position = distorted.node_by_id(i + 1).position;
+                    mapped.x += weights[i] * position.x;
+                    mapped.y += weights[i] * position.y;
+                }
+                const auto recovered = distorted.cell_coordinates(5, mapped);
+                require(recovered.has_value(),
+                        "distorted quadrilateral inverse isoparametric mapping did not converge");
+                for (std::size_t i = 0; i < weights.size(); ++i) {
+                    require_near(recovered->shape_weights[i], weights[i], 1e-13,
+                                 "distorted quadrilateral shape coordinate mismatch");
+                }
+            }
 
             pic::Gmsh2ImportLimits small_limits;
             small_limits.max_nodes = 5;

@@ -26,6 +26,7 @@ add_library(aurorapic
   src/Species.cpp
   src/Species2D.cpp
   src/Species3D.cpp
+  src/UnstructuredMesh2D.cpp
   src/VTKWriter.cpp
 )
 target_include_directories(aurorapic PUBLIC

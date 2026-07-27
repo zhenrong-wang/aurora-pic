@@ -131,6 +131,24 @@ double signed_polygon_area(const ImportedMesh2D& mesh, const ImportedCell2D& cel
     }
     return 0.5 * twice_area;
 }
+
+std::array<double, 4> quadrilateral_shape_weights(double xi, double eta) {
+    return {
+        0.25 * (1.0 - xi) * (1.0 - eta),
+        0.25 * (1.0 + xi) * (1.0 - eta),
+        0.25 * (1.0 + xi) * (1.0 + eta),
+        0.25 * (1.0 - xi) * (1.0 + eta),
+    };
+}
+
+std::array<Vec2, 4> quadrilateral_shape_derivatives(double xi, double eta) {
+    return {
+        Vec2{-0.25 * (1.0 - eta), -0.25 * (1.0 - xi)},
+        Vec2{0.25 * (1.0 - eta), -0.25 * (1.0 + xi)},
+        Vec2{0.25 * (1.0 + eta), 0.25 * (1.0 + xi)},
+        Vec2{-0.25 * (1.0 + eta), 0.25 * (1.0 - xi)},
+    };
+}
 } // namespace
 
 void ImportedMesh2D::add_node(ImportedMeshNode2D node) {
@@ -138,20 +156,26 @@ void ImportedMesh2D::add_node(ImportedMeshNode2D node) {
     if (!std::isfinite(node.position.x) || !std::isfinite(node.position.y)) {
         throw std::invalid_argument("imported mesh node coordinates must be finite");
     }
-    const auto duplicate = std::find_if(nodes_.begin(), nodes_.end(), [&](const auto& existing) {
-        return existing.id == node.id;
-    });
-    if (duplicate != nodes_.end()) {
+    if (node_indices_.contains(node.id)) {
         throw std::invalid_argument("duplicate imported mesh node id: " + std::to_string(node.id));
     }
+    node_indices_.emplace(node.id, nodes_.size());
     nodes_.push_back(node);
+    if (!has_bounds_) {
+        minimum_corner_ = node.position;
+        maximum_corner_ = node.position;
+        has_bounds_ = true;
+    } else {
+        minimum_corner_.x = std::min(minimum_corner_.x, node.position.x);
+        minimum_corner_.y = std::min(minimum_corner_.y, node.position.y);
+        maximum_corner_.x = std::max(maximum_corner_.x, node.position.x);
+        maximum_corner_.y = std::max(maximum_corner_.y, node.position.y);
+    }
 }
 
 void ImportedMesh2D::add_cell(ImportedCell2D cell) {
     if (cell.id == 0) throw std::invalid_argument("imported mesh cell id must be positive");
-    if (std::any_of(cells_.begin(), cells_.end(), [&](const auto& existing) { return existing.id == cell.id; }) ||
-        std::any_of(boundary_faces_.begin(), boundary_faces_.end(),
-                    [&](const auto& existing) { return existing.id == cell.id; })) {
+    if (cell_indices_.contains(cell.id) || boundary_face_indices_.contains(cell.id)) {
         throw std::invalid_argument("duplicate imported element id: " + std::to_string(cell.id));
     }
     const std::size_t expected = cell.shape == ImportedCellShape2D::Triangle ? 3 : 4;
@@ -163,20 +187,20 @@ void ImportedMesh2D::add_cell(ImportedCell2D cell) {
         throw std::invalid_argument("imported mesh cell has duplicate node ids");
     }
     if (cell.label.empty()) cell.label = label_for_physical_tag(2, cell.physical_tag);
+    cell_indices_.emplace(cell.id, cells_.size());
     cells_.push_back(std::move(cell));
 }
 
 void ImportedMesh2D::add_boundary_face(ImportedBoundaryFace2D face) {
     if (face.id == 0) throw std::invalid_argument("imported boundary face id must be positive");
-    if (std::any_of(cells_.begin(), cells_.end(), [&](const auto& existing) { return existing.id == face.id; }) ||
-        std::any_of(boundary_faces_.begin(), boundary_faces_.end(),
-                    [&](const auto& existing) { return existing.id == face.id; })) {
+    if (cell_indices_.contains(face.id) || boundary_face_indices_.contains(face.id)) {
         throw std::invalid_argument("duplicate imported element id: " + std::to_string(face.id));
     }
     if (face.node_ids[0] == face.node_ids[1]) {
         throw std::invalid_argument("imported boundary face has duplicate node ids");
     }
     if (face.label.empty()) face.label = label_for_physical_tag(1, face.physical_tag);
+    boundary_face_indices_.emplace(face.id, boundary_faces_.size());
     boundary_faces_.push_back(std::move(face));
 }
 
@@ -194,24 +218,27 @@ void ImportedMesh2D::set_physical_name(int dimension, int tag, std::string name)
 }
 
 const ImportedMeshNode2D& ImportedMesh2D::node_by_id(std::size_t id) const {
-    const auto it = std::find_if(nodes_.begin(), nodes_.end(), [&](const auto& node) { return node.id == id; });
-    if (it == nodes_.end()) throw std::out_of_range("imported mesh node id not found: " + std::to_string(id));
-    return *it;
+    const auto it = node_indices_.find(id);
+    if (it == node_indices_.end()) {
+        throw std::out_of_range("imported mesh node id not found: " + std::to_string(id));
+    }
+    return nodes_[it->second];
 }
 
 const ImportedCell2D& ImportedMesh2D::cell_by_id(std::size_t id) const {
-    const auto it = std::find_if(cells_.begin(), cells_.end(), [&](const auto& cell) { return cell.id == id; });
-    if (it == cells_.end()) throw std::out_of_range("imported mesh cell id not found: " + std::to_string(id));
-    return *it;
+    const auto it = cell_indices_.find(id);
+    if (it == cell_indices_.end()) {
+        throw std::out_of_range("imported mesh cell id not found: " + std::to_string(id));
+    }
+    return cells_[it->second];
 }
 
 const ImportedBoundaryFace2D& ImportedMesh2D::boundary_face_by_id(std::size_t id) const {
-    const auto it = std::find_if(boundary_faces_.begin(), boundary_faces_.end(),
-                                 [&](const auto& face) { return face.id == id; });
-    if (it == boundary_faces_.end()) {
+    const auto it = boundary_face_indices_.find(id);
+    if (it == boundary_face_indices_.end()) {
         throw std::out_of_range("imported boundary face id not found: " + std::to_string(id));
     }
-    return *it;
+    return boundary_faces_[it->second];
 }
 
 std::string ImportedMesh2D::label_for_physical_tag(int dimension, int tag) const {
@@ -226,23 +253,13 @@ std::vector<std::string> ImportedMesh2D::boundary_labels() const {
 }
 
 Vec2 ImportedMesh2D::min_corner() const {
-    if (nodes_.empty()) throw std::runtime_error("imported mesh has no nodes");
-    Vec2 result{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
-    for (const auto& node : nodes_) {
-        result.x = std::min(result.x, node.position.x);
-        result.y = std::min(result.y, node.position.y);
-    }
-    return result;
+    if (!has_bounds_) throw std::runtime_error("imported mesh has no nodes");
+    return minimum_corner_;
 }
 
 Vec2 ImportedMesh2D::max_corner() const {
-    if (nodes_.empty()) throw std::runtime_error("imported mesh has no nodes");
-    Vec2 result{-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()};
-    for (const auto& node : nodes_) {
-        result.x = std::max(result.x, node.position.x);
-        result.y = std::max(result.y, node.position.y);
-    }
-    return result;
+    if (!has_bounds_) throw std::runtime_error("imported mesh has no nodes");
+    return maximum_corner_;
 }
 
 double ImportedMesh2D::cell_area(std::size_t id) const {
@@ -278,6 +295,133 @@ double ImportedMesh2D::total_area() const {
     double result = 0.0;
     for (const auto& cell : cells_) result += cell_area(cell.id);
     return result;
+}
+
+std::optional<ImportedPointLocation2D> ImportedMesh2D::cell_coordinates(
+    std::size_t cell_id, Vec2 point, double relative_tolerance) const {
+    if (!std::isfinite(point.x) || !std::isfinite(point.y)) {
+        throw std::invalid_argument("imported mesh point coordinates must be finite");
+    }
+    if (!std::isfinite(relative_tolerance) || relative_tolerance < 0.0) {
+        throw std::invalid_argument("imported mesh point-location tolerance must be finite and non-negative");
+    }
+
+    const auto& cell = cell_by_id(cell_id);
+    Vec2 minimum{std::numeric_limits<double>::infinity(),
+                 std::numeric_limits<double>::infinity()};
+    Vec2 maximum{-std::numeric_limits<double>::infinity(),
+                 -std::numeric_limits<double>::infinity()};
+    for (const auto node_id : cell.node_ids) {
+        const Vec2 position = node_by_id(node_id).position;
+        minimum.x = std::min(minimum.x, position.x);
+        minimum.y = std::min(minimum.y, position.y);
+        maximum.x = std::max(maximum.x, position.x);
+        maximum.y = std::max(maximum.y, position.y);
+    }
+    const double scale = std::max(maximum.x - minimum.x, maximum.y - minimum.y);
+    if (!(scale > 0.0) || !std::isfinite(scale)) {
+        throw std::runtime_error("imported mesh bounding box must have finite nonzero extent");
+    }
+    const double weight_tolerance =
+        std::max(relative_tolerance, 128.0 * std::numeric_limits<double>::epsilon());
+    const double position_tolerance = weight_tolerance * scale;
+
+    ImportedPointLocation2D result;
+    result.cell_id = cell.id;
+    result.node_ids = cell.node_ids;
+
+    if (cell.shape == ImportedCellShape2D::Triangle) {
+        const Vec2 first = node_by_id(cell.node_ids[0]).position;
+        const Vec2 second = node_by_id(cell.node_ids[1]).position;
+        const Vec2 third = node_by_id(cell.node_ids[2]).position;
+        const double denominator = cross(first, second, third);
+        if (!std::isfinite(denominator) ||
+            std::abs(denominator) <= 128.0 * std::numeric_limits<double>::epsilon() * scale * scale) {
+            throw std::runtime_error("cannot locate a point in degenerate imported cell " +
+                                     std::to_string(cell.id));
+        }
+        result.shape_weights = {
+            cross(point, second, third) / denominator,
+            cross(first, point, third) / denominator,
+            cross(first, second, point) / denominator,
+        };
+    } else {
+        std::array<Vec2, 4> nodes{};
+        for (std::size_t i = 0; i < nodes.size(); ++i) {
+            nodes[i] = node_by_id(cell.node_ids[i]).position;
+        }
+
+        double xi = 0.0;
+        double eta = 0.0;
+        bool converged = false;
+        for (int iteration = 0; iteration < 32; ++iteration) {
+            const auto weights = quadrilateral_shape_weights(xi, eta);
+            const auto derivatives = quadrilateral_shape_derivatives(xi, eta);
+            Vec2 mapped{};
+            double dx_dxi = 0.0;
+            double dx_deta = 0.0;
+            double dy_dxi = 0.0;
+            double dy_deta = 0.0;
+            for (std::size_t i = 0; i < nodes.size(); ++i) {
+                mapped.x += weights[i] * nodes[i].x;
+                mapped.y += weights[i] * nodes[i].y;
+                dx_dxi += derivatives[i].x * nodes[i].x;
+                dx_deta += derivatives[i].y * nodes[i].x;
+                dy_dxi += derivatives[i].x * nodes[i].y;
+                dy_deta += derivatives[i].y * nodes[i].y;
+            }
+            const Vec2 residual{mapped.x - point.x, mapped.y - point.y};
+            if (std::hypot(residual.x, residual.y) <= position_tolerance) {
+                converged = true;
+                break;
+            }
+            const double determinant = dx_dxi * dy_deta - dx_deta * dy_dxi;
+            if (!std::isfinite(determinant) ||
+                std::abs(determinant) <=
+                    128.0 * std::numeric_limits<double>::epsilon() * scale * scale) {
+                return std::nullopt;
+            }
+            const double delta_xi = (dy_deta * residual.x - dx_deta * residual.y) / determinant;
+            const double delta_eta = (-dy_dxi * residual.x + dx_dxi * residual.y) / determinant;
+            xi -= delta_xi;
+            eta -= delta_eta;
+            if (!std::isfinite(xi) || !std::isfinite(eta)) return std::nullopt;
+        }
+        if (!converged || xi < -1.0 - weight_tolerance || xi > 1.0 + weight_tolerance ||
+            eta < -1.0 - weight_tolerance || eta > 1.0 + weight_tolerance) {
+            return std::nullopt;
+        }
+        xi = std::clamp(xi, -1.0, 1.0);
+        eta = std::clamp(eta, -1.0, 1.0);
+        const auto weights = quadrilateral_shape_weights(xi, eta);
+        result.shape_weights.assign(weights.begin(), weights.end());
+    }
+
+    double weight_sum = 0.0;
+    for (auto& value : result.shape_weights) {
+        if (!std::isfinite(value) || value < -weight_tolerance || value > 1.0 + weight_tolerance) {
+            return std::nullopt;
+        }
+        value = std::clamp(value, 0.0, 1.0);
+        weight_sum += value;
+    }
+    if (!(weight_sum > 0.0) || !std::isfinite(weight_sum)) return std::nullopt;
+    for (auto& value : result.shape_weights) value /= weight_sum;
+    return result;
+}
+
+std::optional<ImportedPointLocation2D> ImportedMesh2D::locate_point(
+    Vec2 point, double relative_tolerance) const {
+    if (!std::isfinite(point.x) || !std::isfinite(point.y)) {
+        throw std::invalid_argument("imported mesh point coordinates must be finite");
+    }
+    if (!std::isfinite(relative_tolerance) || relative_tolerance < 0.0) {
+        throw std::invalid_argument("imported mesh point-location tolerance must be finite and non-negative");
+    }
+    for (const auto& cell : cells_) {
+        if (auto location = cell_coordinates(cell.id, point, relative_tolerance)) return location;
+    }
+    return std::nullopt;
 }
 
 void ImportedMesh2D::validate() const {
