@@ -2339,9 +2339,9 @@ int main() {
             // M2 benchmark: tagged 2D Gmsh v2 ASCII meshes import into AuroraPIC-owned labels.
             const auto fixture = std::filesystem::path(AURORA_TEST_SOURCE_DIR) / "tests" / "fixtures" / "tagged_square_v2.msh";
             const pic::ImportedMesh2D mesh = pic::load_gmsh2_ascii_mesh2d(fixture);
-            require(mesh.nodes().size() == 5, "M2 Gmsh importer node count mismatch");
+            require(mesh.nodes().size() == 6, "M2 Gmsh importer node count mismatch");
             require(mesh.cells().size() == 3, "M2 Gmsh importer cell count mismatch");
-            require(mesh.boundary_faces().size() == 4, "M2 Gmsh importer boundary face count mismatch");
+            require(mesh.boundary_faces().size() == 6, "M2 Gmsh importer boundary face count mismatch");
             require(mesh.physical_names().size() == 5, "M2 Gmsh importer physical-name count mismatch");
 
             const auto labels = mesh.boundary_labels();
@@ -2351,8 +2351,8 @@ int main() {
             require_near(mesh.min_corner().y, 0.0, 1e-15, "M2 Gmsh importer min y mismatch");
             require_near(mesh.max_corner().x, 1.0, 1e-15, "M2 Gmsh importer max x mismatch");
             require_near(mesh.max_corner().y, 1.0, 1e-15, "M2 Gmsh importer max y mismatch");
-            require_near(mesh.node_by_id(5).position.x, 0.5, 1e-15, "M2 Gmsh importer node lookup x mismatch");
-            require_near(mesh.node_by_id(5).position.y, 0.5, 1e-15, "M2 Gmsh importer node lookup y mismatch");
+            require_near(mesh.node_by_id(6).position.x, 0.0, 1e-15, "M2 Gmsh importer node lookup x mismatch");
+            require_near(mesh.node_by_id(6).position.y, 1.0, 1e-15, "M2 Gmsh importer node lookup y mismatch");
             require(mesh.label_for_physical_tag(1, 3) == "wall", "M2 Gmsh importer boundary tag lookup mismatch");
             require(mesh.label_for_physical_tag(2, 10) == "plasma", "M2 Gmsh importer region tag lookup mismatch");
             require(mesh.label_for_physical_tag(1, 99) == "boundary_physical_99",
@@ -2364,16 +2364,39 @@ int main() {
             require(first_cell.shape == pic::ImportedCellShape2D::Triangle,
                     "M2 Gmsh importer first cell shape mismatch");
             require(first_cell.label == "plasma", "M2 Gmsh importer cell label mismatch");
-            require(first_cell.node_ids == std::vector<std::size_t>({1, 2, 5}),
+            require(first_cell.node_ids == std::vector<std::size_t>({1, 2, 6}),
                     "M2 Gmsh importer triangle connectivity mismatch");
             const auto& quad_cell = mesh.cells().back();
             require(quad_cell.shape == pic::ImportedCellShape2D::Quadrilateral,
                     "M2 Gmsh importer quadrilateral cell shape mismatch");
-            require(quad_cell.node_ids == std::vector<std::size_t>({1, 5, 4, 3}),
+            require(quad_cell.node_ids == std::vector<std::size_t>({2, 3, 4, 5}),
                     "M2 Gmsh importer quadrilateral connectivity mismatch");
             require(mesh.boundary_faces().front().label == "inlet", "M2 Gmsh importer boundary label mismatch");
             require(mesh.boundary_faces().front().node_ids == std::array<std::size_t, 2>{1, 2},
                     "M2 Gmsh importer boundary connectivity mismatch");
+            require(mesh.cell_by_id(9).shape == pic::ImportedCellShape2D::Quadrilateral,
+                    "M2 Gmsh importer cell lookup mismatch");
+            require(mesh.boundary_face_by_id(3).label == "outlet",
+                    "M2 Gmsh importer boundary-face lookup mismatch");
+            require_near(mesh.cell_area(7), 0.25, 1e-15, "M2 Gmsh importer first triangle area mismatch");
+            require_near(mesh.cell_area(8), 0.25, 1e-15, "M2 Gmsh importer second triangle area mismatch");
+            require_near(mesh.cell_area(9), 0.5, 1e-15, "M2 Gmsh importer quadrilateral area mismatch");
+            require_near(mesh.total_area(), 1.0, 1e-15, "M2 Gmsh importer total area mismatch");
+            require_near(mesh.cell_centroid(7).x, 1.0 / 6.0, 1e-15,
+                         "M2 Gmsh importer triangle centroid x mismatch");
+            require_near(mesh.cell_centroid(7).y, 1.0 / 3.0, 1e-15,
+                         "M2 Gmsh importer triangle centroid y mismatch");
+            require_near(mesh.cell_centroid(9).x, 0.75, 1e-15,
+                         "M2 Gmsh importer quadrilateral centroid x mismatch");
+            require_near(mesh.cell_centroid(9).y, 0.5, 1e-15,
+                         "M2 Gmsh importer quadrilateral centroid y mismatch");
+            require_near(mesh.boundary_face_length(1), 0.5, 1e-15,
+                         "M2 Gmsh importer boundary-face length mismatch");
+
+            pic::Gmsh2ImportLimits small_limits;
+            small_limits.max_nodes = 5;
+            require_throws([&]() { (void)pic::load_gmsh2_ascii_mesh2d(fixture, small_limits); },
+                           "M2 Gmsh importer ignored its configured node limit");
 
             const auto bad_path = std::filesystem::path("test_output_bad_nonplanar.msh");
             {
@@ -2385,6 +2408,83 @@ int main() {
             require_throws([&]() { (void)pic::load_gmsh2_ascii_mesh2d(bad_path); },
                            "M2 Gmsh importer accepted non-planar 2D node coordinates");
             std::filesystem::remove(bad_path);
+
+            require_throws(
+                []() {
+                    pic::ImportedMesh2D invalid;
+                    invalid.add_node({1, {std::numeric_limits<double>::infinity(), 0.0}});
+                },
+                "M2 imported mesh accepted a non-finite node");
+
+            require_throws(
+                []() {
+                    pic::ImportedMesh2D invalid;
+                    invalid.add_node({1, {0.0, 0.0}});
+                    invalid.add_node({2, {1.0, 0.0}});
+                    invalid.add_node({3, {0.0, 1.0}});
+                    invalid.add_cell({1, pic::ImportedCellShape2D::Triangle, {1, 2, 3}, 1, "plasma"});
+                    invalid.add_boundary_face({1, {1, 2}, 1, "wall"});
+                },
+                "M2 imported mesh accepted a duplicate global element id");
+
+            require_throws(
+                []() {
+                    pic::ImportedMesh2D invalid;
+                    invalid.add_node({1, {0.0, 0.0}});
+                    invalid.add_node({2, {1.0, 0.0}});
+                    invalid.add_node({3, {2.0, 0.0}});
+                    invalid.add_cell({4, pic::ImportedCellShape2D::Triangle, {1, 2, 3}, 1, "plasma"});
+                    invalid.add_boundary_face({5, {1, 2}, 1, "wall"});
+                    invalid.add_boundary_face({6, {2, 3}, 1, "wall"});
+                    invalid.add_boundary_face({7, {3, 1}, 1, "wall"});
+                    invalid.validate();
+                },
+                "M2 imported mesh accepted a degenerate cell");
+
+            require_throws(
+                []() {
+                    pic::ImportedMesh2D invalid;
+                    invalid.add_node({1, {0.0, 0.0}});
+                    invalid.add_node({2, {1.0, 0.0}});
+                    invalid.add_node({3, {0.25, 0.25}});
+                    invalid.add_node({4, {0.0, 1.0}});
+                    invalid.add_cell({5, pic::ImportedCellShape2D::Quadrilateral, {1, 2, 3, 4}, 1, "plasma"});
+                    invalid.add_boundary_face({6, {1, 2}, 1, "wall"});
+                    invalid.add_boundary_face({7, {2, 3}, 1, "wall"});
+                    invalid.add_boundary_face({8, {3, 4}, 1, "wall"});
+                    invalid.add_boundary_face({9, {4, 1}, 1, "wall"});
+                    invalid.validate();
+                },
+                "M2 imported mesh accepted a concave quadrilateral");
+
+            require_throws(
+                []() {
+                    pic::ImportedMesh2D invalid;
+                    invalid.add_node({1, {0.0, 0.0}});
+                    invalid.add_node({2, {1.0, 0.0}});
+                    invalid.add_node({3, {0.0, 1.0}});
+                    invalid.add_cell({4, pic::ImportedCellShape2D::Triangle, {1, 2, 3}, 1, "plasma"});
+                    invalid.add_boundary_face({5, {1, 2}, 1, "wall"});
+                    invalid.add_boundary_face({6, {2, 3}, 1, "wall"});
+                    invalid.validate();
+                },
+                "M2 imported mesh accepted an incomplete tagged boundary");
+
+            require_throws(
+                []() {
+                    pic::ImportedMesh2D invalid;
+                    invalid.add_node({1, {0.0, 0.0}});
+                    invalid.add_node({2, {1.0, 0.0}});
+                    invalid.add_node({3, {0.0, 1.0}});
+                    invalid.add_node({4, {0.0, -1.0}});
+                    invalid.add_node({5, {0.5, 1.0}});
+                    invalid.add_cell({6, pic::ImportedCellShape2D::Triangle, {1, 2, 3}, 1, "plasma"});
+                    invalid.add_cell({7, pic::ImportedCellShape2D::Triangle, {2, 1, 4}, 1, "plasma"});
+                    invalid.add_cell({8, pic::ImportedCellShape2D::Triangle, {1, 2, 5}, 1, "plasma"});
+                    invalid.add_boundary_face({9, {1, 3}, 1, "wall"});
+                    invalid.validate();
+                },
+                "M2 imported mesh accepted a non-manifold cell edge");
         }
         return 0;
     } catch (const std::exception& e) {

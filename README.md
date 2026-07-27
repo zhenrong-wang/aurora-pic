@@ -53,7 +53,7 @@ python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 2D runs are selected by `dimension = 2` in the config file and are reachable from both the CLI/config loader and the C++ API. The 2D path provides:
 
 - `Mesh2D`: rectangular node-centered mesh with periodic or Dirichlet field boundary mode plus side boundary tags/potentials for electrode-style Dirichlet domains.
-- `ImportedMesh2D`: internal topology/label model for tagged planar Gmsh v2 ASCII imports; line elements become boundary faces with physical-name labels, and triangle/quadrilateral elements become region cells without exposing solver code to `.msh` details.
+- `ImportedMesh2D`: validated topology/label model for tagged planar Gmsh v2 ASCII imports; bounded parsing rejects non-finite coordinates, duplicate entities, degenerate or non-convex cells, inconsistent orientation, non-manifold edges, and incomplete boundary closure. The model exposes cell area/centroid and boundary-length metrics without exposing solver code to `.msh` details.
 - `Species2D`: explicit `Particle2D` storage with 2D position/velocity initialization, CIC deposition, kinetic-energy accounting, and live-particle accounting.
 - `Simulation2D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; nonzero `magnetic_field_z` switches particles to the Boris rotation/kick.
 - `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.

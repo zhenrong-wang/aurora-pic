@@ -33,6 +33,13 @@ struct ImportedBoundaryFace2D {
     std::string label;
 };
 
+struct Gmsh2ImportLimits {
+    std::size_t max_physical_names{100000};
+    std::size_t max_nodes{10000000};
+    std::size_t max_elements{20000000};
+    std::size_t max_tags_per_element{64};
+};
+
 class ImportedMesh2D {
 public:
     void add_node(ImportedMeshNode2D node);
@@ -46,10 +53,16 @@ public:
     const std::map<std::pair<int, int>, std::string>& physical_names() const { return physical_names_; }
 
     const ImportedMeshNode2D& node_by_id(std::size_t id) const;
+    const ImportedCell2D& cell_by_id(std::size_t id) const;
+    const ImportedBoundaryFace2D& boundary_face_by_id(std::size_t id) const;
     std::string label_for_physical_tag(int dimension, int tag) const;
     std::vector<std::string> boundary_labels() const;
     Vec2 min_corner() const;
     Vec2 max_corner() const;
+    double cell_area(std::size_t id) const;
+    Vec2 cell_centroid(std::size_t id) const;
+    double boundary_face_length(std::size_t id) const;
+    double total_area() const;
     void validate() const;
 
 private:
@@ -59,6 +72,7 @@ private:
     std::map<std::pair<int, int>, std::string> physical_names_;
 };
 
-ImportedMesh2D load_gmsh2_ascii_mesh2d(const std::filesystem::path& path);
+ImportedMesh2D load_gmsh2_ascii_mesh2d(const std::filesystem::path& path,
+                                       Gmsh2ImportLimits limits = {});
 
 } // namespace pic
