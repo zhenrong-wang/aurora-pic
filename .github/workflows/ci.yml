@@ -1,0 +1,68 @@
+name: AuroraPIC CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test-package:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / openmp=${{ matrix.openmp }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            cxx: g++
+            openmp: ON
+          - os: ubuntu-latest
+            compiler: clang
+            cc: clang
+            cxx: clang++
+            openmp: OFF
+          - os: macos-latest
+            compiler: appleclang
+            cc: clang
+            cxx: clang++
+            openmp: OFF
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DAURORA_ENABLE_OPENMP=${{ matrix.openmp }}
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Validate milestone and release metadata
+        run: |
+          python3 scripts/validate_milestones.py
+          python3 scripts/validate_release_artifacts.py
+
+      - name: Run CTest
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Validate pushers
+        run: python3 scripts/validate_pushers.py
+
+      - name: Run example smoke tests
+        run: python3 scripts/verify_examples.py build/aurorapic_cli
+
+      - name: Build TGZ package
+        run: cmake --build build --target package
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurorapic-${{ matrix.os }}-${{ matrix.compiler }}-openmp-${{ matrix.openmp }}
+          path: build/AuroraPIC-*.tar.gz
+          if-no-files-found: error

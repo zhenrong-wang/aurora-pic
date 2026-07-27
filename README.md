@@ -10,7 +10,7 @@ For the recommended multidimensional expansion strategy, geometry/mesh format ch
 
 ## Production milestone baseline
 
-Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift. The current baseline includes the first M6 release-engineering/operability slice: configs may declare `config_version = 1`, public examples do so explicitly, and unsupported future config versions fail with a clear diagnostic instead of silently falling back. It also preserves the completed M5 higher-fidelity physics slice, M4 runtime-scaling interface slice, M3 VTK XML structured-grid output compatibility, and the M2 tagged 2D Gmsh v2 ASCII importer (`ImportedMesh2D`) for externally meshed planar domains.
+Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift. The current M6 baseline includes release-engineering and operability mitigation: configs may declare `config_version = 1`, public examples do so explicitly, unsupported future config versions fail with a clear diagnostic, CI workflow coverage exercises serial/OpenMP build variants across Linux/macOS runners, CPack can produce a `TGZ` package, and `docs/performance-envelope.md` documents the verified smoke/performance envelope. It also preserves the completed M5 higher-fidelity physics slice, M4 runtime-scaling interface slice, M3 VTK XML structured-grid output compatibility, and the M2 tagged 2D Gmsh v2 ASCII importer (`ImportedMesh2D`) for externally meshed planar domains.
 
 ## Build
 
@@ -21,6 +21,12 @@ cmake --build build -j
 
 OpenMP support is enabled by default when CMake finds a C++ OpenMP toolchain. Disable it explicitly with `-DAURORA_ENABLE_OPENMP=OFF` to force serial-only builds.
 
+To create the current source/binary `TGZ` package after a successful configure/build, run:
+
+```sh
+cmake --build build --target package
+```
+
 ## Verify
 
 ```sh
@@ -29,8 +35,7 @@ ctest --test-dir build --output-on-failure
 scripts/verify.sh
 ```
 
-The full smoke suite builds the project, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), and runs isolated CLI smoke tests for the included 1D/2D/3D examples. The example smoke tests copy each config to a temporary `test_output_aurorapic_verify/` directory, rewrite only `output_dir`, run `aurorapic_cli`, and assert the expected scalar, field, VTK, and particle-inspection files are structurally valid. Temporary smoke outputs are removed on success; set `KEEP_VERIFY_OUTPUTS=1` or pass `--keep-output` to `scripts/verify_examples.py` to retain them for debugging:
-
+The full smoke suite builds the project, validates milestone and release-engineering artifacts, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), and runs isolated CLI smoke tests for the included 1D/2D/3D examples. The example smoke tests copy each config to a temporary `test_output_aurorapic_verify/` directory, rewrite only `output_dir`, run `aurorapic_cli`, and assert the expected scalar, field, VTK, and particle-inspection files are structurally valid. Temporary smoke outputs are removed on success; set `KEEP_VERIFY_OUTPUTS=1` or pass `--keep-output` to `scripts/verify_examples.py` to retain them for debugging:
 ```sh
 python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 ```
@@ -264,4 +269,8 @@ The particle initialization/synchronization loops and the 1D particle advance us
 
 The parser is intentionally strict: unsupported `config_version` values, unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive `particle_output_stride`, empty 2D boundary tags, non-finite magnetic-field values, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP is limited to safe particle-loop slices rather than a whole-solver scaling model, simplified collision model, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), and no unstructured-mesh field solve beyond the current tagged Gmsh import model. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.
+## Performance and validation envelope
+
+The verified smoke/performance envelope is documented in `docs/performance-envelope.md`. In short, the checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. They do not prove convergence for arbitrary plasma regimes. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
+
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP is limited to safe particle-loop slices rather than a whole-solver scaling model, simplified collision model, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), and no unstructured-mesh field solve beyond the current tagged Gmsh import model. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows. These extension points are documented in `docs/methodology.md`, `docs/multidimensional-roadmap.md`, and `docs/performance-envelope.md`.

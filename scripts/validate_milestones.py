@@ -43,7 +43,15 @@ REQUIRED_EVIDENCE_TERMS = {
     "M3": ("VTK XML", "openPMD/HDF5", "compatibility tests"),
     "M4": ("OpenMP/MPI/GPU", "scaling smoke tests"),
     "M5": ("uniform-B", "Boris", "CTest", "CLI examples", "electromagnetic", "collision models"),
-    "M6": ("config_version", "configuration compatibility", "clearer failure diagnostics", "CTest", "CI matrix"),
+    "M6": (
+        "config_version",
+        "configuration compatibility",
+        "clearer failure diagnostics",
+        "CTest",
+        "CI matrix",
+        "CPack",
+        "documented performance envelopes",
+    ),
 }
 
 
@@ -108,8 +116,9 @@ def validate_roadmap() -> None:
             "roadmap must keep the M3 output/restart target visible")
     require("M4" in section and "OpenMP/MPI/GPU" in section and "scaling smoke tests" in section,
             "roadmap must keep the M4 runtime-scaling baseline visible")
-    require("M6" in section and "config_version" in section and "configuration compatibility" in section,
-            "roadmap must keep the M6 configuration-compatibility baseline visible")
+    require("M6" in section and "config_version" in section and "configuration compatibility" in section
+            and "CI matrix" in section and "CPack" in section and "documented performance envelopes" in section,
+            "roadmap must keep the M6 release-engineering baseline visible")
 
 
 def validate_readme() -> None:
@@ -119,6 +128,8 @@ def validate_readme() -> None:
             "README must link to the milestone ladder anchor")
     require("scripts/validate_milestones.py" in readme,
             "README must document that milestone validation is in the smoke suite")
+    require("docs/performance-envelope.md" in readme,
+            "README must link to the performance envelope")
 
 
 def validate_verify_script() -> None:

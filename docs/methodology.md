@@ -30,9 +30,11 @@ Optional Monte-Carlo BGK-like velocity reset collisions model scattering against
 For credible runs, choose:
 
 - cell size small enough to resolve the Debye length;
-- time step below electron plasma and transit-time scales;
+- time step below electron plasma, cyclotron when using prescribed magnetic fields, and transit-time scales;
 - enough particles per cell to control PIC noise;
 - output and steady-state windows long enough to distinguish relaxation from oscillation.
+
+The bounded smoke/performance envelope for the checked-in examples is documented in `docs/performance-envelope.md`; use it as an operability baseline, not as proof that arbitrary larger plasma cases are converged.
 
 ## Verification included
 

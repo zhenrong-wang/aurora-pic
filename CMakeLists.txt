@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 option(AURORA_BUILD_TESTS "Build AuroraPIC tests" ON)
 option(AURORA_ENABLE_OPENMP "Enable OpenMP runtime backend when available" ON)
+include(GNUInstallDirs)
 
 add_library(aurorapic
   src/Config.cpp
@@ -25,7 +26,10 @@ add_library(aurorapic
   src/Species3D.cpp
   src/VTKWriter.cpp
 )
-target_include_directories(aurorapic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(aurorapic PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_compile_options(aurorapic PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 if(AURORA_ENABLE_OPENMP)
@@ -39,6 +43,30 @@ endif()
 add_executable(aurorapic_cli src/main.cpp)
 target_link_libraries(aurorapic_cli PRIVATE aurorapic)
 target_compile_options(aurorapic_cli PRIVATE -Wall -Wextra -Wpedantic -O3)
+
+install(TARGETS aurorapic aurorapic_cli
+  EXPORT AuroraPICTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples FILES_MATCHING PATTERN "*.cfg")
+install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(EXPORT AuroraPICTargets
+  FILE AuroraPICTargets.cmake
+  NAMESPACE AuroraPIC::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AuroraPIC
+)
+
+set(CPACK_PACKAGE_NAME "AuroraPIC")
+set(CPACK_PACKAGE_VENDOR "AuroraPIC")
+set(CPACK_PACKAGE_CONTACT "AuroraPIC maintainers")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Electrostatic PIC research prototype with 1D/2D/3D examples")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_GENERATOR "TGZ")
+include(CPack)
 
 if(AURORA_BUILD_TESTS)
   enable_testing()
