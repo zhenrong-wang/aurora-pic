@@ -24,6 +24,8 @@ AuroraPIC advances particles with a time-centered electrostatic leapfrog update.
 
 The C++ imported-domain runtime follows the same cycle. It samples particles uniformly by decomposing validated cells into area-weighted triangles, tracks the earliest outward intersection of each drift segment with tagged geometry, and applies label-specific absorption or specular reflection. This segment-based check is required for concave domains where an endpoint can lie inside even though its path crossed outside. Absorbed counts are reported by physical label.
 
+Imported runs are reachable from the CLI with `mesh = imported`. Their checkpoints include a deterministic signature over node coordinates, element connectivity, physical tags, and labels; a restart is rejected if the configured geometry differs.
+
 ## Collisions
 
 Optional Monte-Carlo BGK-like velocity reset collisions model scattering against a prescribed neutral bath. The collision probability is `1 - exp(-nu dt)`.

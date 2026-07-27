@@ -5,7 +5,9 @@
 #include "pic/VTKWriter.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <iterator>
@@ -16,6 +18,7 @@
 
 namespace pic {
 namespace {
+constexpr const char* CHECKPOINT_MAGIC = "AuroraPIC-unstructured-2D-checkpoint-v1";
 
 double cross(Vec2 first, Vec2 second) {
     return first.x * second.y - first.y * second.x;
@@ -118,6 +121,12 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
     }
     if (config_.output_interval == 0) {
         throw std::invalid_argument("unstructured simulation output_interval must be positive");
+    }
+    if (config_.particle_output_stride == 0) {
+        throw std::invalid_argument("unstructured particle output stride must be positive");
+    }
+    if (config_.checkpoint_output && config_.checkpoint_interval == 0) {
+        config_.checkpoint_interval = config_.output_interval;
     }
     if (!std::isfinite(config_.magnetic_field_z)) {
         throw std::invalid_argument("unstructured magnetic_field_z must be finite");
@@ -450,8 +459,200 @@ void UnstructuredSimulation2D::write_diagnostics_sample(
     output.flush();
 }
 
+void UnstructuredSimulation2D::write_particle_sample(std::size_t step) const {
+    std::ofstream output(config_.output_dir / ("particles_" + std::to_string(step) + ".csv"));
+    if (!output) throw std::runtime_error("cannot open unstructured particle output");
+    output << "species_id,species,x,y,vx,vy,alive\n";
+    std::size_t written = 0;
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        const auto& species = species_[species_id];
+        for (std::size_t particle_id = 0;
+             particle_id < species.particles().size(); ++particle_id) {
+            if (particle_id % config_.particle_output_stride != 0) continue;
+            const auto& particle = species.particles()[particle_id];
+            output << species_id << ',' << csv_quote(species.name()) << ','
+                   << std::setprecision(17)
+                   << particle.position.x << ',' << particle.position.y << ','
+                   << particle.velocity.x << ',' << particle.velocity.y << ','
+                   << (particle.alive ? 1 : 0) << '\n';
+            ++written;
+            if (config_.particle_sample_count != 0 &&
+                written >= config_.particle_sample_count) {
+                return;
+            }
+        }
+    }
+}
+
+std::filesystem::path UnstructuredSimulation2D::checkpoint_path_for_step(
+    std::size_t step) const {
+    if (!config_.checkpoint_path.empty()) return config_.checkpoint_path;
+    return config_.output_dir / ("checkpoint_" + std::to_string(step) + ".apc");
+}
+
+std::uint64_t UnstructuredSimulation2D::mesh_signature() const {
+    constexpr std::uint64_t offset_basis = 14695981039346656037ULL;
+    constexpr std::uint64_t prime = 1099511628211ULL;
+    std::uint64_t hash = offset_basis;
+    const auto append = [&](std::uint64_t value) {
+        for (int byte = 0; byte < 8; ++byte) {
+            hash ^= (value >> (8 * byte)) & 0xffU;
+            hash *= prime;
+        }
+    };
+    const auto append_string = [&](const std::string& value) {
+        for (const unsigned char character : value) {
+            hash ^= character;
+            hash *= prime;
+        }
+        hash ^= 0xffU;
+        hash *= prime;
+    };
+    for (const auto& node : mesh_.topology().nodes()) {
+        append(node.id);
+        append(std::bit_cast<std::uint64_t>(node.position.x));
+        append(std::bit_cast<std::uint64_t>(node.position.y));
+    }
+    for (const auto& cell : mesh_.topology().cells()) {
+        append(cell.id);
+        append(static_cast<std::uint64_t>(cell.shape));
+        append(static_cast<std::uint64_t>(cell.physical_tag));
+        append_string(cell.label);
+        for (const auto node_id : cell.node_ids) append(node_id);
+    }
+    for (const auto& face : mesh_.topology().boundary_faces()) {
+        append(face.id);
+        append(static_cast<std::uint64_t>(face.physical_tag));
+        append_string(face.label);
+        append(face.node_ids[0]);
+        append(face.node_ids[1]);
+    }
+    return hash;
+}
+
+void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path) const {
+    const auto parent = path.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent);
+    std::ofstream output(path);
+    if (!output) {
+        throw std::runtime_error("cannot open unstructured checkpoint for writing: " +
+                                 path.string());
+    }
+    output << std::setprecision(17);
+    output << CHECKPOINT_MAGIC << '\n';
+    output << "mesh_signature " << mesh_signature() << '\n';
+    output << "step " << step_ << '\n';
+    output << "time " << time_ << '\n';
+    output << "absorbed_count " << absorbed_by_label_.size() << '\n';
+    for (const auto& [label, count] : absorbed_by_label_) {
+        output << "absorbed " << std::quoted(label) << ' ' << count << '\n';
+    }
+    output << "species_count " << species_.size() << '\n';
+    output << "rng " << rng_ << '\n';
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        const auto& species = species_[species_id];
+        output << "species " << species_id << ' ' << std::quoted(species.name()) << ' '
+               << species.particles().size() << '\n';
+        for (const auto& particle : species.particles()) {
+            output << particle.position.x << ' ' << particle.position.y << ' '
+                   << particle.velocity.x << ' ' << particle.velocity.y << ' '
+                   << particle.velocity_half.x << ' ' << particle.velocity_half.y << ' '
+                   << (particle.alive ? 1 : 0) << '\n';
+        }
+    }
+    if (!output) {
+        throw std::runtime_error("failed while writing unstructured checkpoint: " +
+                                 path.string());
+    }
+}
+
+void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path) {
+    std::ifstream input(path);
+    if (!input) {
+        throw std::runtime_error("cannot open unstructured checkpoint for reading: " +
+                                 path.string());
+    }
+    std::string magic;
+    std::getline(input, magic);
+    if (magic != CHECKPOINT_MAGIC) {
+        throw std::runtime_error("invalid unstructured checkpoint magic");
+    }
+    std::string key;
+    std::uint64_t signature = 0;
+    input >> key >> signature;
+    if (key != "mesh_signature" || signature != mesh_signature()) {
+        throw std::runtime_error("unstructured checkpoint mesh does not match configured geometry");
+    }
+    input >> key >> step_;
+    if (key != "step") throw std::runtime_error("unstructured checkpoint missing step");
+    input >> key >> time_;
+    if (key != "time" || !std::isfinite(time_) || time_ < 0.0) {
+        throw std::runtime_error("unstructured checkpoint has invalid time");
+    }
+    std::size_t absorbed_count = 0;
+    input >> key >> absorbed_count;
+    if (key != "absorbed_count" || absorbed_count != absorbed_by_label_.size()) {
+        throw std::runtime_error("unstructured checkpoint boundary-label count mismatch");
+    }
+    std::set<std::string> loaded_labels;
+    for (std::size_t i = 0; i < absorbed_count; ++i) {
+        std::string label;
+        std::size_t count = 0;
+        input >> key >> std::quoted(label) >> count;
+        if (key != "absorbed" || !absorbed_by_label_.contains(label) ||
+            !loaded_labels.insert(label).second) {
+            throw std::runtime_error("unstructured checkpoint boundary labels do not match");
+        }
+        absorbed_by_label_[label] = count;
+    }
+    std::size_t species_count = 0;
+    input >> key >> species_count;
+    if (key != "species_count" || species_count != species_.size()) {
+        throw std::runtime_error("unstructured checkpoint species count mismatch");
+    }
+    input >> key;
+    if (key != "rng") throw std::runtime_error("unstructured checkpoint missing RNG state");
+    input >> rng_;
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        std::size_t stored_id = 0;
+        std::string stored_name;
+        std::size_t particle_count = 0;
+        input >> key >> stored_id >> std::quoted(stored_name) >> particle_count;
+        if (key != "species" || stored_id != species_id ||
+            stored_name != species_[species_id].name() ||
+            particle_count != species_configs_[species_id].particles) {
+            throw std::runtime_error("unstructured checkpoint species metadata mismatch");
+        }
+        auto& particles = species_[species_id].particles();
+        particles.resize(particle_count);
+        for (auto& particle : particles) {
+            int alive = 0;
+            input >> particle.position.x >> particle.position.y
+                  >> particle.velocity.x >> particle.velocity.y
+                  >> particle.velocity_half.x >> particle.velocity_half.y >> alive;
+            particle.alive = alive != 0;
+            if (!std::isfinite(particle.position.x) ||
+                !std::isfinite(particle.position.y) ||
+                !std::isfinite(particle.velocity.x) ||
+                !std::isfinite(particle.velocity.y) ||
+                !std::isfinite(particle.velocity_half.x) ||
+                !std::isfinite(particle.velocity_half.y) ||
+                (particle.alive && !mesh_.locate_point(particle.position))) {
+                throw std::runtime_error("unstructured checkpoint contains invalid particle state");
+            }
+        }
+    }
+    if (!input) throw std::runtime_error("truncated unstructured checkpoint");
+    deposit_and_solve();
+    initialized_ = true;
+}
+
 UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
-    initialize();
+    if (config_.restart_path.empty()) {
+        initialize();
+    } else {
+        load_checkpoint(config_.restart_path);
+    }
     std::filesystem::create_directories(config_.output_dir);
     std::ofstream diagnostics(config_.output_dir / "scalars.csv");
     if (!diagnostics) throw std::runtime_error("cannot open unstructured diagnostics output");
@@ -464,11 +665,18 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     write_diagnostics_sample(diagnostics, initial);
     summary.final_sample = initial;
     if (config_.vtk_output) {
-        write_vtk_xml(mesh_, config_.output_dir / "fields_0.vtu");
+        write_vtk_xml(
+            mesh_, config_.output_dir / ("fields_" + std::to_string(step_) + ".vtu"));
     }
+    if (config_.particle_output) write_particle_sample(step_);
+    if (config_.checkpoint_output) save_checkpoint(checkpoint_path_for_step(step_));
 
     const std::size_t limit =
         config_.mode == RunMode::SteadyState ? config_.max_steps : config_.steps;
+    const std::size_t particle_interval =
+        config_.particle_output_interval == 0
+            ? config_.output_interval
+            : config_.particle_output_interval;
     while (step_ < limit) {
         step();
         if (step_ % config_.output_interval != 0 && step_ != limit) continue;
@@ -480,9 +688,20 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
             write_vtk_xml(
                 mesh_, config_.output_dir / ("fields_" + std::to_string(step_) + ".vtu"));
         }
-        if (config_.mode == RunMode::SteadyState &&
+        const bool reached_steady =
+            config_.mode == RunMode::SteadyState &&
             adjacent_energy_windows_converged(
-                history, config_.steady_window, config_.steady_tolerance)) {
+                history, config_.steady_window, config_.steady_tolerance);
+        if (config_.particle_output &&
+            (step_ % particle_interval == 0 || step_ == limit || reached_steady)) {
+            write_particle_sample(step_);
+        }
+        if (config_.checkpoint_output &&
+            (step_ % config_.checkpoint_interval == 0 ||
+             step_ == limit || reached_steady)) {
+            save_checkpoint(checkpoint_path_for_step(step_));
+        }
+        if (reached_steady) {
             summary.steady_state_reached = true;
             break;
         }

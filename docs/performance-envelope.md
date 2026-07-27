@@ -12,6 +12,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
 | `examples/plasma_2d.cfg` | 2D2V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D2V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
+| `examples/imported_plasma_2d.cfg` | 2D2V | 6 nodes / 3 mixed cells | 64 | 3 | Imported Gmsh CLI path, FEM solve, tagged reflection, VTU, particle samples, checkpoint. |
 | `examples/plasma_3d.cfg` | 3D3V | 8 x 8 x 8 nodes | 128 | 3 | Structured 3D CLI path, VTK legacy/XML output, particle samples. |
 
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.
@@ -23,6 +24,7 @@ The current implementation is aimed at correctness and regression coverage befor
 - particles advanced per step: `O(total_particles)`;
 - structured field storage: `O(nx * ny * nz)` for the active dimension;
 - direct structured Poisson solve cost depending on boundary mode and dimension;
+- imported-mesh particle lookup depending on spatial-bin occupancy, plus sparse FEM assembly and preconditioned-CG iterations;
 - output volume proportional to written field nodes, particle sample count, and output frequency.
 
 Use the serial backend as the portability baseline. Optional OpenMP currently covers safe particle-loop slices and uses deterministic static scheduling; it is not yet a full MPI/GPU or domain-decomposed scaling model. Treat `runtime_backend = mpi` and `runtime_backend = gpu` as reserved future options that intentionally fail fast.

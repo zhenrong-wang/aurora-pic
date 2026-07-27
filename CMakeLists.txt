@@ -26,6 +26,7 @@ add_library(aurorapic
   src/Species.cpp
   src/Species2D.cpp
   src/Species3D.cpp
+  src/UnstructuredConfig2D.cpp
   src/UnstructuredFieldSolver2D.cpp
   src/UnstructuredMesh2D.cpp
   src/UnstructuredSimulation2D.cpp
@@ -58,7 +59,8 @@ install(TARGETS aurorapic aurorapic_cli
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples FILES_MATCHING PATTERN "*.cfg")
+install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples
+  FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh")
 install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 install(EXPORT AuroraPICTargets
   FILE AuroraPICTargets.cmake

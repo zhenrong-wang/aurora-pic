@@ -13,6 +13,9 @@ test_output/
 test_output_*/
 *.vtk
 *.vti
+*.vtu
+*.vts
+*.apc
 *.csv
 *.dat
 *.log

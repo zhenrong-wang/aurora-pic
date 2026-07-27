@@ -2347,6 +2347,38 @@ int main() {
             require(mesh.boundary_faces().size() == 6, "M2 Gmsh importer boundary face count mismatch");
             require(mesh.physical_names().size() == 5, "M2 Gmsh importer physical-name count mismatch");
 
+            const auto imported_example =
+                std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                "examples" / "imported_plasma_2d.cfg";
+            require(pic::config_uses_unstructured_mesh_2d(imported_example),
+                    "imported 2D config detection did not select the unstructured runtime");
+            const auto imported_config =
+                pic::load_unstructured_config_2d(imported_example);
+            require(imported_config.mesh_path.filename() == "imported_square_v2.msh" &&
+                        imported_config.species.size() == 2 &&
+                        imported_config.dirichlet_potentials.size() == 4 &&
+                        imported_config.particle_boundaries.at("electrode") ==
+                            pic::ParticleBoundary::Reflecting,
+                    "imported 2D example config did not load expected runtime settings");
+
+            const auto bad_imported_config =
+                std::filesystem::path("test_output_bad_imported_config.cfg");
+            {
+                std::ofstream bad(bad_imported_config);
+                bad << "config_version = 1\n"
+                    << "dimension = 2\n"
+                    << "mesh = imported\n"
+                    << "mesh_file = " << fixture.string() << "\n"
+                    << "unknown_runtime_key = true\n";
+            }
+            require_throws(
+                [&]() {
+                    (void)pic::load_unstructured_config_2d(
+                        bad_imported_config);
+                },
+                "imported 2D config loader accepted an unknown key");
+            std::filesystem::remove(bad_imported_config);
+
             const auto labels = mesh.boundary_labels();
             require(labels == std::vector<std::string>({"electrode", "inlet", "outlet", "wall"}),
                     "M2 Gmsh importer boundary labels were not preserved as internal tags");
@@ -2665,6 +2697,12 @@ int main() {
                 config.output_interval = 1;
                 config.output_dir = output_dir;
                 config.vtk_output = true;
+                config.particle_output = true;
+                config.particle_output_interval = 1;
+                config.particle_output_stride = 2;
+                config.particle_sample_count = 4;
+                config.checkpoint_output = true;
+                config.checkpoint_interval = 1;
                 config.dirichlet_potentials = {
                     {"electrode", 0.0}, {"inlet", 0.0},
                     {"outlet", 0.0}, {"wall", 0.0},
@@ -2704,6 +2742,10 @@ int main() {
                 require(std::filesystem::exists(output_dir / "fields_0.vtu") &&
                             std::filesystem::exists(output_dir / "fields_1.vtu"),
                         "unstructured runtime did not write requested VTU snapshots");
+                require(std::filesystem::exists(output_dir / "particles_1.csv"),
+                        "unstructured runtime did not write requested particle samples");
+                require(std::filesystem::exists(output_dir / "checkpoint_1.apc"),
+                        "unstructured runtime did not write requested checkpoint");
                 const std::string vtu = read_file_text(output_dir / "fields_1.vtu");
                 require(vtu.find("type=\"UnstructuredGrid\"") != std::string::npos,
                         "unstructured VTU output has the wrong dataset type");
@@ -2714,7 +2756,55 @@ int main() {
                 require(scalars.find("poisson_final_residual") != std::string::npos &&
                             count_lines(scalars) == 3,
                         "unstructured scalar diagnostics structure mismatch");
+
+                auto continued_config = config;
+                continued_config.steps = 2;
+                continued_config.restart_path = output_dir / "checkpoint_1.apc";
+                continued_config.output_dir =
+                    "test_output_unstructured_restart_continued";
+                continued_config.vtk_output = false;
+                continued_config.particle_output = false;
+                continued_config.checkpoint_output = false;
+                std::filesystem::remove_all(continued_config.output_dir);
+                pic::UnstructuredSimulation2D continued(continued_config);
+                const auto continued_summary = continued.run();
+
+                auto reference_config = config;
+                reference_config.steps = 2;
+                reference_config.output_dir =
+                    "test_output_unstructured_restart_reference";
+                reference_config.vtk_output = false;
+                reference_config.particle_output = false;
+                reference_config.checkpoint_output = false;
+                std::filesystem::remove_all(reference_config.output_dir);
+                pic::UnstructuredSimulation2D reference(reference_config);
+                const auto reference_summary = reference.run();
+                require_near(continued_summary.final_sample.total_energy,
+                             reference_summary.final_sample.total_energy, 1e-13,
+                             "unstructured checkpoint restart changed total energy");
+                const auto& continued_particles =
+                    continued.species().front().particles();
+                const auto& reference_particles =
+                    reference.species().front().particles();
+                require(continued_particles.size() == reference_particles.size(),
+                        "unstructured checkpoint restart changed particle count");
+                for (std::size_t i = 0; i < continued_particles.size(); ++i) {
+                    require_near(continued_particles[i].position.x,
+                                 reference_particles[i].position.x, 1e-13,
+                                 "unstructured checkpoint restart changed particle x");
+                    require_near(continued_particles[i].position.y,
+                                 reference_particles[i].position.y, 1e-13,
+                                 "unstructured checkpoint restart changed particle y");
+                    require_near(continued_particles[i].velocity_half.x,
+                                 reference_particles[i].velocity_half.x, 1e-13,
+                                 "unstructured checkpoint restart changed half-step vx");
+                    require_near(continued_particles[i].velocity_half.y,
+                                 reference_particles[i].velocity_half.y, 1e-13,
+                                 "unstructured checkpoint restart changed half-step vy");
+                }
                 std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_config.output_dir);
+                std::filesystem::remove_all(reference_config.output_dir);
             }
 
             {

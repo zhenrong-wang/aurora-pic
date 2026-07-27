@@ -46,6 +46,8 @@ def rewrite_output_dir(config_path: Path, temp_root: Path, output_name: str) -> 
     if not replaced:
         rewritten.append(f"output_dir = {output_dir.as_posix()}")
     copied_config.write_text("\n".join(rewritten) + "\n", encoding="utf-8")
+    for mesh_path in EXAMPLES.glob("*.msh"):
+        shutil.copy2(mesh_path, temp_root / mesh_path.name)
     return copied_config, output_dir
 
 
@@ -131,6 +133,25 @@ def require_vts(path: Path, dimensions: tuple[int, int, int]) -> None:
     ]
     for fragment in required_fragments:
         require(fragment in text, f"missing VTK XML fragment {fragment!r} in {path}")
+
+
+def require_vtu(path: Path, points: int, cells: int) -> None:
+    require_file(path)
+    text = path.read_text(encoding="utf-8")
+    required_fragments = [
+        '<?xml version="1.0"?>',
+        '<VTKFile type="UnstructuredGrid"',
+        f'NumberOfPoints="{points}" NumberOfCells="{cells}"',
+        '<PointData Scalars="rho" Vectors="electric">',
+        'Name="rho" format="ascii"',
+        'Name="phi" format="ascii"',
+        'Name="electric" NumberOfComponents="3" format="ascii"',
+        'Name="connectivity" format="ascii"',
+        'Name="offsets" format="ascii"',
+        'Name="types" format="ascii"',
+    ]
+    for fragment in required_fragments:
+        require(fragment in text, f"missing VTK unstructured fragment {fragment!r} in {path}")
 
 
 def require_particle_csv(path: Path, expected_header: Sequence[str], min_rows: int = 1) -> None:
@@ -241,12 +262,35 @@ def check_plasma_3d(output_dir: Path) -> None:
     )
 
 
+def check_imported_plasma_2d(output_dir: Path) -> None:
+    header, rows = require_csv(
+        output_dir / "scalars.csv",
+        expected_header=[
+            "step", "time", "kinetic_energy", "field_energy", "total_energy",
+            "charge_l1", "live_particles", "poisson_iterations",
+            "poisson_initial_residual", "poisson_final_residual",
+            "absorbed_electrode", "absorbed_inlet", "absorbed_outlet", "absorbed_wall",
+        ],
+        min_rows=4,
+    )
+    require_step(rows, 3, output_dir / "scalars.csv")
+    require_vtu(output_dir / "fields_0.vtu", 6, 3)
+    require_vtu(output_dir / "fields_3.vtu", 6, 3)
+    require_particle_csv(
+        output_dir / "particles_3.csv",
+        expected_header=["species_id", "species", "x", "y", "vx", "vy", "alive"],
+        min_rows=1,
+    )
+    require_file(output_dir / "checkpoint_3.apc")
+
+
 def run_smokes(cli: Path, temp_root: Path) -> None:
     checks = [
         ("two_stream.cfg", "two_stream", check_two_stream),
         ("sheath_steady.cfg", "sheath_steady", check_sheath_steady),
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
+        ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),
         ("plasma_3d.cfg", "plasma_3d", check_plasma_3d),
     ]
     for config_name, output_name, check in checks:

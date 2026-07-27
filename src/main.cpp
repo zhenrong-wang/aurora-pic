@@ -2,6 +2,7 @@
 #include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
+#include "pic/UnstructuredSimulation2D.hpp"
 #include <exception>
 #include <iostream>
 #include <utility>
@@ -14,6 +15,29 @@ int main(int argc, char** argv) {
     try {
         const unsigned dimension = pic::detect_config_dimension(argv[1]);
         if (dimension == 2) {
+            if (pic::config_uses_unstructured_mesh_2d(argv[1])) {
+                auto cfg = pic::load_unstructured_config_2d(argv[1]);
+                std::cout << "AuroraPIC imported 2D: mesh=" << cfg.mesh_path.string()
+                          << " dt=" << cfg.dt
+                          << " mode=" << pic::to_string(cfg.mode)
+                          << " vtk_output=" << (cfg.vtk_output ? "yes" : "no")
+                          << "\n";
+                pic::UnstructuredSimulation2D sim(std::move(cfg));
+                const auto summary = sim.run();
+                std::cout << "completed steps=" << summary.steps_completed
+                          << " time=" << summary.final_time
+                          << " live_particles=" << summary.final_sample.live_particles
+                          << " steady="
+                          << (summary.steady_state_reached ? "yes" : "no")
+                          << " poisson_residual="
+                          << summary.final_sample.poisson.final_residual
+                          << " total_energy=" << summary.final_sample.total_energy
+                          << "\n";
+                return summary.steady_state_reached ||
+                               summary.steps_completed > 0
+                           ? 0
+                           : 1;
+            }
             auto cfg = pic::load_config_2d(argv[1]);
             std::cout << "AuroraPIC 2D: nx=" << cfg.nx << " ny=" << cfg.ny
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iosfwd>
 #include <array>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <random>
@@ -41,6 +42,14 @@ struct UnstructuredSimulation2DConfig {
     std::size_t output_interval{10};
     std::filesystem::path output_dir{"output_unstructured_2d"};
     bool vtk_output{false};
+    bool particle_output{false};
+    std::size_t particle_output_interval{0};
+    std::size_t particle_output_stride{1};
+    std::size_t particle_sample_count{0};
+    bool checkpoint_output{false};
+    std::size_t checkpoint_interval{0};
+    std::filesystem::path checkpoint_path;
+    std::filesystem::path restart_path;
     RuntimePolicy runtime{};
     UnstructuredPoissonOptions2D poisson{};
     std::map<std::string, double> dirichlet_potentials;
@@ -74,6 +83,8 @@ public:
     void initialize();
     void step();
     UnstructuredRunSummary2D run();
+    void save_checkpoint(const std::filesystem::path& path) const;
+    void load_checkpoint(const std::filesystem::path& path);
     UnstructuredDiagnosticSample2D sample() const;
 
     const UnstructuredMesh2D& mesh() const { return mesh_; }
@@ -102,6 +113,9 @@ private:
     void write_diagnostics_header(std::ofstream& output) const;
     void write_diagnostics_sample(std::ofstream& output,
                                   const UnstructuredDiagnosticSample2D& sample) const;
+    void write_particle_sample(std::size_t step) const;
+    std::filesystem::path checkpoint_path_for_step(std::size_t step) const;
+    std::uint64_t mesh_signature() const;
 
     UnstructuredSimulation2DConfig config_;
     UnstructuredMesh2D mesh_;
@@ -116,5 +130,9 @@ private:
     std::size_t step_{0};
     bool initialized_{false};
 };
+
+bool config_uses_unstructured_mesh_2d(const std::filesystem::path& path);
+UnstructuredSimulation2DConfig load_unstructured_config_2d(
+    const std::filesystem::path& path);
 
 } // namespace pic
