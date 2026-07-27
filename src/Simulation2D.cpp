@@ -120,6 +120,16 @@ void synchronize_particle(Particle2D& particle, Vec2 electric, double charge_to_
         synchronize_leapfrog(particle, electric, charge_to_mass, cfg.dt);
     }
 }
+
+void write_vtk_outputs(const Mesh2D& mesh, const std::filesystem::path& output_dir, std::size_t step, VTKOutputFormat format) {
+    const auto stem = output_dir / ("fields_" + std::to_string(step));
+    if (format == VTKOutputFormat::Legacy || format == VTKOutputFormat::Both) {
+        write_legacy_vtk(mesh, stem.string() + ".vtk");
+    }
+    if (format == VTKOutputFormat::Xml || format == VTKOutputFormat::Both) {
+        write_vtk_xml(mesh, stem.string() + ".vts");
+    }
+}
 } // namespace
 
 Simulation2D::Simulation2D(Simulation2DConfig cfg)
@@ -289,7 +299,7 @@ RunSummary2D Simulation2D::run() {
     diag.write_header();
     auto s0 = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
     diag.write_sample(s0);
-    if (cfg_.vtk_output) write_legacy_vtk(mesh_, cfg_.output_dir / ("fields_" + std::to_string(step_) + ".vtk"));
+    if (cfg_.vtk_output) write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
     if (cfg_.particle_output) {
         diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
     }
@@ -302,7 +312,7 @@ RunSummary2D Simulation2D::run() {
             auto s = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
             diag.write_sample(s);
             if (cfg_.vtk_output) {
-                write_legacy_vtk(mesh_, cfg_.output_dir / ("fields_" + std::to_string(step_) + ".vtk"));
+                write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
             }
         }
         if (cfg_.particle_output && (step_ % particle_interval == 0 || step_ == cfg_.steps)) {

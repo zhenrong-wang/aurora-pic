@@ -1022,6 +1022,17 @@ int main() {
             require(vtk2d.find("0 0 0\n0.5 0 0\n1 0 0") != std::string::npos, "2D VTK point ordering changed");
             require(vtk2d.find("0 0 0\n0.25 0 0\n0.5 0 0") != std::string::npos, "2D VTK electric vector values are missing");
 
+            pic::write_vtk_xml(mesh2d, output_dir / "manual_fields_2d.vts");
+            const auto vts2d = read_file_text(output_dir / "manual_fields_2d.vts");
+            require(vts2d.find("<VTKFile type=\"StructuredGrid\"") != std::string::npos, "2D VTK XML root is missing");
+            require(vts2d.find("WholeExtent=\"0 2 0 3 0 0\"") != std::string::npos, "2D VTK XML extent is wrong");
+            require(vts2d.find("<PointData Scalars=\"rho\" Vectors=\"electric\">") != std::string::npos, "2D VTK XML point data is missing");
+            require(vts2d.find("Name=\"rho\" format=\"ascii\"") != std::string::npos, "2D VTK XML rho array is missing");
+            require(vts2d.find("Name=\"phi\" format=\"ascii\"") != std::string::npos, "2D VTK XML phi array is missing");
+            require(vts2d.find("Name=\"electric\" NumberOfComponents=\"3\" format=\"ascii\"") != std::string::npos, "2D VTK XML electric array is missing");
+            require(vts2d.find("Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\"") != std::string::npos, "2D VTK XML points array is missing");
+            require(vts2d.find("0 0 0 0.5 0 0 1 0 0") != std::string::npos, "2D VTK XML point ordering changed");
+
             pic::Mesh3D mesh3d(3, 3, 4, 2.0, 2.0, 3.0, pic::Boundary::Dirichlet);
             for (std::size_t k = 0; k < mesh3d.nz(); ++k) {
                 for (std::size_t j = 0; j < mesh3d.ny(); ++j) {
@@ -1045,6 +1056,15 @@ int main() {
             require(vtk3d.find("VECTORS electric double") != std::string::npos, "3D VTK electric vector is missing");
             require(vtk3d.find("0 0 0\n1 0 0\n2 0 0\n0 1 0") != std::string::npos, "3D VTK point ordering changed");
             require(vtk3d.find("0 0 -0.125") != std::string::npos, "3D VTK electric z values are missing");
+
+            pic::write_vtk_xml(mesh3d, output_dir / "manual_fields_3d.vts");
+            const auto vts3d = read_file_text(output_dir / "manual_fields_3d.vts");
+            require(vts3d.find("WholeExtent=\"0 2 0 2 0 3\"") != std::string::npos, "3D VTK XML extent is wrong");
+            require(vts3d.find("Name=\"rho\" format=\"ascii\"") != std::string::npos, "3D VTK XML rho array is missing");
+            require(vts3d.find("Name=\"phi\" format=\"ascii\"") != std::string::npos, "3D VTK XML phi array is missing");
+            require(vts3d.find("Name=\"electric\" NumberOfComponents=\"3\" format=\"ascii\"") != std::string::npos, "3D VTK XML electric array is missing");
+            require(vts3d.find("0 0 0 1 0 0 2 0 0 0 1 0") != std::string::npos, "3D VTK XML point ordering changed");
+            require(vts3d.find("0 0 -0.125") != std::string::npos, "3D VTK XML electric z values are missing");
 
             pic::Species2DConfig cfg2d;
             cfg2d.name = "ions";
@@ -1165,6 +1185,7 @@ int main() {
                     << "output_interval = 1\n"
                     << "output_dir = test_output_config_2d\n"
                     << "vtk_output = true\n"
+                    << "vtk_format = both\n"
                     << "particle_output = true\n"
                     << "particle_output_interval = 3\n"
                     << "particle_output_stride = 2\n"
@@ -1199,6 +1220,7 @@ int main() {
             auto cfg2 = pic::load_config_2d(config_2d_path.string());
             require(cfg2.nx == 8 && cfg2.ny == 6, "2D config did not load mesh dimensions");
             require(cfg2.vtk_output, "2D config did not load vtk_output");
+            require(cfg2.vtk_format == pic::VTKOutputFormat::Both, "2D config did not load vtk_format");
             require(cfg2.particle_output, "2D config did not load particle_output");
             require(cfg2.particle_output_interval == 3, "2D config did not load particle_output_interval");
             require(cfg2.particle_output_stride == 2, "2D config did not load particle_output_stride");
@@ -1290,6 +1312,7 @@ int main() {
                     << "output_interval = 1\n"
                     << "output_dir = test_output_config_3d\n"
                     << "vtk_output = true\n"
+                    << "vtk_format = vts\n"
                     << "particle_output = true\n"
                     << "particle_output_interval = 3\n"
                     << "particle_output_stride = 2\n"
@@ -1322,6 +1345,7 @@ int main() {
             auto cfg3 = pic::load_config_3d(config_3d_path.string());
             require(cfg3.nx == 6 && cfg3.ny == 5 && cfg3.nz == 4, "3D config did not load mesh dimensions");
             require(cfg3.vtk_output, "3D config did not load vtk_output");
+            require(cfg3.vtk_format == pic::VTKOutputFormat::Xml, "3D config did not load vtk_format");
             require(cfg3.particle_output, "3D config did not load particle_output");
             require(cfg3.particle_output_interval == 3, "3D config did not load particle_output_interval");
             require(cfg3.particle_output_stride == 2, "3D config did not load particle_output_stride");
@@ -1389,6 +1413,7 @@ int main() {
             cfg.boundary = pic::Boundary::Periodic;
             cfg.seed = 7;
             cfg.vtk_output = true;
+            cfg.vtk_format = pic::VTKOutputFormat::Both;
             cfg.particle_output = true;
             cfg.output_interval = 2;
             cfg.particle_output_interval = 2;
@@ -1410,10 +1435,14 @@ int main() {
             double total_charge = 0.0;
             for (double rho : sim.mesh().rho()) total_charge += rho * sim.mesh().dx() * sim.mesh().dy();
             require(std::abs(total_charge) < 1e-12, "2D simulation did not conserve net neutral charge");
-            require(std::filesystem::exists(cfg.output_dir / "fields_0.vtk"), "2D simulation did not write initial VTK fields");
-            require(std::filesystem::exists(cfg.output_dir / "fields_2.vtk"), "2D simulation did not write interval VTK fields");
-            require(std::filesystem::exists(cfg.output_dir / "fields_3.vtk"), "2D simulation did not write final VTK fields");
-            require(!std::filesystem::exists(cfg.output_dir / "fields_1.vtk"), "2D simulation wrote an unexpected VTK interval");
+            require(std::filesystem::exists(cfg.output_dir / "fields_0.vtk"), "2D simulation did not write initial legacy VTK fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_2.vtk"), "2D simulation did not write interval legacy VTK fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_3.vtk"), "2D simulation did not write final legacy VTK fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_0.vts"), "2D simulation did not write initial VTK XML fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_2.vts"), "2D simulation did not write interval VTK XML fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_3.vts"), "2D simulation did not write final VTK XML fields");
+            require(!std::filesystem::exists(cfg.output_dir / "fields_1.vtk"), "2D simulation wrote an unexpected legacy VTK interval");
+            require(!std::filesystem::exists(cfg.output_dir / "fields_1.vts"), "2D simulation wrote an unexpected VTK XML interval");
             require(std::filesystem::exists(cfg.output_dir / "scalars.csv"), "2D simulation did not write scalar diagnostics");
             const auto scalars = read_file_text(cfg.output_dir / "scalars.csv");
             require(scalars.find("step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,absorbed_left,absorbed_right,absorbed_bottom,absorbed_top,live_particles_e2,live_particles_i2\n") == 0,
@@ -1428,6 +1457,8 @@ int main() {
             require(count_lines(particles) == 6, "2D particle diagnostics did not honor sample_count");
             const auto vtk = read_file_text(cfg.output_dir / "fields_3.vtk");
             require(vtk.find("DIMENSIONS 16 12 1") != std::string::npos, "2D simulation VTK dimensions are wrong");
+            const auto vts = read_file_text(cfg.output_dir / "fields_3.vts");
+            require(vts.find("WholeExtent=\"0 15 0 11 0 0\"") != std::string::npos, "2D simulation VTK XML dimensions are wrong");
         }
         {
             pic::Simulation3DConfig cfg;
@@ -1442,6 +1473,7 @@ int main() {
             cfg.boundary = pic::Boundary::Periodic;
             cfg.seed = 11;
             cfg.vtk_output = true;
+            cfg.vtk_format = pic::VTKOutputFormat::Xml;
             cfg.particle_output = true;
             cfg.output_interval = 2;
             cfg.particle_output_interval = 2;
@@ -1470,10 +1502,11 @@ int main() {
                 }
             }
             require(std::abs(total_charge) < 1e-12, "3D simulation did not conserve net neutral charge");
-            require(std::filesystem::exists(cfg.output_dir / "fields_0.vtk"), "3D simulation did not write initial VTK fields");
-            require(std::filesystem::exists(cfg.output_dir / "fields_2.vtk"), "3D simulation did not write interval VTK fields");
-            require(std::filesystem::exists(cfg.output_dir / "fields_3.vtk"), "3D simulation did not write final VTK fields");
-            require(!std::filesystem::exists(cfg.output_dir / "fields_1.vtk"), "3D simulation wrote an unexpected VTK interval");
+            require(std::filesystem::exists(cfg.output_dir / "fields_0.vts"), "3D simulation did not write initial VTK XML fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_2.vts"), "3D simulation did not write interval VTK XML fields");
+            require(std::filesystem::exists(cfg.output_dir / "fields_3.vts"), "3D simulation did not write final VTK XML fields");
+            require(!std::filesystem::exists(cfg.output_dir / "fields_0.vtk"), "3D XML-only simulation wrote legacy VTK fields");
+            require(!std::filesystem::exists(cfg.output_dir / "fields_1.vts"), "3D simulation wrote an unexpected VTK XML interval");
             require(std::filesystem::exists(cfg.output_dir / "scalars.csv"), "3D simulation did not write scalar diagnostics");
             const auto scalars3d = read_file_text(cfg.output_dir / "scalars.csv");
             require(scalars3d.find("step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,absorbed_left,absorbed_right,absorbed_bottom,absorbed_top,absorbed_back,absorbed_front,live_particles_e3,live_particles_i3\n") == 0,
@@ -1486,8 +1519,8 @@ int main() {
             const auto particles3d = read_file_text(cfg.output_dir / "particles_0.csv");
             require(particles3d.find("species_id,species,x,y,z,vx,vy,vz,alive\n") == 0, "3D particle diagnostics header is wrong");
             require(count_lines(particles3d) == 6, "3D particle diagnostics did not honor sample_count");
-            const auto vtk3d = read_file_text(cfg.output_dir / "fields_3.vtk");
-            require(vtk3d.find("DIMENSIONS 8 6 5") != std::string::npos, "3D simulation VTK dimensions are wrong");
+            const auto vts3d = read_file_text(cfg.output_dir / "fields_3.vts");
+            require(vts3d.find("WholeExtent=\"0 7 0 5 0 4\"") != std::string::npos, "3D simulation VTK XML dimensions are wrong");
         }
         {
             pic::Simulation2DConfig cfg;

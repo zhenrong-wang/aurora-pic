@@ -37,6 +37,7 @@ struct Simulation3DConfig {
     Vec3 magnetic_field{}; // uniform B used by the Boris pusher; zero keeps electrostatic leapfrog
     unsigned seed{12345};
     bool vtk_output{false};
+    VTKOutputFormat vtk_format{VTKOutputFormat::Legacy};
     std::size_t output_interval{10};
     std::filesystem::path output_dir{"output3d"};
     bool particle_output{false};

@@ -10,7 +10,7 @@ For the recommended multidimensional expansion strategy, geometry/mesh format ch
 
 ## Production milestone baseline
 
-Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift. The current baseline includes the M2 tagged 2D Gmsh v2 ASCII importer (`ImportedMesh2D`) for preserving internal boundary labels from externally meshed planar domains.
+Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift. The current baseline includes M3 VTK XML structured-grid output compatibility for 2D/3D runs while preserving legacy VTK defaults and the M2 tagged 2D Gmsh v2 ASCII importer (`ImportedMesh2D`) for externally meshed planar domains.
 
 ## Build
 
@@ -42,9 +42,9 @@ python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 - `Species2D`: explicit `Particle2D` storage with 2D position/velocity initialization, CIC deposition, kinetic-energy accounting, and live-particle accounting.
 - `Simulation2D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; nonzero `magnetic_field_z` switches particles to the Boris rotation/kick.
 - `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
-- `write_legacy_vtk`: structured-grid VTK writer for `rho`, `phi`, and electric-field vectors on `Mesh2D`.
+- `write_legacy_vtk` / `write_vtk_xml`: structured-grid VTK writers for `rho`, `phi`, and electric-field vectors on `Mesh2D`.
 
-When `vtk_output = true`, 2D runs write legacy VTK structured-grid snapshots (`fields_0.vtk`, interval snapshots, and the final `fields_<step>.vtk`) under `output_dir` for ParaView or VisIt.
+When `vtk_output = true`, 2D runs write field snapshots under `output_dir` for ParaView or VisIt. `vtk_format` selects `legacy` (`fields_<step>.vtk`, the default), `xml`/`vts` (`fields_<step>.vts`), or `both`.
 
 All 2D runs write `scalars.csv` with:
 ```text
@@ -74,9 +74,9 @@ Particle-output controls:
 - `Species3D`: explicit `Particle3D` storage with 3D position/velocity initialization, trilinear CIC deposition, kinetic-energy accounting, and live-particle accounting.
 - `Simulation3D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the 3D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; nonzero `magnetic_field_x/y/z` switches particles to the Boris rotation/kick.
 - `Diagnostics3D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
-- `write_legacy_vtk`: structured-grid VTK writer for `rho`, `phi`, and electric-field vectors on `Mesh3D`.
+- `write_legacy_vtk` / `write_vtk_xml`: structured-grid VTK writers for `rho`, `phi`, and electric-field vectors on `Mesh3D`.
 
-When `vtk_output = true`, 3D runs write legacy VTK structured-grid snapshots (`fields_0.vtk`, interval snapshots, and the final `fields_<step>.vtk`) under `output_dir` for ParaView or VisIt.
+When `vtk_output = true`, 3D runs write field snapshots under `output_dir` for ParaView or VisIt. `vtk_format` selects `legacy` (`fields_<step>.vtk`, the default), `xml`/`vts` (`fields_<step>.vts`), or `both`.
 
 All 3D runs write `scalars.csv` with:
 
@@ -155,6 +155,8 @@ checkpoint_output = true
 checkpoint_interval = 25
 # restart_path = output/electrode_2d/checkpoint_50.apc
 vtk_output = true
+# Optional field snapshot format: legacy (default), xml/vts, or both.
+vtk_format = both
 particle_output = true
 particle_output_interval = 10
 particle_output_stride = 5
@@ -198,6 +200,8 @@ checkpoint_output = true
 checkpoint_interval = 25
 # restart_path = output/plasma_3d/checkpoint_50.apc
 vtk_output = true
+# Optional field snapshot format: legacy (default), xml/vts, or both.
+vtk_format = both
 particle_output = true
 particle_output_interval = 10
 particle_output_stride = 10

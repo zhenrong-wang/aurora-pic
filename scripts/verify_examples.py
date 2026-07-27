@@ -114,6 +114,25 @@ def require_vtk(path: Path, dimensions: tuple[int, int, int]) -> None:
         require(fragment in text, f"missing VTK fragment {fragment!r} in {path}")
 
 
+def require_vts(path: Path, dimensions: tuple[int, int, int]) -> None:
+    require_file(path)
+    text = path.read_text(encoding="utf-8")
+    nx, ny, nz = dimensions
+    required_fragments = [
+        '<?xml version="1.0"?>',
+        '<VTKFile type="StructuredGrid"',
+        f'WholeExtent="0 {nx - 1} 0 {ny - 1} 0 {nz - 1}"',
+        f'Extent="0 {nx - 1} 0 {ny - 1} 0 {nz - 1}"',
+        '<PointData Scalars="rho" Vectors="electric">',
+        'Name="rho" format="ascii"',
+        'Name="phi" format="ascii"',
+        'Name="electric" NumberOfComponents="3" format="ascii"',
+        'Name="Points" NumberOfComponents="3" format="ascii"',
+    ]
+    for fragment in required_fragments:
+        require(fragment in text, f"missing VTK XML fragment {fragment!r} in {path}")
+
+
 def require_particle_csv(path: Path, expected_header: Sequence[str], min_rows: int = 1) -> None:
     header, rows = read_csv(path)
     require(header == list(expected_header), f"unexpected header in {path}: {header!r}")
@@ -213,6 +232,8 @@ def check_plasma_3d(output_dir: Path) -> None:
     require_step(rows, 3, output_dir / "scalars.csv")
     require_vtk(output_dir / "fields_0.vtk", (8, 8, 8))
     require_vtk(output_dir / "fields_3.vtk", (8, 8, 8))
+    require_vts(output_dir / "fields_0.vts", (8, 8, 8))
+    require_vts(output_dir / "fields_3.vts", (8, 8, 8))
     require_particle_csv(
         output_dir / "particles_3.csv",
         expected_header=["species_id", "species", "x", "y", "z", "vx", "vy", "vz", "alive"],

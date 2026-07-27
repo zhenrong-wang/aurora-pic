@@ -7,6 +7,7 @@ constexpr double EPS0 = 1.0; // normalized permittivity; SI scaling can be layer
 enum class Boundary { Periodic, Dirichlet };
 enum class RunMode { Transient, SteadyState };
 enum class ParticleBoundary { Auto, Absorbing, Reflecting, Periodic };
+enum class VTKOutputFormat { Legacy, Xml, Both };
 
 inline std::string to_string(Boundary boundary) {
     switch (boundary) {
@@ -30,6 +31,15 @@ inline std::string to_string(ParticleBoundary boundary) {
         case ParticleBoundary::Absorbing: return "absorbing";
         case ParticleBoundary::Reflecting: return "reflecting";
         case ParticleBoundary::Periodic: return "periodic";
+    }
+    return "unknown";
+}
+
+inline std::string to_string(VTKOutputFormat format) {
+    switch (format) {
+        case VTKOutputFormat::Legacy: return "legacy";
+        case VTKOutputFormat::Xml: return "xml";
+        case VTKOutputFormat::Both: return "both";
     }
     return "unknown";
 }

@@ -114,6 +114,14 @@ Boundary parse_boundary(const KeyValue& kv, Boundary def) {
     throw std::runtime_error("invalid boundary value: '" + value + "'");
 }
 
+VTKOutputFormat parse_vtk_output_format(const KeyValue& kv, VTKOutputFormat def) {
+    const auto value = lower(trim(as<std::string>(kv, "vtk_format", to_string(def))));
+    if (value == "legacy" || value == "vtk") return VTKOutputFormat::Legacy;
+    if (value == "xml" || value == "vts") return VTKOutputFormat::Xml;
+    if (value == "both" || value == "all") return VTKOutputFormat::Both;
+    throw std::runtime_error("invalid vtk_format value: '" + value + "'");
+}
+
 RunMode parse_mode(const KeyValue& kv, RunMode def) {
     const auto value = lower(as<std::string>(kv, "mode", to_string(def)));
     if (value == "transient") return RunMode::Transient;
@@ -397,7 +405,7 @@ unsigned detect_config_dimension(const std::string& path) {
 Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "dimension", "nx", "ny", "length_x", "length_y", "dt", "steps",
-        "output_interval", "output_dir", "seed", "boundary", "vtk_output",
+        "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
         "magnetic_field_z",
@@ -431,6 +439,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.boundary = parse_boundary(global, cfg.boundary);
     cfg.vtk_output = parse_bool(global, "vtk_output", cfg.vtk_output);
+    cfg.vtk_format = parse_vtk_output_format(global, cfg.vtk_format);
     cfg.particle_output = parse_bool(global, "particle_output", cfg.particle_output);
     cfg.particle_output_interval = as<std::size_t>(global, "particle_output_interval", cfg.particle_output_interval);
     cfg.particle_output_stride = as<std::size_t>(global, "particle_output_stride", cfg.particle_output_stride);
@@ -490,7 +499,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
 Simulation3DConfig load_config_3d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "dimension", "nx", "ny", "nz", "length_x", "length_y", "length_z", "dt", "steps",
-        "output_interval", "output_dir", "seed", "boundary", "vtk_output",
+        "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
         "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
@@ -524,6 +533,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.boundary = parse_boundary(global, cfg.boundary);
     cfg.vtk_output = parse_bool(global, "vtk_output", cfg.vtk_output);
+    cfg.vtk_format = parse_vtk_output_format(global, cfg.vtk_format);
     cfg.particle_output = parse_bool(global, "particle_output", cfg.particle_output);
     cfg.particle_output_interval = as<std::size_t>(global, "particle_output_interval", cfg.particle_output_interval);
     cfg.particle_output_stride = as<std::size_t>(global, "particle_output_stride", cfg.particle_output_stride);

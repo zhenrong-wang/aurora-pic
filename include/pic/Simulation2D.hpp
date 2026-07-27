@@ -34,6 +34,7 @@ struct Simulation2DConfig {
     double magnetic_field_z{0.0}; // uniform out-of-plane B used by the Boris pusher; zero keeps electrostatic leapfrog
     unsigned seed{12345};
     bool vtk_output{false};
+    VTKOutputFormat vtk_format{VTKOutputFormat::Legacy};
     std::size_t output_interval{10};
     std::filesystem::path output_dir{"output2d"};
     bool particle_output{false};

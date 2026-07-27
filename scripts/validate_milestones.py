@@ -30,9 +30,9 @@ EXPECTED_MILESTONES = {
 EXPECTED_STATUSES = {
     "M0": "Complete",
     "M1": "Complete",
-    "M2": "Current baseline",
-    "M3": "Next",
-    "M4": "Planned",
+    "M2": "Complete",
+    "M3": "Current baseline",
+    "M4": "Next",
     "M5": "Planned",
     "M6": "Planned",
 }
@@ -40,7 +40,7 @@ REQUIRED_EVIDENCE_TERMS = {
     "M0": ("CTest", "CLI examples", "pusher validation"),
     "M1": ("benchmarks", "documented tolerances"),
     "M2": ("Gmsh", "boundary labels"),
-    "M3": ("VTK XML", "openPMD/HDF5"),
+    "M3": ("VTK XML", "openPMD/HDF5", "compatibility tests"),
     "M4": ("OpenMP/MPI/GPU", "scaling smoke tests"),
     "M5": ("electromagnetic", "collision models"),
     "M6": ("CI matrix", "configuration compatibility"),
