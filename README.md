@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements an electrostatic `1D1V` Particle-in-Cell (PIC) baseline with configurable species, periodic or Dirichlet boundaries, optional Monte-Carlo collisions, transient fixed-step simulation, steady-state convergence mode, and text checkpoint/restart files. It also includes a structured `2D2V` electrostatic path (`Mesh2D`, `Species2D`, and `Simulation2D`) for periodic/Dirichlet rectangular domains, prescribed uniform out-of-plane magnetic-field Boris pushes, VTK field output, scalar histories, checkpoint/restart, and optional particle inspection CSVs. A structured `3D3V` electrostatic path (`Mesh3D`, `Species3D`, and `Simulation3D`) is now available for periodic/grounded-Dirichlet Cartesian domains, prescribed uniform magnetic-field Boris pushes, strict config loading, CLI execution, VTK field output, scalar histories, checkpoint/restart, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, structured `2D2V`, and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline also provides optional Monte-Carlo collisions. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
 
 ## Why this methodology
 
@@ -150,6 +150,7 @@ length_x = 1.0
 length_y = 1.0
 dt = 0.002
 steps = 100
+mode = transient
 boundary = dirichlet
 phi_left = -5.0
 phi_right = 5.0
@@ -206,6 +207,7 @@ length_y = 1.0
 length_z = 1.0
 dt = 0.001
 steps = 100
+mode = transient
 boundary = periodic
 particle_boundary = auto
 # Optional uniform B field. Any nonzero component uses the Boris pusher.
@@ -250,6 +252,18 @@ All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for det
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.
 - `checkpoint_path`: optional fixed checkpoint file path. If omitted, checkpoints are written as `output_dir/checkpoint_<step>.apc`. If provided, each checkpoint write updates that same path.
 - `restart_path`: optional checkpoint file to load before the run loop starts. The run resumes from the checkpoint step/time and continues until the configured `steps`/`max_steps` limit.
+
+## Run modes and termination
+
+All 1D, 2D, and 3D simulations support the same run controls:
+
+- `mode = transient`: run until `steps` is reached.
+- `mode = steady_state`: run until convergence is detected or `max_steps` is reached.
+- `steady_window`: number of emitted diagnostic samples in each adjacent comparison window.
+- `steady_tolerance`: maximum relative change between the mean total energies of those windows.
+- `max_steps`: hard safety cap for a steady-state run.
+
+Steady-state convergence is an engineering termination criterion, not by itself proof of physical equilibrium. It is evaluated only when scalar diagnostics are sampled, so `output_interval`, `steady_window`, and `dt` jointly determine the physical duration represented by a convergence window. Run summaries and CLI output distinguish a converged steady run from one that exhausted `max_steps`. When checkpoint output is enabled, convergence forces a final checkpoint even when the regular checkpoint interval has not been reached.
 
 ## Runtime controls
 

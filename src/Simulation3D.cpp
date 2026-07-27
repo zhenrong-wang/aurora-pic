@@ -1,4 +1,5 @@
 #include "pic/Simulation3D.hpp"
+#include "pic/Convergence.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/VTKWriter.hpp"
@@ -141,6 +142,13 @@ Simulation3D::Simulation3D(Simulation3DConfig cfg)
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("3D particle_output_stride must be positive");
     if (!std::isfinite(cfg_.magnetic_field.x) || !std::isfinite(cfg_.magnetic_field.y) || !std::isfinite(cfg_.magnetic_field.z)) {
         throw std::invalid_argument("3D magnetic_field components must be finite");
+    }
+    if (cfg_.mode == RunMode::SteadyState) {
+        if (cfg_.max_steps == 0) throw std::invalid_argument("3D max_steps must be positive for steady-state mode");
+        if (cfg_.steady_window == 0) throw std::invalid_argument("3D steady_window must be positive");
+        if (!std::isfinite(cfg_.steady_tolerance) || cfg_.steady_tolerance <= 0.0) {
+            throw std::invalid_argument("3D steady_tolerance must be positive and finite");
+        }
     }
     validate_runtime_policy(cfg_.runtime);
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
@@ -329,26 +337,34 @@ RunSummary3D Simulation3D::run() {
     if (cfg_.checkpoint_output) save_checkpoint(checkpoint_path_for_step(cfg_, step_));
 
     const std::size_t particle_interval = cfg_.particle_output_interval == 0 ? cfg_.output_interval : cfg_.particle_output_interval;
-    while (step_ < cfg_.steps) {
+    const std::size_t limit = cfg_.mode == RunMode::SteadyState ? cfg_.max_steps : cfg_.steps;
+    RunSummary3D summary;
+    summary.final_sample = s0;
+    while (step_ < limit) {
         step();
-        if (step_ % cfg_.output_interval == 0 || step_ == cfg_.steps) {
+        bool reached_steady = false;
+        if (step_ % cfg_.output_interval == 0 || step_ == limit) {
             auto s = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
             diag.write_sample(s);
+            summary.final_sample = s;
             if (cfg_.vtk_output) {
                 write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
             }
+            reached_steady = cfg_.mode == RunMode::SteadyState &&
+                             adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);
+            if (reached_steady) summary.steady_state_reached = true;
         }
-        if (cfg_.particle_output && (step_ % particle_interval == 0 || step_ == cfg_.steps)) {
+        if (cfg_.particle_output && (step_ % particle_interval == 0 || step_ == limit || reached_steady)) {
             diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
         }
-        if (cfg_.checkpoint_output && (step_ % cfg_.checkpoint_interval == 0 || step_ == cfg_.steps)) {
+        if (cfg_.checkpoint_output &&
+            (step_ % cfg_.checkpoint_interval == 0 || step_ == limit || reached_steady)) {
             save_checkpoint(checkpoint_path_for_step(cfg_, step_));
         }
+        if (reached_steady) break;
     }
-    RunSummary3D summary;
     summary.steps_completed = step_;
     summary.final_time = time_;
-    summary.final_sample = diag.history().empty() ? sample() : diag.history().back();
     if (summary.final_sample.step != step_) summary.final_sample = sample();
     return summary;
 }

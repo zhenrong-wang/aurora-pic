@@ -12,6 +12,7 @@ namespace pic {
 struct RunSummary2D {
     std::size_t steps_completed{0};
     double final_time{0.0};
+    bool steady_state_reached{false};
     DiagnosticSample2D final_sample{};
 };
 
@@ -29,6 +30,10 @@ struct Simulation2DConfig {
     double length_y{1.0};
     double dt{0.02};
     std::size_t steps{100};
+    RunMode mode{RunMode::Transient};
+    double steady_tolerance{1e-6};
+    std::size_t steady_window{25};
+    std::size_t max_steps{10000};
     Boundary boundary{Boundary::Periodic};
     BoundaryConfig2D boundary_config{};
     ParticleBoundaryConfig2D particle_boundary_config{};

@@ -1187,8 +1187,20 @@ int main() {
             require_throws([] { pic::Simulation2DConfig cfg; cfg.dt = std::numeric_limits<double>::quiet_NaN(); pic::Simulation2D sim(cfg); }, "2D simulation accepted non-finite dt");
             require_throws([] { pic::Simulation2DConfig cfg; cfg.magnetic_field_z = std::numeric_limits<double>::infinity(); pic::Simulation2D sim(cfg); }, "2D simulation accepted non-finite magnetic field");
             require_throws([] { pic::Simulation2DConfig cfg; cfg.boundary_config.left.potential = std::numeric_limits<double>::quiet_NaN(); pic::Simulation2D sim(cfg); }, "2D simulation accepted non-finite boundary potential");
+            require_throws([] {
+                pic::Simulation2DConfig cfg;
+                cfg.mode = pic::RunMode::SteadyState;
+                cfg.max_steps = 0;
+                pic::Simulation2D sim(cfg);
+            }, "2D steady-state simulation accepted zero max_steps");
             require_throws([] { pic::Simulation3DConfig cfg; cfg.dt = std::numeric_limits<double>::quiet_NaN(); pic::Simulation3D sim(cfg); }, "3D simulation accepted non-finite dt");
             require_throws([] { pic::Simulation3DConfig cfg; cfg.magnetic_field.y = std::numeric_limits<double>::infinity(); pic::Simulation3D sim(cfg); }, "3D simulation accepted non-finite magnetic field");
+            require_throws([] {
+                pic::Simulation3DConfig cfg;
+                cfg.mode = pic::RunMode::SteadyState;
+                cfg.steady_tolerance = std::numeric_limits<double>::quiet_NaN();
+                pic::Simulation3D sim(cfg);
+            }, "3D steady-state simulation accepted non-finite tolerance");
             require_throws([] {
                 pic::SpeciesConfig cfg;
                 cfg.charge = std::numeric_limits<double>::quiet_NaN();
@@ -1386,6 +1398,10 @@ int main() {
                     << "length_y = 1.5\n"
                     << "dt = 0.01\n"
                     << "steps = 2\n"
+                    << "mode = steady_state\n"
+                    << "steady_tolerance = 0.001\n"
+                    << "steady_window = 3\n"
+                    << "max_steps = 7\n"
                     << "output_interval = 1\n"
                     << "output_dir = test_output_config_2d\n"
                     << "runtime_backend = serial\n"
@@ -1425,6 +1441,10 @@ int main() {
             require(pic::detect_config_dimension(config_2d_path.string()) == 2, "2D config dimension was not detected");
             auto cfg2 = pic::load_config_2d(config_2d_path.string());
             require(cfg2.nx == 8 && cfg2.ny == 6, "2D config did not load mesh dimensions");
+            require(cfg2.mode == pic::RunMode::SteadyState && cfg2.max_steps == 7,
+                    "2D config did not load steady-state mode and step cap");
+            require_near(cfg2.steady_tolerance, 0.001, 1e-15, "2D config did not load steady_tolerance");
+            require(cfg2.steady_window == 3, "2D config did not load steady_window");
             require(cfg2.vtk_output, "2D config did not load vtk_output");
             require(cfg2.vtk_format == pic::VTKOutputFormat::Both, "2D config did not load vtk_format");
             require(cfg2.runtime.backend == pic::RuntimeBackend::Serial && cfg2.runtime.threads == 1,
@@ -1554,6 +1574,10 @@ int main() {
                     << "length_z = 1.25\n"
                     << "dt = 0.01\n"
                     << "steps = 2\n"
+                    << "mode = steady_state\n"
+                    << "steady_tolerance = 0.002\n"
+                    << "steady_window = 4\n"
+                    << "max_steps = 9\n"
                     << "output_interval = 1\n"
                     << "output_dir = test_output_config_3d\n"
                     << "runtime_backend = serial\n"
@@ -1591,6 +1615,10 @@ int main() {
             require(pic::detect_config_dimension(config_3d_path.string()) == 3, "3D config dimension was not detected");
             auto cfg3 = pic::load_config_3d(config_3d_path.string());
             require(cfg3.nx == 6 && cfg3.ny == 5 && cfg3.nz == 4, "3D config did not load mesh dimensions");
+            require(cfg3.mode == pic::RunMode::SteadyState && cfg3.max_steps == 9,
+                    "3D config did not load steady-state mode and step cap");
+            require_near(cfg3.steady_tolerance, 0.002, 1e-15, "3D config did not load steady_tolerance");
+            require(cfg3.steady_window == 4, "3D config did not load steady_window");
             require(cfg3.vtk_output, "3D config did not load vtk_output");
             require(cfg3.vtk_format == pic::VTKOutputFormat::Xml, "3D config did not load vtk_format");
             require(cfg3.runtime.backend == pic::RuntimeBackend::Serial && cfg3.runtime.threads == 1,
@@ -2208,6 +2236,104 @@ int main() {
             require_near(particle.velocity.z, 0.30, 1e-12,
                          "M1 representative 3D drift example vz invariant mismatch");
             std::filesystem::remove_all(cfg.output_dir);
+        }
+        {
+            const auto output_dir = std::filesystem::path("test_output_steady_1d");
+            std::filesystem::remove_all(output_dir);
+
+            pic::Config cfg;
+            cfg.nx = 12;
+            cfg.dt = 0.01;
+            cfg.mode = pic::RunMode::SteadyState;
+            cfg.steady_window = 2;
+            cfg.steady_tolerance = 1e-12;
+            cfg.max_steps = 10;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir.string();
+            cfg.checkpoint_output = true;
+            cfg.checkpoint_interval = 10;
+            cfg.species = {pic::SpeciesConfig{"steady_neutral_1d", 0.0, 1.0, 1.0, 4,
+                                               1.0, 0.0, 0.0, 0.0, -1.0}};
+
+            pic::Simulation simulation(cfg);
+            const auto summary = simulation.run();
+            require(summary.steady_state_reached, "1D steady-state run did not report convergence");
+            require(summary.steps_completed == 3, "1D steady-state run did not stop at the first complete energy windows");
+            require(std::filesystem::exists(output_dir / "checkpoint_3.apc"),
+                    "1D steady-state convergence did not force a final checkpoint");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
+            const auto output_dir = std::filesystem::path("test_output_steady_2d");
+            std::filesystem::remove_all(output_dir);
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 6;
+            cfg.ny = 5;
+            cfg.dt = 0.01;
+            cfg.mode = pic::RunMode::SteadyState;
+            cfg.steady_window = 2;
+            cfg.steady_tolerance = 1e-12;
+            cfg.max_steps = 10;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir;
+            cfg.checkpoint_output = true;
+            cfg.checkpoint_interval = 10;
+            cfg.species = {pic::Species2DConfig{"steady_neutral_2d", 0.0, 1.0, 1.0, 4,
+                                                 0.0, 0.0, 0.0,
+                                                 0.0, -1.0, 0.0, -1.0}};
+
+            pic::Simulation2D simulation(cfg);
+            const auto summary = simulation.run();
+            require(summary.steady_state_reached, "2D steady-state run did not report convergence");
+            require(summary.steps_completed == 3, "2D steady-state run did not stop at the first complete energy windows");
+            require_near(summary.final_time, 3.0 * cfg.dt, 1e-15, "2D steady-state final time mismatch");
+            require(std::filesystem::exists(output_dir / "checkpoint_3.apc"),
+                    "2D steady-state convergence did not force a final checkpoint");
+            std::filesystem::remove_all(output_dir);
+
+            auto capped_cfg = cfg;
+            capped_cfg.output_dir = "test_output_steady_2d_capped";
+            capped_cfg.max_steps = 2;
+            capped_cfg.checkpoint_output = false;
+            std::filesystem::remove_all(capped_cfg.output_dir);
+            pic::Simulation2D capped_simulation(capped_cfg);
+            const auto capped_summary = capped_simulation.run();
+            require(!capped_summary.steady_state_reached,
+                    "2D capped steady-state run incorrectly reported convergence");
+            require(capped_summary.steps_completed == capped_cfg.max_steps,
+                    "2D capped steady-state run did not stop at max_steps");
+            std::filesystem::remove_all(capped_cfg.output_dir);
+        }
+        {
+            const auto output_dir = std::filesystem::path("test_output_steady_3d");
+            std::filesystem::remove_all(output_dir);
+
+            pic::Simulation3DConfig cfg;
+            cfg.nx = 5;
+            cfg.ny = 4;
+            cfg.nz = 3;
+            cfg.dt = 0.01;
+            cfg.mode = pic::RunMode::SteadyState;
+            cfg.steady_window = 2;
+            cfg.steady_tolerance = 1e-12;
+            cfg.max_steps = 10;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir;
+            cfg.checkpoint_output = true;
+            cfg.checkpoint_interval = 10;
+            cfg.species = {pic::Species3DConfig{"steady_neutral_3d", 0.0, 1.0, 1.0, 4,
+                                                 0.0, 0.0, 0.0, 0.0,
+                                                 0.0, -1.0, 0.0, -1.0, 0.0, -1.0}};
+
+            pic::Simulation3D simulation(cfg);
+            const auto summary = simulation.run();
+            require(summary.steady_state_reached, "3D steady-state run did not report convergence");
+            require(summary.steps_completed == 3, "3D steady-state run did not stop at the first complete energy windows");
+            require_near(summary.final_time, 3.0 * cfg.dt, 1e-15, "3D steady-state final time mismatch");
+            require(std::filesystem::exists(output_dir / "checkpoint_3.apc"),
+                    "3D steady-state convergence did not force a final checkpoint");
+            std::filesystem::remove_all(output_dir);
         }
         {
             // M2 benchmark: tagged 2D Gmsh v2 ASCII meshes import into AuroraPIC-owned labels.

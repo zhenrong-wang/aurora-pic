@@ -12,6 +12,7 @@ namespace pic {
 struct RunSummary3D {
     std::size_t steps_completed{0};
     double final_time{0.0};
+    bool steady_state_reached{false};
     DiagnosticSample3D final_sample{};
 };
 
@@ -33,6 +34,10 @@ struct Simulation3DConfig {
     double length_z{1.0};
     double dt{0.02};
     std::size_t steps{100};
+    RunMode mode{RunMode::Transient};
+    double steady_tolerance{1e-6};
+    std::size_t steady_window{25};
+    std::size_t max_steps{10000};
     Boundary boundary{Boundary::Periodic};
     ParticleBoundaryConfig3D particle_boundary_config{};
     Vec3 magnetic_field{}; // uniform B used by the Boris pusher; zero keeps electrostatic leapfrog

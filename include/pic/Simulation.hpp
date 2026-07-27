@@ -28,7 +28,6 @@ public:
     double time() const { return time_; }
     std::size_t step_count() const { return step_; }
 private:
-    bool steady_converged(const std::vector<DiagnosticSample>& history) const;
     void apply_collisions(Species& sp);
     void deposit_and_solve();
     Config cfg_;

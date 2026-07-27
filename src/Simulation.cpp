@@ -1,4 +1,5 @@
 #include "pic/Simulation.hpp"
+#include "pic/Convergence.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
 #include <algorithm>
@@ -209,25 +210,6 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     initialized_ = true;
 }
 
-bool Simulation::steady_converged(const std::vector<DiagnosticSample>& history) const {
-    if (cfg_.mode != RunMode::SteadyState || history.size() < 2 * cfg_.steady_window) return false;
-
-    double current_window_mean = 0.0;
-    double previous_window_mean = 0.0;
-    for (std::size_t i = history.size() - cfg_.steady_window; i < history.size(); ++i) {
-        current_window_mean += history[i].total_energy;
-    }
-    for (std::size_t i = history.size() - 2 * cfg_.steady_window; i < history.size() - cfg_.steady_window; ++i) {
-        previous_window_mean += history[i].total_energy;
-    }
-    current_window_mean /= static_cast<double>(cfg_.steady_window);
-    previous_window_mean /= static_cast<double>(cfg_.steady_window);
-
-    const double rel = std::abs(current_window_mean - previous_window_mean) /
-                       std::max(1e-30, std::abs(previous_window_mean));
-    return rel < cfg_.steady_tolerance;
-}
-
 RunSummary Simulation::run() {
     if (!cfg_.restart_path.empty()) load_checkpoint(cfg_.restart_path);
     else initialize();
@@ -245,19 +227,23 @@ RunSummary Simulation::run() {
     while (step_ < limit) {
         step();
         const bool at_output = step_ % cfg_.output_interval == 0 || step_ == limit;
+        bool reached_steady = false;
         if (at_output) {
             auto s = diag.sample(step_, time_, grid_, species_);
             diag.write_sample(s);
             diag.write_fields(step_, grid_);
             summary.final_sample = s;
-            if (steady_converged(diag.history())) {
+            reached_steady = cfg_.mode == RunMode::SteadyState &&
+                             adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);
+            if (reached_steady) {
                 summary.steady_state_reached = true;
-                break;
             }
         }
-        if (cfg_.checkpoint_output && (step_ % cfg_.checkpoint_interval == 0 || step_ == limit)) {
+        if (cfg_.checkpoint_output &&
+            (step_ % cfg_.checkpoint_interval == 0 || step_ == limit || reached_steady)) {
             save_checkpoint(checkpoint_path_for_step(cfg_, step_));
         }
+        if (reached_steady) break;
     }
     summary.steps_completed = step_;
     summary.final_time = time_;

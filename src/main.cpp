@@ -17,12 +17,14 @@ int main(int argc, char** argv) {
             auto cfg = pic::load_config_2d(argv[1]);
             std::cout << "AuroraPIC 2D: nx=" << cfg.nx << " ny=" << cfg.ny
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
-                      << " dt=" << cfg.dt << " boundary=" << pic::to_string(cfg.boundary)
+                      << " dt=" << cfg.dt << " mode=" << pic::to_string(cfg.mode)
+                      << " boundary=" << pic::to_string(cfg.boundary)
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
             pic::Simulation2D sim(std::move(cfg));
             auto summary = sim.run();
             std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
                       << " live_particles=" << summary.final_sample.live_particles
+                      << " steady=" << (summary.steady_state_reached ? "yes" : "no")
                       << " total_energy=" << summary.final_sample.total_energy << "\n";
             return summary.steps_completed > 0 ? 0 : 1;
         }
@@ -31,12 +33,14 @@ int main(int argc, char** argv) {
             std::cout << "AuroraPIC 3D: nx=" << cfg.nx << " ny=" << cfg.ny << " nz=" << cfg.nz
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
                       << " length_z=" << cfg.length_z << " dt=" << cfg.dt
+                      << " mode=" << pic::to_string(cfg.mode)
                       << " boundary=" << pic::to_string(cfg.boundary)
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
             pic::Simulation3D sim(std::move(cfg));
             auto summary = sim.run();
             std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
                       << " live_particles=" << summary.final_sample.live_particles
+                      << " steady=" << (summary.steady_state_reached ? "yes" : "no")
                       << " total_energy=" << summary.final_sample.total_energy << "\n";
             return summary.steps_completed > 0 ? 0 : 1;
         }

@@ -219,6 +219,11 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
     validate_positive(cfg.length_y, "length_y");
     validate_positive(cfg.dt, "dt");
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
+    validate_positive(cfg.steady_tolerance, "steady_tolerance");
+    if (cfg.steady_window == 0) throw std::runtime_error("steady_window must be positive");
+    if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) {
+        throw std::runtime_error("max_steps must be positive for steady-state mode");
+    }
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
     if (!std::isfinite(cfg.magnetic_field_z)) throw std::runtime_error("magnetic_field_z must be finite");
     validate_runtime_policy(cfg.runtime);
@@ -256,6 +261,11 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
     validate_positive(cfg.length_z, "length_z");
     validate_positive(cfg.dt, "dt");
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
+    validate_positive(cfg.steady_tolerance, "steady_tolerance");
+    if (cfg.steady_window == 0) throw std::runtime_error("steady_window must be positive");
+    if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) {
+        throw std::runtime_error("max_steps must be positive for steady-state mode");
+    }
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
     if (!std::isfinite(cfg.magnetic_field.x) || !std::isfinite(cfg.magnetic_field.y) || !std::isfinite(cfg.magnetic_field.z)) {
         throw std::runtime_error("magnetic_field components must be finite");
@@ -447,6 +457,7 @@ unsigned detect_config_dimension(const std::string& path) {
 Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "dimension", "config_version", "nx", "ny", "length_x", "length_y", "dt", "steps",
+        "mode", "steady_tolerance", "steady_window", "max_steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
@@ -477,6 +488,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.length_y = as<double>(global, "length_y", cfg.length_y);
     cfg.dt = as<double>(global, "dt", cfg.dt);
     cfg.steps = as<std::size_t>(global, "steps", cfg.steps);
+    cfg.mode = parse_mode(global, cfg.mode);
+    cfg.steady_tolerance = as<double>(global, "steady_tolerance", cfg.steady_tolerance);
+    cfg.steady_window = as<std::size_t>(global, "steady_window", cfg.steady_window);
+    cfg.max_steps = as<std::size_t>(global, "max_steps", cfg.max_steps);
     cfg.output_interval = as<std::size_t>(global, "output_interval", cfg.output_interval);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir.string());
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
@@ -543,6 +558,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
 Simulation3DConfig load_config_3d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "dimension", "config_version", "nx", "ny", "nz", "length_x", "length_y", "length_z", "dt", "steps",
+        "mode", "steady_tolerance", "steady_window", "max_steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
@@ -573,6 +589,10 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.length_z = as<double>(global, "length_z", cfg.length_z);
     cfg.dt = as<double>(global, "dt", cfg.dt);
     cfg.steps = as<std::size_t>(global, "steps", cfg.steps);
+    cfg.mode = parse_mode(global, cfg.mode);
+    cfg.steady_tolerance = as<double>(global, "steady_tolerance", cfg.steady_tolerance);
+    cfg.steady_window = as<std::size_t>(global, "steady_window", cfg.steady_window);
+    cfg.max_steps = as<std::size_t>(global, "max_steps", cfg.max_steps);
     cfg.output_interval = as<std::size_t>(global, "output_interval", cfg.output_interval);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir.string());
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);

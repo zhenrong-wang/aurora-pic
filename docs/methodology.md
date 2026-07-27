@@ -1,6 +1,6 @@
 # AuroraPIC methodology
 
-AuroraPIC v0.1 implements a deliberately bounded, auditable electrostatic `1D1V` Particle-in-Cell model for first-version plasma dynamics research and engineering studies.
+AuroraPIC v0.1 implements deliberately bounded, auditable electrostatic `1D1V`, structured `2D2V`, and structured `3D3V` Particle-in-Cell models for plasma dynamics research and engineering studies.
 
 ## Model
 
@@ -19,7 +19,7 @@ in normalized units with `eps0 = 1`.
 
 ## Particle advance and steady state
 
-AuroraPIC advances particles with a time-centered electrostatic leapfrog update. Each step deposits charge at particle positions, solves Poisson's equation for `E^n`, kicks stored half-step velocities, drifts positions to the next time level, reapplies particle boundaries, redeposits charge, resolves fields, and synchronizes the public velocity fields used by diagnostics/output. In 2D, reflecting particle boundaries reverse the normal half-step velocity so subsequent diagnostics remain consistent after synchronization. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
+AuroraPIC advances particles with a time-centered electrostatic leapfrog update. Each step deposits charge at particle positions, solves Poisson's equation for `E^n`, kicks stored half-step velocities, drifts positions to the next time level, reapplies particle boundaries, redeposits charge, resolves fields, and synchronizes the public velocity fields used by diagnostics/output. Reflecting multidimensional particle boundaries reverse the normal half-step velocity so subsequent diagnostics remain consistent after synchronization. All dimensions support transient and steady-state execution. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
 
 ## Collisions
 

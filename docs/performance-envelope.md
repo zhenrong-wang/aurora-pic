@@ -27,6 +27,8 @@ The current implementation is aimed at correctness and regression coverage befor
 
 Use the serial backend as the portability baseline. Optional OpenMP currently covers safe particle-loop slices and uses deterministic static scheduling; it is not yet a full MPI/GPU or domain-decomposed scaling model. Treat `runtime_backend = mpi` and `runtime_backend = gpu` as reserved future options that intentionally fail fast.
 
+Transient and steady-state execution are available in all structured dimensions. Steady-state termination compares adjacent windows of emitted total-energy diagnostics and always remains bounded by `max_steps`. This is an operational convergence signal only; production studies must also establish problem-specific field, charge, flux, and distribution-function convergence.
+
 ## Before using larger runs
 
 For credible physical studies, document these checks with the run configuration and diagnostics:
