@@ -2,6 +2,7 @@
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
 #include "pic/Grid.hpp"
+#include "pic/ImportedMesh2D.hpp"
 #include "pic/Mesh2D.hpp"
 #include "pic/Mesh3D.hpp"
 #include "pic/Simulation.hpp"
@@ -11,6 +12,7 @@
 #include "pic/VTKWriter.hpp"
 #include "pic/Species3D.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <exception>
 #include <filesystem>
@@ -1924,6 +1926,57 @@ int main() {
             require_near(particle.velocity.z, 0.30, 1e-12,
                          "M1 representative 3D drift example vz invariant mismatch");
             std::filesystem::remove_all(cfg.output_dir);
+        }
+        {
+            // M2 benchmark: tagged 2D Gmsh v2 ASCII meshes import into AuroraPIC-owned labels.
+            const auto fixture = std::filesystem::path(AURORA_TEST_SOURCE_DIR) / "tests" / "fixtures" / "tagged_square_v2.msh";
+            const pic::ImportedMesh2D mesh = pic::load_gmsh2_ascii_mesh2d(fixture);
+            require(mesh.nodes().size() == 5, "M2 Gmsh importer node count mismatch");
+            require(mesh.cells().size() == 3, "M2 Gmsh importer cell count mismatch");
+            require(mesh.boundary_faces().size() == 4, "M2 Gmsh importer boundary face count mismatch");
+            require(mesh.physical_names().size() == 5, "M2 Gmsh importer physical-name count mismatch");
+
+            const auto labels = mesh.boundary_labels();
+            require(labels == std::vector<std::string>({"electrode", "inlet", "outlet", "wall"}),
+                    "M2 Gmsh importer boundary labels were not preserved as internal tags");
+            require_near(mesh.min_corner().x, 0.0, 1e-15, "M2 Gmsh importer min x mismatch");
+            require_near(mesh.min_corner().y, 0.0, 1e-15, "M2 Gmsh importer min y mismatch");
+            require_near(mesh.max_corner().x, 1.0, 1e-15, "M2 Gmsh importer max x mismatch");
+            require_near(mesh.max_corner().y, 1.0, 1e-15, "M2 Gmsh importer max y mismatch");
+            require_near(mesh.node_by_id(5).position.x, 0.5, 1e-15, "M2 Gmsh importer node lookup x mismatch");
+            require_near(mesh.node_by_id(5).position.y, 0.5, 1e-15, "M2 Gmsh importer node lookup y mismatch");
+            require(mesh.label_for_physical_tag(1, 3) == "wall", "M2 Gmsh importer boundary tag lookup mismatch");
+            require(mesh.label_for_physical_tag(2, 10) == "plasma", "M2 Gmsh importer region tag lookup mismatch");
+            require(mesh.label_for_physical_tag(1, 99) == "boundary_physical_99",
+                    "M2 Gmsh importer boundary fallback label mismatch");
+            require(mesh.label_for_physical_tag(2, 42) == "region_physical_42",
+                    "M2 Gmsh importer region fallback label mismatch");
+
+            const auto& first_cell = mesh.cells().front();
+            require(first_cell.shape == pic::ImportedCellShape2D::Triangle,
+                    "M2 Gmsh importer first cell shape mismatch");
+            require(first_cell.label == "plasma", "M2 Gmsh importer cell label mismatch");
+            require(first_cell.node_ids == std::vector<std::size_t>({1, 2, 5}),
+                    "M2 Gmsh importer triangle connectivity mismatch");
+            const auto& quad_cell = mesh.cells().back();
+            require(quad_cell.shape == pic::ImportedCellShape2D::Quadrilateral,
+                    "M2 Gmsh importer quadrilateral cell shape mismatch");
+            require(quad_cell.node_ids == std::vector<std::size_t>({1, 5, 4, 3}),
+                    "M2 Gmsh importer quadrilateral connectivity mismatch");
+            require(mesh.boundary_faces().front().label == "inlet", "M2 Gmsh importer boundary label mismatch");
+            require(mesh.boundary_faces().front().node_ids == std::array<std::size_t, 2>{1, 2},
+                    "M2 Gmsh importer boundary connectivity mismatch");
+
+            const auto bad_path = std::filesystem::path("test_output_bad_nonplanar.msh");
+            {
+                std::ofstream bad(bad_path);
+                bad << "$MeshFormat\n2.2 0 8\n$EndMeshFormat\n"
+                    << "$Nodes\n1\n1 0 0 0.25\n$EndNodes\n"
+                    << "$Elements\n0\n$EndElements\n";
+            }
+            require_throws([&]() { (void)pic::load_gmsh2_ascii_mesh2d(bad_path); },
+                           "M2 Gmsh importer accepted non-planar 2D node coordinates");
+            std::filesystem::remove(bad_path);
         }
         return 0;
     } catch (const std::exception& e) {

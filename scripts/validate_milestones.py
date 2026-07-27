@@ -28,10 +28,10 @@ EXPECTED_MILESTONES = {
     "M6": "Release engineering and operability",
 }
 EXPECTED_STATUSES = {
-    "M0": "Current baseline",
-    "M1": "Next",
-    "M2": "Planned",
-    "M3": "Planned",
+    "M0": "Complete",
+    "M1": "Complete",
+    "M2": "Current baseline",
+    "M3": "Next",
     "M4": "Planned",
     "M5": "Planned",
     "M6": "Planned",
@@ -100,11 +100,12 @@ def validate_roadmap() -> None:
         require(row.evidence.endswith("."), f"{row.identifier} evidence should be a sentence ending with '.'")
         for term in REQUIRED_EVIDENCE_TERMS[row.identifier]:
             require(term in row.evidence, f"{row.identifier} evidence must mention {term!r}")
-
     require("### Immediate coding target" in section, "roadmap must identify the immediate coding target")
     require("scripts/validate_milestones.py" in section, "roadmap must reference this validation script")
-    require("M1" in section and "physics-facing benchmark cases" in section,
-            "roadmap must keep M1 benchmark follow-up visible")
+    require("M2" in section and "Gmsh v2 ASCII" in section and "boundary labels" in section,
+            "roadmap must keep the M2 importer baseline visible")
+    require("M3" in section and "VTK XML" in section,
+            "roadmap must keep the M3 output/restart target visible")
 
 
 def validate_readme() -> None:

@@ -22,11 +22,13 @@ AuroraPIC needs three kinds of external data. They should be treated separately:
 | Particle/field checkpoints | openPMD/HDF5, later phase | Portable high-volume simulation data and restart/checkpoint support. |
 | Multiphysics mesh/data exchange | CGNS, later phase if needed | Stronger fit for CFD-style interoperability than for the first PIC extension. |
 
-The first production-facing geometry workflow should be:
+The first production-facing geometry workflow is:
 
 ```text
-CAD/surface description -> external mesher -> tagged mesh file -> AuroraPIC mesh importer
+CAD/surface description -> external mesher -> tagged Gmsh v2 ASCII mesh -> AuroraPIC mesh importer
 ```
+
+For the M2 importer slice, AuroraPIC reads tagged 2D Gmsh v2 ASCII `.msh` files only. CAD (`STEP`) and surface (`STL`/`OBJ`) inputs stay outside the core: prepare them in an external CAD/meshing tool, assign physical names to 1D boundaries and 2D regions, export a planar v2 ASCII mesh, then let `ImportedMesh2D` translate nodes, triangle/quadrilateral cells, and line boundary faces into AuroraPIC-owned labels. Binary Gmsh files, Gmsh v4 files, non-planar nodes, and 3D elements are intentionally rejected or ignored until later milestones.
 
 This avoids making AuroraPIC responsible for CAD kernels, boolean operations, or meshing quality.
 
@@ -90,17 +92,17 @@ The historical multidimensional phases below remain useful context, but AuroraPI
 
 | ID | Status | Milestone | Exit evidence |
 | --- | --- | --- | --- |
-| M0 | Current baseline | Regression-preserving multidimensional PIC core | 1D/2D/3D CLI examples smoke successfully; CTest covers Poisson, pusher, checkpoint/restart, strict config validation, multidimensional diagnostics, and Boris activation; standalone pusher validation passes. |
-| M1 | Next | Validation and benchmark suite | Add named analytic/symmetry benchmarks for deposition, interpolation, Poisson solves, particle boundaries, restart determinism, and representative 2D/3D examples with documented tolerances. |
-| M2 | Planned | Geometry and mesh import workflow | Import tagged 2D Gmsh meshes into internal boundary labels without exposing solver code to file-format details; document CAD/surface-to-mesh preprocessing. |
-| M3 | Planned | Scalable data and restart formats | Add production-oriented field/particle output and checkpoint formats (VTK XML and later openPMD/HDF5) with compatibility tests and migration notes from CSV/text checkpoints. |
+| M0 | Complete | Regression-preserving multidimensional PIC core | 1D/2D/3D CLI examples smoke successfully; CTest covers Poisson, pusher, checkpoint/restart, strict config validation, multidimensional diagnostics, and Boris activation; standalone pusher validation passes. |
+| M1 | Complete | Validation and benchmark suite | Added named analytic/symmetry benchmarks for deposition, interpolation, Poisson solves, particle boundaries, restart determinism, and representative 2D/3D examples with documented tolerances. |
+| M2 | Current baseline | Geometry and mesh import workflow | Added tagged 2D Gmsh v2 ASCII import into internal boundary labels without exposing solver code to file-format details; documented CAD/surface-to-mesh preprocessing. |
+| M3 | Next | Scalable data and restart formats | Add production-oriented field/particle output and checkpoint formats (VTK XML and later openPMD/HDF5) with compatibility tests and migration notes from CSV/text checkpoints. |
 | M4 | Planned | Runtime scaling backend | Introduce OpenMP/MPI/GPU-ready interfaces only after validation remains stable; include deterministic single-rank comparisons and scaling smoke tests. |
 | M5 | Planned | Higher-fidelity physics | Extend beyond prescribed electrostatic/uniform-B operation with self-consistent electromagnetic fields and improved collision models, each guarded by conservation and benchmark tests. |
 | M6 | Planned | Release engineering and operability | Add packaged builds, CI matrix coverage, versioned configuration compatibility, documented performance envelopes, and clearer failure diagnostics for invalid production inputs. |
 
 ### Immediate coding target
 
-The current M1 batch adds named physics-facing benchmark cases for analytic periodic Poisson solves across 1D/2D/3D, exact CIC shape-function deposition, affine electric-field interpolation, analytic one-step 2D particle-boundary policies, checkpoint/restart determinism across 1D/2D/3D, and representative 2D/3D periodic neutral-tracer examples with analytic drift, wraparound, charge, field-energy, and kinetic-energy tolerances. The machine-checkable milestone contract (`scripts/validate_milestones.py`) keeps the smoke suite pinned to the production ladder. Future M1 work should continue adding physics-facing benchmark cases rather than only documentation checks.
+The current baseline now includes the M2 geometry-import slice: tagged 2D Gmsh v2 ASCII meshes are translated into `ImportedMesh2D` nodes, cells, dimension-aware physical names, and boundary labels while keeping solver code independent of file-format details. The machine-checkable milestone contract (`scripts/validate_milestones.py`) keeps the smoke suite pinned to the production ladder. The next production hardening target is M3: scalable field/particle output and restart formats, starting with VTK XML compatibility tests and migration notes from CSV/text checkpoints.
 
 ## Historical implementation phases
 

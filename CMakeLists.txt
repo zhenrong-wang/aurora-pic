@@ -11,6 +11,7 @@ add_library(aurorapic
   src/Diagnostics.cpp
   src/FieldSolver.cpp
   src/Grid.cpp
+  src/ImportedMesh2D.cpp
   src/Mesh2D.cpp
   src/Mesh3D.cpp
   src/Pusher.cpp
@@ -34,5 +35,6 @@ if(AURORA_BUILD_TESTS)
   add_executable(aurorapic_tests tests/test_core.cpp)
   target_link_libraries(aurorapic_tests PRIVATE aurorapic)
   target_compile_options(aurorapic_tests PRIVATE -Wall -Wextra -Wpedantic -O2)
+  target_compile_definitions(aurorapic_tests PRIVATE AURORA_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME aurorapic_core COMMAND aurorapic_tests)
 endif()
