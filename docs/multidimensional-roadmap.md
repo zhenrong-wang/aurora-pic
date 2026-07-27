@@ -84,7 +84,25 @@ CSV is acceptable for 1D scalar histories, but multidimensional fields need rich
 - add particle sampling output for debugging;
 - consider openPMD/HDF5 once checkpointing and large particle dumps are needed.
 
-## Suggested implementation phases
+## Production-readiness milestone ladder
+
+The historical multidimensional phases below remain useful context, but AuroraPIC now has enough 1D/2D/3D coverage that production work should be pinned to explicit, verifiable milestones. Each milestone must preserve the existing `scripts/verify.sh` baseline unless the milestone itself intentionally updates that baseline and documents the change.
+
+| ID | Status | Milestone | Exit evidence |
+| --- | --- | --- | --- |
+| M0 | Current baseline | Regression-preserving multidimensional PIC core | 1D/2D/3D CLI examples smoke successfully; CTest covers Poisson, pusher, checkpoint/restart, strict config validation, multidimensional diagnostics, and Boris activation; standalone pusher validation passes. |
+| M1 | Next | Validation and benchmark suite | Add named analytic/symmetry benchmarks for deposition, interpolation, Poisson solves, particle boundaries, restart determinism, and representative 2D/3D examples with documented tolerances. |
+| M2 | Planned | Geometry and mesh import workflow | Import tagged 2D Gmsh meshes into internal boundary labels without exposing solver code to file-format details; document CAD/surface-to-mesh preprocessing. |
+| M3 | Planned | Scalable data and restart formats | Add production-oriented field/particle output and checkpoint formats (VTK XML and later openPMD/HDF5) with compatibility tests and migration notes from CSV/text checkpoints. |
+| M4 | Planned | Runtime scaling backend | Introduce OpenMP/MPI/GPU-ready interfaces only after validation remains stable; include deterministic single-rank comparisons and scaling smoke tests. |
+| M5 | Planned | Higher-fidelity physics | Extend beyond prescribed electrostatic/uniform-B operation with self-consistent electromagnetic fields and improved collision models, each guarded by conservation and benchmark tests. |
+| M6 | Planned | Release engineering and operability | Add packaged builds, CI matrix coverage, versioned configuration compatibility, documented performance envelopes, and clearer failure diagnostics for invalid production inputs. |
+
+### Immediate coding target
+
+The current M1 batch adds named physics-facing benchmark cases for exact CIC shape-function deposition, affine electric-field interpolation, and analytic one-step 2D particle-boundary policies, while the machine-checkable milestone contract (`scripts/validate_milestones.py`) keeps the smoke suite pinned to the production ladder. Future M1 work should continue adding physics-facing benchmark cases rather than only documentation checks.
+
+## Historical implementation phases
 
 ### Phase 0: preserve and isolate 1D
 
@@ -118,13 +136,9 @@ CSV is acceptable for 1D scalar histories, but multidimensional fields need rich
 - Add OpenMP/MPI/GPU backends only after the numerical interfaces are stable.
 - Add restart/checkpoint support.
 
-## Non-goals for the first 2D/3D step
+## Non-goals for the first production hardening step
 
 - A custom CAD or geometry modeling language.
 - Direct CAD boolean operations inside AuroraPIC.
 - Full electromagnetic PIC before electrostatic multidimensional deposition and boundary handling are verified.
-- Unstructured 3D as the first multidimensional milestone.
-
-## First concrete next step
-
-Create a minimal structured `2D2V` electrostatic prototype behind new classes while leaving the current 1D path intact. The first acceptance test should deposit a known 2D charge distribution, solve Poisson on a rectangular grid, and compare the potential or electric field against an analytic periodic solution.
+- Unstructured 3D before tagged 2D import and validation are stable.

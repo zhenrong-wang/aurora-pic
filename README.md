@@ -8,6 +8,10 @@ PIC is a standard kinetic method for low-collisionality plasma simulation becaus
 
 For the recommended multidimensional expansion strategy, geometry/mesh format choices, and staged implementation plan, see `docs/multidimensional-roadmap.md`.
 
+## Production milestone baseline
+
+Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift.
+
 ## Build
 
 ```sh

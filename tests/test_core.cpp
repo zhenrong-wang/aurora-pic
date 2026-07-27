@@ -587,6 +587,152 @@ int main() {
             require(std::abs(mesh.rho()[mesh.index(0, 0, 3)] - 8.0) < 1e-12, "3D CIC wrapped z weight is wrong");
         }
         {
+            // M1 benchmark: exact 2D CIC shape-function deposition for a single interior particle.
+            pic::Mesh2D mesh(5, 6, 1.0, 1.5, pic::Boundary::Periodic);
+            const pic::Vec2 position{0.31, 0.44};
+            const double charge = -1.5;
+            const double weight = 2.0;
+            const double macro_charge = charge * weight;
+            const double gx = position.x / mesh.dx();
+            const double gy = position.y / mesh.dy();
+            const std::size_t i = static_cast<std::size_t>(std::floor(gx));
+            const std::size_t j = static_cast<std::size_t>(std::floor(gy));
+            const double fx = gx - static_cast<double>(i);
+            const double fy = gy - static_cast<double>(j);
+            const std::vector<pic::Particle2D> particles{pic::Particle2D{position, pic::Vec2{}, true}};
+            pic::deposit_charge_cic(mesh, particles, charge, weight);
+
+            std::vector<double> expected(mesh.size(), 0.0);
+            expected[mesh.index(i, j)] += macro_charge * (1.0 - fx) * (1.0 - fy) / (mesh.dx() * mesh.dy());
+            expected[mesh.index(i + 1, j)] += macro_charge * fx * (1.0 - fy) / (mesh.dx() * mesh.dy());
+            expected[mesh.index(i, j + 1)] += macro_charge * (1.0 - fx) * fy / (mesh.dx() * mesh.dy());
+            expected[mesh.index(i + 1, j + 1)] += macro_charge * fx * fy / (mesh.dx() * mesh.dy());
+
+            double deposited_charge = 0.0;
+            for (std::size_t idx = 0; idx < mesh.size(); ++idx) {
+                require_near(mesh.rho()[idx], expected[idx], 1e-12,
+                             "M1 2D CIC exact shape-function benchmark density mismatch");
+                deposited_charge += mesh.rho()[idx] * mesh.dx() * mesh.dy();
+            }
+            require_near(deposited_charge, macro_charge, 1e-12,
+                         "M1 2D CIC exact shape-function benchmark did not conserve charge");
+        }
+        {
+            // M1 benchmark: exact 3D CIC shape-function deposition for a single interior particle.
+            pic::Mesh3D mesh(6, 5, 4, 1.2, 1.0, 0.8, pic::Boundary::Periodic);
+            const pic::Vec3 position{0.37, 0.46, 0.51};
+            const double charge = 1.25;
+            const double weight = 0.8;
+            const double macro_charge = charge * weight;
+            const double gx = position.x / mesh.dx();
+            const double gy = position.y / mesh.dy();
+            const double gz = position.z / mesh.dz();
+            const std::size_t i = static_cast<std::size_t>(std::floor(gx));
+            const std::size_t j = static_cast<std::size_t>(std::floor(gy));
+            const std::size_t k = static_cast<std::size_t>(std::floor(gz));
+            const double fx = gx - static_cast<double>(i);
+            const double fy = gy - static_cast<double>(j);
+            const double fz = gz - static_cast<double>(k);
+            const std::vector<pic::Particle3D> particles{pic::Particle3D{position, pic::Vec3{}, true}};
+            pic::deposit_charge_cic(mesh, particles, charge, weight);
+
+            std::vector<double> expected(mesh.size(), 0.0);
+            for (std::size_t dz_i = 0; dz_i < 2; ++dz_i) {
+                const double wz = dz_i == 0 ? 1.0 - fz : fz;
+                for (std::size_t dy_i = 0; dy_i < 2; ++dy_i) {
+                    const double wy = dy_i == 0 ? 1.0 - fy : fy;
+                    for (std::size_t dx_i = 0; dx_i < 2; ++dx_i) {
+                        const double wx = dx_i == 0 ? 1.0 - fx : fx;
+                        expected[mesh.index(i + dx_i, j + dy_i, k + dz_i)] +=
+                            macro_charge * wx * wy * wz / (mesh.dx() * mesh.dy() * mesh.dz());
+                    }
+                }
+            }
+
+            double deposited_charge = 0.0;
+            for (std::size_t idx = 0; idx < mesh.size(); ++idx) {
+                require_near(mesh.rho()[idx], expected[idx], 1e-12,
+                             "M1 3D CIC exact shape-function benchmark density mismatch");
+                deposited_charge += mesh.rho()[idx] * mesh.dx() * mesh.dy() * mesh.dz();
+            }
+            require_near(deposited_charge, macro_charge, 1e-12,
+                         "M1 3D CIC exact shape-function benchmark did not conserve charge");
+        }
+        {
+            // M1 benchmark: 2D bilinear electric interpolation is exact for affine fields.
+            pic::Mesh2D mesh(6, 5, 1.2, 1.0, pic::Boundary::Periodic);
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const double x = mesh.node_x(i);
+                    const double y = mesh.node_y(j);
+                    const auto idx = mesh.index(i, j);
+                    mesh.electric_x()[idx] = -1.0 + 2.5 * x - 0.75 * y;
+                    mesh.electric_y()[idx] = 0.5 - 1.25 * x + 1.5 * y;
+                }
+            }
+            const pic::Vec2 position{0.53, 0.47};
+            const pic::Vec2 electric = pic::interpolate_electric(mesh, position);
+            require_near(electric.x, -1.0 + 2.5 * position.x - 0.75 * position.y, 1e-12,
+                         "M1 2D affine interpolation benchmark Ex mismatch");
+            require_near(electric.y, 0.5 - 1.25 * position.x + 1.5 * position.y, 1e-12,
+                         "M1 2D affine interpolation benchmark Ey mismatch");
+
+            const pic::Vec2 wrapped = pic::interpolate_electric(mesh, pic::Vec2{position.x + mesh.length_x(), position.y - mesh.length_y()});
+            require_near(wrapped.x, electric.x, 1e-12,
+                         "M1 2D affine interpolation benchmark did not wrap periodic x/y coordinates");
+            require_near(wrapped.y, electric.y, 1e-12,
+                         "M1 2D affine interpolation benchmark did not wrap periodic x/y coordinates");
+        }
+        {
+            // M1 benchmark: 2D particle-boundary policies have analytic one-step outcomes.
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 5;
+            cfg.ny = 5;
+            cfg.length_x = 1.0;
+            cfg.length_y = 1.0;
+            cfg.dt = 0.2;
+            cfg.steps = 1;
+            cfg.boundary = pic::Boundary::Dirichlet;
+            cfg.output_interval = 1;
+            cfg.particle_boundary_config.left = pic::ParticleBoundary::Absorbing;
+            cfg.particle_boundary_config.right = pic::ParticleBoundary::Reflecting;
+            cfg.particle_boundary_config.bottom = pic::ParticleBoundary::Periodic;
+            cfg.particle_boundary_config.top = pic::ParticleBoundary::Reflecting;
+            cfg.species = {
+                pic::Species2DConfig{"left_absorb", 0.0, 1.0, 1.0, 1, -0.4, 0.0, 0.0, 0.03, 0.03, 0.50, 0.50},
+                pic::Species2DConfig{"right_reflect", 0.0, 1.0, 1.0, 1, 0.5, 0.0, 0.0, 0.94, 0.94, 0.25, 0.25},
+                pic::Species2DConfig{"bottom_periodic", 0.0, 1.0, 1.0, 1, 0.0, -0.4, 0.0, 0.20, 0.20, 0.03, 0.03},
+                pic::Species2DConfig{"top_reflect", 0.0, 1.0, 1.0, 1, 0.0, 0.6, 0.0, 0.70, 0.70, 0.92, 0.92},
+            };
+
+            pic::Simulation2D sim(cfg);
+            sim.run();
+            const auto& losses = sim.boundary_losses();
+            require(losses.absorbed_left == 1, "M1 2D particle-boundary benchmark left absorber count mismatch");
+            require(losses.absorbed_right == 0 && losses.absorbed_bottom == 0 && losses.absorbed_top == 0,
+                    "M1 2D particle-boundary benchmark reported unexpected non-left absorption");
+
+            const auto& absorbed = sim.species()[0].particles()[0];
+            const auto& right = sim.species()[1].particles()[0];
+            const auto& bottom = sim.species()[2].particles()[0];
+            const auto& top = sim.species()[3].particles()[0];
+            require(!absorbed.alive, "M1 2D particle-boundary benchmark did not absorb left-crossing particle");
+            require(right.alive && bottom.alive && top.alive,
+                    "M1 2D particle-boundary benchmark lost a non-absorbing particle");
+            require_near(right.position.x, 0.96, 1e-12,
+                         "M1 2D particle-boundary benchmark right reflection position mismatch");
+            require_near(right.velocity.x, -0.5, 1e-12,
+                         "M1 2D particle-boundary benchmark right reflection velocity mismatch");
+            require_near(bottom.position.y, 0.95, 1e-12,
+                         "M1 2D particle-boundary benchmark bottom periodic wrap position mismatch");
+            require_near(bottom.velocity.y, -0.4, 1e-12,
+                         "M1 2D particle-boundary benchmark bottom periodic velocity mismatch");
+            require_near(top.position.y, 0.96, 1e-12,
+                         "M1 2D particle-boundary benchmark top reflection position mismatch");
+            require_near(top.velocity.y, -0.6, 1e-12,
+                         "M1 2D particle-boundary benchmark top reflection velocity mismatch");
+        }
+        {
             pic::Mesh3D mesh(5, 4, 3, 1.0, 0.8, 0.6, pic::Boundary::Periodic);
             for (std::size_t k = 0; k < mesh.nz(); ++k) {
                 for (std::size_t j = 0; j < mesh.ny(); ++j) {
