@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if(@AURORAPIC_USES_OPENMP@)
+  find_dependency(OpenMP)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/AuroraPICTargets.cmake")
+check_required_components(AuroraPIC)

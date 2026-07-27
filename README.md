@@ -21,21 +21,29 @@ cmake --build build -j
 
 OpenMP support is enabled by default when CMake finds a C++ OpenMP toolchain. Disable it explicitly with `-DAURORA_ENABLE_OPENMP=OFF` to force serial-only builds.
 
-To create the current source/binary `TGZ` package after a successful configure/build, run:
+To install the current build into a local prefix, create the `TGZ` package, and smoke-test the installed CLI plus downstream CMake package metadata, run:
 
 ```sh
-cmake --build build --target package
+python3 scripts/verify_install_package.py build
+```
+
+Installed downstream projects can consume the library target with:
+
+```cmake
+find_package(AuroraPIC CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE AuroraPIC::aurorapic)
 ```
 
 ## Verify
 
+The full smoke suite builds the project, validates milestone and release-engineering artifacts, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), runs isolated CLI smoke tests for the included 1D/2D/3D examples, and runs the install/package smoke test for the installed CLI, CPack `TGZ`, and downstream `find_package(AuroraPIC CONFIG REQUIRED)` consumer:
+
 ```sh
-ctest --test-dir build --output-on-failure
-# or run the full smoke suite:
 scripts/verify.sh
 ```
 
-The full smoke suite builds the project, validates milestone and release-engineering artifacts, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), and runs isolated CLI smoke tests for the included 1D/2D/3D examples. The example smoke tests copy each config to a temporary `test_output_aurorapic_verify/` directory, rewrite only `output_dir`, run `aurorapic_cli`, and assert the expected scalar, field, VTK, and particle-inspection files are structurally valid. Temporary smoke outputs are removed on success; set `KEEP_VERIFY_OUTPUTS=1` or pass `--keep-output` to `scripts/verify_examples.py` to retain them for debugging:
+The example smoke tests copy each config to a temporary `test_output_aurorapic_verify/` directory, rewrite only `output_dir`, run `aurorapic_cli`, and assert the expected scalar, field, VTK, and particle-inspection files are structurally valid. Temporary smoke outputs are removed on success; set `KEEP_VERIFY_OUTPUTS=1` or pass `--keep-output` to `scripts/verify_examples.py` to retain them for debugging:
+
 ```sh
 python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 ```

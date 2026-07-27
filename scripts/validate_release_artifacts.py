@@ -2,9 +2,9 @@
 """Validate AuroraPIC release-engineering artifacts.
 
 This guard is intentionally static and lightweight so it can run in the smoke
-suite before packaging. It catches drift in the CI matrix, CPack install rules,
-and the documented performance envelope without depending on GitHub Actions
-being available locally.
+suite before packaging. It catches drift in the CI matrix, CPack/install rules,
+installable CMake package metadata, and the documented performance envelope
+without depending on GitHub Actions being available locally.
 """
 
 from __future__ import annotations
@@ -15,11 +15,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CMAKE = ROOT / "CMakeLists.txt"
+CMAKE_CONFIG_TEMPLATE = ROOT / "cmake" / "AuroraPICConfig.cmake.in"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 PERFORMANCE = ROOT / "docs" / "performance-envelope.md"
 README = ROOT / "README.md"
 ROADMAP = ROOT / "docs" / "multidimensional-roadmap.md"
 VERIFY = ROOT / "scripts" / "verify.sh"
+INSTALL_SMOKE = ROOT / "scripts" / "verify_install_package.py"
 
 
 class ReleaseArtifactError(RuntimeError):
@@ -40,14 +42,22 @@ def validate_cmake_packaging() -> None:
     cmake = read(CMAKE)
     for term in (
         "include(GNUInstallDirs)",
+        "include(CMakePackageConfigHelpers)",
+        "target_compile_features(aurorapic PUBLIC cxx_std_20)",
         "install(TARGETS aurorapic aurorapic_cli",
         "install(DIRECTORY include/",
         "install(DIRECTORY examples/",
         "docs/performance-envelope.md",
+        "configure_package_config_file(",
+        "AuroraPICConfigVersion.cmake",
         "set(CPACK_GENERATOR \"TGZ\")",
         "include(CPack)",
     ):
         require(term in cmake, f"CMake packaging must include {term!r}")
+
+    config = read(CMAKE_CONFIG_TEMPLATE)
+    for term in ("@PACKAGE_INIT@", "find_dependency(OpenMP)", "AuroraPICTargets.cmake"):
+        require(term in config, f"CMake package config template must include {term!r}")
 
 
 def validate_ci_matrix() -> None:
@@ -62,11 +72,26 @@ def validate_ci_matrix() -> None:
         "python3 scripts/validate_release_artifacts.py",
         "ctest --test-dir build --output-on-failure",
         "python3 scripts/verify_examples.py build/aurorapic_cli",
-        "cmake --build build --target package",
+        "python3 scripts/verify_install_package.py build",
         "actions/upload-artifact@v4",
     ):
         require(term in ci, f"CI workflow must include {term!r}")
     require("openmp: ON" in ci and "openmp: OFF" in ci, "CI matrix must cover OpenMP on and off")
+
+
+def validate_install_smoke_script() -> None:
+    script = read(INSTALL_SMOKE)
+    for term in (
+        '"cmake", "--install"',
+        "find_package(AuroraPIC CONFIG REQUIRED)",
+        "target_link_libraries(consumer PRIVATE AuroraPIC::aurorapic)",
+        '"cmake", "--build"',
+        '"--target",',
+        '"package"',
+        "AuroraPICConfig.cmake",
+        "aurorapic_cli",
+    ):
+        require(term in script, f"install/package smoke script must include {term!r}")
 
 
 def validate_performance_doc() -> None:
@@ -80,6 +105,7 @@ def validate_performance_doc() -> None:
         "examples/plasma_3d.cfg",
         "self-consistent electromagnetic field update",
         "not a general-purpose plasma production platform",
+        "install/package smoke",
     ):
         require(term in doc, f"performance envelope must mention {term!r}")
 
@@ -91,16 +117,20 @@ def validate_cross_references() -> None:
     require("docs/performance-envelope.md" in readme, "README must link the performance envelope")
     require("CI workflow" in readme, "README must document CI workflow coverage")
     require("CPack" in readme, "README must document CPack packaging")
+    require("find_package(AuroraPIC CONFIG REQUIRED)" in readme, "README must document downstream CMake package use")
     require("docs/performance-envelope.md" in roadmap, "roadmap must link the performance envelope")
     require("CI matrix" in roadmap and "CPack" in roadmap, "roadmap must document CI matrix and CPack as M6 evidence")
-    pattern = re.compile(r"^python3\s+scripts/validate_release_artifacts\.py\s*$", re.MULTILINE)
-    require(pattern.search(verify) is not None, "scripts/verify.sh must run scripts/validate_release_artifacts.py")
+    require("install/package smoke" in roadmap, "roadmap must document install/package smoke evidence")
+    for script in ("validate_release_artifacts", "verify_install_package"):
+        pattern = re.compile(rf"^python3\s+scripts/{script}\.py(?:\s+build)?\s*$", re.MULTILINE)
+        require(pattern.search(verify) is not None, f"scripts/verify.sh must run scripts/{script}.py")
 
 
 def main() -> int:
     try:
         validate_cmake_packaging()
         validate_ci_matrix()
+        validate_install_smoke_script()
         validate_performance_doc()
         validate_cross_references()
     except ReleaseArtifactError as exc:

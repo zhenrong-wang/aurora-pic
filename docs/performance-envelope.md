@@ -45,7 +45,8 @@ The M6 baseline now includes:
 
 - strict `config_version = 1` compatibility checks;
 - a CI workflow that exercises serial/OpenMP configuration variants across Linux and macOS runners;
-- CPack `TGZ` packaging rules for the CLI, library, headers, examples, and documentation;
+- CPack `TGZ` packaging rules for the CLI, library, headers, examples, documentation, and installable CMake package metadata;
+- an install/package smoke test that installs the built tree, runs the installed CLI, builds a downstream `find_package(AuroraPIC CONFIG REQUIRED)` consumer, and inspects the generated `TGZ` package;
 - this documented performance envelope.
 
 The remaining hardening work is to add measured benchmark history, publish signed release artifacts, expand compiler/platform coverage, and implement deeper physics validation for electromagnetic fields and improved collision models when those features exist.

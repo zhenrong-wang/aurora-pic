@@ -7,6 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(AURORA_BUILD_TESTS "Build AuroraPIC tests" ON)
 option(AURORA_ENABLE_OPENMP "Enable OpenMP runtime backend when available" ON)
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+set(AURORAPIC_USES_OPENMP OFF)
 
 add_library(aurorapic
   src/Config.cpp
@@ -30,6 +32,7 @@ target_include_directories(aurorapic PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+target_compile_features(aurorapic PUBLIC cxx_std_20)
 target_compile_options(aurorapic PRIVATE -Wall -Wextra -Wpedantic -O3)
 
 if(AURORA_ENABLE_OPENMP)
@@ -37,6 +40,7 @@ if(AURORA_ENABLE_OPENMP)
   if(OpenMP_CXX_FOUND)
     target_link_libraries(aurorapic PUBLIC OpenMP::OpenMP_CXX)
     target_compile_definitions(aurorapic PUBLIC AURORA_HAVE_OPENMP=1)
+    set(AURORAPIC_USES_OPENMP ON)
   endif()
 endif()
 
@@ -56,6 +60,21 @@ install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md doc
 install(EXPORT AuroraPICTargets
   FILE AuroraPICTargets.cmake
   NAMESPACE AuroraPIC::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AuroraPIC
+)
+configure_package_config_file(
+  cmake/AuroraPICConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/AuroraPICConfig.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AuroraPIC
+)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/AuroraPICConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/AuroraPICConfig.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/AuroraPICConfigVersion.cmake"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AuroraPIC
 )
 
