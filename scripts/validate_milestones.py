@@ -31,9 +31,9 @@ EXPECTED_STATUSES = {
     "M0": "Complete",
     "M1": "Complete",
     "M2": "Complete",
-    "M3": "Current baseline",
-    "M4": "Next",
-    "M5": "Planned",
+    "M3": "Complete",
+    "M4": "Current baseline",
+    "M5": "Next",
     "M6": "Planned",
 }
 REQUIRED_EVIDENCE_TERMS = {
@@ -106,6 +106,8 @@ def validate_roadmap() -> None:
             "roadmap must keep the M2 importer baseline visible")
     require("M3" in section and "VTK XML" in section,
             "roadmap must keep the M3 output/restart target visible")
+    require("M4" in section and "OpenMP/MPI/GPU" in section and "scaling smoke tests" in section,
+            "roadmap must keep the M4 runtime-scaling baseline visible")
 
 
 def validate_readme() -> None:

@@ -4,8 +4,9 @@ project(AuroraPIC VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 option(AURORA_BUILD_TESTS "Build AuroraPIC tests" ON)
+option(AURORA_ENABLE_OPENMP "Enable OpenMP runtime backend when available" ON)
+
 add_library(aurorapic
   src/Config.cpp
   src/Diagnostics.cpp
@@ -15,6 +16,7 @@ add_library(aurorapic
   src/Mesh2D.cpp
   src/Mesh3D.cpp
   src/Pusher.cpp
+  src/Runtime.cpp
   src/Simulation.cpp
   src/Simulation2D.cpp
   src/Simulation3D.cpp
@@ -25,6 +27,14 @@ add_library(aurorapic
 )
 target_include_directories(aurorapic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(aurorapic PRIVATE -Wall -Wextra -Wpedantic -O3)
+
+if(AURORA_ENABLE_OPENMP)
+  find_package(OpenMP)
+  if(OpenMP_CXX_FOUND)
+    target_link_libraries(aurorapic PUBLIC OpenMP::OpenMP_CXX)
+    target_compile_definitions(aurorapic PUBLIC AURORA_HAVE_OPENMP=1)
+  endif()
+endif()
 
 add_executable(aurorapic_cli src/main.cpp)
 target_link_libraries(aurorapic_cli PRIVATE aurorapic)

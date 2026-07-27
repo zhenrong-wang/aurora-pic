@@ -1,6 +1,7 @@
 #pragma once
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
+#include "pic/Runtime.hpp"
 #include "pic/Species3D.hpp"
 #include <filesystem>
 #include <random>
@@ -48,6 +49,7 @@ struct Simulation3DConfig {
     std::size_t checkpoint_interval{0}; // zero inherits output_interval
     std::filesystem::path checkpoint_path{}; // empty writes output_dir/checkpoint_<step>.apc
     std::filesystem::path restart_path{};
+    RuntimePolicy runtime{};
     std::vector<Species3DConfig> species{};
 };
 

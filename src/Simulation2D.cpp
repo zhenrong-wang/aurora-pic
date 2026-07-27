@@ -1,5 +1,6 @@
 #include "pic/Simulation2D.hpp"
 #include "pic/Pusher.hpp"
+#include "pic/Runtime.hpp"
 #include "pic/VTKWriter.hpp"
 #include <cmath>
 #include <filesystem>
@@ -138,6 +139,7 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
     if (cfg_.dt <= 0.0) throw std::invalid_argument("2D simulation dt must be positive");
     if (cfg_.output_interval == 0) throw std::invalid_argument("2D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("2D particle_output_stride must be positive");
+    validate_runtime_policy(cfg_.runtime);
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
         throw std::invalid_argument("2D checkpoint_interval must be positive when checkpoint_output is enabled");
     }
@@ -157,9 +159,11 @@ void Simulation2D::initialize() {
     deposit_and_solve();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
-        for (auto& particle : sp.particles()) {
+        auto& particles = sp.particles();
+        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
+            auto& particle = particles[particle_id];
             if (particle.alive) initialize_particle_pusher(particle, interpolate_electric(mesh_, particle.position), qm, cfg_);
-        }
+        });
     }
     initialized_ = true;
 }
@@ -208,9 +212,11 @@ void Simulation2D::step() {
     deposit_and_solve();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
-        for (auto& particle : sp.particles()) {
+        auto& particles = sp.particles();
+        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
+            auto& particle = particles[particle_id];
             if (particle.alive) synchronize_particle(particle, interpolate_electric(mesh_, particle.position), qm, cfg_);
-        }
+        });
     }
     ++step_;
     time_ += cfg_.dt;

@@ -9,6 +9,7 @@
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
 #include "pic/Pusher.hpp"
+#include "pic/Runtime.hpp"
 #include "pic/VTKWriter.hpp"
 #include "pic/Species3D.hpp"
 #include <algorithm>
@@ -1108,6 +1109,72 @@ int main() {
             require_throws([] { pic::Config cfg; cfg.output_interval = 0; pic::Simulation sim(cfg); }, "1D output_interval validation did not throw");
         }
         {
+            // M4 runtime scaling smoke tests: serial remains the deterministic baseline while OpenMP,
+            // when compiled in, uses static scheduling and preserves single-rank results.
+            pic::RuntimePolicy serial{};
+            require(pic::to_string(serial.backend) == "serial", "M4 runtime backend string for serial changed");
+            const auto serial_info = pic::runtime_info(serial);
+            require(serial_info.backend == pic::RuntimeBackend::Serial, "M4 runtime_info did not preserve serial backend");
+            require(serial_info.active_threads == 1, "M4 serial runtime should use one active thread");
+
+            std::vector<std::size_t> squares(16, 0);
+            pic::runtime_parallel_for(std::size_t{0}, squares.size(), serial, [&](std::size_t i) {
+                squares[i] = i * i;
+            });
+            require(squares[7] == 49 && squares[15] == 225, "M4 serial runtime_parallel_for produced wrong values");
+
+            require_throws([] { pic::RuntimePolicy p; p.threads = 0; pic::validate_runtime_policy(p); },
+                           "M4 runtime_threads=0 validation did not throw");
+            require_throws([] { pic::RuntimePolicy p; p.threads = 2; pic::validate_runtime_policy(p); },
+                           "M4 serial runtime accepted multiple threads");
+            require_throws([] { pic::RuntimePolicy p; p.backend = pic::RuntimeBackend::MPI; pic::validate_runtime_policy(p); },
+                           "M4 MPI placeholder runtime did not throw");
+            require_throws([] { pic::RuntimePolicy p; p.backend = pic::RuntimeBackend::GPU; pic::validate_runtime_policy(p); },
+                           "M4 GPU placeholder runtime did not throw");
+
+#ifdef AURORA_HAVE_OPENMP
+            pic::RuntimePolicy openmp{pic::RuntimeBackend::OpenMP, 2};
+            const auto openmp_info = pic::runtime_info(openmp);
+            require(openmp_info.openmp_compiled, "M4 OpenMP runtime_info did not report compiled support");
+            require(openmp_info.active_threads == 2, "M4 OpenMP runtime active thread count mismatch");
+            std::vector<std::size_t> openmp_squares(16, 0);
+            pic::runtime_parallel_for(std::size_t{0}, openmp_squares.size(), openmp, [&](std::size_t i) {
+                openmp_squares[i] = i * i;
+            });
+            require(openmp_squares == squares, "M4 OpenMP runtime_parallel_for changed deterministic loop output");
+
+            pic::Simulation2DConfig baseline;
+            baseline.nx = 9;
+            baseline.ny = 8;
+            baseline.length_x = 1.0;
+            baseline.length_y = 1.0;
+            baseline.dt = 0.01;
+            baseline.steps = 4;
+            baseline.output_interval = 4;
+            baseline.output_dir = "test_output_m4_runtime_serial";
+            baseline.seed = 2468;
+            baseline.species = {pic::Species2DConfig{"runtime_smoke", -1.0, 1.0, 0.01, 8,
+                                                       0.03, -0.02, 0.0,
+                                                       0.1, 0.9, 0.2, 0.8}};
+            std::filesystem::remove_all(baseline.output_dir);
+            pic::Simulation2D serial_sim(baseline);
+            const auto serial_summary = serial_sim.run();
+
+            auto parallel_cfg = baseline;
+            parallel_cfg.runtime = openmp;
+            parallel_cfg.output_dir = "test_output_m4_runtime_openmp";
+            std::filesystem::remove_all(parallel_cfg.output_dir);
+            pic::Simulation2D openmp_sim(parallel_cfg);
+            const auto openmp_summary = openmp_sim.run();
+            require_checkpoint_samples_close(serial_summary.final_sample, openmp_summary.final_sample,
+                                             "M4 2D OpenMP deterministic scaling smoke");
+            require_species_close(serial_sim.species(), openmp_sim.species(),
+                                  "M4 2D OpenMP deterministic scaling smoke");
+            std::filesystem::remove_all(baseline.output_dir);
+            std::filesystem::remove_all(parallel_cfg.output_dir);
+#endif
+        }
+        {
             const auto config_path = std::filesystem::path("test_density_config.ini");
             {
                 std::ofstream out(config_path);
@@ -1115,6 +1182,8 @@ int main() {
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
+                    << "runtime_backend = single\n"
+                    << "runtime_threads = 1\n"
                     << "[species]\n"
                     << "name = density_weighted\n"
                     << "charge = -1\n"
@@ -1127,6 +1196,8 @@ int main() {
             }
             auto cfg = pic::load_config(config_path.string());
             require(cfg.species.size() == 1, "config did not load one species");
+            require(cfg.runtime.backend == pic::RuntimeBackend::Serial && cfg.runtime.threads == 1,
+                    "M4 1D runtime config aliases were not parsed");
             require(std::abs(cfg.species[0].weight - 0.5) < 1e-15, "density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_path);
 
@@ -1151,6 +1222,16 @@ int main() {
                 "nx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_weight\ncharge = -1\nmass = 1\nweight = inf\nparticles = 10\n",
                 [](const std::string& path) { return pic::load_config(path); },
                 "1D non-finite species weight validation did not throw");
+            require_config_rejects(
+                "test_invalid_runtime_threads.ini",
+                "nx = 16\nlength = 1\ndt = 0.01\nruntime_threads = 0\n[species]\nname = bad_runtime\ncharge = -1\nmass = 1\nweight = 1\nparticles = 10\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "M4 invalid runtime_threads config validation did not throw");
+            require_config_rejects(
+                "test_invalid_runtime_backend.ini",
+                "dimension = 2\nnx = 8\nny = 6\nlength_x = 2\nlength_y = 1\ndt = 0.01\nruntime_backend = distributed\n[species.electrons]\ncharge = -1\nmass = 1\nweight = 1\nparticles = 12\n",
+                [](const std::string& path) { return pic::load_config_2d(path); },
+                "M4 invalid runtime_backend config validation did not throw");
             require_config_rejects(
                 "test_missing_scale_2d.ini",
                 "dimension = 2\nnx = 8\nny = 6\nlength_x = 2\nlength_y = 1\ndt = 0.01\n[species.electrons]\ncharge = -1\nmass = 1\nparticles = 12\n",
@@ -1184,6 +1265,8 @@ int main() {
                     << "steps = 2\n"
                     << "output_interval = 1\n"
                     << "output_dir = test_output_config_2d\n"
+                    << "runtime_backend = serial\n"
+                    << "runtime_threads = 1\n"
                     << "vtk_output = true\n"
                     << "vtk_format = both\n"
                     << "particle_output = true\n"
@@ -1221,6 +1304,8 @@ int main() {
             require(cfg2.nx == 8 && cfg2.ny == 6, "2D config did not load mesh dimensions");
             require(cfg2.vtk_output, "2D config did not load vtk_output");
             require(cfg2.vtk_format == pic::VTKOutputFormat::Both, "2D config did not load vtk_format");
+            require(cfg2.runtime.backend == pic::RuntimeBackend::Serial && cfg2.runtime.threads == 1,
+                    "M4 2D runtime config was not parsed");
             require(cfg2.particle_output, "2D config did not load particle_output");
             require(cfg2.particle_output_interval == 3, "2D config did not load particle_output_interval");
             require(cfg2.particle_output_stride == 2, "2D config did not load particle_output_stride");
@@ -1311,6 +1396,8 @@ int main() {
                     << "steps = 2\n"
                     << "output_interval = 1\n"
                     << "output_dir = test_output_config_3d\n"
+                    << "runtime_backend = serial\n"
+                    << "runtime_threads = 1\n"
                     << "vtk_output = true\n"
                     << "vtk_format = vts\n"
                     << "particle_output = true\n"
@@ -1346,6 +1433,8 @@ int main() {
             require(cfg3.nx == 6 && cfg3.ny == 5 && cfg3.nz == 4, "3D config did not load mesh dimensions");
             require(cfg3.vtk_output, "3D config did not load vtk_output");
             require(cfg3.vtk_format == pic::VTKOutputFormat::Xml, "3D config did not load vtk_format");
+            require(cfg3.runtime.backend == pic::RuntimeBackend::Serial && cfg3.runtime.threads == 1,
+                    "M4 3D runtime config was not parsed");
             require(cfg3.particle_output, "3D config did not load particle_output");
             require(cfg3.particle_output_interval == 3, "3D config did not load particle_output_interval");
             require(cfg3.particle_output_stride == 2, "3D config did not load particle_output_stride");

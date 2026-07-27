@@ -1,4 +1,5 @@
 #include "pic/Config.hpp"
+#include "pic/Runtime.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
 #include <algorithm>
@@ -122,6 +123,23 @@ VTKOutputFormat parse_vtk_output_format(const KeyValue& kv, VTKOutputFormat def)
     throw std::runtime_error("invalid vtk_format value: '" + value + "'");
 }
 
+RuntimeBackend parse_runtime_backend(const KeyValue& kv, RuntimeBackend def) {
+    const auto value = lower(trim(as<std::string>(kv, "runtime_backend", to_string(def))));
+    if (value == "serial" || value == "none" || value == "single") return RuntimeBackend::Serial;
+    if (value == "openmp" || value == "omp") return RuntimeBackend::OpenMP;
+    if (value == "mpi") return RuntimeBackend::MPI;
+    if (value == "gpu" || value == "cuda" || value == "accelerator") return RuntimeBackend::GPU;
+    throw std::runtime_error("invalid runtime_backend value: '" + value + "'");
+}
+
+RuntimePolicy parse_runtime_policy(const KeyValue& kv, const RuntimePolicy& def) {
+    RuntimePolicy policy = def;
+    policy.backend = parse_runtime_backend(kv, policy.backend);
+    policy.threads = as<std::size_t>(kv, "runtime_threads", policy.threads);
+    validate_runtime_policy(policy);
+    return policy;
+}
+
 RunMode parse_mode(const KeyValue& kv, RunMode def) {
     const auto value = lower(as<std::string>(kv, "mode", to_string(def)));
     if (value == "transient") return RunMode::Transient;
@@ -162,6 +180,7 @@ void validate_config(const Config& cfg) {
     if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) throw std::runtime_error("max_steps must be positive for steady-state mode");
     validate_non_negative(cfg.collisions.frequency, "collision frequency");
     validate_non_negative(cfg.collisions.neutral_temperature_velocity, "neutral_temperature_velocity");
+    validate_runtime_policy(cfg.runtime);
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("species name must not be empty");
         validate_positive(s.mass, "species '" + s.name + "' mass");
@@ -190,6 +209,7 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
     if (!std::isfinite(cfg.magnetic_field_z)) throw std::runtime_error("magnetic_field_z must be finite");
+    validate_runtime_policy(cfg.runtime);
     validate_boundary_side(cfg.boundary_config.left, "left");
     validate_boundary_side(cfg.boundary_config.right, "right");
     validate_boundary_side(cfg.boundary_config.bottom, "bottom");
@@ -224,6 +244,7 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
     if (!std::isfinite(cfg.magnetic_field.x) || !std::isfinite(cfg.magnetic_field.y) || !std::isfinite(cfg.magnetic_field.z)) {
         throw std::runtime_error("magnetic_field components must be finite");
     }
+    validate_runtime_policy(cfg.runtime);
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("3D species name must not be empty");
         validate_positive(s.mass, "3D species '" + s.name + "' mass");
@@ -306,7 +327,7 @@ Config load_config(const std::string& path) {
         "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "boundary", "mode", "dimension", "checkpoint_output", "checkpoint_interval",
-        "checkpoint_path", "restart_path"
+        "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads"
     };
     static const std::unordered_set<std::string> collision_keys{
         "enabled", "frequency", "neutral_temperature_velocity"
@@ -345,6 +366,7 @@ Config load_config(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path);
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path);
+    cfg.runtime = parse_runtime_policy(global, cfg.runtime);
 
     cfg.species.clear();
     for (const auto& block : blocks.species_blocks) {
@@ -408,7 +430,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
-        "magnetic_field_z",
+        "runtime_backend", "runtime_threads", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
@@ -448,6 +470,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
+    cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.magnetic_field_z = as<double>(global, "magnetic_field_z", cfg.magnetic_field_z);
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
@@ -502,7 +525,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
-        "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
+        "runtime_backend", "runtime_threads", "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top", "particle_boundary_back", "particle_boundary_front"
     };
@@ -542,6 +565,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
+    cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.magnetic_field.x = as<double>(global, "magnetic_field_x", cfg.magnetic_field.x);
     cfg.magnetic_field.y = as<double>(global, "magnetic_field_y", cfg.magnetic_field.y);
     cfg.magnetic_field.z = as<double>(global, "magnetic_field_z", cfg.magnetic_field.z);

@@ -1,5 +1,6 @@
 #include "pic/Simulation.hpp"
 #include "pic/Pusher.hpp"
+#include "pic/Runtime.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -25,6 +26,7 @@ void validate_runtime_config(const Config& cfg) {
         if (cfg.steady_window == 0) throw std::invalid_argument("steady_window must be positive");
         if (cfg.steady_tolerance <= 0.0) throw std::invalid_argument("steady_tolerance must be positive");
     }
+    validate_runtime_policy(cfg.runtime);
     if (cfg.collisions.frequency < 0.0) throw std::invalid_argument("collision frequency must be non-negative");
     if (cfg.collisions.neutral_temperature_velocity < 0.0) {
         throw std::invalid_argument("neutral_temperature_velocity must be non-negative");
@@ -67,9 +69,11 @@ void Simulation::initialize() {
     deposit_and_solve();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
-        for (auto& p : sp.particles()) {
+        auto& particles = sp.particles();
+        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
+            auto& p = particles[particle_id];
             if (p.alive) initialize_leapfrog_half_step(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
-        }
+        });
     }
     initialized_ = true;
 }
@@ -91,8 +95,10 @@ void Simulation::step() {
     if (!initialized_) initialize();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
-        for (auto& p : sp.particles()) {
-            if (!p.alive) continue;
+        auto& particles = sp.particles();
+        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
+            auto& p = particles[particle_id];
+            if (!p.alive) return;
             kick_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
             drift_leapfrog(p, cfg_.dt);
             if (grid_.boundary() == Boundary::Periodic) {
@@ -100,14 +106,16 @@ void Simulation::step() {
             } else if (p.x < 0.0 || p.x > grid_.length()) {
                 p.alive = false;
             }
-        }
+        });
     }
     deposit_and_solve();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
-        for (auto& p : sp.particles()) {
+        auto& particles = sp.particles();
+        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
+            auto& p = particles[particle_id];
             if (p.alive) synchronize_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
-        }
+        });
         apply_collisions(sp);
     }
     ++step_;

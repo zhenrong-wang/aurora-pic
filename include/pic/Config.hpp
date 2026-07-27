@@ -1,4 +1,5 @@
 #pragma once
+#include "pic/Runtime.hpp"
 #include "pic/Types.hpp"
 #include <cstddef>
 #include <string>
@@ -47,6 +48,7 @@ struct Config {
     std::size_t checkpoint_interval{0}; // zero inherits output_interval
     std::string checkpoint_path{};      // empty writes output_dir/checkpoint_<step>.apc
     std::string restart_path{};
+    RuntimePolicy runtime{};
     std::vector<SpeciesConfig> species{};
 };
 
