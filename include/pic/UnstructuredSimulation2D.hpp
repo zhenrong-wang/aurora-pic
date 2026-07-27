@@ -78,6 +78,12 @@ struct UnstructuredRunSummary2D {
     UnstructuredDiagnosticSample2D final_sample{};
 };
 
+struct UnstructuredTiming2D {
+    double particle_seconds{0.0};
+    double deposition_seconds{0.0};
+    double field_solve_seconds{0.0};
+};
+
 class UnstructuredSimulation2D {
 public:
     explicit UnstructuredSimulation2D(UnstructuredSimulation2DConfig config);
@@ -102,6 +108,7 @@ public:
     std::size_t poisson_solve_count() const {
         return poisson_solver_ ? poisson_solver_->solve_count() : 0;
     }
+    const UnstructuredTiming2D& timing() const { return timing_; }
 
 private:
     struct BoundarySegment {
@@ -117,7 +124,9 @@ private:
 
     Vec2 sample_position(const UnstructuredSpecies2DConfig& config);
     void deposit_and_solve();
-    void advance_with_boundaries(Particle2D& particle, Vec2 previous_position);
+    void advance_with_boundaries(
+        Particle2D& particle, Vec2 previous_position,
+        std::map<std::string, std::size_t>& absorbed_by_label);
     void write_diagnostics_header(std::ofstream& output) const;
     void write_diagnostics_sample(std::ofstream& output,
                                   const UnstructuredDiagnosticSample2D& sample) const;
@@ -135,6 +144,7 @@ private:
     std::map<std::string, std::size_t> absorbed_by_label_;
     std::mt19937_64 rng_;
     UnstructuredPoissonSummary2D last_poisson_{};
+    UnstructuredTiming2D timing_{};
     double time_{0.0};
     std::size_t step_{0};
     bool initialized_{false};

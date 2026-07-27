@@ -22,6 +22,7 @@ README = ROOT / "README.md"
 ROADMAP = ROOT / "docs" / "multidimensional-roadmap.md"
 VERIFY = ROOT / "scripts" / "verify.sh"
 INSTALL_SMOKE = ROOT / "scripts" / "verify_install_package.py"
+UNSTRUCTURED_BENCHMARK = ROOT / "scripts" / "benchmark_unstructured.py"
 
 
 class ReleaseArtifactError(RuntimeError):
@@ -93,6 +94,16 @@ def validate_install_smoke_script() -> None:
     ):
         require(term in script, f"install/package smoke script must include {term!r}")
 
+    benchmark = read(UNSTRUCTURED_BENCHMARK)
+    for term in (
+        "time.perf_counter()",
+        "statistics.median",
+        "particle_seconds",
+        "deposition_seconds",
+        "field_solve_seconds",
+    ):
+        require(term in benchmark, f"unstructured benchmark must include {term!r}")
+
 
 def validate_performance_doc() -> None:
     doc = read(PERFORMANCE)
@@ -124,6 +135,11 @@ def validate_cross_references() -> None:
     for script in ("validate_release_artifacts", "verify_install_package"):
         pattern = re.compile(rf"^python3\s+scripts/{script}\.py(?:\s+build)?\s*$", re.MULTILINE)
         require(pattern.search(verify) is not None, f"scripts/verify.sh must run scripts/{script}.py")
+    require(
+        "python3 scripts/benchmark_unstructured.py build/aurorapic_cli --repeats 1"
+        in verify,
+        "scripts/verify.sh must run the unstructured benchmark smoke",
+    )
 
 
 def main() -> int:

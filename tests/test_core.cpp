@@ -2511,6 +2511,36 @@ int main() {
             }
             require_near(integrated_charge, deposit.deposited_charge, 1e-14,
                          "unstructured shape deposition did not conserve charge");
+#ifdef AURORA_HAVE_OPENMP
+            {
+                std::vector<pic::Particle2D> scaling_particles(128);
+                for (std::size_t i = 0; i < scaling_particles.size(); ++i) {
+                    scaling_particles[i].position =
+                        i % 2 == 0 ? pic::Vec2{0.2, 0.2} : pic::Vec2{0.8, 0.25};
+                }
+                pic::UnstructuredMesh2D serial_deposit_mesh(mesh);
+                pic::UnstructuredMesh2D parallel_deposit_mesh(mesh);
+                const auto serial_deposit = pic::deposit_charge_shape(
+                    serial_deposit_mesh, scaling_particles, -1.0, 0.125,
+                    pic::RuntimePolicy{});
+                const auto parallel_deposit = pic::deposit_charge_shape(
+                    parallel_deposit_mesh, scaling_particles, -1.0, 0.125,
+                    pic::RuntimePolicy{pic::RuntimeBackend::OpenMP, 2});
+                require(serial_deposit.deposited_particles ==
+                            parallel_deposit.deposited_particles &&
+                            serial_deposit.outside_particles ==
+                                parallel_deposit.outside_particles,
+                        "parallel unstructured deposition changed particle accounting");
+                require_near(serial_deposit.deposited_charge,
+                             parallel_deposit.deposited_charge, 1e-14,
+                             "parallel unstructured deposition changed total charge");
+                for (std::size_t i = 0; i < serial_deposit_mesh.size(); ++i) {
+                    require_near(serial_deposit_mesh.rho()[i],
+                                 parallel_deposit_mesh.rho()[i], 1e-12,
+                                 "parallel unstructured deposition changed nodal charge");
+                }
+            }
+#endif
             computational_mesh.clear_charge();
             require(std::all_of(computational_mesh.rho().begin(), computational_mesh.rho().end(),
                                 [](double value) { return value == 0.0; }),
@@ -2873,8 +2903,53 @@ int main() {
                         "unstructured VTU output is missing cell topology arrays");
                 const std::string scalars = read_file_text(output_dir / "scalars.csv");
                 require(scalars.find("poisson_final_residual") != std::string::npos &&
+                            scalars.find("particle_seconds") != std::string::npos &&
+                            scalars.find("deposition_seconds") != std::string::npos &&
+                            scalars.find("field_solve_seconds") != std::string::npos &&
                             count_lines(scalars) == 3,
                         "unstructured scalar diagnostics structure mismatch");
+
+#ifdef AURORA_HAVE_OPENMP
+                auto parallel_config = config;
+                parallel_config.runtime = {
+                    pic::RuntimeBackend::OpenMP, 2};
+                parallel_config.output_dir =
+                    "test_output_unstructured_parallel";
+                parallel_config.vtk_output = false;
+                parallel_config.particle_output = false;
+                parallel_config.checkpoint_output = false;
+                std::filesystem::remove_all(parallel_config.output_dir);
+                pic::UnstructuredSimulation2D parallel_simulation(parallel_config);
+                const auto parallel_summary = parallel_simulation.run();
+                require_near(
+                    parallel_summary.final_sample.total_energy,
+                    summary.final_sample.total_energy, 1e-13,
+                    "OpenMP imported runtime changed total energy");
+                require(parallel_summary.final_sample.absorbed_by_label ==
+                            summary.final_sample.absorbed_by_label,
+                        "OpenMP imported runtime changed boundary loss accounting");
+                const auto& parallel_particles =
+                    parallel_simulation.species().front().particles();
+                const auto& serial_particles =
+                    simulation.species().front().particles();
+                require(parallel_particles.size() == serial_particles.size(),
+                        "OpenMP imported runtime changed particle count");
+                for (std::size_t i = 0; i < serial_particles.size(); ++i) {
+                    require_near(parallel_particles[i].position.x,
+                                 serial_particles[i].position.x, 1e-13,
+                                 "OpenMP imported runtime changed particle x");
+                    require_near(parallel_particles[i].position.y,
+                                 serial_particles[i].position.y, 1e-13,
+                                 "OpenMP imported runtime changed particle y");
+                    require_near(parallel_particles[i].velocity_half.x,
+                                 serial_particles[i].velocity_half.x, 1e-13,
+                                 "OpenMP imported runtime changed half-step vx");
+                    require_near(parallel_particles[i].velocity_half.y,
+                                 serial_particles[i].velocity_half.y, 1e-13,
+                                 "OpenMP imported runtime changed half-step vy");
+                }
+                std::filesystem::remove_all(parallel_config.output_dir);
+#endif
 
                 auto continued_config = config;
                 continued_config.steps = 2;

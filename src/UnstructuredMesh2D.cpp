@@ -197,6 +197,15 @@ void UnstructuredMesh2D::clear_charge() {
 UnstructuredDepositSummary2D deposit_charge_shape(UnstructuredMesh2D& mesh,
                                                    const std::vector<Particle2D>& particles,
                                                    double charge, double weight) {
+    return deposit_charge_shape(
+        mesh, particles, charge, weight, RuntimePolicy{});
+}
+
+UnstructuredDepositSummary2D deposit_charge_shape(
+    UnstructuredMesh2D& mesh,
+    const std::vector<Particle2D>& particles,
+    double charge, double weight,
+    const RuntimePolicy& runtime) {
     if (!std::isfinite(charge)) throw std::invalid_argument("unstructured deposit charge must be finite");
     if (!std::isfinite(weight) || weight <= 0.0) {
         throw std::invalid_argument("unstructured deposit weight must be positive and finite");
@@ -206,29 +215,77 @@ UnstructuredDepositSummary2D deposit_charge_shape(UnstructuredMesh2D& mesh,
         throw std::invalid_argument("unstructured particle charge product must be finite");
     }
 
-    UnstructuredDepositSummary2D summary;
+    validate_runtime_policy(runtime);
+    if (particles.empty()) return {};
     for (const auto& particle : particles) {
-        if (!particle.alive) continue;
-        const auto location = mesh.locate_point(particle.position);
-        if (!location) {
-            ++summary.outside_particles;
-            continue;
+        if (particle.alive &&
+            (!std::isfinite(particle.position.x) ||
+             !std::isfinite(particle.position.y))) {
+            throw std::invalid_argument(
+                "unstructured deposited particle position must be finite");
         }
-        for (std::size_t i = 0; i < location->node_ids.size(); ++i) {
-            const std::size_t node_index = mesh.node_index(location->node_ids[i]);
-            const double increment =
-                particle_charge * location->shape_weights[i] / mesh.node_control_areas()[node_index];
-            const double updated = mesh.rho()[node_index] + increment;
-            if (!std::isfinite(updated)) {
-                throw std::overflow_error("unstructured deposited charge density overflow");
+    }
+    const std::size_t worker_count =
+        std::min(runtime_info(runtime).active_threads, particles.size());
+    std::vector<std::vector<double>> local_density(
+        worker_count, std::vector<double>(mesh.size(), 0.0));
+    std::vector<UnstructuredDepositSummary2D> local_summaries(worker_count);
+    std::vector<unsigned char> local_overflow(worker_count, 0);
+    runtime_parallel_for(std::size_t{0}, worker_count, runtime,
+                         [&](std::size_t worker) {
+        const std::size_t begin = particles.size() * worker / worker_count;
+        const std::size_t end = particles.size() * (worker + 1) / worker_count;
+        auto& density = local_density[worker];
+        auto& summary = local_summaries[worker];
+        for (std::size_t particle_id = begin; particle_id < end; ++particle_id) {
+            const auto& particle = particles[particle_id];
+            if (!particle.alive) continue;
+            const auto location = mesh.locate_point(particle.position);
+            if (!location) {
+                ++summary.outside_particles;
+                continue;
             }
-            mesh.rho()[node_index] = updated;
+            for (std::size_t i = 0; i < location->node_ids.size(); ++i) {
+                const std::size_t node_index = mesh.node_index(location->node_ids[i]);
+                const double increment =
+                    particle_charge * location->shape_weights[i] /
+                    mesh.node_control_areas()[node_index];
+                const double updated = density[node_index] + increment;
+                if (!std::isfinite(updated)) {
+                    local_overflow[worker] = 1;
+                    continue;
+                }
+                density[node_index] = updated;
+            }
+            ++summary.deposited_particles;
+            summary.deposited_charge += particle_charge;
+            if (!std::isfinite(summary.deposited_charge)) {
+                local_overflow[worker] = 1;
+            }
         }
-        ++summary.deposited_particles;
-        summary.deposited_charge += particle_charge;
+    });
+
+    UnstructuredDepositSummary2D summary;
+    for (std::size_t worker = 0; worker < worker_count; ++worker) {
+        if (local_overflow[worker] != 0) {
+            throw std::overflow_error("unstructured deposited charge overflow");
+        }
+        summary.deposited_particles += local_summaries[worker].deposited_particles;
+        summary.outside_particles += local_summaries[worker].outside_particles;
+        summary.deposited_charge += local_summaries[worker].deposited_charge;
         if (!std::isfinite(summary.deposited_charge)) {
             throw std::overflow_error("unstructured deposited charge total overflow");
         }
+    }
+    for (std::size_t node = 0; node < mesh.size(); ++node) {
+        double updated = mesh.rho()[node];
+        for (std::size_t worker = 0; worker < worker_count; ++worker) {
+            updated += local_density[worker][node];
+        }
+        if (!std::isfinite(updated)) {
+            throw std::overflow_error("unstructured deposited charge density overflow");
+        }
+        mesh.rho()[node] = updated;
     }
     return summary;
 }

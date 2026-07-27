@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pic/ImportedMesh2D.hpp"
+#include "pic/Runtime.hpp"
 
 #include <cstddef>
 #include <map>
@@ -54,6 +55,11 @@ private:
 UnstructuredDepositSummary2D deposit_charge_shape(UnstructuredMesh2D& mesh,
                                                    const std::vector<Particle2D>& particles,
                                                    double charge, double weight);
+UnstructuredDepositSummary2D deposit_charge_shape(
+    UnstructuredMesh2D& mesh,
+    const std::vector<Particle2D>& particles,
+    double charge, double weight,
+    const RuntimePolicy& runtime);
 std::optional<Vec2> interpolate_electric(const UnstructuredMesh2D& mesh, Vec2 position);
 
 } // namespace pic

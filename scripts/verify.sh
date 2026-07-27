@@ -7,4 +7,5 @@ python3 scripts/validate_release_artifacts.py
 ctest --test-dir build --output-on-failure
 python3 scripts/validate_pushers.py
 python3 scripts/verify_examples.py build/aurorapic_cli
+python3 scripts/benchmark_unstructured.py build/aurorapic_cli --repeats 1
 python3 scripts/verify_install_package.py build
