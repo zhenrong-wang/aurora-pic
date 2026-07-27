@@ -26,6 +26,7 @@ add_library(aurorapic
   src/Species.cpp
   src/Species2D.cpp
   src/Species3D.cpp
+  src/UnstructuredFieldSolver2D.cpp
   src/UnstructuredMesh2D.cpp
   src/VTKWriter.cpp
 )

@@ -14,6 +14,7 @@
 #include "pic/Species.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/Species3D.hpp"
+#include "pic/UnstructuredFieldSolver2D.hpp"
 #include "pic/UnstructuredMesh2D.hpp"
 #include <algorithm>
 #include <array>
@@ -2507,6 +2508,149 @@ int main() {
                     require_near(recovered->shape_weights[i], weights[i], 1e-13,
                                  "distorted quadrilateral shape coordinate mismatch");
                 }
+            }
+
+            {
+                // Executable imported-geometry benchmark: a symmetric four-triangle
+                // domain has one interior degree of freedom with an analytic solution.
+                pic::ImportedMesh2D star;
+                star.add_node({1, {0.0, 0.0}});
+                star.add_node({2, {1.0, 0.0}});
+                star.add_node({3, {1.0, 1.0}});
+                star.add_node({4, {0.0, 1.0}});
+                star.add_node({5, {0.5, 0.5}});
+                star.add_cell({10, pic::ImportedCellShape2D::Triangle, {1, 2, 5}, 1, "plasma"});
+                star.add_cell({11, pic::ImportedCellShape2D::Triangle, {2, 3, 5}, 1, "plasma"});
+                star.add_cell({12, pic::ImportedCellShape2D::Triangle, {3, 4, 5}, 1, "plasma"});
+                star.add_cell({13, pic::ImportedCellShape2D::Triangle, {4, 1, 5}, 1, "plasma"});
+                star.add_boundary_face({20, {1, 2}, 1, "ground"});
+                star.add_boundary_face({21, {2, 3}, 1, "ground"});
+                star.add_boundary_face({22, {3, 4}, 1, "ground"});
+                star.add_boundary_face({23, {4, 1}, 1, "ground"});
+
+                pic::UnstructuredMesh2D field_mesh(star);
+                const auto constant_summary =
+                    pic::solve_unstructured_poisson(field_mesh, {{"ground", 2.0}});
+                require(constant_summary.converged,
+                        "unstructured Poisson solve did not converge for constant Dirichlet data");
+                for (const double potential : field_mesh.phi()) {
+                    require_near(potential, 2.0, 1e-12,
+                                 "unstructured Poisson solve did not preserve constant potential");
+                }
+                for (const auto electric : field_mesh.electric()) {
+                    require_near(electric.x, 0.0, 1e-12,
+                                 "constant unstructured potential produced a nonzero Ex");
+                    require_near(electric.y, 0.0, 1e-12,
+                                 "constant unstructured potential produced a nonzero Ey");
+                }
+
+                field_mesh.clear_charge();
+                std::fill(field_mesh.phi().begin(), field_mesh.phi().end(), 0.0);
+                const std::size_t center = field_mesh.node_index(5);
+                field_mesh.rho()[center] = 1.0 / field_mesh.node_control_area(5);
+                const auto source_summary =
+                    pic::solve_unstructured_poisson(field_mesh, {{"ground", 0.0}});
+                require(source_summary.converged,
+                        "unstructured Poisson solve did not converge for the symmetric source");
+                require(source_summary.iterations == 1,
+                        "one-degree-of-freedom unstructured Poisson solve did not converge in one iteration");
+                require_near(field_mesh.phi()[center], 0.25, 1e-12,
+                             "unstructured Poisson analytic center potential mismatch");
+                require_near(field_mesh.electric()[center].x, 0.0, 1e-12,
+                             "symmetric unstructured source produced nonzero center Ex");
+                require_near(field_mesh.electric()[center].y, 0.0, 1e-12,
+                             "symmetric unstructured source produced nonzero center Ey");
+
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(field_mesh, {});
+                    },
+                    "unstructured Poisson solve accepted missing boundary potentials");
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            field_mesh, {{"ground", 0.0}, {"unknown", 0.0}});
+                    },
+                    "unstructured Poisson solve accepted an unknown boundary label");
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            field_mesh, {{"ground", std::numeric_limits<double>::infinity()}});
+                    },
+                    "unstructured Poisson solve accepted a non-finite boundary potential");
+            }
+
+            {
+                // Four Q1 elements provide an independent analytic check of the
+                // quadrilateral stiffness/Jacobian assembly.
+                pic::ImportedMesh2D quad_patch;
+                quad_patch.add_node({1, {0.0, 0.0}});
+                quad_patch.add_node({2, {0.5, 0.0}});
+                quad_patch.add_node({3, {1.0, 0.0}});
+                quad_patch.add_node({4, {0.0, 0.5}});
+                quad_patch.add_node({5, {0.5, 0.5}});
+                quad_patch.add_node({6, {1.0, 0.5}});
+                quad_patch.add_node({7, {0.0, 1.0}});
+                quad_patch.add_node({8, {0.5, 1.0}});
+                quad_patch.add_node({9, {1.0, 1.0}});
+                quad_patch.add_cell({10, pic::ImportedCellShape2D::Quadrilateral,
+                                     {1, 2, 5, 4}, 1, "plasma"});
+                quad_patch.add_cell({11, pic::ImportedCellShape2D::Quadrilateral,
+                                     {2, 3, 6, 5}, 1, "plasma"});
+                quad_patch.add_cell({12, pic::ImportedCellShape2D::Quadrilateral,
+                                     {4, 5, 8, 7}, 1, "plasma"});
+                quad_patch.add_cell({13, pic::ImportedCellShape2D::Quadrilateral,
+                                     {5, 6, 9, 8}, 1, "plasma"});
+                quad_patch.add_boundary_face({20, {1, 2}, 1, "ground"});
+                quad_patch.add_boundary_face({21, {2, 3}, 1, "ground"});
+                quad_patch.add_boundary_face({22, {3, 6}, 1, "ground"});
+                quad_patch.add_boundary_face({23, {6, 9}, 1, "ground"});
+                quad_patch.add_boundary_face({24, {9, 8}, 1, "ground"});
+                quad_patch.add_boundary_face({25, {8, 7}, 1, "ground"});
+                quad_patch.add_boundary_face({26, {7, 4}, 1, "ground"});
+                quad_patch.add_boundary_face({27, {4, 1}, 1, "ground"});
+
+                pic::UnstructuredMesh2D quad_field_mesh(quad_patch);
+                const std::size_t center = quad_field_mesh.node_index(5);
+                quad_field_mesh.rho()[center] =
+                    1.0 / quad_field_mesh.node_control_area(5);
+                const auto summary =
+                    pic::solve_unstructured_poisson(quad_field_mesh, {{"ground", 0.0}});
+                require(summary.converged && summary.iterations == 1,
+                        "one-degree-of-freedom Q1 Poisson solve did not converge in one iteration");
+                require_near(quad_field_mesh.phi()[center], 3.0 / 8.0, 1e-12,
+                             "unstructured Q1 analytic center potential mismatch");
+                require_near(quad_field_mesh.electric()[center].x, 0.0, 1e-12,
+                             "symmetric Q1 source produced nonzero center Ex");
+                require_near(quad_field_mesh.electric()[center].y, 0.0, 1e-12,
+                             "symmetric Q1 source produced nonzero center Ey");
+            }
+
+            {
+                pic::UnstructuredMesh2D mixed_field_mesh(mesh);
+                const auto summary = pic::solve_unstructured_poisson(
+                    mixed_field_mesh,
+                    {{"electrode", 1.25}, {"inlet", 1.25}, {"outlet", 1.25}, {"wall", 1.25}});
+                require(summary.converged,
+                        "mixed triangle/quadrilateral unstructured Poisson solve did not converge");
+                for (const double potential : mixed_field_mesh.phi()) {
+                    require_near(potential, 1.25, 1e-12,
+                                 "mixed-cell unstructured solve did not preserve constant potential");
+                }
+                for (const auto electric : mixed_field_mesh.electric()) {
+                    require_near(electric.x, 0.0, 1e-12,
+                                 "mixed-cell constant potential produced nonzero Ex");
+                    require_near(electric.y, 0.0, 1e-12,
+                                 "mixed-cell constant potential produced nonzero Ey");
+                }
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            mixed_field_mesh,
+                            {{"electrode", 1.0}, {"inlet", 0.0},
+                             {"outlet", 0.0}, {"wall", 0.0}});
+                    },
+                    "unstructured Poisson solve accepted conflicting corner potentials");
             }
 
             pic::Gmsh2ImportLimits small_limits;

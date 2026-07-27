@@ -16,6 +16,7 @@ in normalized units with `eps0 = 1`.
 
 - Periodic domains use a direct spectral Poisson solve. The zero mode is removed, enforcing global quasi-neutral compatibility.
 - Dirichlet domains use a tridiagonal finite-difference Poisson solve with prescribed endpoint potentials.
+- Validated imported 2D domains use triangle/bilinear-quadrilateral finite-element stiffness assembly with lumped nodal charge, physical-label Dirichlet constraints, CSR storage, and Jacobi-preconditioned conjugate gradients. The solve reports its residual and iteration count, and projects element electric fields back to nodes. This API is not yet connected to the CLI simulation loop.
 
 ## Particle advance and steady state
 
@@ -38,7 +39,7 @@ The bounded smoke/performance envelope for the checked-in examples is documented
 
 ## Verification included
 
-The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution and runs a short neutral two-species PIC simulation end-to-end.
+The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential and symmetric-source solutions, and runs a short neutral two-species PIC simulation end-to-end.
 
 ## Extension path
 
