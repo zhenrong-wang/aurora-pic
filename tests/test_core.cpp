@@ -371,6 +371,52 @@ int main() {
             require_near(final_speed, initial_speed, 1e-13, "2D Boris pusher did not conserve perpendicular speed");
         }
         {
+            // M5 regression: Simulation2D config-level uniform-B activation should use the
+            // same Boris rotation as the pusher-level cyclotron benchmark while keeping the
+            // field solve electrostatic. A tiny macro-particle weight suppresses self-field
+            // feedback so the prescribed-B rotation is deterministic end to end.
+            constexpr double dt = 0.04;
+            constexpr std::size_t steps = 37;
+            constexpr double charge_to_mass = 1.25;
+            constexpr double magnetic_z = 1.7;
+            const pic::Vec2 initial_velocity{0.8, -0.35};
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 8;
+            cfg.ny = 8;
+            cfg.length_x = 1.0;
+            cfg.length_y = 1.0;
+            cfg.dt = dt;
+            cfg.steps = steps;
+            cfg.boundary = pic::Boundary::Periodic;
+            cfg.output_interval = steps;
+            cfg.magnetic_field_z = magnetic_z;
+            cfg.species = {pic::Species2DConfig{"m5_boris_ion", charge_to_mass, 1.0, 1e-30, 1,
+                                                initial_velocity.x, initial_velocity.y, 0.0,
+                                                0.25, 0.26, 0.25, 0.26}};
+
+            pic::Simulation2D sim(cfg);
+            sim.initialize();
+            require_near(sim.species()[0].particles()[0].velocity.x, initial_velocity.x, 1e-12,
+                         "M5 2D uniform-B simulation changed initial vx during initialization");
+            require_near(sim.species()[0].particles()[0].velocity.y, initial_velocity.y, 1e-12,
+                         "M5 2D uniform-B simulation changed initial vy during initialization");
+            sim.run();
+
+            const auto& particle = sim.species()[0].particles()[0];
+            const double angle = static_cast<double>(steps) * boris_rotation_angle(std::abs(magnetic_z), charge_to_mass, dt);
+            const double expected_x = initial_velocity.x * std::cos(angle) - initial_velocity.y * std::sin(angle);
+            const double expected_y = initial_velocity.x * std::sin(angle) + initial_velocity.y * std::cos(angle);
+            require_near(particle.velocity.x, expected_x, 1e-10,
+                         "M5 2D uniform-B Simulation2D run did not apply Boris x-velocity rotation");
+            require_near(particle.velocity.y, expected_y, 1e-10,
+                         "M5 2D uniform-B Simulation2D run did not apply Boris y-velocity rotation");
+            const double initial_speed = std::sqrt(initial_velocity.x * initial_velocity.x + initial_velocity.y * initial_velocity.y);
+            const double final_speed = std::sqrt(particle.velocity.x * particle.velocity.x + particle.velocity.y * particle.velocity.y);
+            require_near(final_speed, initial_speed, 1e-10,
+                         "M5 2D uniform-B Simulation2D run did not conserve magnetic-rotation speed");
+        }
+        {
             constexpr double dt = 0.03;
             constexpr std::size_t steps = 29;
             constexpr double charge_to_mass = -0.75;

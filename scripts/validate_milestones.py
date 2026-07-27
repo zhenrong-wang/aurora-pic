@@ -32,8 +32,8 @@ EXPECTED_STATUSES = {
     "M1": "Complete",
     "M2": "Complete",
     "M3": "Complete",
-    "M4": "Current baseline",
-    "M5": "Next",
+    "M4": "Complete",
+    "M5": "Current baseline",
     "M6": "Planned",
 }
 REQUIRED_EVIDENCE_TERMS = {
@@ -42,7 +42,7 @@ REQUIRED_EVIDENCE_TERMS = {
     "M2": ("Gmsh", "boundary labels"),
     "M3": ("VTK XML", "openPMD/HDF5", "compatibility tests"),
     "M4": ("OpenMP/MPI/GPU", "scaling smoke tests"),
-    "M5": ("electromagnetic", "collision models"),
+    "M5": ("uniform-B", "Boris", "CTest", "CLI examples", "electromagnetic", "collision models"),
     "M6": ("CI matrix", "configuration compatibility"),
 }
 
