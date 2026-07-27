@@ -29,7 +29,7 @@ The current implementation is aimed at correctness and regression coverage befor
 
 Use the serial backend as the portability baseline. Optional OpenMP currently covers safe particle-loop slices and uses deterministic static scheduling; it is not yet a full MPI/GPU or domain-decomposed scaling model. Treat `runtime_backend = mpi` and `runtime_backend = gpu` as reserved future options that intentionally fail fast.
 
-Imported 2D diagnostics include cumulative `particle_seconds`, `deposition_seconds`, and `field_solve_seconds` columns. These use a monotonic wall clock and are operational measurements, not simulation state; they are intentionally excluded from checkpoints and numerical convergence decisions. Imported charge deposition uses one dense nodal buffer per active worker and reduces those buffers in worker order. This avoids atomics and data races, gives repeatable results for a fixed worker count, and uses additional memory proportional to `active_threads * mesh_nodes`.
+Imported 2D diagnostics include cumulative `particle_seconds`, `deposition_seconds`, and `field_solve_seconds` columns, plus cumulative `location_cache_hits` and `location_searches`. Timings use a monotonic wall clock and are operational measurements, not simulation state; timings and location caches are intentionally excluded from checkpoints and numerical convergence decisions. Each live particle first validates its last element and recomputes shape coordinates locally. Only a cache miss or element crossing invokes spatial point location; restart reconstructs the sidecars during its required redeposition. Imported charge deposition uses one dense nodal buffer per active worker and reduces those buffers in worker order. This avoids atomics and data races, gives repeatable results for a fixed worker count, and uses additional memory proportional to `active_threads * mesh_nodes`.
 
 Run a repeat-median benchmark with:
 
@@ -38,7 +38,7 @@ python3 scripts/benchmark_unstructured.py build/aurorapic_cli \
   examples/imported_plasma_2d.cfg --repeats 5
 ```
 
-The benchmark disables field, particle, and checkpoint output, preserves the configured mesh, particle population, timestep count, and runtime backend, and reports median end-to-end and cumulative phase timings. Record the compiler, build type, CPU, thread affinity, mesh size, live-particle count, step count, backend, and thread count alongside results. The checked-in smoke invocation validates the measurement path; its tiny example is not a scaling claim.
+The benchmark disables field, particle, and checkpoint output, preserves the configured mesh, particle population, timestep count, and runtime backend, and reports median end-to-end and cumulative phase timings and location-cache counters. Record the compiler, build type, CPU, thread affinity, mesh size, live-particle count, step count, backend, and thread count alongside results. The checked-in smoke invocation validates the measurement path; its tiny example is not a scaling claim.
 
 Transient and steady-state execution are available in all structured dimensions. Steady-state termination compares adjacent windows of emitted total-energy diagnostics and always remains bounded by `max_steps`. This is an operational convergence signal only; production studies must also establish problem-specific field, charge, flux, and distribution-function convergence.
 

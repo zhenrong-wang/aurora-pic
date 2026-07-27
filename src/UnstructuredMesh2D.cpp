@@ -206,6 +206,17 @@ UnstructuredDepositSummary2D deposit_charge_shape(
     const std::vector<Particle2D>& particles,
     double charge, double weight,
     const RuntimePolicy& runtime) {
+    std::vector<UnstructuredParticleLocation2D> locations(particles.size());
+    return deposit_charge_shape(
+        mesh, particles, charge, weight, runtime, locations);
+}
+
+UnstructuredDepositSummary2D deposit_charge_shape(
+    UnstructuredMesh2D& mesh,
+    const std::vector<Particle2D>& particles,
+    double charge, double weight,
+    const RuntimePolicy& runtime,
+    std::vector<UnstructuredParticleLocation2D>& locations) {
     if (!std::isfinite(charge)) throw std::invalid_argument("unstructured deposit charge must be finite");
     if (!std::isfinite(weight) || weight <= 0.0) {
         throw std::invalid_argument("unstructured deposit weight must be positive and finite");
@@ -216,6 +227,10 @@ UnstructuredDepositSummary2D deposit_charge_shape(
     }
 
     validate_runtime_policy(runtime);
+    if (locations.size() != particles.size()) {
+        throw std::invalid_argument(
+            "unstructured particle-location cache size mismatch");
+    }
     if (particles.empty()) return {};
     for (const auto& particle : particles) {
         if (particle.alive &&
@@ -240,15 +255,29 @@ UnstructuredDepositSummary2D deposit_charge_shape(
         for (std::size_t particle_id = begin; particle_id < end; ++particle_id) {
             const auto& particle = particles[particle_id];
             if (!particle.alive) continue;
-            const auto location = mesh.locate_point(particle.position);
-            if (!location) {
+            auto& cached = locations[particle_id];
+            std::optional<ImportedPointLocation2D> resolved;
+            if (cached.valid) {
+                resolved = mesh.topology().cell_coordinates(
+                    cached.location.cell_id, particle.position);
+                if (resolved) ++summary.location_cache_hits;
+            }
+            if (!resolved) {
+                ++summary.location_searches;
+                resolved = mesh.locate_point(particle.position);
+            }
+            if (!resolved) {
+                cached.valid = false;
                 ++summary.outside_particles;
                 continue;
             }
-            for (std::size_t i = 0; i < location->node_ids.size(); ++i) {
-                const std::size_t node_index = mesh.node_index(location->node_ids[i]);
+            cached.location = std::move(*resolved);
+            cached.valid = true;
+            for (std::size_t i = 0; i < cached.location.node_ids.size(); ++i) {
+                const std::size_t node_index =
+                    mesh.node_index(cached.location.node_ids[i]);
                 const double increment =
-                    particle_charge * location->shape_weights[i] /
+                    particle_charge * cached.location.shape_weights[i] /
                     mesh.node_control_areas()[node_index];
                 const double updated = density[node_index] + increment;
                 if (!std::isfinite(updated)) {
@@ -272,6 +301,8 @@ UnstructuredDepositSummary2D deposit_charge_shape(
         }
         summary.deposited_particles += local_summaries[worker].deposited_particles;
         summary.outside_particles += local_summaries[worker].outside_particles;
+        summary.location_cache_hits += local_summaries[worker].location_cache_hits;
+        summary.location_searches += local_summaries[worker].location_searches;
         summary.deposited_charge += local_summaries[worker].deposited_charge;
         if (!std::isfinite(summary.deposited_charge)) {
             throw std::overflow_error("unstructured deposited charge total overflow");
@@ -291,17 +322,35 @@ UnstructuredDepositSummary2D deposit_charge_shape(
 }
 
 std::optional<Vec2> interpolate_electric(const UnstructuredMesh2D& mesh, Vec2 position) {
-    const auto location = mesh.locate_point(position);
-    if (!location) return std::nullopt;
+    UnstructuredParticleLocation2D location;
+    return interpolate_electric(mesh, position, location);
+}
 
+std::optional<Vec2> interpolate_electric(
+    const UnstructuredMesh2D& mesh, Vec2 position,
+    UnstructuredParticleLocation2D& cached, bool* cache_hit) {
+    std::optional<ImportedPointLocation2D> location;
+    if (cached.valid) {
+        location = mesh.topology().cell_coordinates(
+            cached.location.cell_id, position);
+    }
+    if (cache_hit) *cache_hit = location.has_value();
+    if (!location) location = mesh.locate_point(position);
+    if (!location) {
+        cached.valid = false;
+        return std::nullopt;
+    }
+    cached.location = std::move(*location);
+    cached.valid = true;
     Vec2 result{};
-    for (std::size_t i = 0; i < location->node_ids.size(); ++i) {
-        const Vec2 value = mesh.electric()[mesh.node_index(location->node_ids[i])];
+    for (std::size_t i = 0; i < cached.location.node_ids.size(); ++i) {
+        const Vec2 value =
+            mesh.electric()[mesh.node_index(cached.location.node_ids[i])];
         if (!std::isfinite(value.x) || !std::isfinite(value.y)) {
             throw std::runtime_error("unstructured electric field values must be finite");
         }
-        result.x += location->shape_weights[i] * value.x;
-        result.y += location->shape_weights[i] * value.y;
+        result.x += cached.location.shape_weights[i] * value.x;
+        result.y += cached.location.shape_weights[i] * value.y;
     }
     return result;
 }

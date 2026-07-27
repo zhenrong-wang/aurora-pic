@@ -44,7 +44,7 @@ The bounded smoke/performance envelope for the checked-in examples is documented
 
 ## Verification included
 
-The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential, symmetric-source, and exact mixed-boundary linear solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, rejects singular or incomplete imported boundary specifications, exercises imported-domain multi-bounce reflection and label-attributed absorption end to end, and runs a short neutral two-species structured PIC simulation.
+The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential, symmetric-source, and exact mixed-boundary linear solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, checks particle-location cache population, reuse, and cross-cell fallback, rejects singular or incomplete imported boundary specifications, exercises imported-domain multi-bounce reflection and label-attributed absorption end to end, and runs a short neutral two-species structured PIC simulation.
 
 ## Extension path
 

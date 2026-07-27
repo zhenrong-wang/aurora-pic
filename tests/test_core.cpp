@@ -2511,6 +2511,41 @@ int main() {
             }
             require_near(integrated_charge, deposit.deposited_charge, 1e-14,
                          "unstructured shape deposition did not conserve charge");
+            {
+                pic::UnstructuredMesh2D cached_mesh(mesh);
+                std::vector<pic::UnstructuredParticleLocation2D> locations(
+                    particles.size());
+                const auto initial_cached = pic::deposit_charge_shape(
+                    cached_mesh, particles, -2.0, 0.5,
+                    pic::RuntimePolicy{}, locations);
+                require(initial_cached.location_cache_hits == 0 &&
+                            initial_cached.location_searches == 3,
+                        "initial unstructured deposition did not populate location caches");
+                cached_mesh.clear_charge();
+                const auto repeated_cached = pic::deposit_charge_shape(
+                    cached_mesh, particles, -2.0, 0.5,
+                    pic::RuntimePolicy{}, locations);
+                require(repeated_cached.location_cache_hits == 2 &&
+                            repeated_cached.location_searches == 1,
+                        "repeated unstructured deposition did not reuse valid locations");
+                particles[0].position = {0.8, 0.25};
+                cached_mesh.clear_charge();
+                const auto crossed_cached = pic::deposit_charge_shape(
+                    cached_mesh, particles, -2.0, 0.5,
+                    pic::RuntimePolicy{}, locations);
+                require(crossed_cached.location_cache_hits == 1 &&
+                            crossed_cached.location_searches == 2,
+                        "unstructured location cache did not fall back after a cell crossing");
+                require_throws(
+                    [&]() {
+                        std::vector<pic::UnstructuredParticleLocation2D> wrong_size;
+                        (void)pic::deposit_charge_shape(
+                            cached_mesh, particles, -2.0, 0.5,
+                            pic::RuntimePolicy{}, wrong_size);
+                    },
+                    "unstructured deposition accepted a mismatched location cache");
+                particles[0].position = {1.0 / 6.0, 1.0 / 3.0};
+            }
 #ifdef AURORA_HAVE_OPENMP
             {
                 std::vector<pic::Particle2D> scaling_particles(128);
@@ -2560,6 +2595,26 @@ int main() {
                 require_near(electric->y, -point.x + 4.0 * point.y - 2.0, 1e-14,
                              "unstructured affine electric interpolation y mismatch");
             }
+            pic::UnstructuredParticleLocation2D interpolation_location;
+            bool interpolation_hit = true;
+            require(
+                pic::interpolate_electric(
+                    computational_mesh, {0.2, 0.2},
+                    interpolation_location, &interpolation_hit).has_value() &&
+                    !interpolation_hit,
+                "initial unstructured interpolation incorrectly reported a cache hit");
+            require(
+                pic::interpolate_electric(
+                    computational_mesh, {0.21, 0.2},
+                    interpolation_location, &interpolation_hit).has_value() &&
+                    interpolation_hit,
+                "same-cell unstructured interpolation missed its cached location");
+            require(
+                pic::interpolate_electric(
+                    computational_mesh, {0.8, 0.25},
+                    interpolation_location, &interpolation_hit).has_value() &&
+                    !interpolation_hit,
+                "cross-cell unstructured interpolation did not fall back to point location");
             require(!pic::interpolate_electric(computational_mesh, {1.1, 0.5}).has_value(),
                     "unstructured field interpolation accepted an exterior point");
 
@@ -2876,6 +2931,9 @@ int main() {
                 require(simulation.poisson_assembly_count() == 1 &&
                             simulation.poisson_solve_count() == 2,
                         "unstructured runtime did not reuse its Poisson operator");
+                require(simulation.timing().location_cache_hits > 0 &&
+                            simulation.timing().location_searches >= neutral.particles,
+                        "unstructured runtime did not report location-cache reuse");
                 require(summary.final_sample.live_particles == neutral.particles,
                         "reflecting imported boundaries lost particles");
                 for (const auto& [label, count] : summary.final_sample.absorbed_by_label) {

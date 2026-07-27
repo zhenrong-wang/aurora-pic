@@ -134,7 +134,7 @@ void parallel_particle_chunks(std::vector<Particle2D>& particles,
             const std::size_t begin = particles.size() * worker / workers;
             const std::size_t end = particles.size() * (worker + 1) / workers;
             for (std::size_t particle = begin; particle < end; ++particle) {
-                body(worker, particles[particle]);
+                body(worker, particle, particles[particle]);
             }
         } catch (...) {
             failures[worker] = std::current_exception();
@@ -258,6 +258,7 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         }
         species_configs_.push_back(species_config);
         species_.emplace_back(particle_storage_config(species_config));
+        particle_locations_.emplace_back();
     }
     poisson_solver_ = std::make_unique<UnstructuredPoissonSolver2D>(
         mesh_, config_.dirichlet_potentials,
@@ -310,8 +311,10 @@ void UnstructuredSimulation2D::initialize() {
     for (auto& [label, count] : absorbed_by_label_) count = 0;
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         auto& particles = species_[species_id].particles();
+        auto& locations = particle_locations_[species_id];
         const auto& species_config = species_configs_[species_id];
         particles.assign(species_config.particles, Particle2D{});
+        locations.assign(species_config.particles, UnstructuredParticleLocation2D{});
         std::normal_distribution<double> velocity_x(
             species_config.drift_velocity_x, species_config.thermal_velocity);
         std::normal_distribution<double> velocity_y(
@@ -325,13 +328,24 @@ void UnstructuredSimulation2D::initialize() {
     }
     deposit_and_solve();
     const auto particle_start = SteadyClock::now();
-    for (auto& species : species_) {
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        auto& species = species_[species_id];
         const double charge_to_mass = species.charge() / species.mass();
+        const std::size_t workers =
+            particle_worker_count(species.particles().size(), config_.runtime);
+        std::vector<std::size_t> local_hits(workers, 0);
+        std::vector<std::size_t> local_searches(workers, 0);
         parallel_particle_chunks(
             species.particles(), config_.runtime,
-            [&](std::size_t, Particle2D& particle) {
+            [&](std::size_t worker, std::size_t particle_id,
+                Particle2D& particle) {
+                bool cache_hit = false;
                 const auto electric =
-                    interpolate_electric(mesh_, particle.position);
+                    interpolate_electric(
+                        mesh_, particle.position,
+                        particle_locations_[species_id][particle_id],
+                        &cache_hit);
+                cache_hit ? ++local_hits[worker] : ++local_searches[worker];
                 if (!electric) {
                     throw std::runtime_error(
                         "initialized particle is outside imported mesh");
@@ -340,6 +354,10 @@ void UnstructuredSimulation2D::initialize() {
                     particle, *electric, charge_to_mass,
                     config_.magnetic_field_z, config_.dt);
             });
+        for (std::size_t worker = 0; worker < workers; ++worker) {
+            timing_.location_cache_hits += local_hits[worker];
+            timing_.location_searches += local_searches[worker];
+        }
     }
     timing_.particle_seconds +=
         std::chrono::duration<double>(SteadyClock::now() - particle_start).count();
@@ -349,11 +367,15 @@ void UnstructuredSimulation2D::initialize() {
 void UnstructuredSimulation2D::deposit_and_solve() {
     const auto deposition_start = SteadyClock::now();
     mesh_.clear_charge();
-    for (const auto& species : species_) {
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        const auto& species = species_[species_id];
         const auto deposit =
             deposit_charge_shape(
                 mesh_, species.particles(), species.charge(),
-                species.weight(), config_.runtime);
+                species.weight(), config_.runtime,
+                particle_locations_[species_id]);
+        timing_.location_cache_hits += deposit.location_cache_hits;
+        timing_.location_searches += deposit.location_searches;
         if (deposit.outside_particles != 0) {
             throw std::runtime_error("live particles remain outside the imported mesh during deposition");
         }
@@ -442,11 +464,14 @@ void UnstructuredSimulation2D::advance_with_boundaries(
 void UnstructuredSimulation2D::step() {
     if (!initialized_) initialize();
     const auto first_particle_start = SteadyClock::now();
-    for (auto& species : species_) {
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        auto& species = species_[species_id];
         const double charge_to_mass = species.charge() / species.mass();
         const std::size_t workers =
             particle_worker_count(species.particles().size(), config_.runtime);
         std::vector<std::map<std::string, std::size_t>> local_absorbed(workers);
+        std::vector<std::size_t> local_hits(workers, 0);
+        std::vector<std::size_t> local_searches(workers, 0);
         for (auto& counts : local_absorbed) {
             for (const auto& [label, total] : absorbed_by_label_) {
                 (void)total;
@@ -455,10 +480,16 @@ void UnstructuredSimulation2D::step() {
         }
         parallel_particle_chunks(
             species.particles(), config_.runtime,
-            [&](std::size_t worker, Particle2D& particle) {
+            [&](std::size_t worker, std::size_t particle_id,
+                Particle2D& particle) {
                 if (!particle.alive) return;
+                bool cache_hit = false;
                 const auto electric =
-                    interpolate_electric(mesh_, particle.position);
+                    interpolate_electric(
+                        mesh_, particle.position,
+                        particle_locations_[species_id][particle_id],
+                        &cache_hit);
+                cache_hit ? ++local_hits[worker] : ++local_searches[worker];
                 if (!electric) {
                     throw std::runtime_error(
                         "live particle is outside imported mesh before push");
@@ -476,20 +507,35 @@ void UnstructuredSimulation2D::step() {
                 absorbed_by_label_.at(label) += count;
             }
         }
+        for (std::size_t worker = 0; worker < workers; ++worker) {
+            timing_.location_cache_hits += local_hits[worker];
+            timing_.location_searches += local_searches[worker];
+        }
     }
     timing_.particle_seconds +=
         std::chrono::duration<double>(SteadyClock::now() - first_particle_start).count();
 
     deposit_and_solve();
     const auto second_particle_start = SteadyClock::now();
-    for (auto& species : species_) {
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        auto& species = species_[species_id];
         const double charge_to_mass = species.charge() / species.mass();
+        const std::size_t workers =
+            particle_worker_count(species.particles().size(), config_.runtime);
+        std::vector<std::size_t> local_hits(workers, 0);
+        std::vector<std::size_t> local_searches(workers, 0);
         parallel_particle_chunks(
             species.particles(), config_.runtime,
-            [&](std::size_t, Particle2D& particle) {
+            [&](std::size_t worker, std::size_t particle_id,
+                Particle2D& particle) {
                 if (!particle.alive) return;
+                bool cache_hit = false;
                 const auto electric =
-                    interpolate_electric(mesh_, particle.position);
+                    interpolate_electric(
+                        mesh_, particle.position,
+                        particle_locations_[species_id][particle_id],
+                        &cache_hit);
+                cache_hit ? ++local_hits[worker] : ++local_searches[worker];
                 if (!electric) {
                     throw std::runtime_error(
                         "live particle is outside imported mesh after push");
@@ -498,6 +544,10 @@ void UnstructuredSimulation2D::step() {
                     particle, *electric, charge_to_mass,
                     config_.magnetic_field_z, config_.dt);
             });
+        for (std::size_t worker = 0; worker < workers; ++worker) {
+            timing_.location_cache_hits += local_hits[worker];
+            timing_.location_searches += local_searches[worker];
+        }
     }
     timing_.particle_seconds +=
         std::chrono::duration<double>(SteadyClock::now() - second_particle_start).count();
@@ -529,7 +579,8 @@ UnstructuredDiagnosticSample2D UnstructuredSimulation2D::sample() const {
 void UnstructuredSimulation2D::write_diagnostics_header(std::ofstream& output) const {
     output << "step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles"
               ",poisson_iterations,poisson_initial_residual,poisson_final_residual"
-              ",particle_seconds,deposition_seconds,field_solve_seconds";
+              ",particle_seconds,deposition_seconds,field_solve_seconds"
+              ",location_cache_hits,location_searches";
     for (const auto& [label, count] : absorbed_by_label_) {
         (void)count;
         output << ',' << csv_quote("absorbed_" + label);
@@ -545,7 +596,8 @@ void UnstructuredSimulation2D::write_diagnostics_sample(
            << value.live_particles << ',' << value.poisson.iterations << ','
            << value.poisson.initial_residual << ',' << value.poisson.final_residual << ','
            << timing_.particle_seconds << ',' << timing_.deposition_seconds << ','
-           << timing_.field_solve_seconds;
+           << timing_.field_solve_seconds << ','
+           << timing_.location_cache_hits << ',' << timing_.location_searches;
     for (const auto& [label, count] : value.absorbed_by_label) {
         (void)label;
         output << ',' << count;
@@ -721,6 +773,8 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
         }
         auto& particles = species_[species_id].particles();
         particles.resize(particle_count);
+        particle_locations_[species_id].assign(
+            particle_count, UnstructuredParticleLocation2D{});
         for (auto& particle : particles) {
             int alive = 0;
             input >> particle.position.x >> particle.position.y

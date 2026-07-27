@@ -270,6 +270,7 @@ def check_imported_plasma_2d(output_dir: Path) -> None:
             "charge_l1", "live_particles", "poisson_iterations",
             "poisson_initial_residual", "poisson_final_residual",
             "particle_seconds", "deposition_seconds", "field_solve_seconds",
+            "location_cache_hits", "location_searches",
             "absorbed_electrode", "absorbed_inlet", "absorbed_outlet", "absorbed_wall",
         ],
         min_rows=4,

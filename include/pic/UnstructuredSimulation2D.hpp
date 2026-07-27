@@ -82,6 +82,8 @@ struct UnstructuredTiming2D {
     double particle_seconds{0.0};
     double deposition_seconds{0.0};
     double field_solve_seconds{0.0};
+    std::size_t location_cache_hits{0};
+    std::size_t location_searches{0};
 };
 
 class UnstructuredSimulation2D {
@@ -139,6 +141,7 @@ private:
     std::unique_ptr<UnstructuredPoissonSolver2D> poisson_solver_;
     std::vector<Species2D> species_;
     std::vector<UnstructuredSpecies2DConfig> species_configs_;
+    std::vector<std::vector<UnstructuredParticleLocation2D>> particle_locations_;
     std::vector<BoundarySegment> boundary_segments_;
     std::vector<SamplingTriangle> sampling_triangles_;
     std::map<std::string, std::size_t> absorbed_by_label_;

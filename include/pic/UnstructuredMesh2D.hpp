@@ -13,7 +13,14 @@ namespace pic {
 struct UnstructuredDepositSummary2D {
     std::size_t deposited_particles{0};
     std::size_t outside_particles{0};
+    std::size_t location_cache_hits{0};
+    std::size_t location_searches{0};
     double deposited_charge{0.0};
+};
+
+struct UnstructuredParticleLocation2D {
+    ImportedPointLocation2D location;
+    bool valid{false};
 };
 
 class UnstructuredMesh2D {
@@ -60,6 +67,16 @@ UnstructuredDepositSummary2D deposit_charge_shape(
     const std::vector<Particle2D>& particles,
     double charge, double weight,
     const RuntimePolicy& runtime);
+UnstructuredDepositSummary2D deposit_charge_shape(
+    UnstructuredMesh2D& mesh,
+    const std::vector<Particle2D>& particles,
+    double charge, double weight,
+    const RuntimePolicy& runtime,
+    std::vector<UnstructuredParticleLocation2D>& locations);
 std::optional<Vec2> interpolate_electric(const UnstructuredMesh2D& mesh, Vec2 position);
+std::optional<Vec2> interpolate_electric(
+    const UnstructuredMesh2D& mesh, Vec2 position,
+    UnstructuredParticleLocation2D& location,
+    bool* cache_hit = nullptr);
 
 } // namespace pic

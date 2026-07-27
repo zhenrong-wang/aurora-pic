@@ -49,6 +49,8 @@ def final_timing(csv_path: pathlib.Path) -> dict[str, float]:
             "particle_seconds",
             "deposition_seconds",
             "field_solve_seconds",
+            "location_cache_hits",
+            "location_searches",
         )
     }
 
@@ -72,6 +74,8 @@ def main() -> int:
         "particle_seconds": [],
         "deposition_seconds": [],
         "field_solve_seconds": [],
+        "location_cache_hits": [],
+        "location_searches": [],
     }
     with tempfile.TemporaryDirectory(prefix="aurorapic_benchmark_") as temporary:
         root = pathlib.Path(temporary)

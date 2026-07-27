@@ -101,6 +101,8 @@ def validate_install_smoke_script() -> None:
         "particle_seconds",
         "deposition_seconds",
         "field_solve_seconds",
+        "location_cache_hits",
+        "location_searches",
     ):
         require(term in benchmark, f"unstructured benchmark must include {term!r}")
 
