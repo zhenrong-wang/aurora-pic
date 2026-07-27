@@ -54,6 +54,7 @@ struct UnstructuredSimulation2DConfig {
     RuntimePolicy runtime{};
     UnstructuredPoissonOptions2D poisson{};
     std::map<std::string, double> dirichlet_potentials;
+    std::map<std::string, double> neumann_normal_derivatives;
     std::map<std::string, ParticleBoundary> particle_boundaries;
     std::vector<UnstructuredSpecies2DConfig> species;
 };

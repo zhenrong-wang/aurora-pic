@@ -2356,7 +2356,10 @@ int main() {
                 pic::load_unstructured_config_2d(imported_example);
             require(imported_config.mesh_path.filename() == "imported_square_v2.msh" &&
                         imported_config.species.size() == 2 &&
-                        imported_config.dirichlet_potentials.size() == 4 &&
+                        imported_config.dirichlet_potentials.size() == 1 &&
+                        imported_config.dirichlet_potentials.contains("inlet") &&
+                        imported_config.neumann_normal_derivatives.size() == 3 &&
+                        imported_config.neumann_normal_derivatives.contains("outlet") &&
                         imported_config.particle_boundaries.at("electrode") ==
                             pic::ParticleBoundary::Reflecting,
                     "imported 2D example config did not load expected runtime settings");
@@ -2378,6 +2381,30 @@ int main() {
                 },
                 "imported 2D config loader accepted an unknown key");
             std::filesystem::remove(bad_imported_config);
+
+            const auto all_neumann_config =
+                std::filesystem::path("test_output_all_neumann_imported_config.cfg");
+            {
+                std::ofstream bad(all_neumann_config);
+                bad << "config_version = 1\n"
+                    << "dimension = 2\n"
+                    << "mesh = imported\n"
+                    << "mesh_file = " << fixture.string() << "\n";
+                for (const std::string label :
+                     {"electrode", "inlet", "outlet", "wall"}) {
+                    bad << "[boundary." << label << "]\n"
+                        << "field = neumann\n"
+                        << "normal_derivative = 0\n"
+                        << "particle = reflecting\n";
+                }
+            }
+            require_throws(
+                [&]() {
+                    (void)pic::load_unstructured_config_2d(
+                        all_neumann_config);
+                },
+                "imported 2D config loader accepted an all-Neumann field gauge");
+            std::filesystem::remove(all_neumann_config);
 
             const auto labels = mesh.boundary_labels();
             require(labels == std::vector<std::string>({"electrode", "inlet", "outlet", "wall"}),
@@ -2633,6 +2660,73 @@ int main() {
                             field_mesh, {{"ground", std::numeric_limits<double>::infinity()}});
                     },
                     "unstructured Poisson solve accepted a non-finite boundary potential");
+            }
+
+            {
+                // Mixed weak-form boundary benchmark: phi=x satisfies Laplace's
+                // equation with phi=0 at x=0, dphi/dn=1 at x=1, and homogeneous
+                // Neumann data on the horizontal sides.
+                pic::ImportedMesh2D mixed_boundary_patch;
+                mixed_boundary_patch.add_node({1, {0.0, 0.0}});
+                mixed_boundary_patch.add_node({2, {1.0, 0.0}});
+                mixed_boundary_patch.add_node({3, {1.0, 1.0}});
+                mixed_boundary_patch.add_node({4, {0.0, 1.0}});
+                mixed_boundary_patch.add_cell({
+                    10, pic::ImportedCellShape2D::Quadrilateral,
+                    {1, 2, 3, 4}, 1, "plasma"});
+                mixed_boundary_patch.add_boundary_face({20, {1, 2}, 1, "bottom"});
+                mixed_boundary_patch.add_boundary_face({21, {2, 3}, 1, "right"});
+                mixed_boundary_patch.add_boundary_face({22, {3, 4}, 1, "top"});
+                mixed_boundary_patch.add_boundary_face({23, {4, 1}, 1, "left"});
+
+                pic::UnstructuredMesh2D mixed_boundary_mesh(mixed_boundary_patch);
+                const auto summary = pic::solve_unstructured_poisson(
+                    mixed_boundary_mesh,
+                    {{"left", 0.0}},
+                    {{"bottom", 0.0}, {"right", 1.0}, {"top", 0.0}});
+                require(summary.converged,
+                        "mixed Dirichlet/Neumann Poisson solve did not converge");
+                for (const auto& node : mixed_boundary_patch.nodes()) {
+                    const std::size_t index = mixed_boundary_mesh.node_index(node.id);
+                    require_near(mixed_boundary_mesh.phi()[index], node.position.x, 1e-12,
+                                 "mixed-boundary linear potential mismatch");
+                    require_near(mixed_boundary_mesh.electric()[index].x, -1.0, 1e-12,
+                                 "mixed-boundary linear Ex mismatch");
+                    require_near(mixed_boundary_mesh.electric()[index].y, 0.0, 1e-12,
+                                 "mixed-boundary linear Ey mismatch");
+                }
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            mixed_boundary_mesh, {},
+                            {{"bottom", 0.0}, {"right", 1.0},
+                             {"top", 0.0}, {"left", -1.0}});
+                    },
+                    "unstructured Poisson solve accepted an all-Neumann gauge");
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            mixed_boundary_mesh, {{"left", 0.0}},
+                            {{"left", 0.0}, {"bottom", 0.0},
+                             {"right", 1.0}, {"top", 0.0}});
+                    },
+                    "unstructured Poisson solve accepted overlapping field conditions");
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            mixed_boundary_mesh, {{"left", 0.0}},
+                            {{"bottom", 0.0}, {"right", 1.0}});
+                    },
+                    "unstructured Poisson solve accepted a missing field condition");
+                require_throws(
+                    [&]() {
+                        (void)pic::solve_unstructured_poisson(
+                            mixed_boundary_mesh, {{"left", 0.0}},
+                            {{"bottom", 0.0},
+                             {"right", std::numeric_limits<double>::infinity()},
+                             {"top", 0.0}});
+                    },
+                    "unstructured Poisson solve accepted non-finite Neumann data");
             }
 
             {

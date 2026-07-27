@@ -73,7 +73,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "poisson_relative_tolerance", "poisson_absolute_tolerance",
         "poisson_max_iterations",
     };
-    static const std::set<std::string> boundary_keys{"potential", "particle"};
+    static const std::set<std::string> boundary_keys{
+        "field", "potential", "normal_derivative", "particle"};
     static const std::set<std::string> species_keys{
         "charge", "mass", "weight", "particles", "drift_velocity_x",
         "drift_velocity_y", "thermal_velocity", "init_x_min", "init_x_max",
@@ -295,12 +296,38 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         number<std::size_t>(global, "runtime_threads", result.runtime.threads);
 
     for (const auto& boundary : parsed.boundaries) {
-        (void)required(boundary.values, "potential",
-                       "boundary '" + boundary.name + "'");
-        result.dirichlet_potentials.emplace(
-            boundary.name,
-            number<double>(boundary.values, "potential",
-                           std::numeric_limits<double>::quiet_NaN()));
+        const std::string field = boundary.values.contains("field")
+                                      ? lower(boundary.values.at("field"))
+                                      : "dirichlet";
+        if (field == "dirichlet") {
+            (void)required(boundary.values, "potential",
+                           "Dirichlet boundary '" + boundary.name + "'");
+            if (boundary.values.contains("normal_derivative")) {
+                throw std::runtime_error(
+                    "Dirichlet boundary '" + boundary.name +
+                    "' must not define normal_derivative");
+            }
+            result.dirichlet_potentials.emplace(
+                boundary.name,
+                number<double>(boundary.values, "potential",
+                               std::numeric_limits<double>::quiet_NaN()));
+        } else if (field == "neumann") {
+            (void)required(boundary.values, "normal_derivative",
+                           "Neumann boundary '" + boundary.name + "'");
+            if (boundary.values.contains("potential")) {
+                throw std::runtime_error(
+                    "Neumann boundary '" + boundary.name +
+                    "' must not define potential");
+            }
+            result.neumann_normal_derivatives.emplace(
+                boundary.name,
+                number<double>(boundary.values, "normal_derivative",
+                               std::numeric_limits<double>::quiet_NaN()));
+        } else {
+            throw std::runtime_error(
+                "boundary '" + boundary.name +
+                "' field type must be dirichlet or neumann");
+        }
         const std::string particle =
             lower(required(boundary.values, "particle",
                            "boundary '" + boundary.name + "'"));
@@ -318,6 +345,10 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
     }
     if (parsed.boundaries.empty()) {
         throw std::runtime_error("unstructured 2D config requires boundary sections");
+    }
+    if (result.dirichlet_potentials.empty()) {
+        throw std::runtime_error(
+            "unstructured 2D config requires at least one Dirichlet field boundary");
     }
 
     for (const auto& species : parsed.species) {

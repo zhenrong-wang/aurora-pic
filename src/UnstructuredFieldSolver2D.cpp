@@ -10,6 +10,7 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace pic {
@@ -183,9 +184,11 @@ void validate_options(const UnstructuredPoissonOptions2D& options) {
 
 std::vector<std::optional<double>> map_dirichlet_nodes(
     const UnstructuredMesh2D& mesh,
-    const std::map<std::string, double>& dirichlet_potentials) {
+    const std::map<std::string, double>& dirichlet_potentials,
+    const std::map<std::string, double>& neumann_normal_derivatives) {
     if (dirichlet_potentials.empty()) {
-        throw std::invalid_argument("unstructured Poisson requires tagged Dirichlet potentials");
+        throw std::invalid_argument(
+            "unstructured Poisson requires at least one Dirichlet boundary");
     }
     std::set<std::string> boundary_labels;
     for (const auto& face : mesh.topology().boundary_faces()) boundary_labels.insert(face.label);
@@ -198,14 +201,30 @@ std::vector<std::optional<double>> map_dirichlet_nodes(
             throw std::invalid_argument("Dirichlet boundary label not found in imported mesh: " + label);
         }
     }
+    for (const auto& [label, derivative] : neumann_normal_derivatives) {
+        if (label.empty()) throw std::invalid_argument("Neumann boundary label must not be empty");
+        if (!std::isfinite(derivative)) {
+            throw std::invalid_argument("Neumann boundary normal derivative must be finite");
+        }
+        if (!boundary_labels.contains(label)) {
+            throw std::invalid_argument("Neumann boundary label not found in imported mesh: " + label);
+        }
+        if (dirichlet_potentials.contains(label)) {
+            throw std::invalid_argument(
+                "imported boundary label cannot be both Dirichlet and Neumann: " + label);
+        }
+    }
     for (const auto& label : boundary_labels) {
-        if (!dirichlet_potentials.contains(label)) {
-            throw std::invalid_argument("missing Dirichlet potential for imported boundary label: " + label);
+        if (!dirichlet_potentials.contains(label) &&
+            !neumann_normal_derivatives.contains(label)) {
+            throw std::invalid_argument(
+                "missing field condition for imported boundary label: " + label);
         }
     }
 
     std::vector<std::optional<double>> fixed(mesh.size());
     for (const auto& face : mesh.topology().boundary_faces()) {
+        if (!dirichlet_potentials.contains(face.label)) continue;
         const double potential = dirichlet_potentials.at(face.label);
         for (const auto node_id : face.node_ids) {
             const std::size_t index = mesh.node_index(node_id);
@@ -292,12 +311,21 @@ UnstructuredPoissonSolver2D::UnstructuredPoissonSolver2D(
     const UnstructuredMesh2D& mesh,
     std::map<std::string, double> dirichlet_potentials,
     UnstructuredPoissonOptions2D options)
+    : UnstructuredPoissonSolver2D(
+          mesh, std::move(dirichlet_potentials), {}, options) {}
+
+UnstructuredPoissonSolver2D::UnstructuredPoissonSolver2D(
+    const UnstructuredMesh2D& mesh,
+    std::map<std::string, double> dirichlet_potentials,
+    std::map<std::string, double> neumann_normal_derivatives,
+    UnstructuredPoissonOptions2D options)
     : impl_(std::make_unique<Impl>()) {
     validate_options(options);
     validate_nodal_fields(mesh);
     impl_->topology = &mesh.topology();
     impl_->options = options;
-    impl_->fixed = map_dirichlet_nodes(mesh, dirichlet_potentials);
+    impl_->fixed = map_dirichlet_nodes(
+        mesh, dirichlet_potentials, neumann_normal_derivatives);
     impl_->constrained_right_hand_side.assign(mesh.size(), 0.0);
     impl_->elements.reserve(mesh.topology().cells().size());
     SparseRows matrix(mesh.size());
@@ -323,6 +351,22 @@ UnstructuredPoissonSolver2D::UnstructuredPoissonSolver2D(
             }
         }
         impl_->elements.push_back(std::move(element));
+    }
+
+    for (const auto& face : mesh.topology().boundary_faces()) {
+        const auto derivative = neumann_normal_derivatives.find(face.label);
+        if (derivative == neumann_normal_derivatives.end()) continue;
+        const Vec2 first = mesh.topology().node_by_id(face.node_ids[0]).position;
+        const Vec2 second = mesh.topology().node_by_id(face.node_ids[1]).position;
+        const double length = std::hypot(second.x - first.x, second.y - first.y);
+        const double contribution = 0.5 * length * derivative->second;
+        if (!std::isfinite(contribution)) {
+            throw std::overflow_error(
+                "unstructured Poisson Neumann boundary contribution overflow");
+        }
+        for (const auto node_id : face.node_ids) {
+            impl_->constrained_right_hand_side[mesh.node_index(node_id)] += contribution;
+        }
     }
 
     for (std::size_t row = 0; row < matrix.size(); ++row) {
@@ -478,6 +522,16 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
     const std::map<std::string, double>& dirichlet_potentials,
     UnstructuredPoissonOptions2D options) {
     UnstructuredPoissonSolver2D solver(mesh, dirichlet_potentials, options);
+    return solver.solve(mesh);
+}
+
+UnstructuredPoissonSummary2D solve_unstructured_poisson(
+    UnstructuredMesh2D& mesh,
+    const std::map<std::string, double>& dirichlet_potentials,
+    const std::map<std::string, double>& neumann_normal_derivatives,
+    UnstructuredPoissonOptions2D options) {
+    UnstructuredPoissonSolver2D solver(
+        mesh, dirichlet_potentials, neumann_normal_derivatives, options);
     return solver.solve(mesh);
 }
 

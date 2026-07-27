@@ -16,6 +16,7 @@ in normalized units with `eps0 = 1`.
 
 - Periodic domains use a direct spectral Poisson solve. The zero mode is removed, enforcing global quasi-neutral compatibility.
 - Dirichlet domains use a tridiagonal finite-difference Poisson solve with prescribed endpoint potentials.
+- Imported finite-element domains support label-wise constant Dirichlet values and Neumann outward normal derivatives. For `-laplacian(phi) = rho / epsilon_0`, the Neumann term `dphi/dn` enters the weak-form right-hand side with a positive sign; therefore `E dot n = -dphi/dn`. At least one Dirichlet label is required to remove the constant-potential nullspace.
 - Validated imported 2D domains use triangle/bilinear-quadrilateral finite-element stiffness assembly with lumped nodal charge, physical-label Dirichlet constraints, CSR storage, and Jacobi-preconditioned conjugate gradients. The solve reports its residual and iteration count, and projects element electric fields back to nodes. This API is not yet connected to the CLI simulation loop.
 
 ## Particle advance and steady state
@@ -43,7 +44,7 @@ The bounded smoke/performance envelope for the checked-in examples is documented
 
 ## Verification included
 
-The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential and symmetric-source solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, exercises imported-domain multi-bounce reflection and label-attributed absorption end to end, and runs a short neutral two-species structured PIC simulation.
+The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential, symmetric-source, and exact mixed-boundary linear solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, rejects singular or incomplete imported boundary specifications, exercises imported-domain multi-bounce reflection and label-attributed absorption end to end, and runs a short neutral two-species structured PIC simulation.
 
 ## Extension path
 

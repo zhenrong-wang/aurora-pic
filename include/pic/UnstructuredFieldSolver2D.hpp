@@ -28,6 +28,11 @@ public:
         const UnstructuredMesh2D& mesh,
         std::map<std::string, double> dirichlet_potentials,
         UnstructuredPoissonOptions2D options = {});
+    UnstructuredPoissonSolver2D(
+        const UnstructuredMesh2D& mesh,
+        std::map<std::string, double> dirichlet_potentials,
+        std::map<std::string, double> neumann_normal_derivatives,
+        UnstructuredPoissonOptions2D options = {});
     ~UnstructuredPoissonSolver2D();
     UnstructuredPoissonSolver2D(UnstructuredPoissonSolver2D&&) noexcept;
     UnstructuredPoissonSolver2D& operator=(UnstructuredPoissonSolver2D&&) noexcept;
@@ -46,6 +51,12 @@ private:
 UnstructuredPoissonSummary2D solve_unstructured_poisson(
     UnstructuredMesh2D& mesh,
     const std::map<std::string, double>& dirichlet_potentials,
+    UnstructuredPoissonOptions2D options = {});
+
+UnstructuredPoissonSummary2D solve_unstructured_poisson(
+    UnstructuredMesh2D& mesh,
+    const std::map<std::string, double>& dirichlet_potentials,
+    const std::map<std::string, double>& neumann_normal_derivatives,
     UnstructuredPoissonOptions2D options = {});
 
 } // namespace pic

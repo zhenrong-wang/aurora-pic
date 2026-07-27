@@ -225,7 +225,8 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         species_.emplace_back(particle_storage_config(species_config));
     }
     poisson_solver_ = std::make_unique<UnstructuredPoissonSolver2D>(
-        mesh_, config_.dirichlet_potentials, config_.poisson);
+        mesh_, config_.dirichlet_potentials,
+        config_.neumann_normal_derivatives, config_.poisson);
 }
 
 Vec2 UnstructuredSimulation2D::sample_position(const UnstructuredSpecies2DConfig& config) {
