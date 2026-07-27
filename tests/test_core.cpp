@@ -210,7 +210,96 @@ int main() {
                 double expected = -std::cos(2.0 * std::numbers::pi * g.node_x(i)) / (2.0 * std::numbers::pi);
                 max_err = std::max(max_err, std::abs(g.electric()[i] - expected));
             }
-            require(max_err < 1e-12, "periodic Poisson solve exceeded analytic error tolerance");
+            require(max_err < 1e-12, "M1 1D periodic Poisson sine benchmark exceeded electric-field tolerance");
+        }
+        {
+            constexpr std::size_t nx = 16;
+            constexpr std::size_t ny = 12;
+            constexpr double length_x = 1.0;
+            constexpr double length_y = 1.5;
+            constexpr double kx = 2.0 * std::numbers::pi * 2.0 / length_x;
+            constexpr double ky = 2.0 * std::numbers::pi * 3.0 / length_y;
+            constexpr double k2 = kx * kx + ky * ky;
+            pic::Mesh2D mesh(nx, ny, length_x, length_y, pic::Boundary::Periodic);
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const double x = mesh.node_x(i);
+                    const double y = mesh.node_y(j);
+                    mesh.rho()[mesh.index(i, j)] = std::sin(kx * x) * std::cos(ky * y);
+                }
+            }
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double max_phi_err = 0.0;
+            double max_ex_err = 0.0;
+            double max_ey_err = 0.0;
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const double x = mesh.node_x(i);
+                    const double y = mesh.node_y(j);
+                    const double expected_phi = std::sin(kx * x) * std::cos(ky * y) / k2;
+                    const double expected_ex = -kx * std::cos(kx * x) * std::cos(ky * y) / k2;
+                    const double expected_ey = ky * std::sin(kx * x) * std::sin(ky * y) / k2;
+                    const auto idx = mesh.index(i, j);
+                    max_phi_err = std::max(max_phi_err, std::abs(mesh.phi()[idx] - expected_phi));
+                    max_ex_err = std::max(max_ex_err, std::abs(mesh.electric_x()[idx] - expected_ex));
+                    max_ey_err = std::max(max_ey_err, std::abs(mesh.electric_y()[idx] - expected_ey));
+                }
+            }
+            require(max_phi_err < 1e-12, "M1 2D periodic Poisson sine-cosine benchmark exceeded potential tolerance");
+            require(max_ex_err < 1e-12, "M1 2D periodic Poisson sine-cosine benchmark exceeded Ex tolerance");
+            require(max_ey_err < 1e-12, "M1 2D periodic Poisson sine-cosine benchmark exceeded Ey tolerance");
+        }
+        {
+            constexpr std::size_t nx = 8;
+            constexpr std::size_t ny = 10;
+            constexpr std::size_t nz = 12;
+            constexpr double length_x = 1.0;
+            constexpr double length_y = 1.25;
+            constexpr double length_z = 1.5;
+            constexpr double kx = 2.0 * std::numbers::pi * 1.0 / length_x;
+            constexpr double ky = 2.0 * std::numbers::pi * 2.0 / length_y;
+            constexpr double kz = 2.0 * std::numbers::pi * 3.0 / length_z;
+            constexpr double k2 = kx * kx + ky * ky + kz * kz;
+            pic::Mesh3D mesh(nx, ny, nz, length_x, length_y, length_z, pic::Boundary::Periodic);
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const double x = mesh.node_x(i);
+                        const double y = mesh.node_y(j);
+                        const double z = mesh.node_z(k);
+                        mesh.rho()[mesh.index(i, j, k)] = std::sin(kx * x) * std::cos(ky * y) * std::sin(kz * z);
+                    }
+                }
+            }
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double max_phi_err = 0.0;
+            double max_ex_err = 0.0;
+            double max_ey_err = 0.0;
+            double max_ez_err = 0.0;
+            for (std::size_t k = 0; k < mesh.nz(); ++k) {
+                for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                    for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                        const double x = mesh.node_x(i);
+                        const double y = mesh.node_y(j);
+                        const double z = mesh.node_z(k);
+                        const double expected_phi = std::sin(kx * x) * std::cos(ky * y) * std::sin(kz * z) / k2;
+                        const double expected_ex = -kx * std::cos(kx * x) * std::cos(ky * y) * std::sin(kz * z) / k2;
+                        const double expected_ey = ky * std::sin(kx * x) * std::sin(ky * y) * std::sin(kz * z) / k2;
+                        const double expected_ez = -kz * std::sin(kx * x) * std::cos(ky * y) * std::cos(kz * z) / k2;
+                        const auto idx = mesh.index(i, j, k);
+                        max_phi_err = std::max(max_phi_err, std::abs(mesh.phi()[idx] - expected_phi));
+                        max_ex_err = std::max(max_ex_err, std::abs(mesh.electric_x()[idx] - expected_ex));
+                        max_ey_err = std::max(max_ey_err, std::abs(mesh.electric_y()[idx] - expected_ey));
+                        max_ez_err = std::max(max_ez_err, std::abs(mesh.electric_z()[idx] - expected_ez));
+                    }
+                }
+            }
+            require(max_phi_err < 1e-12, "M1 3D periodic Poisson sine-cosine benchmark exceeded potential tolerance");
+            require(max_ex_err < 1e-12, "M1 3D periodic Poisson sine-cosine benchmark exceeded Ex tolerance");
+            require(max_ey_err < 1e-12, "M1 3D periodic Poisson sine-cosine benchmark exceeded Ey tolerance");
+            require(max_ez_err < 1e-12, "M1 3D periodic Poisson sine-cosine benchmark exceeded Ez tolerance");
         }
         {
             constexpr double dt = 0.125;
