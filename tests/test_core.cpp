@@ -16,6 +16,7 @@
 #include "pic/Species3D.hpp"
 #include "pic/UnstructuredFieldSolver2D.hpp"
 #include "pic/UnstructuredMesh2D.hpp"
+#include "pic/UnstructuredSimulation2D.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -2651,6 +2652,106 @@ int main() {
                              {"outlet", 0.0}, {"wall", 0.0}});
                     },
                     "unstructured Poisson solve accepted conflicting corner potentials");
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path("test_output_unstructured_reflecting");
+                std::filesystem::remove_all(output_dir);
+                pic::UnstructuredSimulation2DConfig config;
+                config.mesh_path = fixture;
+                config.dt = 1.0;
+                config.steps = 1;
+                config.output_interval = 1;
+                config.output_dir = output_dir;
+                config.vtk_output = true;
+                config.dirichlet_potentials = {
+                    {"electrode", 0.0}, {"inlet", 0.0},
+                    {"outlet", 0.0}, {"wall", 0.0},
+                };
+                config.particle_boundaries = {
+                    {"electrode", pic::ParticleBoundary::Reflecting},
+                    {"inlet", pic::ParticleBoundary::Reflecting},
+                    {"outlet", pic::ParticleBoundary::Reflecting},
+                    {"wall", pic::ParticleBoundary::Reflecting},
+                };
+                pic::UnstructuredSpecies2DConfig neutral;
+                neutral.name = "neutral";
+                neutral.charge = 0.0;
+                neutral.mass = 1.0;
+                neutral.weight = 1.0;
+                neutral.particles = 16;
+                neutral.drift_velocity_x = 2.0;
+                neutral.thermal_velocity = 0.0;
+                config.species = {neutral};
+
+                pic::UnstructuredSimulation2D simulation(config);
+                const auto summary = simulation.run();
+                require(summary.steps_completed == 1 && summary.final_time == config.dt,
+                        "unstructured runtime did not complete its configured transient step");
+                require(summary.final_sample.live_particles == neutral.particles,
+                        "reflecting imported boundaries lost particles");
+                for (const auto& [label, count] : summary.final_sample.absorbed_by_label) {
+                    (void)label;
+                    require(count == 0, "reflecting imported boundary reported absorbed particles");
+                }
+                for (const auto& particle : simulation.species().front().particles()) {
+                    require(particle.alive && simulation.mesh().locate_point(particle.position).has_value(),
+                            "reflected particle did not remain inside imported geometry");
+                }
+                require(std::filesystem::exists(output_dir / "scalars.csv"),
+                        "unstructured runtime did not write scalar diagnostics");
+                require(std::filesystem::exists(output_dir / "fields_0.vtu") &&
+                            std::filesystem::exists(output_dir / "fields_1.vtu"),
+                        "unstructured runtime did not write requested VTU snapshots");
+                const std::string vtu = read_file_text(output_dir / "fields_1.vtu");
+                require(vtu.find("type=\"UnstructuredGrid\"") != std::string::npos,
+                        "unstructured VTU output has the wrong dataset type");
+                require(vtu.find("Name=\"connectivity\"") != std::string::npos &&
+                            vtu.find("Name=\"types\"") != std::string::npos,
+                        "unstructured VTU output is missing cell topology arrays");
+                const std::string scalars = read_file_text(output_dir / "scalars.csv");
+                require(scalars.find("poisson_final_residual") != std::string::npos &&
+                            count_lines(scalars) == 3,
+                        "unstructured scalar diagnostics structure mismatch");
+                std::filesystem::remove_all(output_dir);
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path("test_output_unstructured_absorbing");
+                std::filesystem::remove_all(output_dir);
+                pic::UnstructuredSimulation2DConfig config;
+                config.mesh_path = fixture;
+                config.dt = 1.0;
+                config.steps = 1;
+                config.output_interval = 1;
+                config.output_dir = output_dir;
+                config.dirichlet_potentials = {
+                    {"electrode", 0.0}, {"inlet", 0.0},
+                    {"outlet", 0.0}, {"wall", 0.0},
+                };
+                config.particle_boundaries = {
+                    {"electrode", pic::ParticleBoundary::Absorbing},
+                    {"inlet", pic::ParticleBoundary::Absorbing},
+                    {"outlet", pic::ParticleBoundary::Absorbing},
+                    {"wall", pic::ParticleBoundary::Absorbing},
+                };
+                pic::UnstructuredSpecies2DConfig beam;
+                beam.name = "beam";
+                beam.charge = 0.0;
+                beam.particles = 16;
+                beam.drift_velocity_x = 2.0;
+                beam.thermal_velocity = 0.0;
+                config.species = {beam};
+
+                pic::UnstructuredSimulation2D simulation(config);
+                const auto summary = simulation.run();
+                require(summary.final_sample.live_particles == 0,
+                        "absorbing imported boundary did not remove outgoing particles");
+                require(summary.final_sample.absorbed_by_label.at("outlet") == beam.particles,
+                        "absorbing imported boundary attributed losses to the wrong physical label");
+                std::filesystem::remove_all(output_dir);
             }
 
             pic::Gmsh2ImportLimits small_limits;

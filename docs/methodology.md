@@ -22,6 +22,8 @@ in normalized units with `eps0 = 1`.
 
 AuroraPIC advances particles with a time-centered electrostatic leapfrog update. Each step deposits charge at particle positions, solves Poisson's equation for `E^n`, kicks stored half-step velocities, drifts positions to the next time level, reapplies particle boundaries, redeposits charge, resolves fields, and synchronizes the public velocity fields used by diagnostics/output. Reflecting multidimensional particle boundaries reverse the normal half-step velocity so subsequent diagnostics remain consistent after synchronization. All dimensions support transient and steady-state execution. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
 
+The C++ imported-domain runtime follows the same cycle. It samples particles uniformly by decomposing validated cells into area-weighted triangles, tracks the earliest outward intersection of each drift segment with tagged geometry, and applies label-specific absorption or specular reflection. This segment-based check is required for concave domains where an endpoint can lie inside even though its path crossed outside. Absorbed counts are reported by physical label.
+
 ## Collisions
 
 Optional Monte-Carlo BGK-like velocity reset collisions model scattering against a prescribed neutral bath. The collision probability is `1 - exp(-nu dt)`.
@@ -39,7 +41,7 @@ The bounded smoke/performance envelope for the checked-in examples is documented
 
 ## Verification included
 
-The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential and symmetric-source solutions, and runs a short neutral two-species PIC simulation end-to-end.
+The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential and symmetric-source solutions, exercises imported-domain multi-bounce reflection and label-attributed absorption end to end, and runs a short neutral two-species structured PIC simulation.
 
 ## Extension path
 

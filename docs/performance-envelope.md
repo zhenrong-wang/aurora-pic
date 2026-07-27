@@ -38,7 +38,7 @@ For credible physical studies, document these checks with the run configuration 
 3. **Noise:** particles per cell are high enough for the desired charge/current noise tolerance.
 4. **Convergence:** repeat with smaller `dt`, finer mesh, and/or more particles; compare scalar histories and field snapshots.
 5. **Output cadence:** output intervals are short enough to detect transients but not so frequent that I/O dominates.
-6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses a spatial candidate index and element-local shapes, and their electrostatic solve supports strict all-boundary Dirichlet label mapping. Mixed Dirichlet/Neumann models and full runtime integration remain pending.
+6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses a spatial candidate index and element-local shapes, their electrostatic solve supports strict all-boundary Dirichlet label mapping, and the C++ runtime applies segment-based absorbing/reflecting policies by physical label. Mixed Dirichlet/Neumann fields and config/checkpoint integration remain pending.
 7. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform magnetic rotation. There is no self-consistent electromagnetic field update yet.
 
 ## Release-engineering envelope

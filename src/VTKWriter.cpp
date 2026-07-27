@@ -180,4 +180,70 @@ void write_vtk_xml(const Mesh3D& mesh, const std::filesystem::path& path) {
     out << "      </Points>\n";
     write_vtk_xml_footer(out);
 }
+
+void write_vtk_xml(const UnstructuredMesh2D& mesh, const std::filesystem::path& path) {
+    ensure_parent_directory(path);
+    if (mesh.rho().size() != mesh.size() || mesh.phi().size() != mesh.size() ||
+        mesh.electric().size() != mesh.size()) {
+        throw std::invalid_argument("unstructured VTK nodal field arrays have inconsistent sizes");
+    }
+
+    std::ofstream out(path);
+    require_open(out, path, "XML unstructured");
+    out << std::setprecision(17);
+    out << "<?xml version=\"1.0\"?>\n";
+    out << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+    out << "  <UnstructuredGrid>\n";
+    out << "    <Piece NumberOfPoints=\"" << mesh.size()
+        << "\" NumberOfCells=\"" << mesh.topology().cells().size() << "\">\n";
+    out << "      <PointData Scalars=\"rho\" Vectors=\"electric\">\n";
+    write_scalar_data_array(out, "rho", mesh.rho());
+    write_scalar_data_array(out, "phi", mesh.phi());
+    out << "        <DataArray type=\"Float64\" Name=\"electric\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+    out << "          ";
+    for (const auto electric : mesh.electric()) {
+        out << electric.x << ' ' << electric.y << " 0 ";
+    }
+    out << "\n        </DataArray>\n";
+    out << "      </PointData>\n";
+    out << "      <CellData Scalars=\"physical_tag\">\n";
+    out << "        <DataArray type=\"Int32\" Name=\"physical_tag\" format=\"ascii\">\n";
+    out << "          ";
+    for (const auto& cell : mesh.topology().cells()) out << cell.physical_tag << ' ';
+    out << "\n        </DataArray>\n";
+    out << "      </CellData>\n";
+    out << "      <Points>\n";
+    out << "        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+    out << "          ";
+    for (const auto& node : mesh.topology().nodes()) {
+        out << node.position.x << ' ' << node.position.y << " 0 ";
+    }
+    out << "\n        </DataArray>\n";
+    out << "      </Points>\n";
+    out << "      <Cells>\n";
+    out << "        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n";
+    out << "          ";
+    for (const auto& cell : mesh.topology().cells()) {
+        for (const auto node_id : cell.node_ids) out << mesh.node_index(node_id) << ' ';
+    }
+    out << "\n        </DataArray>\n";
+    out << "        <DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">\n";
+    out << "          ";
+    std::size_t offset = 0;
+    for (const auto& cell : mesh.topology().cells()) {
+        offset += cell.node_ids.size();
+        out << offset << ' ';
+    }
+    out << "\n        </DataArray>\n";
+    out << "        <DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n";
+    out << "          ";
+    for (const auto& cell : mesh.topology().cells()) {
+        out << (cell.shape == ImportedCellShape2D::Triangle ? 5 : 9) << ' ';
+    }
+    out << "\n        </DataArray>\n";
+    out << "      </Cells>\n";
+    out << "    </Piece>\n";
+    out << "  </UnstructuredGrid>\n";
+    out << "</VTKFile>\n";
+}
 } // namespace pic
