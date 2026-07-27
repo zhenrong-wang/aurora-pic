@@ -1833,6 +1833,98 @@ int main() {
             require_near(p3.velocity_half.x * p3.velocity_half.x + p3.velocity_half.y * p3.velocity_half.y,
                          1.0, 1e-15, "3D Boris cyclotron perpendicular speed was not conserved");
         }
+        {
+            // M1 benchmark: representative 2D periodic neutral-tracer example has analytic drift invariants.
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 9;
+            cfg.ny = 7;
+            cfg.length_x = 1.0;
+            cfg.length_y = 0.75;
+            cfg.dt = 0.25;
+            cfg.steps = 3;
+            cfg.boundary = pic::Boundary::Periodic;
+            cfg.output_interval = 3;
+            cfg.output_dir = "test_output_m1_representative_2d";
+            cfg.seed = 101;
+            cfg.species = {pic::Species2DConfig{"neutral_drift_2d", 0.0, 2.0, 0.5, 1,
+                                                  0.35, -0.4, 0.0,
+                                                  0.92, 0.92, 0.15, 0.15}};
+            std::filesystem::remove_all(cfg.output_dir);
+
+            pic::Simulation2D sim(cfg);
+            const auto summary = sim.run();
+            const auto& particle = sim.species().front().particles().front();
+            require(summary.steps_completed == cfg.steps, "M1 representative 2D drift example did not complete requested steps");
+            require_near(summary.final_time, cfg.dt * static_cast<double>(cfg.steps), 1e-15,
+                         "M1 representative 2D drift example final time mismatch");
+            require(summary.final_sample.live_particles == 1,
+                    "M1 representative 2D drift example lost neutral tracer");
+            require_near(summary.final_sample.charge_l1, 0.0, 1e-15,
+                         "M1 representative 2D drift example accumulated charge density");
+            require_near(summary.final_sample.field_energy, 0.0, 1e-15,
+                         "M1 representative 2D drift example accumulated field energy");
+            require_near(summary.final_sample.kinetic_energy, 0.14125, 1e-14,
+                         "M1 representative 2D drift example kinetic-energy invariant mismatch");
+            require(particle.alive, "M1 representative 2D drift example particle is not alive");
+            require_near(particle.position.x, 0.1825, 1e-12,
+                         "M1 representative 2D drift example periodic x position mismatch");
+            require_near(particle.position.y, 0.6, 1e-12,
+                         "M1 representative 2D drift example periodic y position mismatch");
+            require_near(particle.velocity.x, 0.35, 1e-12,
+                         "M1 representative 2D drift example vx invariant mismatch");
+            require_near(particle.velocity.y, -0.4, 1e-12,
+                         "M1 representative 2D drift example vy invariant mismatch");
+            std::filesystem::remove_all(cfg.output_dir);
+        }
+        {
+            // M1 benchmark: representative 3D periodic neutral-tracer example has analytic drift invariants.
+            pic::Simulation3DConfig cfg;
+            cfg.nx = 7;
+            cfg.ny = 6;
+            cfg.nz = 5;
+            cfg.length_x = 1.2;
+            cfg.length_y = 1.0;
+            cfg.length_z = 0.8;
+            cfg.dt = 0.2;
+            cfg.steps = 4;
+            cfg.boundary = pic::Boundary::Periodic;
+            cfg.output_interval = 4;
+            cfg.output_dir = "test_output_m1_representative_3d";
+            cfg.seed = 202;
+            cfg.species = {pic::Species3DConfig{"neutral_drift_3d", 0.0, 1.5, 0.4, 1,
+                                                  0.25, -0.35, 0.30, 0.0,
+                                                  1.05, 1.05, 0.12, 0.12, 0.72, 0.72}};
+            std::filesystem::remove_all(cfg.output_dir);
+
+            pic::Simulation3D sim(cfg);
+            const auto summary = sim.run();
+            const auto& particle = sim.species().front().particles().front();
+            require(summary.steps_completed == cfg.steps, "M1 representative 3D drift example did not complete requested steps");
+            require_near(summary.final_time, cfg.dt * static_cast<double>(cfg.steps), 1e-15,
+                         "M1 representative 3D drift example final time mismatch");
+            require(summary.final_sample.live_particles == 1,
+                    "M1 representative 3D drift example lost neutral tracer");
+            require_near(summary.final_sample.charge_l1, 0.0, 1e-15,
+                         "M1 representative 3D drift example accumulated charge density");
+            require_near(summary.final_sample.field_energy, 0.0, 1e-15,
+                         "M1 representative 3D drift example accumulated field energy");
+            require_near(summary.final_sample.kinetic_energy, 0.0825, 1e-14,
+                         "M1 representative 3D drift example kinetic-energy invariant mismatch");
+            require(particle.alive, "M1 representative 3D drift example particle is not alive");
+            require_near(particle.position.x, 0.05, 1e-12,
+                         "M1 representative 3D drift example periodic x position mismatch");
+            require_near(particle.position.y, 0.84, 1e-12,
+                         "M1 representative 3D drift example periodic y position mismatch");
+            require_near(particle.position.z, 0.16, 1e-12,
+                         "M1 representative 3D drift example periodic z position mismatch");
+            require_near(particle.velocity.x, 0.25, 1e-12,
+                         "M1 representative 3D drift example vx invariant mismatch");
+            require_near(particle.velocity.y, -0.35, 1e-12,
+                         "M1 representative 3D drift example vy invariant mismatch");
+            require_near(particle.velocity.z, 0.30, 1e-12,
+                         "M1 representative 3D drift example vz invariant mismatch");
+            std::filesystem::remove_all(cfg.output_dir);
+        }
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "aurorapic core test failure: " << e.what() << '\n';

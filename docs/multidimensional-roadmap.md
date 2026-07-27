@@ -100,7 +100,7 @@ The historical multidimensional phases below remain useful context, but AuroraPI
 
 ### Immediate coding target
 
-The current M1 batch adds named physics-facing benchmark cases for analytic periodic Poisson solves across 1D/2D/3D, exact CIC shape-function deposition, affine electric-field interpolation, analytic one-step 2D particle-boundary policies, and checkpoint/restart determinism across 1D/2D/3D. The machine-checkable milestone contract (`scripts/validate_milestones.py`) keeps the smoke suite pinned to the production ladder. Future M1 work should continue adding physics-facing benchmark cases rather than only documentation checks.
+The current M1 batch adds named physics-facing benchmark cases for analytic periodic Poisson solves across 1D/2D/3D, exact CIC shape-function deposition, affine electric-field interpolation, analytic one-step 2D particle-boundary policies, checkpoint/restart determinism across 1D/2D/3D, and representative 2D/3D periodic neutral-tracer examples with analytic drift, wraparound, charge, field-energy, and kinetic-energy tolerances. The machine-checkable milestone contract (`scripts/validate_milestones.py`) keeps the smoke suite pinned to the production ladder. Future M1 work should continue adding physics-facing benchmark cases rather than only documentation checks.
 
 ## Historical implementation phases
 
