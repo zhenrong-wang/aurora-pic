@@ -16,23 +16,29 @@ namespace {
 constexpr const char* kCheckpointMagic = "AuroraPIC-checkpoint-v1";
 
 void validate_runtime_config(const Config& cfg) {
-    if (cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive");
+    if (!std::isfinite(cfg.dt) || cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive and finite");
     if (cfg.output_interval == 0) throw std::invalid_argument("output_interval must be positive");
+    if (!std::isfinite(cfg.phi_left) || !std::isfinite(cfg.phi_right)) {
+        throw std::invalid_argument("Dirichlet boundary potentials must be finite");
+    }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) {
         throw std::invalid_argument("checkpoint_interval must be positive when checkpoint_output is enabled");
     }
     if (cfg.mode == RunMode::SteadyState) {
         if (cfg.max_steps == 0) throw std::invalid_argument("max_steps must be positive for steady-state mode");
         if (cfg.steady_window == 0) throw std::invalid_argument("steady_window must be positive");
-        if (cfg.steady_tolerance <= 0.0) throw std::invalid_argument("steady_tolerance must be positive");
+        if (!std::isfinite(cfg.steady_tolerance) || cfg.steady_tolerance <= 0.0) {
+            throw std::invalid_argument("steady_tolerance must be positive and finite");
+        }
     }
     validate_runtime_policy(cfg.runtime);
-    if (cfg.collisions.frequency < 0.0) throw std::invalid_argument("collision frequency must be non-negative");
-    if (cfg.collisions.neutral_temperature_velocity < 0.0) {
-        throw std::invalid_argument("neutral_temperature_velocity must be non-negative");
+    if (!std::isfinite(cfg.collisions.frequency) || cfg.collisions.frequency < 0.0) {
+        throw std::invalid_argument("collision frequency must be non-negative and finite");
+    }
+    if (!std::isfinite(cfg.collisions.neutral_temperature_velocity) || cfg.collisions.neutral_temperature_velocity < 0.0) {
+        throw std::invalid_argument("neutral_temperature_velocity must be non-negative and finite");
     }
 }
-
 std::filesystem::path checkpoint_path_for_step(const Config& cfg, std::size_t step) {
     if (!cfg.checkpoint_path.empty()) return cfg.checkpoint_path;
     return std::filesystem::path(cfg.output_dir) / ("checkpoint_" + std::to_string(step) + ".apc");

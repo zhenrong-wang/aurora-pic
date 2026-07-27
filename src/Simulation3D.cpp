@@ -136,9 +136,12 @@ void write_vtk_outputs(const Mesh3D& mesh, const std::filesystem::path& output_d
 Simulation3D::Simulation3D(Simulation3DConfig cfg)
     : cfg_(std::move(cfg)), mesh_(cfg_.nx, cfg_.ny, cfg_.nz, cfg_.length_x, cfg_.length_y, cfg_.length_z, cfg_.boundary), rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
-    if (cfg_.dt <= 0.0) throw std::invalid_argument("3D simulation dt must be positive");
+    if (!std::isfinite(cfg_.dt) || cfg_.dt <= 0.0) throw std::invalid_argument("3D simulation dt must be positive and finite");
     if (cfg_.output_interval == 0) throw std::invalid_argument("3D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("3D particle_output_stride must be positive");
+    if (!std::isfinite(cfg_.magnetic_field.x) || !std::isfinite(cfg_.magnetic_field.y) || !std::isfinite(cfg_.magnetic_field.z)) {
+        throw std::invalid_argument("3D magnetic_field components must be finite");
+    }
     validate_runtime_policy(cfg_.runtime);
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
         throw std::invalid_argument("3D checkpoint_interval must be positive when checkpoint_output is enabled");

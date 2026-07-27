@@ -196,7 +196,9 @@ void validate_config(const Config& cfg) {
         validate_positive(s.mass, "species '" + s.name + "' mass");
         validate_positive(s.weight, "species '" + s.name + "' weight");
         validate_positive(s.density, "species '" + s.name + "' density");
+        if (!std::isfinite(s.charge)) throw std::runtime_error("species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("species '" + s.name + "' particles must be positive");
+        if (!std::isfinite(s.drift_velocity)) throw std::runtime_error("species '" + s.name + "' drift_velocity must be finite");
         validate_non_negative(s.thermal_velocity, "species '" + s.name + "' thermal_velocity");
         if (s.init_x_min < 0.0) throw std::runtime_error("species '" + s.name + "' init_x_min must be non-negative");
         const double xmax = s.init_x_max < 0.0 ? cfg.length : s.init_x_max;
@@ -228,7 +230,11 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         if (s.name.empty()) throw std::runtime_error("2D species name must not be empty");
         validate_positive(s.mass, "2D species '" + s.name + "' mass");
         validate_positive(s.weight, "2D species '" + s.name + "' weight");
+        if (!std::isfinite(s.charge)) throw std::runtime_error("2D species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("2D species '" + s.name + "' particles must be positive");
+        if (!std::isfinite(s.drift_velocity_x) || !std::isfinite(s.drift_velocity_y)) {
+            throw std::runtime_error("2D species '" + s.name + "' drift velocities must be finite");
+        }
         validate_non_negative(s.thermal_velocity, "2D species '" + s.name + "' thermal_velocity");
         if (s.init_x_min < 0.0) throw std::runtime_error("2D species '" + s.name + "' init_x_min must be non-negative");
         if (s.init_y_min < 0.0) throw std::runtime_error("2D species '" + s.name + "' init_y_min must be non-negative");
@@ -259,7 +265,11 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
         if (s.name.empty()) throw std::runtime_error("3D species name must not be empty");
         validate_positive(s.mass, "3D species '" + s.name + "' mass");
         validate_positive(s.weight, "3D species '" + s.name + "' weight");
+        if (!std::isfinite(s.charge)) throw std::runtime_error("3D species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("3D species '" + s.name + "' particles must be positive");
+        if (!std::isfinite(s.drift_velocity_x) || !std::isfinite(s.drift_velocity_y) || !std::isfinite(s.drift_velocity_z)) {
+            throw std::runtime_error("3D species '" + s.name + "' drift velocities must be finite");
+        }
         validate_non_negative(s.thermal_velocity, "3D species '" + s.name + "' thermal_velocity");
         if (s.init_x_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_x_min must be non-negative");
         if (s.init_y_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_y_min must be non-negative");
@@ -275,7 +285,6 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
         if (!(s.init_z_min < zmax)) throw std::runtime_error("3D species '" + s.name + "' z initialization interval must have positive width");
     }
 }
-
 struct ParsedBlocks {
     KeyValue global;
     KeyValue collisions;

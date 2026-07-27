@@ -1,5 +1,6 @@
 #include "pic/Grid.hpp"
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace pic {
@@ -10,7 +11,7 @@ std::size_t checked_nx(std::size_t nx) {
 }
 
 double checked_length(double length) {
-    if (length <= 0.0) throw std::invalid_argument("domain length must be positive");
+    if (!std::isfinite(length) || length <= 0.0) throw std::invalid_argument("domain length must be positive and finite");
     return length;
 }
 }

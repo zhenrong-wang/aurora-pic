@@ -1,6 +1,7 @@
 #include "pic/Mesh2D.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -12,8 +13,28 @@ std::size_t checked_extent(std::size_t n, const char* name) {
 }
 
 double checked_length(double length, const char* name) {
-    if (length <= 0.0) throw std::invalid_argument(std::string(name) + " must be positive");
+    if (!std::isfinite(length) || length <= 0.0) throw std::invalid_argument(std::string(name) + " must be positive and finite");
     return length;
+}
+
+std::size_t checked_node_count(std::size_t nx, std::size_t ny) {
+    if (nx > std::numeric_limits<std::size_t>::max() / ny) {
+        throw std::invalid_argument("2D mesh node count exceeds supported size");
+    }
+    return nx * ny;
+}
+
+BoundaryConfig2D checked_boundary_config(BoundaryConfig2D boundary_config) {
+    const auto check_side = [](const BoundarySide2D& side, const char* name) {
+        if (!std::isfinite(side.potential)) {
+            throw std::invalid_argument(std::string("2D boundary side '") + name + "' potential must be finite");
+        }
+    };
+    check_side(boundary_config.left, "left");
+    check_side(boundary_config.right, "right");
+    check_side(boundary_config.bottom, "bottom");
+    check_side(boundary_config.top, "top");
+    return boundary_config;
 }
 
 double wrap_periodic(double value, double length) {
@@ -28,8 +49,9 @@ Mesh2D::Mesh2D(std::size_t nx, std::size_t ny, double length_x, double length_y,
       length_y_(checked_length(length_y, "domain length_y")),
       dx_(length_x_ / static_cast<double>(boundary == Boundary::Periodic ? nx_ : nx_ - 1)),
       dy_(length_y_ / static_cast<double>(boundary == Boundary::Periodic ? ny_ : ny_ - 1)),
-      boundary_(boundary), boundary_config_(std::move(boundary_config)),
-      rho_(nx_ * ny_, 0.0), phi_(nx_ * ny_, 0.0), electric_x_(nx_ * ny_, 0.0), electric_y_(nx_ * ny_, 0.0) {}
+      boundary_(boundary), boundary_config_(checked_boundary_config(std::move(boundary_config))),
+      rho_(checked_node_count(nx_, ny_), 0.0), phi_(rho_.size(), 0.0),
+      electric_x_(rho_.size(), 0.0), electric_y_(rho_.size(), 0.0) {}
 
 void Mesh2D::clear_charge() { std::fill(rho_.begin(), rho_.end(), 0.0); }
 

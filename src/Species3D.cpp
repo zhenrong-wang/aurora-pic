@@ -12,10 +12,16 @@ double wrap_periodic(double value, double length) {
 }
 
 Species3D::Species3D(Species3DConfig cfg) : cfg_(std::move(cfg)) {
-    if (cfg_.mass <= 0.0) throw std::invalid_argument("3D species mass must be positive");
-    if (cfg_.weight <= 0.0) throw std::invalid_argument("3D species weight must be positive");
+    if (!std::isfinite(cfg_.charge)) throw std::invalid_argument("3D species charge must be finite");
+    if (!std::isfinite(cfg_.mass) || cfg_.mass <= 0.0) throw std::invalid_argument("3D species mass must be positive and finite");
+    if (!std::isfinite(cfg_.weight) || cfg_.weight <= 0.0) throw std::invalid_argument("3D species weight must be positive and finite");
     if (cfg_.particles == 0) throw std::invalid_argument("3D species must contain particles");
-    if (cfg_.thermal_velocity < 0.0) throw std::invalid_argument("3D species thermal_velocity must be non-negative");
+    if (!std::isfinite(cfg_.drift_velocity_x) || !std::isfinite(cfg_.drift_velocity_y) || !std::isfinite(cfg_.drift_velocity_z)) {
+        throw std::invalid_argument("3D species drift velocities must be finite");
+    }
+    if (!std::isfinite(cfg_.thermal_velocity) || cfg_.thermal_velocity < 0.0) {
+        throw std::invalid_argument("3D species thermal_velocity must be non-negative and finite");
+    }
 }
 
 void Species3D::initialize(const Mesh3D& mesh, std::mt19937_64& rng) {

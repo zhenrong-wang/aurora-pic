@@ -11,10 +11,16 @@ double wrap_periodic(double value, double length) {
 }
 
 Species2D::Species2D(Species2DConfig cfg) : cfg_(std::move(cfg)) {
-    if (cfg_.mass <= 0.0) throw std::invalid_argument("2D species mass must be positive");
-    if (cfg_.weight <= 0.0) throw std::invalid_argument("2D species weight must be positive");
+    if (!std::isfinite(cfg_.charge)) throw std::invalid_argument("2D species charge must be finite");
+    if (!std::isfinite(cfg_.mass) || cfg_.mass <= 0.0) throw std::invalid_argument("2D species mass must be positive and finite");
+    if (!std::isfinite(cfg_.weight) || cfg_.weight <= 0.0) throw std::invalid_argument("2D species weight must be positive and finite");
     if (cfg_.particles == 0) throw std::invalid_argument("2D species must contain particles");
-    if (cfg_.thermal_velocity < 0.0) throw std::invalid_argument("2D species thermal_velocity must be non-negative");
+    if (!std::isfinite(cfg_.drift_velocity_x) || !std::isfinite(cfg_.drift_velocity_y)) {
+        throw std::invalid_argument("2D species drift velocities must be finite");
+    }
+    if (!std::isfinite(cfg_.thermal_velocity) || cfg_.thermal_velocity < 0.0) {
+        throw std::invalid_argument("2D species thermal_velocity must be non-negative and finite");
+    }
 }
 
 void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {

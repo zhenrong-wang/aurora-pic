@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -13,8 +14,19 @@ std::size_t checked_extent(std::size_t n, const char* name) {
 }
 
 double checked_length(double length, const char* name) {
-    if (length <= 0.0) throw std::invalid_argument(std::string(name) + " must be positive");
+    if (!std::isfinite(length) || length <= 0.0) throw std::invalid_argument(std::string(name) + " must be positive and finite");
     return length;
+}
+
+std::size_t checked_node_count(std::size_t nx, std::size_t ny, std::size_t nz) {
+    if (nx > std::numeric_limits<std::size_t>::max() / ny) {
+        throw std::invalid_argument("3D mesh node count exceeds supported size");
+    }
+    const std::size_t plane = nx * ny;
+    if (plane > std::numeric_limits<std::size_t>::max() / nz) {
+        throw std::invalid_argument("3D mesh node count exceeds supported size");
+    }
+    return plane * nz;
 }
 
 double wrap_periodic(double value, double length) {
@@ -32,8 +44,8 @@ Mesh3D::Mesh3D(std::size_t nx, std::size_t ny, std::size_t nz,
       dy_(length_y_ / static_cast<double>(boundary == Boundary::Periodic ? ny_ : ny_ - 1)),
       dz_(length_z_ / static_cast<double>(boundary == Boundary::Periodic ? nz_ : nz_ - 1)),
       boundary_(boundary),
-      rho_(nx_ * ny_ * nz_, 0.0), phi_(nx_ * ny_ * nz_, 0.0),
-      electric_x_(nx_ * ny_ * nz_, 0.0), electric_y_(nx_ * ny_ * nz_, 0.0), electric_z_(nx_ * ny_ * nz_, 0.0) {}
+      rho_(checked_node_count(nx_, ny_, nz_), 0.0), phi_(rho_.size(), 0.0),
+      electric_x_(rho_.size(), 0.0), electric_y_(rho_.size(), 0.0), electric_z_(rho_.size(), 0.0) {}
 
 void Mesh3D::clear_charge() { std::fill(rho_.begin(), rho_.end(), 0.0); }
 

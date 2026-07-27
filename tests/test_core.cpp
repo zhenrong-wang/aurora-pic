@@ -11,6 +11,8 @@
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/VTKWriter.hpp"
+#include "pic/Species.hpp"
+#include "pic/Species2D.hpp"
 #include "pic/Species3D.hpp"
 #include <algorithm>
 #include <array>
@@ -20,6 +22,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <numbers>
 #include <stdexcept>
 #include <string>
@@ -1161,10 +1164,61 @@ int main() {
         {
             require_throws([] { pic::Grid(2, 1.0, pic::Boundary::Periodic); }, "grid nx validation did not throw");
             require_throws([] { pic::Grid(32, 0.0, pic::Boundary::Periodic); }, "grid length validation did not throw");
+            require_throws([] { pic::Grid(32, std::numeric_limits<double>::infinity(), pic::Boundary::Periodic); }, "grid non-finite length validation did not throw");
             require_throws([] { pic::Mesh2D(2, 4, 1.0, 1.0, pic::Boundary::Periodic); }, "2D mesh nx validation did not throw");
             require_throws([] { pic::Mesh2D(4, 4, 0.0, 1.0, pic::Boundary::Periodic); }, "2D mesh length validation did not throw");
+            require_throws([] { pic::Mesh2D(4, 4, std::numeric_limits<double>::quiet_NaN(), 1.0, pic::Boundary::Periodic); }, "2D mesh non-finite length validation did not throw");
+            require_throws([] {
+                const auto overflowing_nx = std::numeric_limits<std::size_t>::max() / 3 + 1;
+                pic::Mesh2D(overflowing_nx, 3, 1.0, 1.0, pic::Boundary::Periodic);
+            }, "2D mesh node-count overflow validation did not throw");
+            require_throws([] { pic::Mesh3D(4, 4, 4, 1.0, 1.0, std::numeric_limits<double>::infinity(), pic::Boundary::Periodic); }, "3D mesh non-finite length validation did not throw");
+            require_throws([] {
+                const auto overflowing_nx = std::numeric_limits<std::size_t>::max() / 9 + 1;
+                pic::Mesh3D(overflowing_nx, 3, 3, 1.0, 1.0, 1.0, pic::Boundary::Periodic);
+            }, "3D mesh node-count overflow validation did not throw");
             require_throws([] { pic::Simulation2DConfig cfg; cfg.output_interval = 0; pic::Simulation2D sim(cfg); }, "2D output_interval validation did not throw");
             require_throws([] { pic::Config cfg; cfg.output_interval = 0; pic::Simulation sim(cfg); }, "1D output_interval validation did not throw");
+            require_throws([] { pic::Config cfg; cfg.dt = std::numeric_limits<double>::quiet_NaN(); pic::Simulation sim(cfg); }, "1D simulation accepted non-finite dt");
+            require_throws([] { pic::Config cfg; cfg.phi_left = std::numeric_limits<double>::infinity(); pic::Simulation sim(cfg); }, "1D simulation accepted non-finite boundary potential");
+            require_throws([] { pic::Config cfg; cfg.collisions.frequency = std::numeric_limits<double>::infinity(); pic::Simulation sim(cfg); }, "1D simulation accepted non-finite collision frequency");
+            require_throws([] { pic::Config cfg; cfg.collisions.neutral_temperature_velocity = std::numeric_limits<double>::quiet_NaN(); pic::Simulation sim(cfg); }, "1D simulation accepted non-finite neutral collision velocity");
+            require_throws([] { pic::Config cfg; cfg.mode = pic::RunMode::SteadyState; cfg.steady_tolerance = std::numeric_limits<double>::quiet_NaN(); pic::Simulation sim(cfg); }, "1D simulation accepted non-finite steady tolerance");
+            require_throws([] { pic::Simulation2DConfig cfg; cfg.dt = std::numeric_limits<double>::quiet_NaN(); pic::Simulation2D sim(cfg); }, "2D simulation accepted non-finite dt");
+            require_throws([] { pic::Simulation2DConfig cfg; cfg.magnetic_field_z = std::numeric_limits<double>::infinity(); pic::Simulation2D sim(cfg); }, "2D simulation accepted non-finite magnetic field");
+            require_throws([] { pic::Simulation2DConfig cfg; cfg.boundary_config.left.potential = std::numeric_limits<double>::quiet_NaN(); pic::Simulation2D sim(cfg); }, "2D simulation accepted non-finite boundary potential");
+            require_throws([] { pic::Simulation3DConfig cfg; cfg.dt = std::numeric_limits<double>::quiet_NaN(); pic::Simulation3D sim(cfg); }, "3D simulation accepted non-finite dt");
+            require_throws([] { pic::Simulation3DConfig cfg; cfg.magnetic_field.y = std::numeric_limits<double>::infinity(); pic::Simulation3D sim(cfg); }, "3D simulation accepted non-finite magnetic field");
+            require_throws([] {
+                pic::SpeciesConfig cfg;
+                cfg.charge = std::numeric_limits<double>::quiet_NaN();
+                (void)pic::Species(cfg);
+            }, "1D species constructor accepted non-finite charge");
+            require_throws([] {
+                pic::SpeciesConfig cfg;
+                cfg.drift_velocity = std::numeric_limits<double>::infinity();
+                (void)pic::Species(cfg);
+            }, "1D species constructor accepted non-finite drift velocity");
+            require_throws([] {
+                pic::Species2DConfig cfg;
+                cfg.charge = std::numeric_limits<double>::quiet_NaN();
+                (void)pic::Species2D(cfg);
+            }, "2D species constructor accepted non-finite charge");
+            require_throws([] {
+                pic::Species2DConfig cfg;
+                cfg.drift_velocity_y = std::numeric_limits<double>::infinity();
+                (void)pic::Species2D(cfg);
+            }, "2D species constructor accepted non-finite drift velocity");
+            require_throws([] {
+                pic::Species3DConfig cfg;
+                cfg.charge = std::numeric_limits<double>::quiet_NaN();
+                (void)pic::Species3D(cfg);
+            }, "3D species constructor accepted non-finite charge");
+            require_throws([] {
+                pic::Species3DConfig cfg;
+                cfg.drift_velocity_z = std::numeric_limits<double>::infinity();
+                (void)pic::Species3D(cfg);
+            }, "3D species constructor accepted non-finite drift velocity");
         }
         {
             // M4 runtime scaling smoke tests: serial remains the deterministic baseline while OpenMP,
@@ -1426,6 +1480,42 @@ int main() {
                 try { (void)pic::load_config_2d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
                 std::filesystem::remove(path);
             }, "invalid 2D magnetic field validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_1d_species_charge.ini");
+                { std::ofstream out(path); out << "[species]\ncharge = nan\nweight = 1\n"; }
+                try { (void)pic::load_config(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 1D species charge validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_1d_species_drift.ini");
+                { std::ofstream out(path); out << "[species]\ndrift_velocity = inf\nweight = 1\n"; }
+                try { (void)pic::load_config(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 1D species drift velocity validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_2d_species_charge.ini");
+                { std::ofstream out(path); out << "dimension = 2\n[species]\ncharge = nan\nweight = 1\n"; }
+                try { (void)pic::load_config_2d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 2D species charge validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_2d_species_drift.ini");
+                { std::ofstream out(path); out << "dimension = 2\n[species]\ndrift_velocity_x = inf\nweight = 1\n"; }
+                try { (void)pic::load_config_2d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 2D species drift velocity validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_3d_species_charge.ini");
+                { std::ofstream out(path); out << "dimension = 3\n[species]\ncharge = nan\nweight = 1\n"; }
+                try { (void)pic::load_config_3d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 3D species charge validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path("test_invalid_3d_species_drift.ini");
+                { std::ofstream out(path); out << "dimension = 3\n[species]\ndrift_velocity_z = inf\nweight = 1\n"; }
+                try { (void)pic::load_config_3d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
+                std::filesystem::remove(path);
+            }, "invalid 3D species drift velocity validation did not throw");
             require_throws([] {
                 const auto path = std::filesystem::path("test_invalid_key.ini");
                 { std::ofstream out(path); out << "nx = 16\nunknown = 7\n"; }

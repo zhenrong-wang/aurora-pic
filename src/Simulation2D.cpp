@@ -136,9 +136,10 @@ void write_vtk_outputs(const Mesh2D& mesh, const std::filesystem::path& output_d
 Simulation2D::Simulation2D(Simulation2DConfig cfg)
     : cfg_(std::move(cfg)), mesh_(cfg_.nx, cfg_.ny, cfg_.length_x, cfg_.length_y, cfg_.boundary, cfg_.boundary_config), rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
-    if (cfg_.dt <= 0.0) throw std::invalid_argument("2D simulation dt must be positive");
+    if (!std::isfinite(cfg_.dt) || cfg_.dt <= 0.0) throw std::invalid_argument("2D simulation dt must be positive and finite");
     if (cfg_.output_interval == 0) throw std::invalid_argument("2D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("2D particle_output_stride must be positive");
+    if (!std::isfinite(cfg_.magnetic_field_z)) throw std::invalid_argument("2D magnetic_field_z must be finite");
     validate_runtime_policy(cfg_.runtime);
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
         throw std::invalid_argument("2D checkpoint_interval must be positive when checkpoint_output is enabled");
