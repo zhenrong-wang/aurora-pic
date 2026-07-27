@@ -10,7 +10,7 @@ For the recommended multidimensional expansion strategy, geometry/mesh format ch
 
 ## Production milestone baseline
 
-Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift. The current baseline includes the M5 higher-fidelity physics slice: prescribed uniform magnetic fields activate Boris particle rotation in 2D/3D while retaining the electrostatic Poisson solve, with pusher-level and Simulation2D end-to-end conservation/regression tests plus CLI smoke coverage. It also preserves the completed M4 runtime-scaling interface slice, M3 VTK XML structured-grid output compatibility, and the M2 tagged 2D Gmsh v2 ASCII importer (`ImportedMesh2D`) for externally meshed planar domains.
+Production readiness is now tracked as explicit milestones instead of an open-ended roadmap narrative. The pinned milestone ladder and evidence expectations live in `docs/multidimensional-roadmap.md#production-readiness-milestone-ladder`; `scripts/validate_milestones.py` is part of the smoke suite and fails if those milestone IDs or README linkage drift. The current baseline includes the first M6 release-engineering/operability slice: configs may declare `config_version = 1`, public examples do so explicitly, and unsupported future config versions fail with a clear diagnostic instead of silently falling back. It also preserves the completed M5 higher-fidelity physics slice, M4 runtime-scaling interface slice, M3 VTK XML structured-grid output compatibility, and the M2 tagged 2D Gmsh v2 ASCII importer (`ImportedMesh2D`) for externally meshed planar domains.
 
 ## Build
 
@@ -96,9 +96,10 @@ The 3D API also exposes `Vec3`, `Particle3D`, `deposit_charge_cic(Mesh3D&, ...)`
 
 ## Configuration format
 
-AuroraPIC uses a strict INI-like format. 1D configs may omit `dimension` or set `dimension = 1`:
+AuroraPIC uses a strict INI-like format. The optional `config_version` key currently supports only `config_version = 1`; omitted versions are treated as version 1 for backward compatibility, while unsupported future versions are rejected with a clear diagnostic. 1D configs may omit `dimension` or set `dimension = 1`:
 
 ```ini
+config_version = 1
 nx = 128
 length = 1.0
 dt = 0.002
@@ -128,6 +129,7 @@ neutral_temperature_velocity = 0.0
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
 
 ```ini
+config_version = 1
 dimension = 2
 nx = 64
 ny = 64
@@ -181,6 +183,7 @@ init_y_max = 1.0
 3D configs must set `dimension = 3` and use `nx`/`ny`/`nz`, `length_x`/`length_y`/`length_z`, 3D velocity keys, and 3D initialization bounds:
 
 ```ini
+config_version = 1
 dimension = 3
 nx = 32
 ny = 32
@@ -259,6 +262,6 @@ The particle initialization/synchronization loops and the 1D particle advance us
 - 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
 - Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
 
-The parser is intentionally strict: unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive `particle_output_stride`, empty 2D boundary tags, non-finite magnetic-field values, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+The parser is intentionally strict: unsupported `config_version` values, unknown sections/keys, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive `particle_output_stride`, empty 2D boundary tags, non-finite magnetic-field values, and invalid species initialization intervals are rejected instead of silently falling back to defaults. For species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
 
 This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP is limited to safe particle-loop slices rather than a whole-solver scaling model, simplified collision model, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), and no unstructured-mesh field solve beyond the current tagged Gmsh import model. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows. These extension points are documented in `docs/methodology.md` and `docs/multidimensional-roadmap.md`.

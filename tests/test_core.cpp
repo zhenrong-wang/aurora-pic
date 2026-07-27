@@ -54,6 +54,18 @@ void require_throws(Fn&& fn, const std::string& message) {
     throw std::runtime_error(message);
 }
 
+template <typename Fn>
+void require_throws_contains(Fn&& fn, const std::string& expected, const std::string& message) {
+    try {
+        fn();
+    } catch (const std::exception& exc) {
+        const std::string actual = exc.what();
+        if (actual.find(expected) != std::string::npos) return;
+        throw std::runtime_error(message + ": expected substring '" + expected + "' in '" + actual + "'");
+    }
+    throw std::runtime_error(message);
+}
+
 void require_checkpoint_samples_close(const pic::DiagnosticSample& a,
                                       const pic::DiagnosticSample& b,
                                       const std::string& label) {
@@ -1224,7 +1236,8 @@ int main() {
             const auto config_path = std::filesystem::path("test_density_config.ini");
             {
                 std::ofstream out(config_path);
-                out << "nx = 16\n"
+                out << "config_version = 1\n"
+                    << "nx = 16\n"
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
@@ -1299,10 +1312,20 @@ int main() {
                 [](const std::string& path) { return pic::load_config_3d(path); },
                 "3D non-finite species weight validation did not throw");
 
+            {
+                const auto version_path = std::filesystem::path("test_unsupported_config_version.ini");
+                { std::ofstream out(version_path); out << "config_version = 2\nnx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_version\ncharge = -1\nmass = 1\nweight = 1\nparticles = 10\n"; }
+                require_throws_contains([&] {
+                    try { (void)pic::load_config(version_path.string()); } catch (...) { std::filesystem::remove(version_path); throw; }
+                    std::filesystem::remove(version_path);
+                }, "unsupported config_version 2", "M6 unsupported config_version diagnostic did not throw clearly");
+            }
+
             const auto config_2d_path = std::filesystem::path("test_2d_config.ini");
             {
                 std::ofstream out(config_2d_path);
-                out << "dimension = 2\n"
+                out << "config_version = 1\n"
+                    << "dimension = 2\n"
                     << "nx = 8\n"
                     << "ny = 6\n"
                     << "length_x = 2.0\n"
@@ -1431,7 +1454,8 @@ int main() {
             const auto config_3d_path = std::filesystem::path("test_config_3d.ini");
             {
                 std::ofstream out(config_3d_path);
-                out << "dimension = 3\n"
+                out << "config_version = 1\n"
+                    << "dimension = 3\n"
                     << "nx = 6\n"
                     << "ny = 5\n"
                     << "nz = 4\n"

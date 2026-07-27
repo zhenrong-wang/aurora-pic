@@ -140,6 +140,16 @@ RuntimePolicy parse_runtime_policy(const KeyValue& kv, const RuntimePolicy& def)
     return policy;
 }
 
+std::size_t parse_config_version(const KeyValue& kv, const std::string& loader_name) {
+    const std::size_t version = as<std::size_t>(kv, "config_version", 1);
+    if (version != 1) {
+        throw std::runtime_error(loader_name + " config declares unsupported config_version "
+                                 + std::to_string(version)
+                                 + "; this AuroraPIC build supports config_version = 1");
+    }
+    return version;
+}
+
 RunMode parse_mode(const KeyValue& kv, RunMode def) {
     const auto value = lower(as<std::string>(kv, "mode", to_string(def)));
     if (value == "transient") return RunMode::Transient;
@@ -326,7 +336,7 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
-        "boundary", "mode", "dimension", "checkpoint_output", "checkpoint_interval",
+        "boundary", "mode", "dimension", "config_version", "checkpoint_output", "checkpoint_interval",
         "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads"
     };
     static const std::unordered_set<std::string> collision_keys{
@@ -341,6 +351,7 @@ Config load_config(const std::string& path) {
     const auto& global = blocks.global;
     const auto& collision = blocks.collisions;
 
+    (void)parse_config_version(global, "1D");
     const auto dimension = as<std::size_t>(global, "dimension", 1);
     if (dimension != 1) throw std::runtime_error("1D config loader requires dimension = 1 or no dimension key");
 
@@ -426,7 +437,7 @@ unsigned detect_config_dimension(const std::string& path) {
 
 Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
-        "dimension", "nx", "ny", "length_x", "length_y", "dt", "steps",
+        "dimension", "config_version", "nx", "ny", "length_x", "length_y", "dt", "steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
@@ -445,6 +456,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     auto blocks = parse_config_blocks(path, global_keys, species_keys, nullptr, "2D");
     const auto& global = blocks.global;
 
+    (void)parse_config_version(global, "2D");
     if (!global.count("dimension")) throw std::runtime_error("2D config loader requires dimension = 2");
     const auto dimension = as<std::size_t>(global, "dimension", 2);
     if (dimension != 2) throw std::runtime_error("2D config loader requires dimension = 2");
@@ -521,7 +533,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
 
 Simulation3DConfig load_config_3d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
-        "dimension", "nx", "ny", "nz", "length_x", "length_y", "length_z", "dt", "steps",
+        "dimension", "config_version", "nx", "ny", "nz", "length_x", "length_y", "length_z", "dt", "steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
@@ -538,6 +550,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     auto blocks = parse_config_blocks(path, global_keys, species_keys, nullptr, "3D");
     const auto& global = blocks.global;
 
+    (void)parse_config_version(global, "3D");
     if (!global.count("dimension")) throw std::runtime_error("3D config loader requires dimension = 3");
     const auto dimension = as<std::size_t>(global, "dimension", 3);
     if (dimension != 3) throw std::runtime_error("3D config loader requires dimension = 3");

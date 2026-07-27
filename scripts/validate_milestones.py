@@ -33,8 +33,8 @@ EXPECTED_STATUSES = {
     "M2": "Complete",
     "M3": "Complete",
     "M4": "Complete",
-    "M5": "Current baseline",
-    "M6": "Planned",
+    "M5": "Complete",
+    "M6": "Current baseline",
 }
 REQUIRED_EVIDENCE_TERMS = {
     "M0": ("CTest", "CLI examples", "pusher validation"),
@@ -43,7 +43,7 @@ REQUIRED_EVIDENCE_TERMS = {
     "M3": ("VTK XML", "openPMD/HDF5", "compatibility tests"),
     "M4": ("OpenMP/MPI/GPU", "scaling smoke tests"),
     "M5": ("uniform-B", "Boris", "CTest", "CLI examples", "electromagnetic", "collision models"),
-    "M6": ("CI matrix", "configuration compatibility"),
+    "M6": ("config_version", "configuration compatibility", "clearer failure diagnostics", "CTest", "CI matrix"),
 }
 
 
@@ -108,6 +108,8 @@ def validate_roadmap() -> None:
             "roadmap must keep the M3 output/restart target visible")
     require("M4" in section and "OpenMP/MPI/GPU" in section and "scaling smoke tests" in section,
             "roadmap must keep the M4 runtime-scaling baseline visible")
+    require("M6" in section and "config_version" in section and "configuration compatibility" in section,
+            "roadmap must keep the M6 configuration-compatibility baseline visible")
 
 
 def validate_readme() -> None:
