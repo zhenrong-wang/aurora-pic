@@ -24,7 +24,7 @@ The current implementation is aimed at correctness and regression coverage befor
 - particles advanced per step: `O(total_particles)`;
 - structured field storage: `O(nx * ny * nz)` for the active dimension;
 - direct structured Poisson solve cost depending on boundary mode and dimension;
-- imported-mesh particle lookup depending on spatial-bin occupancy, plus sparse FEM assembly and preconditioned-CG iterations;
+- imported-mesh particle lookup depending on spatial-bin occupancy; the FEM quadrature, Dirichlet-eliminated CSR operator, and Jacobi diagonal are assembled once per simulation, while right-hand-side formation, preconditioned-CG iterations, and field recovery remain per-step costs;
 - output volume proportional to written field nodes, particle sample count, and output frequency.
 
 Use the serial backend as the portability baseline. Optional OpenMP currently covers safe particle-loop slices and uses deterministic static scheduling; it is not yet a full MPI/GPU or domain-decomposed scaling model. Treat `runtime_backend = mpi` and `runtime_backend = gpu` as reserved future options that intentionally fail fast.

@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <optional>
 #include <random>
 #include <string>
@@ -94,6 +95,12 @@ public:
     }
     double time() const { return time_; }
     std::size_t step_count() const { return step_; }
+    std::size_t poisson_assembly_count() const {
+        return poisson_solver_ ? poisson_solver_->assembly_count() : 0;
+    }
+    std::size_t poisson_solve_count() const {
+        return poisson_solver_ ? poisson_solver_->solve_count() : 0;
+    }
 
 private:
     struct BoundarySegment {
@@ -119,6 +126,7 @@ private:
 
     UnstructuredSimulation2DConfig config_;
     UnstructuredMesh2D mesh_;
+    std::unique_ptr<UnstructuredPoissonSolver2D> poisson_solver_;
     std::vector<Species2D> species_;
     std::vector<UnstructuredSpecies2DConfig> species_configs_;
     std::vector<BoundarySegment> boundary_segments_;

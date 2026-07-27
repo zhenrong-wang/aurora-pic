@@ -2581,8 +2581,9 @@ int main() {
                 std::fill(field_mesh.phi().begin(), field_mesh.phi().end(), 0.0);
                 const std::size_t center = field_mesh.node_index(5);
                 field_mesh.rho()[center] = 1.0 / field_mesh.node_control_area(5);
-                const auto source_summary =
-                    pic::solve_unstructured_poisson(field_mesh, {{"ground", 0.0}});
+                pic::UnstructuredPoissonSolver2D reusable_solver(
+                    field_mesh, {{"ground", 0.0}});
+                const auto source_summary = reusable_solver.solve(field_mesh);
                 require(source_summary.converged,
                         "unstructured Poisson solve did not converge for the symmetric source");
                 require(source_summary.iterations == 1,
@@ -2593,6 +2594,27 @@ int main() {
                              "symmetric unstructured source produced nonzero center Ex");
                 require_near(field_mesh.electric()[center].y, 0.0, 1e-12,
                              "symmetric unstructured source produced nonzero center Ey");
+                const auto reference_phi = field_mesh.phi();
+                const auto reference_electric = field_mesh.electric();
+                std::fill(field_mesh.phi().begin(), field_mesh.phi().end(), 3.0);
+                const auto repeated_summary = reusable_solver.solve(field_mesh);
+                require(repeated_summary.converged,
+                        "reused unstructured Poisson solve did not converge");
+                require(reusable_solver.assembly_count() == 1 &&
+                            reusable_solver.solve_count() == 2,
+                        "unstructured Poisson solver rebuilt or miscounted its cached operator");
+                for (std::size_t i = 0; i < field_mesh.size(); ++i) {
+                    require_near(field_mesh.phi()[i], reference_phi[i], 1e-12,
+                                 "reused unstructured Poisson potential changed");
+                    require_near(field_mesh.electric()[i].x, reference_electric[i].x, 1e-12,
+                                 "reused unstructured Poisson Ex changed");
+                    require_near(field_mesh.electric()[i].y, reference_electric[i].y, 1e-12,
+                                 "reused unstructured Poisson Ey changed");
+                }
+                pic::UnstructuredMesh2D distinct_field_mesh(star);
+                require_throws(
+                    [&]() { (void)reusable_solver.solve(distinct_field_mesh); },
+                    "unstructured Poisson solver accepted a different mesh topology");
 
                 require_throws(
                     [&]() {
@@ -2727,6 +2749,9 @@ int main() {
                 const auto summary = simulation.run();
                 require(summary.steps_completed == 1 && summary.final_time == config.dt,
                         "unstructured runtime did not complete its configured transient step");
+                require(simulation.poisson_assembly_count() == 1 &&
+                            simulation.poisson_solve_count() == 2,
+                        "unstructured runtime did not reuse its Poisson operator");
                 require(summary.final_sample.live_particles == neutral.particles,
                         "reflecting imported boundaries lost particles");
                 for (const auto& [label, count] : summary.final_sample.absorbed_by_label) {

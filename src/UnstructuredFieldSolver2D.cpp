@@ -30,6 +30,11 @@ struct ElementQuadraturePoint2D {
     double area_weight{0.0};
 };
 
+struct CachedElement2D {
+    std::vector<std::size_t> node_indices;
+    std::vector<ElementQuadraturePoint2D> quadrature;
+};
+
 double dot(const std::vector<double>& first, const std::vector<double>& second) {
     if (first.size() != second.size()) throw std::invalid_argument("vector dot-product size mismatch");
     double result = 0.0;
@@ -220,20 +225,38 @@ std::vector<std::optional<double>> map_dirichlet_nodes(
     return fixed;
 }
 
-void recover_electric_field(UnstructuredMesh2D& mesh) {
+void validate_nodal_fields(const UnstructuredMesh2D& mesh) {
+    if (mesh.rho().size() != mesh.size() || mesh.phi().size() != mesh.size() ||
+        mesh.electric().size() != mesh.size() ||
+        mesh.node_control_areas().size() != mesh.size()) {
+        throw std::invalid_argument("unstructured mesh nodal field arrays have inconsistent sizes");
+    }
+    for (const double density : mesh.rho()) {
+        if (!std::isfinite(density)) {
+            throw std::invalid_argument("unstructured charge density must be finite");
+        }
+    }
+    for (const double potential : mesh.phi()) {
+        if (!std::isfinite(potential)) {
+            throw std::invalid_argument("unstructured initial potential must be finite");
+        }
+    }
+}
+
+void recover_electric_field(UnstructuredMesh2D& mesh,
+                            const std::vector<CachedElement2D>& elements) {
     std::fill(mesh.electric().begin(), mesh.electric().end(), Vec2{});
     std::vector<double> projected_areas(mesh.size(), 0.0);
-    for (const auto& cell : mesh.topology().cells()) {
-        const auto quadrature = element_quadrature(mesh.topology(), cell);
-        for (const auto& point : quadrature) {
+    for (const auto& element : elements) {
+        for (const auto& point : element.quadrature) {
             Vec2 electric{};
-            for (std::size_t local = 0; local < cell.node_ids.size(); ++local) {
-                const double potential = mesh.phi()[mesh.node_index(cell.node_ids[local])];
+            for (std::size_t local = 0; local < element.node_indices.size(); ++local) {
+                const double potential = mesh.phi()[element.node_indices[local]];
                 electric.x -= potential * point.gradients[local].x;
                 electric.y -= potential * point.gradients[local].y;
             }
-            for (std::size_t local = 0; local < cell.node_ids.size(); ++local) {
-                const std::size_t global = mesh.node_index(cell.node_ids[local]);
+            for (std::size_t local = 0; local < element.node_indices.size(); ++local) {
+                const std::size_t global = element.node_indices[local];
                 const double projection_weight = point.weights[local] * point.area_weight;
                 mesh.electric()[global].x += projection_weight * electric.x;
                 mesh.electric()[global].y += projection_weight * electric.y;
@@ -255,36 +278,42 @@ void recover_electric_field(UnstructuredMesh2D& mesh) {
 
 } // namespace
 
-UnstructuredPoissonSummary2D solve_unstructured_poisson(
-    UnstructuredMesh2D& mesh,
-    const std::map<std::string, double>& dirichlet_potentials,
-    UnstructuredPoissonOptions2D options) {
-    validate_options(options);
-    if (mesh.rho().size() != mesh.size() || mesh.phi().size() != mesh.size() ||
-        mesh.electric().size() != mesh.size() ||
-        mesh.node_control_areas().size() != mesh.size()) {
-        throw std::invalid_argument("unstructured mesh nodal field arrays have inconsistent sizes");
-    }
-    for (const double density : mesh.rho()) {
-        if (!std::isfinite(density)) {
-            throw std::invalid_argument("unstructured charge density must be finite");
-        }
-    }
-    for (const double potential : mesh.phi()) {
-        if (!std::isfinite(potential)) {
-            throw std::invalid_argument("unstructured initial potential must be finite");
-        }
-    }
+struct UnstructuredPoissonSolver2D::Impl {
+    const ImportedMesh2D* topology{nullptr};
+    UnstructuredPoissonOptions2D options{};
+    CompressedSparseMatrix matrix;
+    std::vector<double> constrained_right_hand_side;
+    std::vector<std::optional<double>> fixed;
+    std::vector<CachedElement2D> elements;
+    mutable std::size_t solve_count{0};
+};
 
+UnstructuredPoissonSolver2D::UnstructuredPoissonSolver2D(
+    const UnstructuredMesh2D& mesh,
+    std::map<std::string, double> dirichlet_potentials,
+    UnstructuredPoissonOptions2D options)
+    : impl_(std::make_unique<Impl>()) {
+    validate_options(options);
+    validate_nodal_fields(mesh);
+    impl_->topology = &mesh.topology();
+    impl_->options = options;
+    impl_->fixed = map_dirichlet_nodes(mesh, dirichlet_potentials);
+    impl_->constrained_right_hand_side.assign(mesh.size(), 0.0);
+    impl_->elements.reserve(mesh.topology().cells().size());
     SparseRows matrix(mesh.size());
     for (const auto& cell : mesh.topology().cells()) {
-        const auto quadrature = element_quadrature(mesh.topology(), cell);
-        for (const auto& point : quadrature) {
+        CachedElement2D element;
+        element.node_indices.reserve(cell.node_ids.size());
+        for (const auto node_id : cell.node_ids) {
+            element.node_indices.push_back(mesh.node_index(node_id));
+        }
+        element.quadrature = element_quadrature(mesh.topology(), cell);
+        for (const auto& point : element.quadrature) {
             for (std::size_t local_row = 0; local_row < cell.node_ids.size(); ++local_row) {
-                const std::size_t row = mesh.node_index(cell.node_ids[local_row]);
+                const std::size_t row = element.node_indices[local_row];
                 for (std::size_t local_column = 0;
                      local_column < cell.node_ids.size(); ++local_column) {
-                    const std::size_t column = mesh.node_index(cell.node_ids[local_column]);
+                    const std::size_t column = element.node_indices[local_column];
                     const double coefficient =
                         (point.gradients[local_row].x * point.gradients[local_column].x +
                          point.gradients[local_row].y * point.gradients[local_column].y) *
@@ -293,22 +322,15 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
                 }
             }
         }
+        impl_->elements.push_back(std::move(element));
     }
 
-    std::vector<double> right_hand_side(mesh.size(), 0.0);
-    for (std::size_t i = 0; i < mesh.size(); ++i) {
-        right_hand_side[i] = mesh.rho()[i] * mesh.node_control_areas()[i] / EPS0;
-        if (!std::isfinite(right_hand_side[i])) {
-            throw std::overflow_error("unstructured Poisson right-hand side overflow");
-        }
-    }
-
-    const auto fixed = map_dirichlet_nodes(mesh, dirichlet_potentials);
     for (std::size_t row = 0; row < matrix.size(); ++row) {
-        if (fixed[row]) continue;
+        if (impl_->fixed[row]) continue;
         for (auto it = matrix[row].begin(); it != matrix[row].end();) {
-            if (fixed[it->first]) {
-                right_hand_side[row] -= it->second * *fixed[it->first];
+            if (impl_->fixed[it->first]) {
+                impl_->constrained_right_hand_side[row] -=
+                    it->second * *impl_->fixed[it->first];
                 it = matrix[row].erase(it);
             } else {
                 ++it;
@@ -316,20 +338,47 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
         }
     }
     for (std::size_t row = 0; row < matrix.size(); ++row) {
-        if (!fixed[row]) continue;
+        if (!impl_->fixed[row]) continue;
         matrix[row].clear();
         matrix[row][row] = 1.0;
-        right_hand_side[row] = *fixed[row];
-        mesh.phi()[row] = *fixed[row];
+        impl_->constrained_right_hand_side[row] = *impl_->fixed[row];
     }
-    for (const double value : right_hand_side) {
+    for (const double value : impl_->constrained_right_hand_side) {
         if (!std::isfinite(value)) {
             throw std::overflow_error("unstructured Poisson constrained right-hand side overflow");
         }
     }
-    const CompressedSparseMatrix compressed_matrix = compress(matrix);
+    impl_->matrix = compress(matrix);
+}
 
-    std::vector<double> matrix_times_solution = multiply(compressed_matrix, mesh.phi());
+UnstructuredPoissonSolver2D::~UnstructuredPoissonSolver2D() = default;
+UnstructuredPoissonSolver2D::UnstructuredPoissonSolver2D(
+    UnstructuredPoissonSolver2D&&) noexcept = default;
+UnstructuredPoissonSolver2D& UnstructuredPoissonSolver2D::operator=(
+    UnstructuredPoissonSolver2D&&) noexcept = default;
+
+UnstructuredPoissonSummary2D UnstructuredPoissonSolver2D::solve(
+    UnstructuredMesh2D& mesh) const {
+    if (&mesh.topology() != impl_->topology) {
+        throw std::invalid_argument(
+            "unstructured Poisson solver cannot be reused with a different mesh topology");
+    }
+    validate_nodal_fields(mesh);
+    ++impl_->solve_count;
+
+    std::vector<double> right_hand_side = impl_->constrained_right_hand_side;
+    for (std::size_t i = 0; i < mesh.size(); ++i) {
+        if (impl_->fixed[i]) {
+            mesh.phi()[i] = *impl_->fixed[i];
+            continue;
+        }
+        right_hand_side[i] += mesh.rho()[i] * mesh.node_control_areas()[i] / EPS0;
+        if (!std::isfinite(right_hand_side[i])) {
+            throw std::overflow_error("unstructured Poisson right-hand side overflow");
+        }
+    }
+
+    std::vector<double> matrix_times_solution = multiply(impl_->matrix, mesh.phi());
     std::vector<double> residual(mesh.size(), 0.0);
     for (std::size_t i = 0; i < mesh.size(); ++i) {
         residual[i] = right_hand_side[i] - matrix_times_solution[i];
@@ -347,16 +396,17 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
     }
     const double rhs_norm = std::sqrt(rhs_squared);
     const double target =
-        std::max(options.absolute_tolerance, options.relative_tolerance * rhs_norm);
+        std::max(impl_->options.absolute_tolerance,
+                 impl_->options.relative_tolerance * rhs_norm);
     if (summary.final_residual <= target) {
         summary.converged = true;
-        recover_electric_field(mesh);
+        recover_electric_field(mesh, impl_->elements);
         return summary;
     }
 
     std::vector<double> preconditioned_residual(mesh.size(), 0.0);
     for (std::size_t i = 0; i < mesh.size(); ++i) {
-        preconditioned_residual[i] = residual[i] / compressed_matrix.diagonal[i];
+        preconditioned_residual[i] = residual[i] / impl_->matrix.diagonal[i];
     }
     std::vector<double> direction = preconditioned_residual;
     double residual_preconditioned = dot(residual, preconditioned_residual);
@@ -364,14 +414,14 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
         throw std::runtime_error("unstructured Poisson preconditioner is not positive definite");
     }
 
-    std::size_t max_iterations = options.max_iterations;
+    std::size_t max_iterations = impl_->options.max_iterations;
     if (max_iterations == 0) {
         max_iterations = mesh.size() > std::numeric_limits<std::size_t>::max() / 10
                              ? std::numeric_limits<std::size_t>::max()
                              : std::max<std::size_t>(100, 10 * mesh.size());
     }
     for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
-        const std::vector<double> matrix_times_direction = multiply(compressed_matrix, direction);
+        const std::vector<double> matrix_times_direction = multiply(impl_->matrix, direction);
         const double curvature = dot(direction, matrix_times_direction);
         if (!(curvature > 0.0) || !std::isfinite(curvature)) {
             throw std::runtime_error("unstructured Poisson matrix is not positive definite");
@@ -395,11 +445,11 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
         summary.final_residual = std::sqrt(next_residual_squared);
         if (summary.final_residual <= target) {
             summary.converged = true;
-            recover_electric_field(mesh);
+            recover_electric_field(mesh, impl_->elements);
             return summary;
         }
         for (std::size_t i = 0; i < mesh.size(); ++i) {
-            preconditioned_residual[i] = residual[i] / compressed_matrix.diagonal[i];
+            preconditioned_residual[i] = residual[i] / impl_->matrix.diagonal[i];
         }
         const double next_residual_preconditioned = dot(residual, preconditioned_residual);
         if (!(next_residual_preconditioned > 0.0) ||
@@ -413,6 +463,22 @@ UnstructuredPoissonSummary2D solve_unstructured_poisson(
         residual_preconditioned = next_residual_preconditioned;
     }
     return summary;
+}
+
+std::size_t UnstructuredPoissonSolver2D::assembly_count() const {
+    return 1;
+}
+
+std::size_t UnstructuredPoissonSolver2D::solve_count() const {
+    return impl_->solve_count;
+}
+
+UnstructuredPoissonSummary2D solve_unstructured_poisson(
+    UnstructuredMesh2D& mesh,
+    const std::map<std::string, double>& dirichlet_potentials,
+    UnstructuredPoissonOptions2D options) {
+    UnstructuredPoissonSolver2D solver(mesh, dirichlet_potentials, options);
+    return solver.solve(mesh);
 }
 
 } // namespace pic

@@ -224,6 +224,8 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         species_configs_.push_back(species_config);
         species_.emplace_back(particle_storage_config(species_config));
     }
+    poisson_solver_ = std::make_unique<UnstructuredPoissonSolver2D>(
+        mesh_, config_.dirichlet_potentials, config_.poisson);
 }
 
 Vec2 UnstructuredSimulation2D::sample_position(const UnstructuredSpecies2DConfig& config) {
@@ -306,8 +308,7 @@ void UnstructuredSimulation2D::deposit_and_solve() {
             throw std::runtime_error("live particles remain outside the imported mesh during deposition");
         }
     }
-    last_poisson_ =
-        solve_unstructured_poisson(mesh_, config_.dirichlet_potentials, config_.poisson);
+    last_poisson_ = poisson_solver_->solve(mesh_);
     if (!last_poisson_.converged) {
         throw std::runtime_error("unstructured Poisson solver did not converge");
     }
