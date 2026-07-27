@@ -1509,16 +1509,20 @@ int main() {
             continuous.step();
             continuous.save_checkpoint(checkpoint_path);
             require(std::filesystem::exists(checkpoint_path), "1D checkpoint file was not written");
+            const auto checkpoint_sample = continuous.sample();
+            const auto checkpoint_species = continuous.species();
             for (std::size_t n = continuous.step_count(); n < cfg.steps; ++n) continuous.step();
 
             pic::Simulation restarted(cfg);
             restarted.load_checkpoint(checkpoint_path);
             require(restarted.step_count() == 2, "1D checkpoint did not restore step count");
             require_near(restarted.time(), 2.0 * cfg.dt, 1e-15, "1D checkpoint did not restore time");
+            require_checkpoint_samples_close(checkpoint_sample, restarted.sample(), "M1 1D checkpoint reload determinism");
+            require_species_close(checkpoint_species, restarted.species(), "M1 1D checkpoint reload determinism");
             for (std::size_t n = restarted.step_count(); n < cfg.steps; ++n) restarted.step();
 
-            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "1D checkpoint restart");
-            require_species_close(continuous.species(), restarted.species(), "1D checkpoint restart");
+            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "M1 1D checkpoint restart determinism");
+            require_species_close(continuous.species(), restarted.species(), "M1 1D checkpoint restart determinism");
 
             require_throws([&] {
                 pic::Simulation2DConfig bad_cfg;
@@ -1553,16 +1557,20 @@ int main() {
             continuous.step();
             continuous.save_checkpoint(checkpoint_path);
             require(std::filesystem::exists(checkpoint_path), "2D checkpoint file was not written");
+            const auto checkpoint_sample = continuous.sample();
+            const auto checkpoint_species = continuous.species();
             for (std::size_t n = continuous.step_count(); n < cfg.steps; ++n) continuous.step();
 
             pic::Simulation2D restarted(cfg);
             restarted.load_checkpoint(checkpoint_path);
             require(restarted.step_count() == 2, "2D checkpoint did not restore step count");
             require_near(restarted.time(), 2.0 * cfg.dt, 1e-15, "2D checkpoint did not restore time");
+            require_checkpoint_samples_close(checkpoint_sample, restarted.sample(), "M1 2D checkpoint reload determinism");
+            require_species_close(checkpoint_species, restarted.species(), "M1 2D checkpoint reload determinism");
             for (std::size_t n = restarted.step_count(); n < cfg.steps; ++n) restarted.step();
 
-            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "2D checkpoint restart");
-            require_species_close(continuous.species(), restarted.species(), "2D checkpoint restart");
+            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "M1 2D checkpoint restart determinism");
+            require_species_close(continuous.species(), restarted.species(), "M1 2D checkpoint restart determinism");
 
             auto run_cfg = cfg;
             run_cfg.output_dir = output_dir / "run";
@@ -1605,16 +1613,20 @@ int main() {
             continuous.step();
             continuous.save_checkpoint(checkpoint_path);
             require(std::filesystem::exists(checkpoint_path), "3D checkpoint file was not written");
+            const auto checkpoint_sample = continuous.sample();
+            const auto checkpoint_species = continuous.species();
             for (std::size_t n = continuous.step_count(); n < cfg.steps; ++n) continuous.step();
 
             pic::Simulation3D restarted(cfg);
             restarted.load_checkpoint(checkpoint_path);
             require(restarted.step_count() == 2, "3D checkpoint did not restore step count");
             require_near(restarted.time(), 2.0 * cfg.dt, 1e-15, "3D checkpoint did not restore time");
+            require_checkpoint_samples_close(checkpoint_sample, restarted.sample(), "M1 3D checkpoint reload determinism");
+            require_species_close(checkpoint_species, restarted.species(), "M1 3D checkpoint reload determinism");
             for (std::size_t n = restarted.step_count(); n < cfg.steps; ++n) restarted.step();
 
-            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "3D checkpoint restart");
-            require_species_close(continuous.species(), restarted.species(), "3D checkpoint restart");
+            require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "M1 3D checkpoint restart determinism");
+            require_species_close(continuous.species(), restarted.species(), "M1 3D checkpoint restart determinism");
 
             auto run_cfg = cfg;
             run_cfg.output_dir = output_dir / "run";
