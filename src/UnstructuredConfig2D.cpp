@@ -27,6 +27,7 @@ struct ParsedConfig {
     Values global;
     std::vector<NamedBlock> boundaries;
     std::vector<NamedBlock> species;
+    std::vector<NamedBlock> sources;
 };
 
 std::string trim(std::string value) {
@@ -65,7 +66,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
 
     static const std::set<std::string> global_keys{
         "config_version", "dimension", "mesh", "mesh_file", "dt", "steps",
-        "mode", "steady_tolerance", "steady_window", "max_steps", "seed",
+        "mode", "steady_tolerance", "steady_window", "max_steps",
+        "max_particles_per_species", "seed",
         "magnetic_field_z", "output_interval", "output_dir", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride",
         "particle_sample_count", "checkpoint_output", "checkpoint_interval",
@@ -80,12 +82,17 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "drift_velocity_y", "thermal_velocity", "init_x_min", "init_x_max",
         "init_y_min", "init_y_max",
     };
+    static const std::set<std::string> source_keys{
+        "species", "boundary", "particles_per_step", "start_step", "end_step",
+        "normal_velocity", "tangential_velocity", "thermal_velocity",
+    };
 
     ParsedConfig result;
     Values* current = &result.global;
     const std::set<std::string>* allowed = &global_keys;
     std::set<std::string> boundary_names;
     std::set<std::string> species_names;
+    std::set<std::string> source_names;
     std::string line;
     std::size_t line_number = 0;
     while (std::getline(input, line)) {
@@ -99,6 +106,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
             const std::string lowered = lower(section);
             constexpr const char* boundary_prefix = "boundary.";
             constexpr const char* species_prefix = "species.";
+            constexpr const char* source_prefix = "source.";
             if (lowered.rfind(boundary_prefix, 0) == 0) {
                 const std::string name =
                     trim(section.substr(std::char_traits<char>::length(boundary_prefix)));
@@ -117,6 +125,15 @@ ParsedConfig parse(const std::filesystem::path& path) {
                 result.species.push_back({name, {}});
                 current = &result.species.back().values;
                 allowed = &species_keys;
+            } else if (lowered.rfind(source_prefix, 0) == 0) {
+                const std::string name =
+                    trim(section.substr(std::char_traits<char>::length(source_prefix)));
+                if (name.empty() || !source_names.insert(name).second) {
+                    config_error(line_number, "empty or duplicate source section");
+                }
+                result.sources.push_back({name, {}});
+                current = &result.sources.back().values;
+                allowed = &source_keys;
             } else {
                 config_error(line_number, "unknown section '" + section + "'");
             }
@@ -245,6 +262,9 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         number<std::size_t>(global, "steady_window", result.steady_window);
     result.max_steps =
         number<std::size_t>(global, "max_steps", result.max_steps);
+    result.max_particles_per_species = number<std::size_t>(
+        global, "max_particles_per_species",
+        result.max_particles_per_species);
     result.seed = number<unsigned>(global, "seed", result.seed);
     result.magnetic_field_z =
         number<double>(global, "magnetic_field_z", result.magnetic_field_z);
@@ -388,6 +408,40 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
     }
     if (parsed.species.empty()) {
         throw std::runtime_error("unstructured 2D config requires species sections");
+    }
+
+    std::set<std::string> configured_species;
+    for (const auto& species : result.species) {
+        configured_species.insert(species.name);
+    }
+    for (const auto& source : parsed.sources) {
+        UnstructuredBoundarySource2DConfig value;
+        value.name = source.name;
+        value.species = required(
+            source.values, "species", "source '" + source.name + "'");
+        value.boundary = required(
+            source.values, "boundary", "source '" + source.name + "'");
+        (void)required(
+            source.values, "particles_per_step",
+            "source '" + source.name + "'");
+        value.particles_per_step = number<std::size_t>(
+            source.values, "particles_per_step", 0);
+        value.start_step = number<std::size_t>(
+            source.values, "start_step", value.start_step);
+        value.end_step = number<std::size_t>(
+            source.values, "end_step", value.end_step);
+        value.normal_velocity = number<double>(
+            source.values, "normal_velocity", value.normal_velocity);
+        value.tangential_velocity = number<double>(
+            source.values, "tangential_velocity", value.tangential_velocity);
+        value.thermal_velocity = number<double>(
+            source.values, "thermal_velocity", value.thermal_velocity);
+        if (!configured_species.contains(value.species)) {
+            throw std::runtime_error(
+                "source '" + source.name +
+                "' references unknown species '" + value.species + "'");
+        }
+        result.sources.push_back(std::move(value));
     }
     return result;
 }

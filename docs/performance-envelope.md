@@ -12,7 +12,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
 | `examples/plasma_2d.cfg` | 2D2V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D2V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
-| `examples/imported_plasma_2d.cfg` | 2D2V | 6 nodes / 3 mixed cells | 64 | 3 | Imported Gmsh CLI path, FEM solve, tagged reflection, VTU, particle samples, checkpoint. |
+| `examples/imported_plasma_2d.cfg` | 2D2V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
 | `examples/plasma_3d.cfg` | 3D3V | 8 x 8 x 8 nodes | 128 | 3 | Structured 3D CLI path, VTK legacy/XML output, particle samples. |
 
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.
@@ -30,6 +30,8 @@ The current implementation is aimed at correctness and regression coverage befor
 Use the serial backend as the portability baseline. Optional OpenMP currently covers safe particle-loop slices and uses deterministic static scheduling; it is not yet a full MPI/GPU or domain-decomposed scaling model. Treat `runtime_backend = mpi` and `runtime_backend = gpu` as reserved future options that intentionally fail fast.
 
 Imported 2D diagnostics include cumulative `particle_seconds`, `deposition_seconds`, and `field_solve_seconds` columns, plus cumulative `location_cache_hits` and `location_searches`. Timings use a monotonic wall clock and are operational measurements, not simulation state; timings and location caches are intentionally excluded from checkpoints and numerical convergence decisions. Each live particle first validates its last element and recomputes shape coordinates locally. Only a cache miss or element crossing invokes spatial point location; restart reconstructs the sidecars during its required redeposition. Imported charge deposition uses one dense nodal buffer per active worker and reduces those buffers in worker order. This avoids atomics and data races, gives repeatable results for a fixed worker count, and uses additional memory proportional to `active_threads * mesh_nodes`.
+
+Boundary injection can grow particle storage, so production runs must set `max_particles_per_species` from a conservative memory budget. Absorbed/dead slots are reused before growth. The configured macro-particle injection rate and expected residence time should be used to estimate the live population; the hard limit remains a safety bound rather than a population-control model.
 
 Run a repeat-median benchmark with:
 
@@ -51,7 +53,7 @@ For credible physical studies, document these checks with the run configuration 
 3. **Noise:** particles per cell are high enough for the desired charge/current noise tolerance.
 4. **Convergence:** repeat with smaller `dt`, finer mesh, and/or more particles; compare scalar histories and field snapshots.
 5. **Output cadence:** output intervals are short enough to detect transients but not so frequent that I/O dominates.
-6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses a spatial candidate index and element-local shapes, their electrostatic solve supports strict all-boundary Dirichlet label mapping, and the C++ runtime applies segment-based absorbing/reflecting policies by physical label. Mixed Dirichlet/Neumann fields and config/checkpoint integration remain pending.
+6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses cached element-local shapes with spatial fallback, their electrostatic solve supports strict mixed Dirichlet/Neumann labels, and the runtime applies segment-based absorbing/reflecting and length-weighted injection policies by physical label.
 7. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform magnetic rotation. There is no self-consistent electromagnetic field update yet.
 
 ## Release-engineering envelope

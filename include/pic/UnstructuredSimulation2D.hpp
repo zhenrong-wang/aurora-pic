@@ -30,6 +30,18 @@ struct UnstructuredSpecies2DConfig {
     std::optional<Vec2> initialization_maximum;
 };
 
+struct UnstructuredBoundarySource2DConfig {
+    std::string name;
+    std::string species;
+    std::string boundary;
+    std::size_t particles_per_step{0};
+    std::size_t start_step{0};
+    std::size_t end_step{0}; // zero keeps the source active indefinitely
+    double normal_velocity{0.0};
+    double tangential_velocity{0.0};
+    double thermal_velocity{0.0};
+};
+
 struct UnstructuredSimulation2DConfig {
     std::filesystem::path mesh_path;
     double dt{0.02};
@@ -38,6 +50,7 @@ struct UnstructuredSimulation2DConfig {
     double steady_tolerance{1e-6};
     std::size_t steady_window{25};
     std::size_t max_steps{10000};
+    std::size_t max_particles_per_species{10000000};
     unsigned seed{12345};
     double magnetic_field_z{0.0};
     std::size_t output_interval{10};
@@ -57,6 +70,7 @@ struct UnstructuredSimulation2DConfig {
     std::map<std::string, double> neumann_normal_derivatives;
     std::map<std::string, ParticleBoundary> particle_boundaries;
     std::vector<UnstructuredSpecies2DConfig> species;
+    std::vector<UnstructuredBoundarySource2DConfig> sources;
 };
 
 struct UnstructuredDiagnosticSample2D {
@@ -68,6 +82,7 @@ struct UnstructuredDiagnosticSample2D {
     double charge_l1{0.0};
     std::size_t live_particles{0};
     std::map<std::string, std::size_t> absorbed_by_label;
+    std::map<std::string, std::size_t> injected_by_source;
     UnstructuredPoissonSummary2D poisson{};
 };
 
@@ -123,8 +138,16 @@ private:
         std::array<Vec2, 3> vertices{};
         double cumulative_area{0.0};
     };
+    struct BoundarySourceRuntime {
+        UnstructuredBoundarySource2DConfig config;
+        std::size_t species_id{0};
+        std::vector<std::size_t> segment_indices;
+        std::vector<double> cumulative_lengths;
+        std::size_t injected_particles{0};
+    };
 
     Vec2 sample_position(const UnstructuredSpecies2DConfig& config);
+    void inject_boundary_sources();
     void deposit_and_solve();
     void advance_with_boundaries(
         Particle2D& particle, Vec2 previous_position,
@@ -144,6 +167,7 @@ private:
     std::vector<std::vector<UnstructuredParticleLocation2D>> particle_locations_;
     std::vector<BoundarySegment> boundary_segments_;
     std::vector<SamplingTriangle> sampling_triangles_;
+    std::vector<BoundarySourceRuntime> sources_;
     std::map<std::string, std::size_t> absorbed_by_label_;
     std::mt19937_64 rng_;
     UnstructuredPoissonSummary2D last_poisson_{};

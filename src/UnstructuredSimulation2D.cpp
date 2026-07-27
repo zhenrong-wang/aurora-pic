@@ -22,7 +22,10 @@ namespace pic {
 namespace {
 
 using SteadyClock = std::chrono::steady_clock;
-constexpr const char* CHECKPOINT_MAGIC = "AuroraPIC-unstructured-2D-checkpoint-v1";
+constexpr const char* CHECKPOINT_MAGIC_V1 =
+    "AuroraPIC-unstructured-2D-checkpoint-v1";
+constexpr const char* CHECKPOINT_MAGIC_V2 =
+    "AuroraPIC-unstructured-2D-checkpoint-v2";
 
 double cross(Vec2 first, Vec2 second) {
     return first.x * second.y - first.y * second.x;
@@ -63,7 +66,9 @@ Species2DConfig particle_storage_config(const UnstructuredSpecies2DConfig& confi
     result.charge = config.charge;
     result.mass = config.mass;
     result.weight = config.weight;
-    result.particles = config.particles;
+    // Species2D is reused as particle storage and requires a nonzero configured
+    // capacity, while imported source-driven species may intentionally start empty.
+    result.particles = std::max<std::size_t>(1, config.particles);
     result.drift_velocity_x = config.drift_velocity_x;
     result.drift_velocity_y = config.drift_velocity_y;
     result.thermal_velocity = config.thermal_velocity;
@@ -160,6 +165,10 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
     if (config_.particle_output_stride == 0) {
         throw std::invalid_argument("unstructured particle output stride must be positive");
     }
+    if (config_.max_particles_per_species == 0) {
+        throw std::invalid_argument(
+            "unstructured max_particles_per_species must be positive");
+    }
     if (config_.checkpoint_output && config_.checkpoint_interval == 0) {
         config_.checkpoint_interval = config_.output_interval;
     }
@@ -242,6 +251,10 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         if (!species_names.insert(species_config.name).second) {
             throw std::invalid_argument("unstructured species names must be unique");
         }
+        if (species_config.particles > config_.max_particles_per_species) {
+            throw std::invalid_argument(
+                "unstructured initial particle count exceeds max_particles_per_species");
+        }
         if (species_config.initialization_minimum.has_value() !=
             species_config.initialization_maximum.has_value()) {
             throw std::invalid_argument(
@@ -259,6 +272,66 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         species_configs_.push_back(species_config);
         species_.emplace_back(particle_storage_config(species_config));
         particle_locations_.emplace_back();
+    }
+    std::set<std::string> source_names;
+    for (const auto& source_config : config_.sources) {
+        if (source_config.name.empty() ||
+            !source_names.insert(source_config.name).second) {
+            throw std::invalid_argument(
+                "unstructured boundary source names must be non-empty and unique");
+        }
+        if (!species_names.contains(source_config.species)) {
+            throw std::invalid_argument(
+                "unstructured boundary source species not found: " +
+                source_config.species);
+        }
+        if (!label_set.contains(source_config.boundary)) {
+            throw std::invalid_argument(
+                "unstructured boundary source label not found: " +
+                source_config.boundary);
+        }
+        if (source_config.particles_per_step == 0) {
+            throw std::invalid_argument(
+                "unstructured boundary source particles_per_step must be positive");
+        }
+        if (source_config.end_step != 0 &&
+            source_config.end_step <= source_config.start_step) {
+            throw std::invalid_argument(
+                "unstructured boundary source end_step must exceed start_step");
+        }
+        if (!std::isfinite(source_config.normal_velocity) ||
+            source_config.normal_velocity < 0.0 ||
+            !std::isfinite(source_config.tangential_velocity) ||
+            !std::isfinite(source_config.thermal_velocity) ||
+            source_config.thermal_velocity < 0.0) {
+            throw std::invalid_argument(
+                "unstructured boundary source velocities are invalid");
+        }
+
+        BoundarySourceRuntime source;
+        source.config = source_config;
+        source.species_id = static_cast<std::size_t>(
+            std::find_if(
+                species_configs_.begin(), species_configs_.end(),
+                [&](const auto& species) {
+                    return species.name == source_config.species;
+                }) - species_configs_.begin());
+        double cumulative_length = 0.0;
+        for (std::size_t segment_id = 0;
+             segment_id < boundary_segments_.size(); ++segment_id) {
+            const auto& segment = boundary_segments_[segment_id];
+            if (segment.label != source_config.boundary) continue;
+            cumulative_length += std::hypot(
+                segment.second.x - segment.first.x,
+                segment.second.y - segment.first.y);
+            source.segment_indices.push_back(segment_id);
+            source.cumulative_lengths.push_back(cumulative_length);
+        }
+        if (!(cumulative_length > 0.0) || !std::isfinite(cumulative_length)) {
+            throw std::runtime_error(
+                "unstructured boundary source has no finite boundary length");
+        }
+        sources_.push_back(std::move(source));
     }
     poisson_solver_ = std::make_unique<UnstructuredPoissonSolver2D>(
         mesh_, config_.dirichlet_potentials,
@@ -304,10 +377,115 @@ Vec2 UnstructuredSimulation2D::sample_position(const UnstructuredSpecies2DConfig
         "could not sample the requested unstructured species initialization region");
 }
 
+void UnstructuredSimulation2D::inject_boundary_sources() {
+    if (sources_.empty()) return;
+    std::vector<std::vector<std::size_t>> reusable(species_.size());
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        const auto& particles = species_[species_id].particles();
+        for (std::size_t particle_id = 0;
+             particle_id < particles.size(); ++particle_id) {
+            if (!particles[particle_id].alive) {
+                reusable[species_id].push_back(particle_id);
+            }
+        }
+    }
+
+    const Vec2 minimum = mesh_.topology().min_corner();
+    const Vec2 maximum = mesh_.topology().max_corner();
+    const double domain_scale =
+        std::max(maximum.x - minimum.x, maximum.y - minimum.y);
+    const double inset =
+        std::max(1e-12 * domain_scale,
+                 1024.0 * std::numeric_limits<double>::epsilon() * domain_scale);
+    std::uniform_real_distribution<double> unit(0.0, 1.0);
+    std::normal_distribution<double> thermal(0.0, 1.0);
+
+    for (auto& source : sources_) {
+        if (step_ < source.config.start_step ||
+            (source.config.end_step != 0 &&
+             step_ >= source.config.end_step)) {
+            continue;
+        }
+        auto& species = species_[source.species_id];
+        auto& particles = species.particles();
+        auto& locations = particle_locations_[source.species_id];
+        for (std::size_t injected = 0;
+             injected < source.config.particles_per_step; ++injected) {
+            std::size_t particle_id = 0;
+            if (!reusable[source.species_id].empty()) {
+                particle_id = reusable[source.species_id].back();
+                reusable[source.species_id].pop_back();
+                particles[particle_id] = Particle2D{};
+                locations[particle_id] = UnstructuredParticleLocation2D{};
+            } else {
+                if (particles.size() >= config_.max_particles_per_species) {
+                    throw std::runtime_error(
+                        "unstructured boundary source exceeded "
+                        "max_particles_per_species");
+                }
+                particle_id = particles.size();
+                particles.emplace_back();
+                locations.emplace_back();
+            }
+
+            const double target =
+                unit(rng_) * source.cumulative_lengths.back();
+            const auto selected = std::lower_bound(
+                source.cumulative_lengths.begin(),
+                source.cumulative_lengths.end(), target);
+            const std::size_t local_segment =
+                selected == source.cumulative_lengths.end()
+                    ? source.cumulative_lengths.size() - 1
+                    : static_cast<std::size_t>(
+                          selected - source.cumulative_lengths.begin());
+            const auto& segment =
+                boundary_segments_[source.segment_indices[local_segment]];
+            const Vec2 edge = subtract(segment.second, segment.first);
+            const Vec2 tangent{
+                segment.inward_normal.y, -segment.inward_normal.x};
+            constexpr double endpoint_margin = 1e-10;
+            const double along =
+                endpoint_margin +
+                (1.0 - 2.0 * endpoint_margin) * unit(rng_);
+
+            auto& particle = particles[particle_id];
+            particle.position = add(
+                add(segment.first, scale(edge, along)),
+                scale(segment.inward_normal, inset));
+            const double normal_speed =
+                source.config.normal_velocity +
+                source.config.thermal_velocity * std::abs(thermal(rng_));
+            const double tangent_speed =
+                source.config.tangential_velocity +
+                source.config.thermal_velocity * thermal(rng_);
+            particle.velocity = add(
+                scale(segment.inward_normal, normal_speed),
+                scale(tangent, tangent_speed));
+            particle.velocity_half = particle.velocity;
+            particle.alive = true;
+
+            bool cache_hit = false;
+            const auto electric = interpolate_electric(
+                mesh_, particle.position, locations[particle_id], &cache_hit);
+            cache_hit ? ++timing_.location_cache_hits
+                      : ++timing_.location_searches;
+            if (!electric) {
+                throw std::runtime_error(
+                    "unstructured boundary source generated an exterior particle");
+            }
+            initialize_particle_pusher(
+                particle, *electric, species.charge() / species.mass(),
+                config_.magnetic_field_z, config_.dt);
+            ++source.injected_particles;
+        }
+    }
+}
+
 void UnstructuredSimulation2D::initialize() {
     time_ = 0.0;
     step_ = 0;
     timing_ = {};
+    for (auto& source : sources_) source.injected_particles = 0;
     for (auto& [label, count] : absorbed_by_label_) count = 0;
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         auto& particles = species_[species_id].particles();
@@ -464,6 +642,7 @@ void UnstructuredSimulation2D::advance_with_boundaries(
 void UnstructuredSimulation2D::step() {
     if (!initialized_) initialize();
     const auto first_particle_start = SteadyClock::now();
+    inject_boundary_sources();
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         auto& species = species_[species_id];
         const double charge_to_mass = species.charge() / species.mass();
@@ -560,6 +739,10 @@ UnstructuredDiagnosticSample2D UnstructuredSimulation2D::sample() const {
     result.step = step_;
     result.time = time_;
     result.absorbed_by_label = absorbed_by_label_;
+    for (const auto& source : sources_) {
+        result.injected_by_source.emplace(
+            source.config.name, source.injected_particles);
+    }
     result.poisson = last_poisson_;
     for (const auto& species : species_) {
         result.kinetic_energy += species.kinetic_energy();
@@ -585,6 +768,14 @@ void UnstructuredSimulation2D::write_diagnostics_header(std::ofstream& output) c
         (void)count;
         output << ',' << csv_quote("absorbed_" + label);
     }
+    std::map<std::string, std::size_t> injected;
+    for (const auto& source : sources_) {
+        injected.emplace(source.config.name, source.injected_particles);
+    }
+    for (const auto& [name, count] : injected) {
+        (void)count;
+        output << ',' << csv_quote("injected_" + name);
+    }
     output << '\n';
 }
 
@@ -600,6 +791,10 @@ void UnstructuredSimulation2D::write_diagnostics_sample(
            << timing_.location_cache_hits << ',' << timing_.location_searches;
     for (const auto& [label, count] : value.absorbed_by_label) {
         (void)label;
+        output << ',' << count;
+    }
+    for (const auto& [name, count] : value.injected_by_source) {
+        (void)name;
         output << ',' << count;
     }
     output << '\n';
@@ -686,13 +881,26 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
                                  path.string());
     }
     output << std::setprecision(17);
-    output << CHECKPOINT_MAGIC << '\n';
+    output << CHECKPOINT_MAGIC_V2 << '\n';
     output << "mesh_signature " << mesh_signature() << '\n';
     output << "step " << step_ << '\n';
     output << "time " << time_ << '\n';
     output << "absorbed_count " << absorbed_by_label_.size() << '\n';
     for (const auto& [label, count] : absorbed_by_label_) {
         output << "absorbed " << std::quoted(label) << ' ' << count << '\n';
+    }
+    output << "source_count " << sources_.size() << '\n';
+    for (const auto& source : sources_) {
+        output << "source " << std::quoted(source.config.name) << ' '
+               << std::quoted(source.config.species) << ' '
+               << std::quoted(source.config.boundary) << ' '
+               << source.config.particles_per_step << ' '
+               << source.config.start_step << ' '
+               << source.config.end_step << ' '
+               << source.config.normal_velocity << ' '
+               << source.config.tangential_velocity << ' '
+               << source.config.thermal_velocity << ' '
+               << source.injected_particles << '\n';
     }
     output << "species_count " << species_.size() << '\n';
     output << "rng " << rng_ << '\n';
@@ -722,7 +930,8 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
     }
     std::string magic;
     std::getline(input, magic);
-    if (magic != CHECKPOINT_MAGIC) {
+    const bool checkpoint_v1 = magic == CHECKPOINT_MAGIC_V1;
+    if (!checkpoint_v1 && magic != CHECKPOINT_MAGIC_V2) {
         throw std::runtime_error("invalid unstructured checkpoint magic");
     }
     std::string key;
@@ -753,6 +962,56 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
         }
         absorbed_by_label_[label] = count;
     }
+    if (checkpoint_v1) {
+        if (!sources_.empty()) {
+            throw std::runtime_error(
+                "legacy unstructured checkpoint cannot restart configured sources");
+        }
+    } else {
+        std::size_t source_count = 0;
+        input >> key >> source_count;
+        if (key != "source_count" || source_count != sources_.size()) {
+            throw std::runtime_error(
+                "unstructured checkpoint source count mismatch");
+        }
+        std::set<std::string> loaded_sources;
+        for (std::size_t i = 0; i < source_count; ++i) {
+            std::string name;
+            std::string species;
+            std::string boundary;
+            std::size_t particles_per_step = 0;
+            std::size_t start_step = 0;
+            std::size_t end_step = 0;
+            double normal_velocity = 0.0;
+            double tangential_velocity = 0.0;
+            double thermal_velocity = 0.0;
+            std::size_t injected_particles = 0;
+            input >> key >> std::quoted(name) >> std::quoted(species)
+                  >> std::quoted(boundary) >> particles_per_step
+                  >> start_step >> end_step >> normal_velocity
+                  >> tangential_velocity >> thermal_velocity
+                  >> injected_particles;
+            const auto source = std::find_if(
+                sources_.begin(), sources_.end(),
+                [&](const BoundarySourceRuntime& candidate) {
+                    return candidate.config.name == name;
+                });
+            if (key != "source" || source == sources_.end() ||
+                !loaded_sources.insert(name).second ||
+                source->config.species != species ||
+                source->config.boundary != boundary ||
+                source->config.particles_per_step != particles_per_step ||
+                source->config.start_step != start_step ||
+                source->config.end_step != end_step ||
+                source->config.normal_velocity != normal_velocity ||
+                source->config.tangential_velocity != tangential_velocity ||
+                source->config.thermal_velocity != thermal_velocity) {
+                throw std::runtime_error(
+                    "unstructured checkpoint source configuration mismatch");
+            }
+            source->injected_particles = injected_particles;
+        }
+    }
     std::size_t species_count = 0;
     input >> key >> species_count;
     if (key != "species_count" || species_count != species_.size()) {
@@ -768,7 +1027,8 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
         input >> key >> stored_id >> std::quoted(stored_name) >> particle_count;
         if (key != "species" || stored_id != species_id ||
             stored_name != species_[species_id].name() ||
-            particle_count != species_configs_[species_id].particles) {
+            particle_count < species_configs_[species_id].particles ||
+            particle_count > config_.max_particles_per_species) {
             throw std::runtime_error("unstructured checkpoint species metadata mismatch");
         }
         auto& particles = species_[species_id].particles();

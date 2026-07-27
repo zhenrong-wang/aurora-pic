@@ -2360,6 +2360,8 @@ int main() {
                         imported_config.dirichlet_potentials.contains("inlet") &&
                         imported_config.neumann_normal_derivatives.size() == 3 &&
                         imported_config.neumann_normal_derivatives.contains("outlet") &&
+                        imported_config.sources.size() == 2 &&
+                        imported_config.sources.front().species == "electrons" &&
                         imported_config.particle_boundaries.at("electrode") ==
                             pic::ParticleBoundary::Reflecting,
                     "imported 2D example config did not load expected runtime settings");
@@ -3094,6 +3096,147 @@ int main() {
                 require(summary.final_sample.absorbed_by_label.at("outlet") == beam.particles,
                         "absorbing imported boundary attributed losses to the wrong physical label");
                 std::filesystem::remove_all(output_dir);
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path("test_output_unstructured_source");
+                std::filesystem::remove_all(output_dir);
+                pic::UnstructuredSimulation2DConfig config;
+                config.mesh_path = fixture;
+                config.dt = 0.1;
+                config.steps = 3;
+                config.output_interval = 1;
+                config.output_dir = output_dir;
+                config.checkpoint_output = true;
+                config.checkpoint_interval = 1;
+                config.max_particles_per_species = 32;
+                config.dirichlet_potentials = {
+                    {"electrode", 0.0}, {"inlet", 0.0},
+                    {"outlet", 0.0}, {"wall", 0.0},
+                };
+                config.particle_boundaries = {
+                    {"electrode", pic::ParticleBoundary::Reflecting},
+                    {"inlet", pic::ParticleBoundary::Reflecting},
+                    {"outlet", pic::ParticleBoundary::Reflecting},
+                    {"wall", pic::ParticleBoundary::Reflecting},
+                };
+                pic::UnstructuredSpecies2DConfig tracer;
+                tracer.name = "tracer";
+                tracer.charge = 0.0;
+                tracer.particles = 0;
+                tracer.thermal_velocity = 0.0;
+                config.species = {tracer};
+                pic::UnstructuredBoundarySource2DConfig source;
+                source.name = "tracer_inlet";
+                source.species = "tracer";
+                source.boundary = "inlet";
+                source.particles_per_step = 3;
+                source.start_step = 0;
+                source.end_step = 2;
+                source.normal_velocity = 0.0;
+                source.thermal_velocity = 0.0;
+                config.sources = {source};
+
+                pic::UnstructuredSimulation2D simulation(config);
+                const auto summary = simulation.run();
+                require(summary.final_sample.live_particles == 6 &&
+                            simulation.species().front().particles().size() == 6,
+                        "imported boundary source injected the wrong particle count");
+                require(summary.final_sample.injected_by_source.at("tracer_inlet") == 6,
+                        "imported boundary source diagnostic count mismatch");
+                for (const auto& particle :
+                     simulation.species().front().particles()) {
+                    require(particle.alive &&
+                                simulation.mesh().locate_point(
+                                    particle.position).has_value(),
+                            "imported boundary source generated an exterior particle");
+                }
+                const std::string scalars =
+                    read_file_text(output_dir / "scalars.csv");
+                require(scalars.find("injected_tracer_inlet") !=
+                            std::string::npos,
+                        "imported boundary source diagnostic column is missing");
+
+                auto continued_config = config;
+                continued_config.restart_path =
+                    output_dir / "checkpoint_1.apc";
+                continued_config.output_dir =
+                    "test_output_unstructured_source_continued";
+                continued_config.checkpoint_output = false;
+                std::filesystem::remove_all(continued_config.output_dir);
+                pic::UnstructuredSimulation2D continued(continued_config);
+                const auto continued_summary = continued.run();
+                require(
+                    continued_summary.final_sample.injected_by_source.at(
+                        "tracer_inlet") == 6,
+                    "source checkpoint restart changed cumulative injection");
+                const auto& expected_particles =
+                    simulation.species().front().particles();
+                const auto& continued_particles =
+                    continued.species().front().particles();
+                require(continued_particles.size() == expected_particles.size(),
+                        "source checkpoint restart changed particle storage");
+                for (std::size_t i = 0; i < expected_particles.size(); ++i) {
+                    require_near(
+                        continued_particles[i].position.x,
+                        expected_particles[i].position.x, 1e-13,
+                        "source checkpoint restart changed particle x");
+                    require_near(
+                        continued_particles[i].position.y,
+                        expected_particles[i].position.y, 1e-13,
+                        "source checkpoint restart changed particle y");
+                }
+
+                auto bounded_config = config;
+                bounded_config.max_particles_per_species = 2;
+                bounded_config.steps = 1;
+                bounded_config.checkpoint_output = false;
+                bounded_config.output_dir =
+                    "test_output_unstructured_source_bounded";
+                std::filesystem::remove_all(bounded_config.output_dir);
+                require_throws(
+                    [&]() {
+                        pic::UnstructuredSimulation2D bounded(bounded_config);
+                        (void)bounded.run();
+                    },
+                    "imported boundary source exceeded its particle storage bound");
+
+                auto recycling_config = config;
+                recycling_config.steps = 2;
+                recycling_config.max_particles_per_species = 3;
+                recycling_config.checkpoint_output = false;
+                recycling_config.output_dir =
+                    "test_output_unstructured_source_recycling";
+                recycling_config.sources.front().end_step = 0;
+                recycling_config.sources.front().normal_velocity = 20.0;
+                for (auto& [label, policy] :
+                     recycling_config.particle_boundaries) {
+                    (void)label;
+                    policy = pic::ParticleBoundary::Absorbing;
+                }
+                std::filesystem::remove_all(recycling_config.output_dir);
+                pic::UnstructuredSimulation2D recycling(recycling_config);
+                const auto recycling_summary = recycling.run();
+                require(
+                    recycling_summary.final_sample.injected_by_source.at(
+                        "tracer_inlet") == 6 &&
+                        recycling.species().front().particles().size() == 3 &&
+                        recycling_summary.final_sample.live_particles == 0,
+                    "imported boundary source did not reuse absorbed particle slots");
+                std::size_t recycled_absorbed = 0;
+                for (const auto& [label, count] :
+                     recycling_summary.final_sample.absorbed_by_label) {
+                    (void)label;
+                    recycled_absorbed += count;
+                }
+                require(recycled_absorbed == 6,
+                        "injected particles were not absorbed after transit");
+
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_config.output_dir);
+                std::filesystem::remove_all(bounded_config.output_dir);
+                std::filesystem::remove_all(recycling_config.output_dir);
             }
 
             pic::Gmsh2ImportLimits small_limits;

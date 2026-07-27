@@ -272,6 +272,7 @@ def check_imported_plasma_2d(output_dir: Path) -> None:
             "particle_seconds", "deposition_seconds", "field_solve_seconds",
             "location_cache_hits", "location_searches",
             "absorbed_electrode", "absorbed_inlet", "absorbed_outlet", "absorbed_wall",
+            "injected_electron_inlet", "injected_ion_inlet",
         ],
         min_rows=4,
     )
