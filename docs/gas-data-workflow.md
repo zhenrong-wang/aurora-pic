@@ -27,13 +27,15 @@ contains:
   energy ranges, point counts, peak cross sections, elastic mass-ratio checks,
   and a collision-frequency recommendation over the audited energy range.
 
-The importer supports BOLSIG+ `ELASTIC`, `EXCITATION`, and `IONIZATION`
-blocks. It rejects malformed tables, nonzero inelastic data below threshold,
+The importer supports BOLSIG+ `ELASTIC`, `EXCITATION`, `IONIZATION`, and
+`ATTACHMENT` blocks. Attachment onset is retained in its tabulated
+cross-section values because that BOLSIG+ block has no separate threshold
+parameter. It rejects malformed tables, nonzero inelastic data below threshold,
 ambiguous units, mismatched elastic mass ratios, incomplete electron sets, and
 unsupported processes by default. `--allow-partial`,
 `--skip-unsupported`, and `--ignore-mass-ratio` are explicit acknowledgements,
 not silent fallbacks. AuroraPIC does not yet convert `EFFECTIVE`, `MOMENTUM`,
-`ATTACHMENT`, or `ROTATION` blocks.
+or `ROTATION` blocks.
 
 Imported elastic channels remain explicitly isotropic. The converter does not
 guess a differential phase function or reinterpret momentum-transfer data as

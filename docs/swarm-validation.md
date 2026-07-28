@@ -49,12 +49,13 @@ an appropriately monitored compute host.
 
 - `fixed_population_no_avalanche` is the default transport mode. Ionization
   events are counted and change the primary electron energy, but their
-  secondaries do not join the ensemble.
-- `branching_resampled` adds each ionization secondary with its parent's
-  statistical weight, then systematically resamples back to `particles`
-  computational electrons after every step while preserving total represented
-  electron weight. This keeps computational cost fixed while the physical
-  population grows.
+  secondaries do not join the ensemble. This mode rejects attachment because
+  retaining a consumed electron would violate its fixed-population contract.
+- `branching_resampled` adds each ionization secondary and removes each
+  attached primary with its statistical weight, then systematically resamples
+  back to `particles` computational electrons after every step while
+  preserving total represented electron weight. This keeps computational
+  cost fixed while the physical population grows or decays.
 
 Branching runs may set `population_limit` to a value greater than `particles`.
 It caps the temporary pre-resampling population; if omitted, a conservative
@@ -81,9 +82,13 @@ For each E/N it reports:
 
 Branching mode additionally reports initial/final represented electron
 weight, the fixed final computational-particle count, and a temporal growth
-rate fitted to `log(total electron weight)`. When the conventional electron
-drift is positive it also reports `growth rate / flux drift velocity` as a
-clearly named Townsend approximation. `diffusion_available` and
+rate fitted to `log(total electron weight)`. Aggregate ionization,
+attachment, and net creation rates are reported with weight-aware counting
+uncertainties. When the conventional electron drift is positive, the output
+includes both `growth rate / flux drift velocity` and the rate-balance
+effective coefficient `(ionization rate - attachment rate) / flux drift
+velocity`. These are clearly named Townsend approximations.
+`diffusion_available` and
 `townsend_available` distinguish unavailable quantities from numerical zero;
 diffusion columns are empty in branching mode because resampling breaks the
 independent endpoint-lineage estimator.
@@ -172,8 +177,10 @@ an invalid or ambiguous input. Existing reports require `--overwrite`.
 The fixed mode intentionally excludes multiplication. The
 `branching_resampled` mode provides bounded electron-impact avalanche
 multiplication, but its growth-over-flux-drift result is not a spatial
-steady-state bulk Townsend coefficient. It does not yet include attachment,
-photoionization, space charge, or a dedicated steady Townsend experiment.
+steady-state bulk Townsend coefficient. Attachment removes electron weight
+according to its tabulated channel, but the homogeneous runner does not track
+the negative-ion product. It does not yet include detachment, photoionization,
+space charge, or a dedicated steady Townsend experiment.
 Ionization uses the engine's current equal-sharing energy model. Both modes
 assume stationary zero-temperature neutrals. Elastic scattering is isotropic
 unless the gas package explicitly supplies a validated energy-dependent

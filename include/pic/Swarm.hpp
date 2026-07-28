@@ -71,9 +71,17 @@ struct SwarmBenchmarkResult {
     std::size_t final_computational_particles{0};
     double temporal_growth_rate_s{0.0};
     double temporal_growth_rate_standard_error_s{0.0};
+    double ionization_rate_s{0.0};
+    double ionization_rate_standard_error_s{0.0};
+    double attachment_rate_s{0.0};
+    double attachment_rate_standard_error_s{0.0};
+    double net_creation_rate_s{0.0};
+    double net_creation_rate_standard_error_s{0.0};
     bool townsend_available{false};
     double growth_over_flux_drift_townsend_1_m{0.0};
     double growth_over_flux_drift_townsend_standard_error_1_m{0.0};
+    double rate_balance_effective_townsend_1_m{0.0};
+    double rate_balance_effective_townsend_standard_error_1_m{0.0};
     std::uint64_t collision_candidates{0};
     std::uint64_t null_collisions{0};
     std::vector<SwarmChannelResult> channels{};

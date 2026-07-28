@@ -203,7 +203,7 @@ void write_collision_metadata(
             "cannot open imported collision metadata output");
     }
     output << std::setprecision(17);
-    output << "format 2\n";
+    output << "format 3\n";
     output << "gas " << std::quoted(config.gas_name) << '\n';
     output << "neutral_mass " << config.neutral_mass << '\n';
     output << "neutral_density " << config.neutral_density << '\n';
@@ -236,6 +236,7 @@ void write_collision_metadata(
                << std::quoted(channel.cross_section_file.string()) << ' '
                << std::quoted(channel.secondary_species) << ' '
                << std::quoted(channel.ion_species) << ' '
+               << std::quoted(channel.attachment_species) << ' '
                << std::quoted(
                       to_string(channel.angular_scattering)) << ' '
                << channel.mean_cosine_energy_scale << ' '
@@ -469,6 +470,8 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
             collision_totals_.channel_names.size(), 0);
         ionization_channels_.resize(
             config_.collisions.channels.size());
+        attachment_channels_.resize(
+            config_.collisions.channels.size());
         const auto species_id = [&](const std::string& name) {
             return static_cast<std::size_t>(
                 std::find_if(
@@ -481,35 +484,57 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
              channel < config_.collisions.channels.size(); ++channel) {
             const auto& channel_config =
                 config_.collisions.channels[channel];
-            if (channel_config.process !=
-                CollisionProcessKind::Ionization) {
-                continue;
-            }
-            const std::size_t secondary =
-                species_id(channel_config.secondary_species);
-            const std::size_t ion =
-                species_id(channel_config.ion_species);
-            if (secondary >= species_.size() || ion >= species_.size()) {
-                throw std::invalid_argument(
-                    "ionization product species was not found");
-            }
             const auto& target = species_configs_[mcc_species_id_];
-            const auto& secondary_config =
-                species_configs_[secondary];
-            const auto& ion_config = species_configs_[ion];
-            if (target.charge == 0.0 ||
-                target.weight != secondary_config.weight ||
-                target.weight != ion_config.weight ||
-                secondary_config.mass != target.mass ||
-                secondary_config.charge != target.charge ||
-                ion_config.charge != -target.charge) {
-                throw std::invalid_argument(
-                    "ionization currently requires a charged target, equal "
-                    "macro weights, secondary mass and charge equal to the "
-                    "target, and opposite ion charge");
+            if (channel_config.process ==
+                CollisionProcessKind::Ionization) {
+                const std::size_t secondary =
+                    species_id(channel_config.secondary_species);
+                const std::size_t ion =
+                    species_id(channel_config.ion_species);
+                if (secondary >= species_.size() ||
+                    ion >= species_.size()) {
+                    throw std::invalid_argument(
+                        "ionization product species was not found");
+                }
+                const auto& secondary_config =
+                    species_configs_[secondary];
+                const auto& ion_config = species_configs_[ion];
+                if (target.charge == 0.0 ||
+                    target.weight != secondary_config.weight ||
+                    target.weight != ion_config.weight ||
+                    secondary_config.mass != target.mass ||
+                    secondary_config.charge != target.charge ||
+                    ion_config.charge != -target.charge) {
+                    throw std::invalid_argument(
+                        "ionization currently requires a charged target, "
+                        "equal macro weights, secondary mass and charge "
+                        "equal to the target, and opposite ion charge");
+                }
+                ionization_channels_[channel] =
+                    IonizationChannelRuntime{secondary, ion};
+            } else if (channel_config.process ==
+                       CollisionProcessKind::Attachment) {
+                const std::size_t product =
+                    species_id(channel_config.attachment_species);
+                if (product >= species_.size()) {
+                    throw std::invalid_argument(
+                        "attachment product species was not found");
+                }
+                const auto& product_config =
+                    species_configs_[product];
+                if (product == mcc_species_id_ ||
+                    !(target.charge < 0.0) ||
+                    target.weight != product_config.weight ||
+                    target.charge != product_config.charge ||
+                    !(product_config.mass > target.mass)) {
+                    throw std::invalid_argument(
+                        "attachment currently requires a negatively charged "
+                        "target and a distinct heavier product with target "
+                        "charge and equal macro weight");
+                }
+                attachment_channels_[channel] =
+                    AttachmentChannelRuntime{product};
             }
-            ionization_channels_[channel] =
-                IonizationChannelRuntime{secondary, ion};
         }
     }
     std::set<std::string> source_names;
@@ -1281,7 +1306,13 @@ void UnstructuredSimulation2D::apply_collisions() {
         Vec3 secondary_velocity{};
         IonizationChannelRuntime channel{};
     };
-    std::vector<IonizationProduct> products;
+    struct AttachmentProduct {
+        Vec2 position{};
+        std::size_t consumed_particle_id{0};
+        AttachmentChannelRuntime channel{};
+    };
+    std::vector<IonizationProduct> ionization_products;
+    std::vector<AttachmentProduct> attachment_products;
     const std::size_t initial_particle_count =
         species.particles().size();
     for (std::size_t particle_id = 0;
@@ -1302,10 +1333,24 @@ void UnstructuredSimulation2D::apply_collisions() {
                 throw std::logic_error(
                     "MCC produced an unmapped ionization channel");
             }
-            products.push_back({
+            ionization_products.push_back({
                 particle.position,
                 secondary.velocity,
                 *ionization_channels_[secondary.channel]});
+        }
+        if (statistics.primary_removal_channel) {
+            const std::size_t channel =
+                *statistics.primary_removal_channel;
+            if (channel >= attachment_channels_.size() ||
+                !attachment_channels_[channel]) {
+                throw std::logic_error(
+                    "MCC produced an unmapped attachment channel");
+            }
+            attachment_products.push_back({
+                particle.position,
+                particle_id,
+                *attachment_channels_[channel]});
+            continue;
         }
         particle.velocity = {velocity.x, velocity.y};
         particle.velocity_z = velocity.z;
@@ -1329,9 +1374,12 @@ void UnstructuredSimulation2D::apply_collisions() {
             config_.dt);
     }
     std::vector<std::size_t> required_products(species_.size(), 0);
-    for (const auto& product : products) {
+    for (const auto& product : ionization_products) {
         ++required_products[product.channel.secondary_species_id];
         ++required_products[product.channel.ion_species_id];
+    }
+    for (const auto& product : attachment_products) {
+        ++required_products[product.channel.product_species_id];
     }
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
@@ -1349,9 +1397,13 @@ void UnstructuredSimulation2D::apply_collisions() {
         if (growth >
             config_.max_particles_per_species - particles.size()) {
             throw std::runtime_error(
-                "ionization exceeded max_particles_per_species for species '" +
+                "reactive collisions exceeded max_particles_per_species "
+                "for species '" +
                 species_[species_id].name() + "'");
         }
+    }
+    for (const auto& product : attachment_products) {
+        species.particles()[product.consumed_particle_id].alive = false;
     }
     const auto append_product = [&](std::size_t species_id,
                                     Vec2 position,
@@ -1369,7 +1421,8 @@ void UnstructuredSimulation2D::apply_collisions() {
             if (particles.size() >=
                 config_.max_particles_per_species) {
                 throw std::runtime_error(
-                    "ionization exceeded max_particles_per_species");
+                    "reactive collisions exceeded "
+                    "max_particles_per_species");
             }
             particle_id = particles.size();
             particles.emplace_back();
@@ -1393,7 +1446,7 @@ void UnstructuredSimulation2D::apply_collisions() {
                   : ++timing_.location_searches;
         if (!electric) {
             throw std::runtime_error(
-                "ionization product is outside imported mesh");
+                "collision product is outside imported mesh");
         }
         initialize_particle_pusher(
             particle, *electric,
@@ -1403,12 +1456,17 @@ void UnstructuredSimulation2D::apply_collisions() {
                  config_.magnetic_field_z},
             config_.dt);
     };
-    for (const auto& product : products) {
+    for (const auto& product : ionization_products) {
         append_product(
             product.channel.secondary_species_id,
             product.position, product.secondary_velocity);
         append_product(
             product.channel.ion_species_id,
+            product.position, Vec3{});
+    }
+    for (const auto& product : attachment_products) {
+        append_product(
+            product.channel.product_species_id,
             product.position, Vec3{});
     }
 }

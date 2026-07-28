@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support tabulated stationary-neutral finite-mass elastic scattering, excitation, bounded electron-impact ionization, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support tabulated stationary-neutral finite-mass elastic scattering, excitation, bounded electron-impact ionization, charge-conservative electron attachment, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
 
 ## Why this methodology
 
@@ -175,7 +175,8 @@ set `neutral_density` and a conservative `max_frequency`, then add one or more
 `[collision.<name>]` elastic/excitation sections. Imported 2D3V MCC also
 requires `gas`, positive `neutral_mass`, non-negative `neutral_temperature`,
 and `data_provenance`, and can use ionization sections naming secondary and
-ion product species or resonant `charge_exchange` channels. Alternatively,
+ion product species, attachment sections naming a negative-ion product, or
+resonant `charge_exchange` channels. Alternatively,
 `gas_data_file` loads a reusable,
 versioned `.gas` manifest containing gas identity, mass, dataset/version,
 provenance, citation, retrieval date, license, and channel tables while the
@@ -183,6 +184,8 @@ simulation retains operating conditions and product-species mappings. See
 [`examples/mcc_relaxation.cfg`](examples/mcc_relaxation.cfg),
 [`examples/imported_mcc_2d.cfg`](examples/imported_mcc_2d.cfg), and the
 [`examples/imported_ionization_2d.cfg`](examples/imported_ionization_2d.cfg)
+and
+[`examples/imported_attachment_2d.cfg`](examples/imported_attachment_2d.cfg)
 and
 [`examples/imported_charge_exchange_2d.cfg`](examples/imported_charge_exchange_2d.cfg).
 The collision contract documents the reactive kinematic and macro-weight
@@ -198,9 +201,10 @@ E/N using the production collision kernel and emits traceable transport and
 channel-rate diagnostics. Its local comparison tool maps user-supplied
 measured or evaluated coefficients to those outputs and produces a hashed,
 uncertainty-aware acceptance report without bundling the reference data.
-The runner also offers an explicit bounded branching mode: ionization
-secondaries increase represented electron weight while systematic resampling
-holds computational population fixed, enabling temporal avalanche-growth and
+The runner also offers an explicit bounded branching mode: ionization and
+attachment respectively increase and decrease represented electron weight
+while systematic resampling holds computational population fixed, enabling
+temporal avalanche growth, rate-balance effective ionization, and
 growth-over-flux-drift Townsend diagnostics without unbounded host load.
 Elastic 3V channels may additionally provide a validated energy-dependent
 mean-cosine table for Henyey-Greenstein anisotropic scattering; isotropic

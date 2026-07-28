@@ -56,6 +56,7 @@ struct CollisionStepStatistics {
         Vec3 velocity{};
     };
     std::vector<Secondary> secondaries{};
+    std::optional<std::size_t> primary_removal_channel{};
 };
 
 struct CollisionDiagnostics {

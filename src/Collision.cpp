@@ -393,12 +393,13 @@ NullCollisionModel::NullCollisionModel(
                 "MCC threshold_energy must be finite and non-negative");
         }
         if ((channel_config.process == CollisionProcessKind::Elastic ||
+             channel_config.process == CollisionProcessKind::Attachment ||
              channel_config.process ==
                  CollisionProcessKind::ChargeExchange) &&
             channel_config.threshold_energy != 0.0) {
             throw std::invalid_argument(
-                "elastic and charge-exchange MCC channel threshold_energy "
-                "must be zero");
+                "elastic, attachment, and charge-exchange MCC channel "
+                "threshold_energy must be zero");
         }
         if ((channel_config.process == CollisionProcessKind::Excitation ||
              channel_config.process == CollisionProcessKind::Ionization) &&
@@ -437,6 +438,11 @@ NullCollisionModel::NullCollisionModel(
              channel_config.ion_species.empty())) {
             throw std::invalid_argument(
                 "ionization MCC channel requires secondary and ion species");
+        }
+        if (channel_config.process == CollisionProcessKind::Attachment &&
+            channel_config.attachment_species.empty()) {
+            throw std::invalid_argument(
+                "attachment MCC channel requires an attachment species");
         }
         if (channel_config.process ==
             CollisionProcessKind::ChargeExchange) {
@@ -479,6 +485,9 @@ NullCollisionModel::NullCollisionModel(
             CollisionProcessKind::Ionization) {
             hash_string(signature_, channel_config.secondary_species);
             hash_string(signature_, channel_config.ion_species);
+        } else if (channel_config.process ==
+                   CollisionProcessKind::Attachment) {
+            hash_string(signature_, channel_config.attachment_species);
         }
         for (std::size_t i = 0;
              i < channels_.back().table.energies().size(); ++i) {
@@ -547,6 +556,10 @@ void NullCollisionModel::apply_channel(
     double& velocity,
     std::mt19937_64& rng) const {
     const auto& channel = channels_.at(channel_index);
+    if (channel.config.process == CollisionProcessKind::Attachment) {
+        velocity = 0.0;
+        return;
+    }
     if (channel.config.process ==
         CollisionProcessKind::ChargeExchange) {
         velocity = 0.0;
@@ -582,6 +595,10 @@ void NullCollisionModel::apply_channel(
     Vec3& velocity,
     std::mt19937_64& rng) const {
     const auto& channel = channels_.at(channel_index);
+    if (channel.config.process == CollisionProcessKind::Attachment) {
+        velocity = {};
+        return;
+    }
     if (channel.config.process ==
         CollisionProcessKind::ChargeExchange) {
         velocity = {};
@@ -683,11 +700,16 @@ CollisionStepStatistics NullCollisionModel::collide(
             if (selection < cumulative) {
                 apply_channel(channel, velocity, rng);
                 ++statistics.channel_collisions[channel];
+                if (channels_[channel].config.process ==
+                    CollisionProcessKind::Attachment) {
+                    statistics.primary_removal_channel = channel;
+                }
                 accepted = true;
                 break;
             }
         }
         if (!accepted) ++statistics.null_collisions;
+        if (statistics.primary_removal_channel) break;
     }
     return statistics;
 }
@@ -750,11 +772,16 @@ CollisionStepStatistics NullCollisionModel::collide(
                         isotropic_velocity(secondary_speed, rng)});
                 }
                 ++statistics.channel_collisions[channel];
+                if (channels_[channel].config.process ==
+                    CollisionProcessKind::Attachment) {
+                    statistics.primary_removal_channel = channel;
+                }
                 accepted = true;
                 break;
             }
         }
         if (!accepted) ++statistics.null_collisions;
+        if (statistics.primary_removal_channel) break;
     }
     return statistics;
 }

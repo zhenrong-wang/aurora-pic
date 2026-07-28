@@ -382,6 +382,7 @@ void validate_config(
     }
     bool has_elastic = false;
     bool has_ionization = false;
+    bool has_attachment = false;
     for (const auto& channel : dataset.channels) {
         has_elastic =
             has_elastic ||
@@ -389,6 +390,9 @@ void validate_config(
         has_ionization =
             has_ionization ||
             channel.process == CollisionProcessKind::Ionization;
+        has_attachment =
+            has_attachment ||
+            channel.process == CollisionProcessKind::Attachment;
         if (channel.process == CollisionProcessKind::ChargeExchange) {
             throw std::runtime_error(
                 "electron swarm benchmark does not support "
@@ -424,10 +428,17 @@ void validate_config(
             "electron swarm benchmark requires an elastic channel");
     }
     if (config.population_model ==
-            SwarmPopulationModel::BranchingResampled &&
-        !has_ionization) {
+            SwarmPopulationModel::FixedPopulationNoAvalanche &&
+        has_attachment) {
         throw std::runtime_error(
-            "branching swarm requires an ionization channel");
+            "fixed-population swarm does not support attachment; use "
+            "population_model = branching_resampled");
+    }
+    if (config.population_model ==
+            SwarmPopulationModel::BranchingResampled &&
+        !has_ionization && !has_attachment) {
+        throw std::runtime_error(
+            "branching swarm requires an ionization or attachment channel");
     }
 }
 
@@ -456,6 +467,9 @@ CollisionConfig collision_config(
         if (channel.process == CollisionProcessKind::Ionization) {
             channel.secondary_species = "fixed_population_electron";
             channel.ion_species = "diagnostic_ion";
+        } else if (channel.process ==
+                   CollisionProcessKind::Attachment) {
+            channel.attachment_species = "diagnostic_negative_ion";
         }
     }
     return result;
@@ -466,11 +480,13 @@ struct SwarmParticle {
     Vec3 position{};
     Vec3 sampling_start_position{};
     double weight{1.0};
+    bool alive{true};
 };
 
 double total_weight(const std::vector<SwarmParticle>& particles) {
     double result = 0.0;
     for (const auto& particle : particles) {
+        if (!particle.alive) continue;
         result += particle.weight;
     }
     if (!std::isfinite(result) || !(result > 0.0)) {
@@ -649,10 +665,23 @@ SwarmBenchmarkResult run_field(
                     created.weight = parent_weight;
                     particles.push_back(created);
                 }
+                if (statistics.primary_removal_channel) {
+                    particles[particle_index].alive = false;
+                }
             }
         }
         if (config.population_model ==
             SwarmPopulationModel::BranchingResampled) {
+            std::erase_if(
+                particles,
+                [](const SwarmParticle& particle) {
+                    return !particle.alive;
+                });
+            if (particles.empty()) {
+                throw std::runtime_error(
+                    "branching swarm electron ensemble became extinct; "
+                    "increase particles or reduce timestep");
+            }
             systematic_resample(
                 particles, config.particles, rng);
         }
@@ -741,7 +770,29 @@ SwarmBenchmarkResult run_field(
             std::sqrt(
                 squared_weighted_channel_collisions[channel_index]) /
             weighted_exposure;
+        const auto process = dataset.channels[channel_index].process;
+        if (process == CollisionProcessKind::Ionization) {
+            result.ionization_rate_s +=
+                channel.rate_per_electron_s;
+            result.ionization_rate_standard_error_s =
+                std::hypot(
+                    result.ionization_rate_standard_error_s,
+                    channel.poisson_standard_error_s);
+        } else if (process == CollisionProcessKind::Attachment) {
+            result.attachment_rate_s +=
+                channel.rate_per_electron_s;
+            result.attachment_rate_standard_error_s =
+                std::hypot(
+                    result.attachment_rate_standard_error_s,
+                    channel.poisson_standard_error_s);
+        }
     }
+    result.net_creation_rate_s =
+        result.ionization_rate_s - result.attachment_rate_s;
+    result.net_creation_rate_standard_error_s =
+        std::hypot(
+            result.ionization_rate_standard_error_s,
+            result.attachment_rate_standard_error_s);
     result.final_total_electron_weight = total_weight(particles);
     result.final_computational_particles = particles.size();
     if (config.population_model ==
@@ -767,6 +818,15 @@ SwarmBenchmarkResult run_field(
                     result.temporal_growth_rate_standard_error_s /
                         drift,
                     result.temporal_growth_rate_s * drift_error /
+                        (drift * drift));
+            result.rate_balance_effective_townsend_1_m =
+                result.net_creation_rate_s / drift;
+            result
+                .rate_balance_effective_townsend_standard_error_1_m =
+                std::hypot(
+                    result.net_creation_rate_standard_error_s /
+                        drift,
+                    result.net_creation_rate_s * drift_error /
                         (drift * drift));
         }
     }
@@ -994,9 +1054,17 @@ void write_swarm_benchmark_csv(
         << "final_computational_particles,"
         << "temporal_growth_rate_s,"
         << "temporal_growth_rate_standard_error_s,"
+        << "total_ionization_rate_s,"
+        << "total_ionization_rate_standard_error_s,"
+        << "total_attachment_rate_s,"
+        << "total_attachment_rate_standard_error_s,"
+        << "net_creation_rate_s,"
+        << "net_creation_rate_standard_error_s,"
         << "townsend_available,"
         << "growth_over_flux_drift_townsend_1_m,"
         << "growth_over_flux_drift_townsend_standard_error_1_m,"
+        << "rate_balance_effective_townsend_1_m,"
+        << "rate_balance_effective_townsend_standard_error_1_m,"
         << "maximum_observed_energy_ev,"
         << "collision_candidates,null_collisions";
     for (const auto& channel : results.front().channels) {
@@ -1056,15 +1124,25 @@ void write_swarm_benchmark_csv(
             << result.final_computational_particles << ','
             << result.temporal_growth_rate_s << ','
             << result.temporal_growth_rate_standard_error_s << ','
+            << result.ionization_rate_s << ','
+            << result.ionization_rate_standard_error_s << ','
+            << result.attachment_rate_s << ','
+            << result.attachment_rate_standard_error_s << ','
+            << result.net_creation_rate_s << ','
+            << result.net_creation_rate_standard_error_s << ','
             << (result.townsend_available ? "yes" : "no") << ',';
         if (result.townsend_available) {
             output
                 << result.growth_over_flux_drift_townsend_1_m << ','
                 << result
                        .growth_over_flux_drift_townsend_standard_error_1_m
+                << ','
+                << result.rate_balance_effective_townsend_1_m << ','
+                << result
+                       .rate_balance_effective_townsend_standard_error_1_m
                 << ',';
         } else {
-            output << ",,";
+            output << ",,,,";
         }
         output
             << result.maximum_observed_energy_ev << ','

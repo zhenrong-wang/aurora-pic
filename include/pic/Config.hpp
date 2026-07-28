@@ -32,6 +32,7 @@ enum class CollisionProcessKind {
     Elastic,
     Excitation,
     Ionization,
+    Attachment,
     ChargeExchange
 };
 
@@ -48,6 +49,7 @@ inline std::string to_string(CollisionProcessKind process) {
         case CollisionProcessKind::Elastic: return "elastic";
         case CollisionProcessKind::Excitation: return "excitation";
         case CollisionProcessKind::Ionization: return "ionization";
+        case CollisionProcessKind::Attachment: return "attachment";
         case CollisionProcessKind::ChargeExchange:
             return "charge_exchange";
     }
@@ -73,6 +75,7 @@ struct CollisionChannelConfig {
     double cross_section_scale{1.0};
     std::string secondary_species{};
     std::string ion_species{};
+    std::string attachment_species{};
     AngularScatteringKind angular_scattering{
         AngularScatteringKind::Isotropic};
     std::filesystem::path mean_cosine_file{};

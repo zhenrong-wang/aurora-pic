@@ -109,7 +109,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "energy_scale", "cross_section_scale",
         "angular_model", "mean_cosine_file",
         "mean_cosine_energy_scale",
-        "secondary_species", "ion_species",
+        "secondary_species", "ion_species", "attachment_species",
     };
 
     ParsedConfig result;
@@ -665,26 +665,43 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                     channel.name + "'");
             }
             if (configured->process !=
-                CollisionProcessKind::Ionization) {
+                    CollisionProcessKind::Ionization &&
+                configured->process !=
+                    CollisionProcessKind::Attachment) {
                 throw std::runtime_error(
-                    "only ionization product species may be mapped for "
+                    "only reactive product species may be mapped for "
                     "gas dataset channel '" + channel.name + "'");
             }
             for (const auto& [key, unused] : channel.values) {
                 (void)unused;
-                if (key != "secondary_species" &&
-                    key != "ion_species") {
+                const bool ionization_key =
+                    configured->process ==
+                        CollisionProcessKind::Ionization &&
+                    (key == "secondary_species" ||
+                     key == "ion_species");
+                const bool attachment_key =
+                    configured->process ==
+                        CollisionProcessKind::Attachment &&
+                    key == "attachment_species";
+                if (!ionization_key && !attachment_key) {
                     throw std::runtime_error(
                         "gas dataset channel '" + channel.name +
                         "' physics cannot be overridden by a simulation");
                 }
             }
-            configured->secondary_species = required(
-                channel.values, "secondary_species",
-                "ionization channel '" + channel.name + "'");
-            configured->ion_species = required(
-                channel.values, "ion_species",
-                "ionization channel '" + channel.name + "'");
+            if (configured->process ==
+                CollisionProcessKind::Ionization) {
+                configured->secondary_species = required(
+                    channel.values, "secondary_species",
+                    "ionization channel '" + channel.name + "'");
+                configured->ion_species = required(
+                    channel.values, "ion_species",
+                    "ionization channel '" + channel.name + "'");
+            } else {
+                configured->attachment_species = required(
+                    channel.values, "attachment_species",
+                    "attachment channel '" + channel.name + "'");
+            }
             continue;
         }
         CollisionChannelConfig value;
@@ -698,6 +715,8 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             value.process = CollisionProcessKind::Excitation;
         } else if (type == "ionization") {
             value.process = CollisionProcessKind::Ionization;
+        } else if (type == "attachment") {
+            value.process = CollisionProcessKind::Attachment;
         } else if (type == "charge_exchange" ||
                    type == "charge-exchange") {
             value.process =
@@ -705,8 +724,8 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         } else {
             throw std::runtime_error(
                 "collision channel '" + channel.name +
-                "' type must be elastic, excitation, ionization, or "
-                "charge_exchange");
+                "' type must be elastic, excitation, ionization, "
+                "attachment, or charge_exchange");
         }
         value.cross_section_file = resolved_path(
             path, required(
@@ -769,17 +788,34 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 "henyey_greenstein");
         }
         if (value.process == CollisionProcessKind::Ionization) {
+            if (channel.values.contains("attachment_species")) {
+                throw std::runtime_error(
+                    "ionization channel '" + channel.name +
+                    "' does not accept attachment_species");
+            }
             value.secondary_species = required(
                 channel.values, "secondary_species",
                 "ionization channel '" + channel.name + "'");
             value.ion_species = required(
                 channel.values, "ion_species",
                 "ionization channel '" + channel.name + "'");
+        } else if (value.process ==
+                   CollisionProcessKind::Attachment) {
+            if (channel.values.contains("secondary_species") ||
+                channel.values.contains("ion_species")) {
+                throw std::runtime_error(
+                    "attachment channel '" + channel.name +
+                    "' accepts only attachment_species");
+            }
+            value.attachment_species = required(
+                channel.values, "attachment_species",
+                "attachment channel '" + channel.name + "'");
         } else if (channel.values.contains("secondary_species") ||
-                   channel.values.contains("ion_species")) {
+                   channel.values.contains("ion_species") ||
+                   channel.values.contains("attachment_species")) {
             throw std::runtime_error(
                 "collision channel '" + channel.name +
-                "' product species are valid only for ionization");
+                "' product species do not match its process");
         }
         result.collisions.channels.push_back(std::move(value));
     }
@@ -803,12 +839,20 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 "imported MCC requires collision channel sections");
         }
         for (const auto& channel : result.collisions.channels) {
-            if (channel.process != CollisionProcessKind::Ionization) continue;
-            if (!configured_species.contains(channel.secondary_species) ||
-                !configured_species.contains(channel.ion_species)) {
+            if (channel.process == CollisionProcessKind::Ionization &&
+                (!configured_species.contains(
+                     channel.secondary_species) ||
+                 !configured_species.contains(channel.ion_species))) {
                 throw std::runtime_error(
                     "ionization channel '" + channel.name +
                     "' references unknown product species");
+            }
+            if (channel.process == CollisionProcessKind::Attachment &&
+                !configured_species.contains(
+                    channel.attachment_species)) {
+                throw std::runtime_error(
+                    "attachment channel '" + channel.name +
+                    "' references an unknown product species");
             }
         }
         if (!result.collisions.gas_data_file.empty()) {
@@ -818,6 +862,13 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                      channel.ion_species.empty())) {
                     throw std::runtime_error(
                         "gas dataset ionization channel '" + channel.name +
+                        "' requires a matching [collision." +
+                        channel.name + "] product mapping");
+                }
+                if (channel.process == CollisionProcessKind::Attachment &&
+                    channel.attachment_species.empty()) {
+                    throw std::runtime_error(
+                        "gas dataset attachment channel '" + channel.name +
                         "' requires a matching [collision." +
                         channel.name + "] product mapping");
                 }

@@ -592,6 +592,46 @@ int main() {
                 },
                 "scalar MCC accepted an ionization channel");
 
+            auto attachment_config = elastic_config;
+            pic::CollisionChannelConfig attachment_channel;
+            attachment_channel.name = "attachment";
+            attachment_channel.process =
+                pic::CollisionProcessKind::Attachment;
+            attachment_channel.cross_section_file = table_path;
+            attachment_channel.attachment_species = "negative_ions";
+            attachment_config.channels = {attachment_channel};
+            pic::NullCollisionModel attachment(
+                attachment_config, 1.0);
+            std::mt19937_64 attachment_rng(271828);
+            bool attached = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !attached; ++attempt) {
+                pic::Vec3 electron{std::sqrt(2.0), 0.0, 0.0};
+                const auto stats = attachment.collide(
+                    electron, 0.1, attachment_rng);
+                if (!stats.primary_removal_channel) continue;
+                require(
+                    *stats.primary_removal_channel == 0 &&
+                        stats.channel_collisions[0] == 1 &&
+                        stats.secondaries.empty() &&
+                        norm(electron) == 0.0,
+                    "attachment did not consume exactly one primary");
+                attached = true;
+            }
+            require(
+                attached,
+                "electron attachment was not sampled");
+            auto unmapped_attachment = attachment_config;
+            unmapped_attachment.channels.front()
+                .attachment_species.clear();
+            require_throws_contains(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        unmapped_attachment, 1.0);
+                },
+                "requires an attachment species",
+                "attachment accepted a missing product mapping");
+
             auto charge_exchange_config = elastic_config;
             charge_exchange_config.neutral_mass = 40.0;
             charge_exchange_config.channels = {
@@ -3014,6 +3054,24 @@ int main() {
                     imported_ionization_config.collisions.channels.front()
                         .ion_species == "ions",
                 "imported ionization config did not preserve product species");
+            const auto imported_attachment_example =
+                std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                "examples" / "imported_attachment_2d.cfg";
+            const auto imported_attachment_config =
+                pic::load_unstructured_config_2d(
+                    imported_attachment_example);
+            require(
+                imported_attachment_config.collisions.dataset_id ==
+                        "aurorapic.synthetic.attachment" &&
+                    imported_attachment_config.collisions.channels
+                            .size() == 1 &&
+                    imported_attachment_config.collisions.channels
+                            .front().process ==
+                        pic::CollisionProcessKind::Attachment &&
+                    imported_attachment_config.collisions.channels
+                            .front().attachment_species ==
+                        "negative_ions",
+                "imported attachment config lost its product mapping");
             const auto imported_charge_exchange_example =
                 std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
                 "examples" / "imported_charge_exchange_2d.cfg";
@@ -3223,6 +3281,9 @@ int main() {
                 const auto swarm_ionization_table =
                     std::filesystem::absolute(
                         "test_swarm_ionization.dat");
+                const auto swarm_attachment_table =
+                    std::filesystem::absolute(
+                        "test_swarm_attachment.dat");
                 const auto swarm_branch_manifest =
                     std::filesystem::absolute(
                         "test_swarm_branching.gas");
@@ -3274,6 +3335,10 @@ int main() {
                         swarm_ionization_table);
                     ionization_output
                         << "0 0\n0.01 1e-18\n50 1e-18\n";
+                    std::ofstream attachment_output(
+                        swarm_attachment_table);
+                    attachment_output
+                        << "0 0\n0.01 1e-19\n50 1e-19\n";
                     std::ofstream branch_manifest_output(
                         swarm_branch_manifest);
                     branch_manifest_output
@@ -3297,7 +3362,12 @@ int main() {
                         << "cross_section_file = "
                         << swarm_ionization_table.string() << '\n'
                         << "energy_scale = 1.602176634e-19\n"
-                        << "threshold_energy = 1.602176634e-21\n";
+                        << "threshold_energy = 1.602176634e-21\n\n"
+                        << "[collision.attachment]\n"
+                        << "type = attachment\n"
+                        << "cross_section_file = "
+                        << swarm_attachment_table.string() << '\n'
+                        << "energy_scale = 1.602176634e-19\n";
                     std::ofstream branch_config_output(
                         swarm_branch_config_path);
                     branch_config_output
@@ -3435,14 +3505,31 @@ int main() {
                             branch.final_computational_particles == 64 &&
                             branch.final_total_electron_weight >
                                 branch.initial_total_electron_weight &&
-                            branch.temporal_growth_rate_s > 0.0,
+                            branch.temporal_growth_rate_s > 0.0 &&
+                            branch.ionization_rate_s >
+                                branch.attachment_rate_s &&
+                            branch.attachment_rate_s > 0.0 &&
+                            branch.net_creation_rate_s > 0.0,
                         "branching swarm did not preserve its bounded "
                         "ensemble while multiplying electron weight");
                     require(
-                        branch.townsend_available ==
-                            (branch.electron_drift_velocity_m_s > 0.0),
-                        "branching swarm Townsend availability is "
-                        "inconsistent with its drift direction");
+                        branch.townsend_available &&
+                            branch.electron_drift_velocity_m_s > 0.0 &&
+                            branch
+                                    .rate_balance_effective_townsend_1_m >
+                                0.0,
+                        "branching swarm did not expose its effective "
+                        "Townsend diagnostics");
+                    require_near(
+                        branch.rate_balance_effective_townsend_1_m,
+                        branch.net_creation_rate_s /
+                            branch.electron_drift_velocity_m_s,
+                        std::abs(
+                            branch
+                                .rate_balance_effective_townsend_1_m) *
+                            1e-14,
+                        "rate-balance effective Townsend coefficient "
+                        "is inconsistent");
                     const auto branch_dataset =
                         pic::load_gas_dataset(swarm_branch_manifest);
                     pic::write_swarm_benchmark_csv(
@@ -3463,6 +3550,12 @@ int main() {
                                 std::string::npos &&
                             branch_csv.find(
                                 "diffusion_available") !=
+                                std::string::npos &&
+                            branch_csv.find(
+                                "net_creation_rate_s") !=
+                                std::string::npos &&
+                            branch_csv.find(
+                                "total_attachment_rate_s") !=
                                 std::string::npos &&
                             branch_header_end != std::string::npos &&
                             branch_row_end != std::string::npos &&
@@ -3493,12 +3586,25 @@ int main() {
                         "population_limit must exceed particles",
                         "branching swarm accepted an unsafe population "
                         "limit");
+                    invalid_branch = branch_config;
+                    invalid_branch.population_model =
+                        pic::SwarmPopulationModel::
+                            FixedPopulationNoAvalanche;
+                    invalid_branch.population_limit = 0;
+                    require_throws_contains(
+                        [&] {
+                            (void)pic::run_swarm_benchmark(
+                                invalid_branch);
+                        },
+                        "does not support attachment",
+                        "fixed-population swarm accepted attachment");
                 } catch (...) {
                     std::filesystem::remove(swarm_table);
                     std::filesystem::remove(swarm_manifest);
                     std::filesystem::remove(swarm_config_path);
                     std::filesystem::remove(swarm_output);
                     std::filesystem::remove(swarm_ionization_table);
+                    std::filesystem::remove(swarm_attachment_table);
                     std::filesystem::remove(swarm_branch_manifest);
                     std::filesystem::remove(swarm_branch_config_path);
                     std::filesystem::remove(swarm_branch_output);
@@ -3509,6 +3615,7 @@ int main() {
                 std::filesystem::remove(swarm_config_path);
                 std::filesystem::remove(swarm_output);
                 std::filesystem::remove(swarm_ionization_table);
+                std::filesystem::remove(swarm_attachment_table);
                 std::filesystem::remove(swarm_branch_manifest);
                 std::filesystem::remove(swarm_branch_config_path);
                 std::filesystem::remove(swarm_branch_output);
@@ -3737,6 +3844,71 @@ int main() {
                 std::filesystem::remove_all(output_dir);
                 std::filesystem::remove_all(
                     continued_output_dir);
+                std::filesystem::remove_all(
+                    bounded_config.output_dir);
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_attachment");
+                std::filesystem::remove_all(output_dir);
+
+                auto config = imported_attachment_config;
+                config.output_dir = output_dir;
+                pic::UnstructuredSimulation2D simulation(config);
+                const auto summary = simulation.run();
+                const auto& collisions =
+                    simulation.collision_diagnostics();
+                const std::size_t remaining_electrons =
+                    simulation.species()[0].live_count();
+                const std::size_t negative_ions =
+                    simulation.species()[1].live_count();
+                require(
+                    collisions.candidates == 6 &&
+                        collisions.null_collisions == 2 &&
+                        collisions.channel_collisions ==
+                            std::vector<std::uint64_t>{4} &&
+                        remaining_electrons == 12 &&
+                        negative_ions == 20 &&
+                        summary.final_sample.live_particles == 32,
+                    "imported attachment did not replace consumed "
+                    "electrons with negative ions");
+                const double final_charge =
+                    -static_cast<double>(
+                        remaining_electrons + negative_ions);
+                require_near(
+                    final_charge, -32.0, 0.0,
+                    "imported attachment did not conserve charge");
+
+                auto invalid_product = config;
+                invalid_product.species[1].charge = 1.0;
+                require_throws_contains(
+                    [&] {
+                        pic::UnstructuredSimulation2D invalid(
+                            invalid_product);
+                    },
+                    "distinct heavier product with target charge",
+                    "attachment accepted a positive-ion product");
+
+                auto bounded_config = config;
+                bounded_config.output_dir =
+                    "test_output_unstructured_attachment_bounded";
+                bounded_config.checkpoint_output = false;
+                bounded_config.max_particles_per_species = 16;
+                pic::UnstructuredSimulation2D bounded(
+                    bounded_config);
+                require_throws_contains(
+                    [&] { (void)bounded.run(); },
+                    "max_particles_per_species",
+                    "attachment ignored product species capacity");
+                require(
+                    bounded.species()[0].live_count() == 16 &&
+                        bounded.species()[1].live_count() == 16,
+                    "attachment capacity failure partially consumed "
+                    "electrons");
+
+                std::filesystem::remove_all(output_dir);
                 std::filesystem::remove_all(
                     bounded_config.output_dir);
             }

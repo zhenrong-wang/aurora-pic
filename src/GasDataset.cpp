@@ -290,6 +290,8 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
             value.process = CollisionProcessKind::Excitation;
         } else if (type == "ionization") {
             value.process = CollisionProcessKind::Ionization;
+        } else if (type == "attachment") {
+            value.process = CollisionProcessKind::Attachment;
         } else if (type == "charge_exchange" ||
                    type == "charge-exchange") {
             value.process =
@@ -297,8 +299,8 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         } else {
             throw std::runtime_error(
                 channel_context +
-                " type must be elastic, excitation, ionization, or "
-                "charge_exchange");
+                " type must be elastic, excitation, ionization, "
+                "attachment, or charge_exchange");
         }
         value.cross_section_file = resolved_path(
             path, required(
@@ -348,12 +350,14 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
             channel.values, "mean_cosine_energy_scale",
             value.mean_cosine_energy_scale, channel_context);
         if ((value.process == CollisionProcessKind::Elastic ||
+             value.process == CollisionProcessKind::Attachment ||
              value.process ==
                  CollisionProcessKind::ChargeExchange) &&
             value.threshold_energy != 0.0) {
             throw std::runtime_error(
                 channel_context +
-                " elastic and charge-exchange threshold_energy must be zero");
+                " elastic, attachment, and charge-exchange "
+                "threshold_energy must be zero");
         }
         if ((value.process == CollisionProcessKind::Excitation ||
              value.process == CollisionProcessKind::Ionization) &&

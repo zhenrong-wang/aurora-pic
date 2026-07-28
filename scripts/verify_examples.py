@@ -411,6 +411,38 @@ def check_imported_ionization_2d(output_dir: Path) -> None:
     )
 
 
+def check_imported_attachment_2d(output_dir: Path) -> None:
+    scalar_header, scalar_rows = require_csv(
+        output_dir / "scalars.csv", min_rows=5
+    )
+    require_step(scalar_rows, 4, output_dir / "scalars.csv")
+    final_scalar = {
+        name: float(value)
+        for name, value in zip(scalar_header, scalar_rows[-1])
+    }
+    collision_header, collision_rows = require_csv(
+        output_dir / "collisions.csv", min_rows=5
+    )
+    require_step(collision_rows, 4, output_dir / "collisions.csv")
+    final_collision = {
+        name: float(value)
+        for name, value in zip(collision_header, collision_rows[-1])
+    }
+    require(
+        final_collision["cumulative_candidates"] == 6 and
+        final_collision["cumulative_null_collisions"] == 2 and
+        final_collision["cumulative_synthetic_attachment"] == 4,
+        "imported attachment deterministic collision envelope changed",
+    )
+    require(
+        final_scalar["live_particles"] == 32 and
+        abs(final_scalar["total_energy"] - 96.0) < 1e-11,
+        "imported attachment product or energy envelope changed",
+    )
+    require_file(output_dir / "checkpoint_2.apc")
+    require_file(output_dir / "checkpoint_4.apc")
+
+
 def check_imported_charge_exchange_2d(output_dir: Path) -> None:
     scalar_header, scalar_rows = require_csv(
         output_dir / "scalars.csv", min_rows=7
@@ -507,6 +539,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),
         ("imported_mcc_2d.cfg", "imported_mcc_2d", check_imported_mcc_2d),
         ("imported_ionization_2d.cfg", "imported_ionization_2d", check_imported_ionization_2d),
+        ("imported_attachment_2d.cfg", "imported_attachment_2d", check_imported_attachment_2d),
         ("imported_charge_exchange_2d.cfg", "imported_charge_exchange_2d", check_imported_charge_exchange_2d),
         ("biased_probe_2d.cfg", "biased_probe_2d", check_biased_probe_2d),
         ("plasma_3d.cfg", "plasma_3d", check_plasma_3d),

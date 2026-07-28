@@ -23,8 +23,8 @@ collision model.
 
 The MCC slice supports stationary-neutral elastic and excitation channels for
 one named kinetic species. Imported 2D3V additionally supports bounded
-electron-impact ionization product creation and resonant ion-neutral charge
-exchange:
+electron-impact ionization, electron attachment with a kinetic negative-ion
+product, and resonant ion-neutral charge exchange:
 
 ```ini
 [collisions]
@@ -50,6 +50,11 @@ cross_section_file = ionization.dat
 threshold_energy = 1.0
 secondary_species = electrons
 ion_species = ions
+
+[collision.attachment]
+type = attachment
+cross_section_file = attachment.dat
+attachment_species = negative_ions
 
 [collision.charge_exchange]
 type = charge_exchange
@@ -119,6 +124,21 @@ partition well-defined. Product storage is preflighted against
 `max_particles_per_species`, and new particles do not collide again during
 their birth timestep.
 
+Attachment represents `electron + neutral -> negative ion` as a
+charge-conservative macro-event. The primary electron is retired and one
+stationary configured product is created at the event position. The product
+must be a distinct species heavier than the electron, with the same charge
+and macro weight. Attachment channels use zero `threshold_energy`; any onset
+or energy window is represented directly by zero/nonzero values in the
+cross-section table. Product storage is preflighted against
+`max_particles_per_species`, just like ionization.
+
+This is a bounded stationary-product model. It does not resolve dissociation
+fragments, product recoil, neutral depletion, detachment, or species-dependent
+branching ratios. The bundled `examples/imported_attachment_2d.cfg` and
+`mcc_2d3v_attachment.dat` are deterministic software-validation inputs, not
+material data.
+
 This is a deliberately bounded ionization model: ion recoil, differential
 scattering data, neutral depletion, metastables, and multi-ionization are not
 yet represented. The bundled `examples/imported_ionization_2d.cfg` and
@@ -185,6 +205,11 @@ cross_section_file = argon_elastic.dat
 type = ionization
 cross_section_file = argon_ionization.dat
 threshold_energy = 2.524e-18
+
+# For a complete, internally consistent electronegative-gas package:
+[collision.attachment]
+type = attachment
+cross_section_file = attachment.dat
 ```
 
 The simulation supplies operating conditions and reactive species mappings:
@@ -202,7 +227,15 @@ max_frequency = 1.0e8
 [collision.ionization]
 secondary_species = electrons
 ion_species = argon_ions
+
+[collision.attachment]
+attachment_species = negative_ions
 ```
+
+Do not combine channels from unrelated targets merely to fill out a process
+list. A package for a stable atomic noble gas will normally omit attachment;
+the attachment example above applies only when the selected target dataset
+actually contains that process.
 
 Manifest table paths are resolved relative to the manifest, so one package can
 be reused by simulations in different directories. `gas_data_version = 2`,
@@ -212,7 +245,8 @@ provenance, citation, a valid `YYYY-MM-DD` retrieval date, license text, and at
 least one valid channel are mandatory. Unknown or duplicate keys, malformed
 tables, invalid thresholds, and missing files fail during loading. Simulation
 files cannot override packaged channel type, table, scales, or threshold; they
-only map ionization products to configured kinetic species. The public
+only map ionization and attachment products to configured kinetic species.
+The public
 `pic::load_gas_dataset` API exposes the same validated manifest contract to
 embedding applications.
 
@@ -255,6 +289,9 @@ Henyey-Greenstein path with synthetic mean-cosine values.
 `examples/imported_ionization_2d.cfg` similarly exercises paired reactive
 product creation, capacity enforcement, energy accounting, and deterministic
 restart.
+`examples/imported_attachment_2d.cfg` exercises electron removal,
+charge-conservative negative-ion creation, capacity validation, and
+deterministic diagnostics.
 
 ## Diagnostics and restart
 
@@ -282,8 +319,9 @@ enabling finite-mass recoil.
   excitation/ionization recoil, depletion, and gas heating are absent.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
 - Ionization is limited to the equal-sharing imported 2D3V model above.
+  Attachment is limited to the stationary negative-ion product model above.
   Charge exchange is limited to the resonant mass-matched model above.
-  Attachment, Coulomb collisions, and general reaction networks are not
+  Detachment, Coulomb collisions, and general reaction networks are not
   implemented.
 - Cross-section licensing and provenance are the user's responsibility. The
   checked-in MCC tables are synthetic software-validation data, not He, Ar,

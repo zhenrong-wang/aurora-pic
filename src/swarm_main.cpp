@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
                 std::cout
                     << " growth_rate="
                     << result.temporal_growth_rate_s << " 1/s"
+                    << " net_creation_rate="
+                    << result.net_creation_rate_s << " 1/s"
                     << " electron_weight="
                     << result.final_total_electron_weight;
                 if (result.townsend_available) {
@@ -37,6 +39,9 @@ int main(int argc, char** argv) {
                         << " growth_over_flux_drift_townsend="
                         << result
                                .growth_over_flux_drift_townsend_1_m
+                        << " 1/m rate_balance_effective_townsend="
+                        << result
+                               .rate_balance_effective_townsend_1_m
                         << " 1/m";
                 }
             }

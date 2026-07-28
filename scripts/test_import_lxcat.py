@@ -89,6 +89,34 @@ def main() -> int:
                 f"missing converted table {channel}",
             )
 
+        attachment_source = root / "with_attachment.txt"
+        attachment_source.write_text(
+            FIXTURE.read_text(encoding="utf-8")
+            + "ATTACHMENT\n"
+            + "Ar -> Ar-\n"
+            + "COMMENT: synthetic attachment validation data\n"
+            + "--------------------\n"
+            + "0.0 0.0\n"
+            + "1.0 2.0e-21\n"
+            + "20.0 0.0\n"
+            + "--------------------\n",
+            encoding="utf-8",
+        )
+        attachment_output = root / "argon_attachment"
+        subprocess.run(
+            base_command(attachment_output, attachment_source),
+            check=True,
+        )
+        attachment_manifest = (
+            attachment_output / "Ar.gas"
+        ).read_text(encoding="utf-8")
+        require(
+            attachment_manifest.count("[collision.") == 4
+            and "type = attachment\n" in attachment_manifest
+            and (attachment_output / "attachment_001.dat").is_file(),
+            "attachment channel was not converted",
+        )
+
         existing = subprocess.run(
             base_command(output_dir),
             text=True,

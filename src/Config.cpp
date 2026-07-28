@@ -311,6 +311,11 @@ void validate_config(const Config& cfg) {
                 "1D collision channels do not support anisotropic "
                 "scattering");
         }
+        if (channel.process == CollisionProcessKind::Attachment) {
+            throw std::runtime_error(
+                "1D simulation does not support attachment product "
+                "species; use imported 2D3V");
+        }
         if (channel.process == CollisionProcessKind::Elastic &&
             channel.threshold_energy != 0.0) {
             throw std::runtime_error(

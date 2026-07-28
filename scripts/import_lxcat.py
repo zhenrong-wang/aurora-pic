@@ -3,7 +3,7 @@
 
 The converter runs locally and does not download or redistribute source data.
 It supports the collision processes currently implemented by AuroraPIC:
-ELASTIC, EXCITATION, and IONIZATION.
+ELASTIC, EXCITATION, IONIZATION, and ATTACHMENT.
 """
 
 from __future__ import annotations
@@ -32,7 +32,12 @@ KNOWN_TYPES = {
     "EXCITATION",
     "ROTATION",
 }
-SUPPORTED_TYPES = {"ELASTIC", "IONIZATION", "EXCITATION"}
+SUPPORTED_TYPES = {
+    "ELASTIC",
+    "IONIZATION",
+    "ATTACHMENT",
+    "EXCITATION",
+}
 SEPARATOR = re.compile(r"^-{5,}\s*$")
 IDENTIFIER = re.compile(r"^[A-Za-z0-9_.:-]+$")
 

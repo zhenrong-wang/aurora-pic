@@ -216,6 +216,10 @@ void Simulation::apply_collisions(
                 collision_totals_, statistics);
             add_collision_statistics(
                 collision_interval_, statistics);
+            if (statistics.primary_removal_channel) {
+                part.alive = false;
+                continue;
+            }
             initialize_leapfrog_half_step(
                 part, interpolate_electric(grid_, part.x), qm,
                 cfg_.dt);

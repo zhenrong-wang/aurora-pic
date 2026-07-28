@@ -109,9 +109,11 @@ The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining
 1D BGK compatibility. Imported 2D3V adds isotropic stationary-heavy-neutral
-scattering, required gas/provenance metadata, and bounded electron-impact
-ionization with paired charged products. Stationary-target finite-mass elastic
-recoil and resonant mass-matched ion-neutral charge exchange are also covered.
+scattering, required gas/provenance metadata, bounded electron-impact
+ionization with paired charged products, and charge-conservative electron
+attachment to a kinetic negative-ion product. Stationary-target finite-mass
+elastic recoil and resonant mass-matched ion-neutral charge exchange are also
+covered.
 A strict external `.gas` manifest
 interface now separates reusable table physics and licensing metadata from
 simulation operating conditions and fingerprints both for restart. A local
@@ -121,9 +123,9 @@ coverage ambiguity. A homogeneous electron-swarm runner now
 uses the production 3V MCC kernel for reproducible E/N scans with enforced
 energy coverage, block uncertainty estimates, diffusion diagnostics, and
 per-channel rates. Its optional branching/resampled contract tracks
-ionization multiplication through conserved statistical weight at a fixed
-computational-particle count and reports temporal growth plus a clearly
-labeled growth-over-flux-drift Townsend approximation. A strict local
+ionization and attachment through conserved statistical weight at a fixed
+computational-particle count and reports temporal growth, rate-balance
+effective ionization, and clearly labeled Townsend approximations. A strict local
 reference-comparison contract now maps
 user-supplied measured or evaluated swarm coefficients to simulation columns,
 combines declared numerical/reference uncertainty with explicit tolerances,
