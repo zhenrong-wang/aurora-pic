@@ -1,4 +1,5 @@
 #include "pic/UnstructuredSimulation2D.hpp"
+#include "pic/GasDataset.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -101,7 +102,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
     static const std::set<std::string> collision_keys{
         "enabled", "model", "species", "gas", "neutral_density",
         "neutral_mass", "neutral_temperature", "data_provenance",
-        "max_frequency", "max_candidates_per_particle",
+        "gas_data_file", "max_frequency", "max_candidates_per_particle",
     };
     static const std::set<std::string> collision_channel_keys{
         "type", "cross_section_file", "threshold_energy",
@@ -413,23 +414,51 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         if (result.collisions.enabled) {
             result.collisions.species = required(
                 parsed.collisions, "species", "collisions");
-            result.collisions.gas_name = required(
-                parsed.collisions, "gas", "collisions");
-            result.collisions.data_provenance = required(
-                parsed.collisions, "data_provenance", "collisions");
             (void)required(
                 parsed.collisions, "neutral_density", "collisions");
-            (void)required(
-                parsed.collisions, "neutral_mass", "collisions");
             (void)required(
                 parsed.collisions, "neutral_temperature", "collisions");
             (void)required(
                 parsed.collisions, "max_frequency", "collisions");
+            if (parsed.collisions.contains("gas_data_file")) {
+                if (parsed.collisions.contains("gas") ||
+                    parsed.collisions.contains("neutral_mass") ||
+                    parsed.collisions.contains("data_provenance")) {
+                    throw std::runtime_error(
+                        "gas_data_file cannot be combined with inline gas, "
+                        "neutral_mass, or data_provenance");
+                }
+                result.collisions.gas_data_file = resolved_path(
+                    path, parsed.collisions.at("gas_data_file"));
+                const auto dataset = load_gas_dataset(
+                    result.collisions.gas_data_file);
+                result.collisions.gas_name = dataset.gas_name;
+                result.collisions.neutral_mass =
+                    dataset.neutral_mass;
+                result.collisions.data_provenance =
+                    dataset.data_provenance;
+                result.collisions.dataset_id = dataset.dataset_id;
+                result.collisions.dataset_version =
+                    dataset.dataset_version;
+                result.collisions.citation = dataset.citation;
+                result.collisions.retrieved = dataset.retrieved;
+                result.collisions.license = dataset.license;
+                result.collisions.channels = dataset.channels;
+            } else {
+                result.collisions.gas_name = required(
+                    parsed.collisions, "gas", "collisions");
+                result.collisions.data_provenance = required(
+                    parsed.collisions, "data_provenance", "collisions");
+                (void)required(
+                    parsed.collisions, "neutral_mass", "collisions");
+            }
         }
         result.collisions.neutral_density = number<double>(
             parsed.collisions, "neutral_density", 0.0);
-        result.collisions.neutral_mass = number<double>(
-            parsed.collisions, "neutral_mass", 0.0);
+        if (result.collisions.gas_data_file.empty()) {
+            result.collisions.neutral_mass = number<double>(
+                parsed.collisions, "neutral_mass", 0.0);
+        }
         result.collisions.neutral_temperature = number<double>(
             parsed.collisions, "neutral_temperature", 0.0);
         result.collisions.max_frequency = number<double>(
@@ -610,6 +639,41 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         result.emissions.push_back(std::move(value));
     }
     for (const auto& channel : parsed.collision_channels) {
+        if (!result.collisions.gas_data_file.empty()) {
+            const auto configured = std::find_if(
+                result.collisions.channels.begin(),
+                result.collisions.channels.end(),
+                [&](const auto& value) {
+                    return value.name == channel.name;
+                });
+            if (configured == result.collisions.channels.end()) {
+                throw std::runtime_error(
+                    "gas dataset has no collision channel named '" +
+                    channel.name + "'");
+            }
+            if (configured->process !=
+                CollisionProcessKind::Ionization) {
+                throw std::runtime_error(
+                    "only ionization product species may be mapped for "
+                    "gas dataset channel '" + channel.name + "'");
+            }
+            for (const auto& [key, unused] : channel.values) {
+                (void)unused;
+                if (key != "secondary_species" &&
+                    key != "ion_species") {
+                    throw std::runtime_error(
+                        "gas dataset channel '" + channel.name +
+                        "' physics cannot be overridden by a simulation");
+                }
+            }
+            configured->secondary_species = required(
+                channel.values, "secondary_species",
+                "ionization channel '" + channel.name + "'");
+            configured->ion_species = required(
+                channel.values, "ion_species",
+                "ionization channel '" + channel.name + "'");
+            continue;
+        }
         CollisionChannelConfig value;
         value.name = channel.name;
         const std::string type = lower(required(
@@ -679,6 +743,18 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 throw std::runtime_error(
                     "ionization channel '" + channel.name +
                     "' references unknown product species");
+            }
+        }
+        if (!result.collisions.gas_data_file.empty()) {
+            for (const auto& channel : result.collisions.channels) {
+                if (channel.process == CollisionProcessKind::Ionization &&
+                    (channel.secondary_species.empty() ||
+                     channel.ion_species.empty())) {
+                    throw std::runtime_error(
+                        "gas dataset ionization channel '" + channel.name +
+                        "' requires a matching [collision." +
+                        channel.name + "] product mapping");
+                }
             }
         }
     } else if (!parsed.collision_channels.empty()) {

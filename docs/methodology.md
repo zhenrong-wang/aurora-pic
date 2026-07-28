@@ -49,8 +49,13 @@ interval/cumulative counts are written to `collisions.csv`. Checkpoint v3 in
 counters. Imported 2D3V ionization removes its threshold, equally partitions
 the remaining primary/secondary electron energy, samples independent isotropic
 directions, and creates a stationary opposite-charge ion with bounded,
-preflighted storage. See `docs/collisions.md` for the gas metadata, scaling,
-reactive-species constraints, and limitation contract.
+preflighted storage. Imported runs can load versioned external `.gas`
+manifests; packaged physics and provenance are kept separate from
+simulation-specific density, temperature, rate bounds, and reactive species
+mappings. Effective dataset metadata and channel settings are emitted to
+`collision_data.txt` and included in restart compatibility. See
+`docs/collisions.md` for the gas metadata, scaling, reactive-species
+constraints, and limitation contract.
 
 ## Stability guidance
 

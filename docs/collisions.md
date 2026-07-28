@@ -139,6 +139,59 @@ must use a self-consistent normalized contract. Gas identity, mass,
 temperature, provenance, rate controls, target species, and effective tables
 are checkpoint-fingerprinted.
 
+For reusable external data, replace the inline `gas`, `neutral_mass`,
+`data_provenance`, and channel physics with a versioned manifest:
+
+```ini
+# argon.gas
+gas_data_version = 1
+gas = argon
+neutral_mass = 6.6335209e-26
+dataset_id = provider.argon.electron-neutral
+dataset_version = 2026-01
+data_provenance = provider dataset name and source URL
+citation = citation requested by the data contributor
+retrieved = 2026-01-15
+license = applicable dataset terms
+
+[collision.elastic]
+type = elastic
+cross_section_file = argon_elastic.dat
+
+[collision.ionization]
+type = ionization
+cross_section_file = argon_ionization.dat
+threshold_energy = 2.524e-18
+```
+
+The simulation supplies operating conditions and reactive species mappings:
+
+```ini
+[collisions]
+enabled = true
+model = null_collision
+species = electrons
+gas_data_file = argon.gas
+neutral_density = 2.4e20
+neutral_temperature = 300.0
+max_frequency = 1.0e8
+
+[collision.ionization]
+secondary_species = electrons
+ion_species = argon_ions
+```
+
+Manifest table paths are resolved relative to the manifest, so one package can
+be reused by simulations in different directories. `gas_data_version = 1`,
+gas identity, positive neutral mass, stable dataset ID and version,
+provenance, citation, a valid `YYYY-MM-DD` retrieval date, license text, and at
+least one valid channel are mandatory. Unknown or duplicate keys, malformed
+tables, invalid thresholds, and missing files fail during loading. Simulation
+files cannot override packaged channel type, table, scales, or threshold; they
+only map ionization products to configured kinetic species. The public
+`pic::load_gas_dataset` API exposes the same validated manifest contract to
+embedding applications.
+
 The present kinematics use the stationary-heavy-neutral approximation.
 Therefore neutral mass and temperature are required provenance and
 forward-compatibility metadata but do not yet add thermal neutral velocity,
@@ -155,12 +208,15 @@ restart.
 
 An enabled collision model writes `collisions.csv`, containing interval and
 cumulative candidate, null-collision, and named-channel counts at the scalar
-output cadence.
+output cadence. Imported runs also write `collision_data.txt`, recording the
+resolved gas metadata, operating state, model signature, effective channel
+settings, table paths, and product mappings used by that run.
 
 1D checkpoint v3 and imported checkpoint v6 record collision model identity, a
 fingerprint of effective cross-section tables and MCC parameters, cumulative
 collision counts, and RNG state. They reject restart with changed collision
-data or model parameters. Historical 1D v1/v2 and imported v1-v5 checkpoints
+data, external dataset metadata, or model parameters. Historical 1D v1/v2 and
+imported v1-v5 checkpoints
 cannot restart null-collision MCC because they contain no compatible MCC
 provenance. Historical 1D v3 MCC signatures remain compatible when the new
 optional gas metadata is absent.

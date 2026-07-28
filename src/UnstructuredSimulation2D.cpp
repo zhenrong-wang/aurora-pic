@@ -193,6 +193,48 @@ std::string csv_quote(const std::string& value) {
     return result;
 }
 
+void write_collision_metadata(
+    const std::filesystem::path& output_dir,
+    const CollisionConfig& config,
+    std::uint64_t signature) {
+    std::ofstream output(output_dir / "collision_data.txt");
+    if (!output) {
+        throw std::runtime_error(
+            "cannot open imported collision metadata output");
+    }
+    output << std::setprecision(17);
+    output << "format 1\n";
+    output << "gas " << std::quoted(config.gas_name) << '\n';
+    output << "neutral_mass " << config.neutral_mass << '\n';
+    output << "neutral_density " << config.neutral_density << '\n';
+    output << "neutral_temperature "
+           << config.neutral_temperature << '\n';
+    output << "gas_data_file "
+           << std::quoted(config.gas_data_file.string()) << '\n';
+    output << "dataset_id "
+           << std::quoted(config.dataset_id) << '\n';
+    output << "dataset_version "
+           << std::quoted(config.dataset_version) << '\n';
+    output << "data_provenance "
+           << std::quoted(config.data_provenance) << '\n';
+    output << "citation " << std::quoted(config.citation) << '\n';
+    output << "retrieved " << std::quoted(config.retrieved) << '\n';
+    output << "license " << std::quoted(config.license) << '\n';
+    output << "model_signature " << signature << '\n';
+    output << "channel_count " << config.channels.size() << '\n';
+    for (const auto& channel : config.channels) {
+        output << "channel "
+               << std::quoted(channel.name) << ' '
+               << std::quoted(to_string(channel.process)) << ' '
+               << channel.threshold_energy << ' '
+               << channel.energy_scale << ' '
+               << channel.cross_section_scale << ' '
+               << std::quoted(channel.cross_section_file.string()) << ' '
+               << std::quoted(channel.secondary_species) << ' '
+               << std::quoted(channel.ion_species) << '\n';
+    }
+}
+
 ImportedMesh2D load_configured_mesh(const std::filesystem::path& path) {
     if (path.empty()) {
         throw std::invalid_argument("unstructured simulation mesh path must not be empty");
@@ -1978,6 +2020,9 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     write_diagnostics_header(diagnostics);
     std::ofstream collision_output;
     if (mcc_model_) {
+        write_collision_metadata(
+            config_.output_dir, config_.collisions,
+            mcc_model_->signature());
         collision_output.open(config_.output_dir / "collisions.csv");
         if (!collision_output) {
             throw std::runtime_error(

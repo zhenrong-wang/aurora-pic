@@ -167,7 +167,10 @@ set `neutral_density` and a conservative `max_frequency`, then add one or more
 `[collision.<name>]` elastic/excitation sections. Imported 2D3V MCC also
 requires `gas`, positive `neutral_mass`, non-negative `neutral_temperature`,
 and `data_provenance`, and can use ionization sections naming secondary and
-ion product species. See
+ion product species. Alternatively, `gas_data_file` loads a reusable,
+versioned `.gas` manifest containing gas identity, mass, dataset/version,
+provenance, citation, retrieval date, license, and channel tables while the
+simulation retains operating conditions and product-species mappings. See
 [`examples/mcc_relaxation.cfg`](examples/mcc_relaxation.cfg),
 [`examples/imported_mcc_2d.cfg`](examples/imported_mcc_2d.cfg), and the
 [`examples/imported_ionization_2d.cfg`](examples/imported_ionization_2d.cfg).

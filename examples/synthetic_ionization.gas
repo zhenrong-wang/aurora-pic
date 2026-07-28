@@ -1,0 +1,15 @@
+# Synthetic software-validation gas package. This is not material data.
+gas_data_version = 1
+gas = synthetic_validation_gas
+neutral_mass = 40.0
+dataset_id = aurorapic.synthetic.ionization
+dataset_version = 1
+data_provenance = AuroraPIC generated software-validation values
+citation = AuroraPIC repository synthetic ionization fixture
+retrieved = 2026-07-28
+license = Project source license, synthetic data only
+
+[collision.synthetic_ionization]
+type = ionization
+cross_section_file = mcc_2d3v_ionization.dat
+threshold_energy = 1.0

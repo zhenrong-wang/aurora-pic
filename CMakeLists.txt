@@ -15,6 +15,7 @@ add_library(aurorapic
   src/Config.cpp
   src/Diagnostics.cpp
   src/FieldSolver.cpp
+  src/GasDataset.cpp
   src/Grid.cpp
   src/ImportedMesh2D.cpp
   src/Mesh2D.cpp
@@ -63,7 +64,7 @@ install(TARGETS aurorapic aurorapic_cli
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples
   FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh" PATTERN "*.geo"
-  PATTERN "*.dat")
+  PATTERN "*.dat" PATTERN "*.gas")
 install(PROGRAMS scripts/generate_real_case_mesh.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
 install(FILES README.md docs/collisions.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})

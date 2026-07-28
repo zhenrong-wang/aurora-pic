@@ -15,7 +15,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
 | `examples/imported_mcc_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 | 6 | Synthetic stationary-neutral isotropic elastic MCC, provenance metadata, diagnostics, and checkpoint v6. |
-| `examples/imported_ionization_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 32 initial / 38 final | 4 | Synthetic electron-impact ionization, paired charged products, threshold-energy accounting, bounded storage, and checkpoint v6. |
+| `examples/imported_ionization_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 32 initial / 38 final | 4 | External synthetic `.gas` manifest, electron-impact ionization, paired charged products, threshold-energy accounting, bounded storage, and checkpoint v6. |
 | `examples/biased_probe_2d.cfg` | 2D3V | 725 nodes / 1,342 triangles / internal probe hole | 800 initial / 404 final in the pinned run | 20 | Gmsh-authored real geometry, local refinement, mixed probe fields, injection, collection, secondary emission, flux diagnostics, VTU, checkpoint. |
 | `examples/plasma_3d.cfg` | 3D3V | 8 x 8 x 8 nodes | 128 | 3 | Structured 3D CLI path, VTK legacy/XML output, particle samples. |
 

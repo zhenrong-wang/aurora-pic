@@ -2,6 +2,7 @@
 #include "pic/Config.hpp"
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
+#include "pic/GasDataset.hpp"
 #include "pic/Grid.hpp"
 #include "pic/ImportedMesh2D.hpp"
 #include "pic/Mesh2D.hpp"
@@ -2821,6 +2822,16 @@ int main() {
                 pic::load_unstructured_config_2d(
                     imported_ionization_example);
             require(
+                imported_ionization_config.collisions.gas_data_file
+                        .filename() == "synthetic_ionization.gas" &&
+                    imported_ionization_config.collisions.dataset_id ==
+                        "aurorapic.synthetic.ionization" &&
+                    imported_ionization_config.collisions.dataset_version ==
+                        "1" &&
+                    imported_ionization_config.collisions.retrieved ==
+                        "2026-07-28" &&
+                    !imported_ionization_config.collisions.citation.empty() &&
+                    !imported_ionization_config.collisions.license.empty() &&
                 imported_ionization_config.collisions.channels.size() == 1 &&
                     imported_ionization_config.collisions.channels.front()
                             .process ==
@@ -2828,8 +2839,99 @@ int main() {
                     imported_ionization_config.collisions.channels.front()
                             .secondary_species == "electrons" &&
                     imported_ionization_config.collisions.channels.front()
-                            .ion_species == "ions",
+                        .ion_species == "ions",
                 "imported ionization config did not preserve product species");
+            {
+                const auto gas_dataset_path =
+                    std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                    "examples" / "synthetic_ionization.gas";
+                const auto gas_dataset =
+                    pic::load_gas_dataset(gas_dataset_path);
+                require(
+                    gas_dataset.gas_name ==
+                            "synthetic_validation_gas" &&
+                        gas_dataset.neutral_mass == 40.0 &&
+                        gas_dataset.channels.size() == 1 &&
+                        gas_dataset.channels.front().process ==
+                            pic::CollisionProcessKind::Ionization,
+                    "standalone gas dataset loader lost manifest data");
+
+                const auto invalid_dataset =
+                    std::filesystem::path(
+                        "test_invalid_retrieval_date.gas");
+                std::string invalid_text =
+                    read_file_text(gas_dataset_path);
+                const auto date =
+                    invalid_text.find("retrieved = 2026-07-28");
+                require(
+                    date != std::string::npos,
+                    "gas dataset fixture retrieval date is missing");
+                invalid_text.replace(
+                    date, std::string("retrieved = 2026-07-28").size(),
+                    "retrieved = 2026-02-30");
+                {
+                    std::ofstream invalid(invalid_dataset);
+                    invalid << invalid_text;
+                }
+                require_throws_contains(
+                    [&] {
+                        try {
+                            (void)pic::load_gas_dataset(
+                                invalid_dataset);
+                        } catch (...) {
+                            std::filesystem::remove(
+                                invalid_dataset);
+                            throw;
+                        }
+                        std::filesystem::remove(invalid_dataset);
+                    },
+                    "valid YYYY-MM-DD",
+                    "gas dataset accepted an invalid retrieval date");
+
+                const auto invalid_config =
+                    std::filesystem::path(
+                        "test_gas_dataset_override.cfg");
+                std::string invalid_config_text =
+                    read_file_text(imported_ionization_example);
+                const auto manifest_reference =
+                    invalid_config_text.find(
+                        "gas_data_file = synthetic_ionization.gas");
+                require(
+                    manifest_reference != std::string::npos,
+                    "external gas example manifest reference is missing");
+                invalid_config_text.replace(
+                    manifest_reference,
+                    std::string(
+                        "gas_data_file = synthetic_ionization.gas").size(),
+                    "gas_data_file = " + gas_dataset_path.string());
+                const auto product_mapping =
+                    invalid_config_text.find(
+                        "secondary_species = electrons");
+                require(
+                    product_mapping != std::string::npos,
+                    "external gas example product mapping is missing");
+                invalid_config_text.insert(
+                    product_mapping,
+                    "threshold_energy = 2.0\n");
+                {
+                    std::ofstream invalid(invalid_config);
+                    invalid << invalid_config_text;
+                }
+                require_throws_contains(
+                    [&] {
+                        try {
+                            (void)pic::load_unstructured_config_2d(
+                                invalid_config);
+                        } catch (...) {
+                            std::filesystem::remove(
+                                invalid_config);
+                            throw;
+                        }
+                        std::filesystem::remove(invalid_config);
+                    },
+                    "physics cannot be overridden",
+                    "simulation config overrode packaged gas physics");
+            }
             {
                 const auto invalid_path =
                     std::filesystem::path(
@@ -2988,6 +3090,19 @@ int main() {
                 require_near(
                     summary.final_sample.total_energy, 125.0, 1e-11,
                     "imported ionization removed the wrong threshold energy");
+                const auto collision_metadata =
+                    read_file_text(output_dir / "collision_data.txt");
+                require(
+                    collision_metadata.find(
+                        "dataset_id \"aurorapic.synthetic.ionization\"") !=
+                            std::string::npos &&
+                        collision_metadata.find(
+                            "retrieved \"2026-07-28\"") !=
+                            std::string::npos &&
+                        collision_metadata.find(
+                            "channel \"synthetic_ionization\" "
+                            "\"ionization\"") != std::string::npos,
+                    "imported gas dataset metadata output is incomplete");
 
                 auto continued_config = config;
                 continued_config.restart_path =
@@ -3008,8 +3123,19 @@ int main() {
                             collisions.null_collisions &&
                         continued.collision_diagnostics()
                                 .channel_collisions ==
-                            collisions.channel_collisions,
+                        collisions.channel_collisions,
                     "imported ionization checkpoint lost collision state");
+
+                auto changed_dataset_config = continued_config;
+                changed_dataset_config.collisions.dataset_version = "2";
+                require_throws_contains(
+                    [&] {
+                        pic::UnstructuredSimulation2D changed(
+                            changed_dataset_config);
+                        (void)changed.run();
+                    },
+                    "collision model mismatch",
+                    "ionization checkpoint accepted changed gas metadata");
 
                 auto bounded_config = config;
                 bounded_config.output_dir =

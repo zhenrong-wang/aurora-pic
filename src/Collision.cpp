@@ -184,6 +184,17 @@ NullCollisionModel::NullCollisionModel(
         hash_double(signature_, config_.neutral_temperature);
         hash_string(signature_, config_.data_provenance);
     }
+    if (!config_.dataset_id.empty() ||
+        !config_.dataset_version.empty() ||
+        !config_.citation.empty() ||
+        !config_.retrieved.empty() ||
+        !config_.license.empty()) {
+        hash_string(signature_, config_.dataset_id);
+        hash_string(signature_, config_.dataset_version);
+        hash_string(signature_, config_.citation);
+        hash_string(signature_, config_.retrieved);
+        hash_string(signature_, config_.license);
+    }
     const std::uint64_t candidate_limit =
         config_.max_candidates_per_particle;
     hash_uint64(signature_, candidate_limit);

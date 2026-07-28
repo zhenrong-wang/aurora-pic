@@ -46,7 +46,7 @@ def rewrite_output_dir(config_path: Path, temp_root: Path, output_name: str) -> 
     if not replaced:
         rewritten.append(f"output_dir = {output_dir.as_posix()}")
     copied_config.write_text("\n".join(rewritten) + "\n", encoding="utf-8")
-    for pattern in ("*.msh", "*.dat"):
+    for pattern in ("*.msh", "*.dat", "*.gas"):
         for support_path in EXAMPLES.glob(pattern):
             shutil.copy2(support_path, temp_root / support_path.name)
     return copied_config, output_dir
@@ -400,6 +400,15 @@ def check_imported_ionization_2d(output_dir: Path) -> None:
     )
     require_file(output_dir / "checkpoint_2.apc")
     require_file(output_dir / "checkpoint_4.apc")
+    metadata = require_file(
+        output_dir / "collision_data.txt"
+    ).read_text(encoding="utf-8")
+    require(
+        'dataset_id "aurorapic.synthetic.ionization"' in metadata and
+        'retrieved "2026-07-28"' in metadata and
+        'channel "synthetic_ionization" "ionization"' in metadata,
+        "imported ionization gas metadata output is incomplete",
+    )
 
 
 def check_biased_probe_2d(output_dir: Path) -> None:
