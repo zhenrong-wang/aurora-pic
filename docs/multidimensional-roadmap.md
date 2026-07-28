@@ -125,7 +125,11 @@ energy coverage, block uncertainty estimates, diffusion diagnostics, and
 per-channel rates. Its optional branching/resampled contract tracks
 ionization and attachment through conserved statistical weight at a fixed
 computational-particle count and reports temporal growth, rate-balance
-effective ionization, and clearly labeled Townsend approximations. A strict local
+effective ionization, and clearly labeled Townsend approximations. A separate
+bounded finite-distance history experiment now measures signed steady electron
+flux across interior planes and fits a spatial effective Townsend coefficient
+with history-block uncertainty, R², termination, population, and work gates.
+A strict local
 reference-comparison contract now maps
 user-supplied measured or evaluated swarm coefficients to simulation columns,
 combines declared numerical/reference uncertainty with explicit tolerances,
@@ -134,8 +138,8 @@ reference data. Energy-dependent anisotropic elastic scattering is now
 available through a strict mean-cosine table and Henyey-Greenstein phase
 function, with total-cross-section semantics, 3V-only enforcement,
 energy-coverage checks, and restart fingerprinting. Actual gas-specific
-validation campaigns, spatial steady-state Townsend validation, and full
-differential cross-section models remain subsequent work. Charge
+spatial Townsend validation campaigns and full differential cross-section
+models remain subsequent work. Charge
 exchange beyond the resonant case, thermal neutral motion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 

@@ -199,6 +199,44 @@ std::pair<double, double> block_slope_and_error(
              static_cast<double>(slopes.size() - 1)))};
 }
 
+double slope_r_squared(
+    const std::vector<double>& values,
+    std::size_t begin,
+    std::size_t end) {
+    const std::size_t count = end - begin;
+    double mean = 0.0;
+    for (std::size_t index = begin; index < end; ++index) {
+        mean += values[index];
+    }
+    mean /= static_cast<double>(count);
+    const double mean_index =
+        0.5 * static_cast<double>(count - 1);
+    double covariance = 0.0;
+    double index_variance = 0.0;
+    double value_variance = 0.0;
+    for (std::size_t local = 0; local < count; ++local) {
+        const double centered_index =
+            static_cast<double>(local) - mean_index;
+        const double centered_value =
+            values[begin + local] - mean;
+        covariance += centered_index * centered_value;
+        index_variance += centered_index * centered_index;
+        value_variance += centered_value * centered_value;
+    }
+    if (value_variance == 0.0) return 1.0;
+    return std::clamp(
+        covariance * covariance /
+            (index_variance * value_variance),
+        0.0, 1.0);
+}
+
+std::size_t spatial_fit_end(
+    const SwarmBenchmarkConfig& config) {
+    return config.spatial_fit_end_bin == 0
+               ? config.spatial_bins
+               : config.spatial_fit_end_bin;
+}
+
 std::size_t effective_population_limit(
     const SwarmBenchmarkConfig& config) {
     if (config.population_limit != 0) {
@@ -338,6 +376,68 @@ void validate_config(
         throw std::runtime_error(
             "branching swarm requires at least two sampling steps "
             "per uncertainty block");
+    }
+    if (config.spatial_histories == 0) {
+        if (config.spatial_length_m != 0.0 ||
+            config.spatial_bins != 0 ||
+            config.spatial_fit_begin_bin != 0 ||
+            config.spatial_fit_end_bin != 0 ||
+            config.spatial_max_steps != 0 ||
+            config.spatial_min_r_squared != 0.0) {
+            throw std::runtime_error(
+                "spatial Townsend controls require positive "
+                "spatial_histories");
+        }
+    } else {
+        if (config.population_model !=
+            SwarmPopulationModel::BranchingResampled) {
+            throw std::runtime_error(
+                "spatial Townsend estimation requires "
+                "population_model = branching_resampled");
+        }
+        if (!positive_finite(config.spatial_length_m)) {
+            throw std::runtime_error(
+                "spatial_length_m must be positive and finite");
+        }
+        if (config.spatial_bins < 4) {
+            throw std::runtime_error(
+                "spatial_bins must be at least 4");
+        }
+        const std::size_t fit_end = spatial_fit_end(config);
+        if (config.spatial_fit_begin_bin >= fit_end ||
+            fit_end > config.spatial_bins ||
+            fit_end - config.spatial_fit_begin_bin < 3) {
+            throw std::runtime_error(
+                "spatial Townsend fit range must contain at least "
+                "three valid bins");
+        }
+        if (config.spatial_max_steps == 0 ||
+            config.spatial_work_item_limit == 0) {
+            throw std::runtime_error(
+                "spatial_max_steps and spatial_work_item_limit "
+                "must be positive");
+        }
+        if (config.spatial_histories < config.uncertainty_blocks ||
+            config.spatial_histories %
+                    config.uncertainty_blocks !=
+                0) {
+            throw std::runtime_error(
+                "spatial_histories must be divisible by "
+                "uncertainty_blocks");
+        }
+        constexpr std::size_t spatial_sample_limit = 1000000;
+        if (config.spatial_histories >
+            spatial_sample_limit / config.spatial_bins) {
+            throw std::runtime_error(
+                "spatial history-profile allocation exceeds "
+                "the safety limit");
+        }
+        if (!std::isfinite(config.spatial_min_r_squared) ||
+            config.spatial_min_r_squared < 0.0 ||
+            config.spatial_min_r_squared > 1.0) {
+            throw std::runtime_error(
+                "spatial_min_r_squared must be between 0 and 1");
+        }
     }
     if (!std::isfinite(config.initial_mean_energy_ev) ||
         config.initial_mean_energy_ev < 0.0) {
@@ -523,6 +623,301 @@ void systematic_resample(
         resampled.push_back(selected);
     }
     particles = std::move(resampled);
+}
+
+void run_spatial_townsend(
+    const SwarmBenchmarkConfig& config,
+    const GasDataset& dataset,
+    double reduced_field_td,
+    std::uint64_t seed,
+    std::uint64_t& scan_particle_updates,
+    SwarmBenchmarkResult& result) {
+    if (config.spatial_histories == 0) return;
+
+    const CollisionConfig collisions =
+        collision_config(config, dataset);
+    const NullCollisionModel model(collisions, electron_mass_kg);
+    std::mt19937_64 rng(seed ^ 0x9e3779b97f4a7c15ULL);
+    const double component_stddev = std::sqrt(
+        2.0 * config.initial_mean_energy_ev * ev_to_j /
+        (3.0 * electron_mass_kg));
+    std::normal_distribution<double> normal(0.0, component_stddev);
+    const double electric_field =
+        reduced_field_td * townsend_v_m2 * config.neutral_density;
+    const double acceleration =
+        -elementary_charge_c * electric_field / electron_mass_kg;
+    const double half_kick =
+        0.5 * acceleration * config.timestep;
+    const double plane_spacing =
+        config.spatial_length_m /
+        static_cast<double>(config.spatial_bins + 1);
+    std::vector<double> plane_positions(config.spatial_bins);
+    for (std::size_t bin = 0;
+         bin < config.spatial_bins; ++bin) {
+        plane_positions[bin] =
+            static_cast<double>(bin + 1) * plane_spacing;
+    }
+    const std::size_t population_limit =
+        effective_population_limit(config);
+
+    std::vector<double> history_crossings(
+        config.spatial_histories * config.spatial_bins, 0.0);
+    std::uint64_t particle_updates = 0;
+    std::size_t maximum_active_particles = 0;
+    for (std::size_t history = 0;
+         history < config.spatial_histories; ++history) {
+        std::vector<SwarmParticle> particles(1);
+        const double source_unit = std::max(
+            std::generate_canonical<double, 64>(rng),
+            std::numeric_limits<double>::min());
+        const double inward_source_speed =
+            component_stddev *
+            std::sqrt(-2.0 * std::log(source_unit));
+        particles.front().velocity = {
+            -inward_source_speed, normal(rng), normal(rng)};
+        bool terminated = false;
+        for (std::size_t step = 0;
+             step < config.spatial_max_steps; ++step) {
+            if (particles.empty()) {
+                terminated = true;
+                break;
+            }
+            const std::size_t active_particles = particles.size();
+            maximum_active_particles = std::max(
+                maximum_active_particles, active_particles);
+            if (active_particles >
+                config.spatial_work_item_limit -
+                    scan_particle_updates) {
+                throw std::runtime_error(
+                    "spatial Townsend scan exceeded "
+                    "spatial_work_item_limit");
+            }
+            scan_particle_updates +=
+                static_cast<std::uint64_t>(active_particles);
+            particle_updates +=
+                static_cast<std::uint64_t>(active_particles);
+            for (std::size_t particle_index = 0;
+                 particle_index < active_particles;
+                 ++particle_index) {
+                auto& particle = particles[particle_index];
+                auto& velocity = particle.velocity;
+                velocity.x += half_kick;
+                const double pre_collision_energy_ev =
+                    kinetic_energy_ev(velocity);
+                if (pre_collision_energy_ev >
+                    config.max_energy_ev) {
+                    throw std::runtime_error(
+                        "spatial Townsend particle energy exceeded "
+                        "max_energy_ev before collision lookup");
+                }
+                const double old_distance = -particle.position.x;
+                particle.position.x +=
+                    velocity.x * config.timestep;
+                particle.position.y +=
+                    velocity.y * config.timestep;
+                particle.position.z +=
+                    velocity.z * config.timestep;
+                const double new_distance = -particle.position.x;
+                double* crossings =
+                    history_crossings.data() +
+                    history * config.spatial_bins;
+                if (new_distance > old_distance) {
+                    const auto first = std::upper_bound(
+                        plane_positions.begin(),
+                        plane_positions.end(),
+                        old_distance);
+                    const auto end = std::upper_bound(
+                        first, plane_positions.end(),
+                        new_distance);
+                    for (auto plane = first;
+                         plane != end; ++plane) {
+                        crossings[
+                            static_cast<std::size_t>(
+                                plane -
+                                plane_positions.begin())] +=
+                            particle.weight;
+                    }
+                } else if (new_distance < old_distance) {
+                    const auto first = std::upper_bound(
+                        plane_positions.begin(),
+                        plane_positions.end(),
+                        new_distance);
+                    const auto end = std::upper_bound(
+                        first, plane_positions.end(),
+                        old_distance);
+                    for (auto plane = first;
+                         plane != end; ++plane) {
+                        crossings[
+                            static_cast<std::size_t>(
+                                plane -
+                                plane_positions.begin())] -=
+                            particle.weight;
+                    }
+                }
+                if (new_distance < 0.0 ||
+                    new_distance >= config.spatial_length_m) {
+                    particle.alive = false;
+                    continue;
+                }
+
+                const auto statistics =
+                    model.collide(
+                        velocity, config.timestep, rng);
+                velocity.x += half_kick;
+                if (kinetic_energy_ev(velocity) >
+                    config.max_energy_ev) {
+                    throw std::runtime_error(
+                        "spatial Townsend particle energy exceeded "
+                        "max_energy_ev");
+                }
+                const Vec3 parent_position = particle.position;
+                const Vec3 parent_sampling_start =
+                    particle.sampling_start_position;
+                const double parent_weight = particle.weight;
+                for (const auto& secondary :
+                     statistics.secondaries) {
+                    if (particles.size() >= population_limit) {
+                        throw std::runtime_error(
+                            "spatial Townsend branching exceeded "
+                            "population_limit before resampling");
+                    }
+                    SwarmParticle created;
+                    created.velocity = secondary.velocity;
+                    created.position = parent_position;
+                    created.sampling_start_position =
+                        parent_sampling_start;
+                    created.weight = parent_weight;
+                    particles.push_back(created);
+                }
+                if (statistics.primary_removal_channel) {
+                    particles[particle_index].alive = false;
+                }
+            }
+            maximum_active_particles = std::max(
+                maximum_active_particles, particles.size());
+            std::erase_if(
+                particles,
+                [](const SwarmParticle& particle) {
+                    return !particle.alive;
+                });
+            if (particles.size() > config.particles) {
+                systematic_resample(
+                    particles, config.particles, rng);
+            }
+        }
+        if (!terminated && particles.empty()) {
+            terminated = true;
+        }
+        if (!terminated) {
+            throw std::runtime_error(
+                "spatial Townsend history did not terminate within "
+                "spatial_max_steps");
+        }
+    }
+
+    result.spatial_flux_profile.resize(config.spatial_bins);
+    std::vector<double> log_flux(config.spatial_bins, 0.0);
+    for (std::size_t bin = 0;
+         bin < config.spatial_bins; ++bin) {
+        double sum = 0.0;
+        double squared_sum = 0.0;
+        for (std::size_t history = 0;
+             history < config.spatial_histories; ++history) {
+            const double value =
+                history_crossings[
+                    history * config.spatial_bins + bin];
+            sum += value;
+            squared_sum += value * value;
+        }
+        const double histories =
+            static_cast<double>(config.spatial_histories);
+        const double mean = sum / histories;
+        double standard_error = 0.0;
+        if (config.spatial_histories > 1) {
+            const double centered_sum = std::max(
+                0.0, squared_sum - sum * sum / histories);
+            standard_error = std::sqrt(
+                centered_sum /
+                (histories * (histories - 1.0)));
+        }
+        result.spatial_flux_profile[bin] = {
+            plane_positions[bin],
+            mean,
+            standard_error};
+        if (mean > 0.0) log_flux[bin] = std::log(mean);
+    }
+
+    const std::size_t fit_begin =
+        config.spatial_fit_begin_bin;
+    const std::size_t fit_end = spatial_fit_end(config);
+    for (std::size_t bin = fit_begin;
+         bin < fit_end; ++bin) {
+        if (!(result.spatial_flux_profile[bin]
+                  .net_crossings_per_injected_electron > 0.0)) {
+            throw std::runtime_error(
+                "spatial Townsend fit requires positive net flux "
+                "at every fit plane; increase spatial_histories or "
+                "adjust the fit range");
+        }
+    }
+
+    const std::size_t histories_per_block =
+        config.spatial_histories / config.uncertainty_blocks;
+    std::vector<double> block_slopes;
+    block_slopes.reserve(config.uncertainty_blocks);
+    std::vector<double> block_log_flux(
+        config.spatial_bins, 0.0);
+    for (std::size_t block = 0;
+         block < config.uncertainty_blocks; ++block) {
+        for (std::size_t bin = 0;
+             bin < config.spatial_bins; ++bin) {
+            double sum = 0.0;
+            for (std::size_t local = 0;
+                 local < histories_per_block; ++local) {
+                const std::size_t history =
+                    block * histories_per_block + local;
+                sum += history_crossings[
+                    history * config.spatial_bins + bin];
+            }
+            const double flux =
+                sum / static_cast<double>(histories_per_block);
+            if (bin >= fit_begin && bin < fit_end &&
+                !(flux > 0.0)) {
+                throw std::runtime_error(
+                    "spatial Townsend uncertainty block has "
+                    "non-positive fit flux; increase "
+                    "spatial_histories");
+            }
+            if (flux > 0.0) {
+                block_log_flux[bin] = std::log(flux);
+            }
+        }
+        block_slopes.push_back(linear_slope(
+            block_log_flux, fit_begin, fit_end,
+            plane_spacing));
+    }
+    const auto slope_statistics = block_mean_and_error(
+        block_slopes, block_slopes.size());
+    result.spatial_townsend_available = true;
+    result.spatial_flux_townsend_1_m =
+        linear_slope(
+            log_flux, fit_begin, fit_end,
+            plane_spacing);
+    result.spatial_flux_townsend_standard_error_1_m =
+        slope_statistics.second;
+    result.spatial_flux_fit_r_squared =
+        slope_r_squared(log_flux, fit_begin, fit_end);
+    result.spatial_histories_completed =
+        config.spatial_histories;
+    result.spatial_maximum_active_particles =
+        maximum_active_particles;
+    result.spatial_particle_updates = particle_updates;
+    if (result.spatial_flux_fit_r_squared <
+        config.spatial_min_r_squared) {
+        throw std::runtime_error(
+            "spatial Townsend log-flux fit did not meet "
+            "spatial_min_r_squared");
+    }
 }
 
 SwarmBenchmarkResult run_field(
@@ -860,6 +1255,15 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
         "max_energy_ev",
         "seed",
         "output_file",
+        "spatial_histories",
+        "spatial_length_m",
+        "spatial_bins",
+        "spatial_fit_begin_bin",
+        "spatial_fit_end_bin",
+        "spatial_max_steps",
+        "spatial_work_item_limit",
+        "spatial_min_r_squared",
+        "spatial_profile_file",
     };
     std::map<std::string, std::string> values;
     std::string line;
@@ -984,6 +1388,63 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
     } else {
         result.output_file = base / result.output_file;
     }
+    if (values.contains("spatial_histories")) {
+        result.spatial_histories =
+            parse_number<std::size_t>(
+                values.at("spatial_histories"),
+                context + " key 'spatial_histories'");
+    }
+    if (values.contains("spatial_length_m")) {
+        result.spatial_length_m =
+            parse_number<double>(
+                values.at("spatial_length_m"),
+                context + " key 'spatial_length_m'");
+    }
+    if (values.contains("spatial_bins")) {
+        result.spatial_bins =
+            parse_number<std::size_t>(
+                values.at("spatial_bins"),
+                context + " key 'spatial_bins'");
+    }
+    if (values.contains("spatial_fit_begin_bin")) {
+        result.spatial_fit_begin_bin =
+            parse_number<std::size_t>(
+                values.at("spatial_fit_begin_bin"),
+                context + " key 'spatial_fit_begin_bin'");
+    }
+    if (values.contains("spatial_fit_end_bin")) {
+        result.spatial_fit_end_bin =
+            parse_number<std::size_t>(
+                values.at("spatial_fit_end_bin"),
+                context + " key 'spatial_fit_end_bin'");
+    }
+    if (values.contains("spatial_max_steps")) {
+        result.spatial_max_steps =
+            parse_number<std::size_t>(
+                values.at("spatial_max_steps"),
+                context + " key 'spatial_max_steps'");
+    }
+    if (values.contains("spatial_work_item_limit")) {
+        result.spatial_work_item_limit =
+            parse_number<std::uint64_t>(
+                values.at("spatial_work_item_limit"),
+                context + " key 'spatial_work_item_limit'");
+    }
+    if (values.contains("spatial_min_r_squared")) {
+        result.spatial_min_r_squared =
+            parse_number<double>(
+                values.at("spatial_min_r_squared"),
+                context + " key 'spatial_min_r_squared'");
+    }
+    if (values.contains("spatial_profile_file")) {
+        result.spatial_profile_file =
+            (base / required_string(
+                        "spatial_profile_file"))
+                .lexically_normal();
+    } else {
+        result.spatial_profile_file =
+            base / result.spatial_profile_file;
+    }
     const auto absolute_config =
         std::filesystem::absolute(path).lexically_normal();
     const auto absolute_gas =
@@ -992,10 +1453,21 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
     const auto absolute_output =
         std::filesystem::absolute(
             result.output_file).lexically_normal();
+    const auto absolute_spatial_profile =
+        std::filesystem::absolute(
+            result.spatial_profile_file).lexically_normal();
     if (absolute_output == absolute_config ||
         absolute_output == absolute_gas) {
         throw std::runtime_error(
             context + " output_file must not overwrite an input file");
+    }
+    if (result.spatial_histories != 0 &&
+        (absolute_spatial_profile == absolute_config ||
+         absolute_spatial_profile == absolute_gas ||
+         absolute_spatial_profile == absolute_output)) {
+        throw std::runtime_error(
+            context + " spatial_profile_file must not overwrite "
+            "an input or the main output");
     }
     return result;
 }
@@ -1007,11 +1479,18 @@ std::vector<SwarmBenchmarkResult> run_swarm_benchmark(
     validate_config(config, dataset);
     std::vector<SwarmBenchmarkResult> results;
     results.reserve(config.reduced_fields_td.size());
+    std::uint64_t spatial_scan_particle_updates = 0;
     for (std::size_t field = 0;
          field < config.reduced_fields_td.size(); ++field) {
-        results.push_back(run_field(
+        auto result = run_field(
             config, dataset, config.reduced_fields_td[field],
-            config.seed + static_cast<std::uint64_t>(field)));
+            config.seed + static_cast<std::uint64_t>(field));
+        run_spatial_townsend(
+            config, dataset, config.reduced_fields_td[field],
+            config.seed + static_cast<std::uint64_t>(field),
+            spatial_scan_particle_updates,
+            result);
+        results.push_back(std::move(result));
     }
     return results;
 }
@@ -1039,6 +1518,11 @@ void write_swarm_benchmark_csv(
         << "citation,license,gas_data_file,population_model,"
         << "neutral_density_m3,timestep_s,steps,burn_in_steps,"
         << "particles,population_limit,work_item_limit,seed,"
+        << "spatial_histories_requested,spatial_length_m,"
+        << "spatial_bins,spatial_fit_begin_bin,"
+        << "spatial_fit_end_bin,spatial_max_steps,"
+        << "spatial_work_item_limit,spatial_min_r_squared,"
+        << "spatial_profile_file,"
         << "reduced_field_td,"
         << "collision_model_signature,"
         << "electric_field_v_m,mean_velocity_x_m_s,"
@@ -1065,6 +1549,13 @@ void write_swarm_benchmark_csv(
         << "growth_over_flux_drift_townsend_standard_error_1_m,"
         << "rate_balance_effective_townsend_1_m,"
         << "rate_balance_effective_townsend_standard_error_1_m,"
+        << "spatial_townsend_available,"
+        << "spatial_flux_townsend_1_m,"
+        << "spatial_flux_townsend_standard_error_1_m,"
+        << "spatial_flux_fit_r_squared,"
+        << "spatial_histories_completed,"
+        << "spatial_maximum_active_particles,"
+        << "spatial_particle_updates,"
         << "maximum_observed_energy_ev,"
         << "collision_candidates,null_collisions";
     for (const auto& channel : results.front().channels) {
@@ -1101,6 +1592,20 @@ void write_swarm_benchmark_csv(
             << ','
             << config.work_item_limit << ','
             << config.seed + static_cast<std::uint64_t>(row) << ','
+            << config.spatial_histories << ','
+            << config.spatial_length_m << ','
+            << config.spatial_bins << ','
+            << config.spatial_fit_begin_bin << ','
+            << (config.spatial_histories == 0
+                    ? 0
+                    : spatial_fit_end(config))
+            << ','
+            << config.spatial_max_steps << ','
+            << config.spatial_work_item_limit << ','
+            << config.spatial_min_r_squared << ','
+            << csv_cell(
+                   config.spatial_profile_file.string())
+            << ','
             << result.reduced_field_td << ','
             << result.collision_model_signature << ','
             << result.electric_field_v_m << ','
@@ -1145,6 +1650,22 @@ void write_swarm_benchmark_csv(
             output << ",,,,";
         }
         output
+            << (result.spatial_townsend_available ? "yes" : "no")
+            << ',';
+        if (result.spatial_townsend_available) {
+            output
+                << result.spatial_flux_townsend_1_m << ','
+                << result
+                       .spatial_flux_townsend_standard_error_1_m
+                << ','
+                << result.spatial_flux_fit_r_squared << ',';
+        } else {
+            output << ",,,";
+        }
+        output
+            << result.spatial_histories_completed << ','
+            << result.spatial_maximum_active_particles << ','
+            << result.spatial_particle_updates << ','
             << result.maximum_observed_energy_ev << ','
             << result.collision_candidates << ','
             << result.null_collisions;
@@ -1158,6 +1679,90 @@ void write_swarm_benchmark_csv(
     if (!output) {
         throw std::runtime_error(
             "failed while writing swarm output: " + path.string());
+    }
+}
+
+void write_swarm_spatial_profile_csv(
+    const std::filesystem::path& path,
+    const SwarmBenchmarkConfig& config,
+    const GasDataset& dataset,
+    const std::vector<SwarmBenchmarkResult>& results) {
+    if (config.spatial_histories == 0) {
+        throw std::invalid_argument(
+            "cannot write a disabled spatial Townsend profile");
+    }
+    if (results.empty()) {
+        throw std::invalid_argument(
+            "cannot write an empty spatial Townsend profile");
+    }
+    if (results.size() != config.reduced_fields_td.size()) {
+        throw std::invalid_argument(
+            "spatial Townsend result count does not match field scan");
+    }
+    if (!path.parent_path().empty()) {
+        std::filesystem::create_directories(path.parent_path());
+    }
+    std::ofstream output(path);
+    if (!output) {
+        throw std::runtime_error(
+            "cannot write spatial Townsend profile: " +
+            path.string());
+    }
+    output << std::setprecision(17);
+    output
+        << "dataset_id,dataset_version,gas,population_model,"
+        << "collision_model_signature,reduced_field_td,seed,"
+        << "spatial_histories,spatial_length_m,spatial_bins,"
+        << "spatial_max_steps,spatial_work_item_limit,"
+        << "bin,distance_m,fit_selected,"
+        << "net_crossings_per_injected_electron,"
+        << "standard_error\n";
+    const std::size_t fit_end = spatial_fit_end(config);
+    for (std::size_t field = 0;
+         field < results.size(); ++field) {
+        const auto& result = results[field];
+        if (!result.spatial_townsend_available ||
+            result.spatial_flux_profile.size() !=
+                config.spatial_bins) {
+            throw std::invalid_argument(
+                "spatial Townsend result profile is incomplete");
+        }
+        for (std::size_t bin = 0;
+             bin < result.spatial_flux_profile.size(); ++bin) {
+            const auto& point =
+                result.spatial_flux_profile[bin];
+            output
+                << csv_cell(dataset.dataset_id) << ','
+                << csv_cell(dataset.dataset_version) << ','
+                << csv_cell(dataset.gas_name) << ','
+                << csv_cell(to_string(config.population_model))
+                << ','
+                << result.collision_model_signature << ','
+                << result.reduced_field_td << ','
+                << config.seed +
+                       static_cast<std::uint64_t>(field)
+                << ','
+                << config.spatial_histories << ','
+                << config.spatial_length_m << ','
+                << config.spatial_bins << ','
+                << config.spatial_max_steps << ','
+                << config.spatial_work_item_limit << ','
+                << bin << ','
+                << point.distance_m << ','
+                << (bin >= config.spatial_fit_begin_bin &&
+                            bin < fit_end
+                        ? "yes"
+                        : "no")
+                << ','
+                << point.net_crossings_per_injected_electron
+                << ','
+                << point.standard_error << '\n';
+        }
+    }
+    if (!output) {
+        throw std::runtime_error(
+            "failed while writing spatial Townsend profile: " +
+            path.string());
     }
 }
 

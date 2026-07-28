@@ -26,13 +26,25 @@ timestep = 2.5e-10
 steps = 20000
 burn_in_steps = 10000
 particles = 10000
-population_model = fixed_population_no_avalanche
+population_model = branching_resampled
 uncertainty_blocks = 10
 work_item_limit = 1500000000
 initial_mean_energy_ev = 0.1
 max_energy_ev = 100
 seed = 271828
 output_file = argon_swarm.csv
+
+# Optional finite-distance steady-flux experiment:
+population_limit = 20000
+spatial_histories = 1000
+spatial_length_m = 0.02
+spatial_bins = 20
+spatial_fit_begin_bin = 4
+spatial_fit_end_bin = 16
+spatial_max_steps = 200000
+spatial_work_item_limit = 100000000
+spatial_min_r_squared = 0.95
+spatial_profile_file = argon_spatial_profile.csv
 ```
 
 The runner requires `max_frequency * timestep <= 0.1`. `max_energy_ev` must
@@ -64,6 +76,53 @@ target may not exceed 10 million allocations. This is a memory fail-safe, not
 a convergence control: production studies still need particle-count and
 timestep refinement.
 
+## Spatial steady-flux Townsend experiment
+
+Setting positive `spatial_histories` enables a separate finite-distance
+experiment for every configured E/N point. It is not derived from the
+temporal-growth result. Each independent history injects one flux-weighted
+half-Maxwellian electron at distance zero, with its initial velocity directed
+into the drift domain. Electrons then move through the same prescribed field
+and 3V collision kernel until they:
+
+- cross the upstream source boundary;
+- reach the downstream collector at `spatial_length_m`; or
+- are consumed by attachment.
+
+`initial_mean_energy_ev` defines the underlying isotropic Maxwellian
+temperature; flux weighting changes the mean energy of particles actually
+injected through the source plane.
+
+Ionization secondaries remain in the same history. If a history's active
+population exceeds `particles`, systematic resampling returns it to that
+target while preserving represented weight. `population_limit` bounds the
+temporary pre-resampling population. A history that does not terminate within
+`spatial_max_steps`, or a complete scan that exceeds
+`spatial_work_item_limit` particle updates, fails instead of returning a
+truncated coefficient. The retained history-by-plane sample matrix is capped
+at one million values.
+
+The domain contains `spatial_bins` equally spaced interior planes. Each
+forward crossing contributes positive statistical weight and each backward
+crossing contributes negative weight, producing net electron flux per
+injected electron. Bin indices are zero-based;
+`spatial_fit_begin_bin` is inclusive and `spatial_fit_end_bin` is exclusive.
+An omitted/zero end selects all bins through the final plane. At least three
+fit bins are required.
+
+The spatial effective Townsend coefficient is the slope of
+`log(net electron flux)` versus distance. Independent history blocks provide
+its standard error, while the aggregate fit supplies R². Every fit plane and
+every uncertainty block must have positive net flux.
+`spatial_min_r_squared` optionally makes fit quality an enforced acceptance
+gate. The companion `spatial_profile_file` records every plane's distance,
+net crossings, standard error, and fit-selection flag.
+
+This experiment represents the linear, prescribed-field steady response to a
+continuous source by superposition of independent histories. It does not
+include space-charge distortion, electrode sheaths, or secondary wall
+processes. Those belong in an imported-geometry device simulation.
+
 The CSV embeds the dataset identity, version, citation, provenance, retrieval
 date, license text, gas-manifest path, numerical controls, per-field seed, and
 collision-model signature. The signature fingerprints cross-section and
@@ -92,6 +151,11 @@ velocity`. These are clearly named Townsend approximations.
 `townsend_available` distinguish unavailable quantities from numerical zero;
 diffusion columns are empty in branching mode because resampling breaks the
 independent endpoint-lineage estimator.
+
+When the spatial experiment is enabled, the main CSV also reports the
+spatial flux coefficient, its history-block standard error, fit R², completed
+history count, maximum active history population, and actual particle-update
+count.
 
 The reduced-mobility unit is `1 / (V m s)`. One Townsend is
 `1e-21 V m^2`.
@@ -177,10 +241,13 @@ an invalid or ambiguous input. Existing reports require `--overwrite`.
 The fixed mode intentionally excludes multiplication. The
 `branching_resampled` mode provides bounded electron-impact avalanche
 multiplication, but its growth-over-flux-drift result is not a spatial
-steady-state bulk Townsend coefficient. Attachment removes electron weight
+steady-state bulk Townsend coefficient. The optional spatial experiment
+provides an independent steady-flux coefficient over a declared finite fit
+range, but it is still a prescribed-field, linear swarm benchmark rather than
+a self-consistent discharge. Attachment removes electron weight
 according to its tabulated channel, but the homogeneous runner does not track
 the negative-ion product. It does not yet include detachment, photoionization,
-space charge, or a dedicated steady Townsend experiment.
+space charge, or a self-consistent discharge-level Townsend experiment.
 Ionization uses the engine's current equal-sharing energy model. Both modes
 assume stationary zero-temperature neutrals. Elastic scattering is isotropic
 unless the gas package explicitly supplies a validated energy-dependent
@@ -192,7 +259,8 @@ drift, mean energy, fixed-mode diffusion trend, collision rates, and bounded
 transient avalanche growth. It cannot yet claim high-accuracy transport for
 datasets requiring a full differential angular cross section beyond the
 mean-cosine phase-function approximation, thermal neutral motion, non-equal
-ionization energy sharing, or spatial steady-state Townsend coefficients.
+ionization energy sharing, or gas-specific spatial Townsend accuracy without
+independent measured or evaluated validation.
 
 ## Production study checklist
 
@@ -208,3 +276,6 @@ ionization energy sharing, or spatial steady-state Townsend coefficients.
    swarm comparison is understood.
 8. For branching runs, repeat with larger computational populations and verify
    both the temporal growth rate and its block uncertainty stabilize.
+9. For spatial runs, vary the source-to-fit distance, fit range, plane count,
+   history count, and downstream length; require coefficient stability rather
+   than accepting one high R² value in isolation.

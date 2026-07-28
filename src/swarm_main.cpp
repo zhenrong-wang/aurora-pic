@@ -17,6 +17,11 @@ int main(int argc, char** argv) {
         const auto results = pic::run_swarm_benchmark(config);
         pic::write_swarm_benchmark_csv(
             config.output_file, config, dataset, results);
+        if (config.spatial_histories != 0) {
+            pic::write_swarm_spatial_profile_csv(
+                config.spatial_profile_file,
+                config, dataset, results);
+        }
         for (const auto& result : results) {
             std::cout
                 << "E/N=" << result.reduced_field_td
@@ -44,10 +49,25 @@ int main(int argc, char** argv) {
                                .rate_balance_effective_townsend_1_m
                         << " 1/m";
                 }
+                if (result.spatial_townsend_available) {
+                    std::cout
+                        << " spatial_flux_townsend="
+                        << result.spatial_flux_townsend_1_m
+                        << " +/- "
+                        << result
+                               .spatial_flux_townsend_standard_error_1_m
+                        << " 1/m spatial_fit_r2="
+                        << result.spatial_flux_fit_r_squared;
+                }
             }
             std::cout << '\n';
         }
         std::cout << "wrote " << config.output_file.string() << '\n';
+        if (config.spatial_histories != 0) {
+            std::cout
+                << "wrote "
+                << config.spatial_profile_file.string() << '\n';
+        }
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "swarm error: " << error.what() << '\n';

@@ -206,6 +206,9 @@ attachment respectively increase and decrease represented electron weight
 while systematic resampling holds computational population fixed, enabling
 temporal avalanche growth, rate-balance effective ionization, and
 growth-over-flux-drift Townsend diagnostics without unbounded host load.
+An optional finite-distance history experiment independently fits the slope
+of steady signed electron flux across interior planes and writes the complete
+profile, block uncertainty, fit R², and bounded-work evidence.
 Elastic 3V channels may additionally provide a validated energy-dependent
 mean-cosine table for Henyey-Greenstein anisotropic scattering; isotropic
 behavior remains the explicit default.

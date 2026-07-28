@@ -3293,6 +3293,9 @@ int main() {
                 const auto swarm_branch_output =
                     std::filesystem::absolute(
                         "test_swarm_branching.csv");
+                const auto swarm_spatial_output =
+                    std::filesystem::absolute(
+                        "test_swarm_spatial.csv");
                 {
                     std::ofstream table_output(swarm_table);
                     table_output << "0 0\n50 0\n";
@@ -3388,7 +3391,17 @@ int main() {
                         << "max_energy_ev = 50\n"
                         << "seed = 29\n"
                         << "output_file = "
-                        << swarm_branch_output.string() << '\n';
+                        << swarm_branch_output.string() << '\n'
+                        << "spatial_histories = 128\n"
+                        << "spatial_length_m = 0.01\n"
+                        << "spatial_bins = 8\n"
+                        << "spatial_fit_begin_bin = 1\n"
+                        << "spatial_fit_end_bin = 7\n"
+                        << "spatial_max_steps = 2000\n"
+                        << "spatial_work_item_limit = 1000000\n"
+                        << "spatial_min_r_squared = 0.5\n"
+                        << "spatial_profile_file = "
+                        << swarm_spatial_output.string() << '\n';
                 }
                 try {
                     const auto swarm_config =
@@ -3509,7 +3522,17 @@ int main() {
                             branch.ionization_rate_s >
                                 branch.attachment_rate_s &&
                             branch.attachment_rate_s > 0.0 &&
-                            branch.net_creation_rate_s > 0.0,
+                            branch.net_creation_rate_s > 0.0 &&
+                            branch.spatial_townsend_available &&
+                            branch.spatial_flux_townsend_1_m > 0.0 &&
+                            branch.spatial_flux_profile.size() == 8 &&
+                            branch.spatial_histories_completed == 128 &&
+                            branch.spatial_flux_fit_r_squared >= 0.0 &&
+                            branch.spatial_flux_fit_r_squared <= 1.0 &&
+                            branch
+                                    .spatial_maximum_active_particles <=
+                                256 &&
+                            branch.spatial_particle_updates <= 1000000,
                         "branching swarm did not preserve its bounded "
                         "ensemble while multiplying electron weight");
                     require(
@@ -3534,6 +3557,9 @@ int main() {
                         pic::load_gas_dataset(swarm_branch_manifest);
                     pic::write_swarm_benchmark_csv(
                         swarm_branch_output, branch_config,
+                        branch_dataset, branch_results);
+                    pic::write_swarm_spatial_profile_csv(
+                        swarm_spatial_output, branch_config,
                         branch_dataset, branch_results);
                     const std::string branch_csv =
                         read_file_text(swarm_branch_output);
@@ -3575,6 +3601,16 @@ int main() {
                                     ','),
                         "branching swarm CSV omitted population "
                         "diagnostics");
+                    const std::string spatial_csv =
+                        read_file_text(swarm_spatial_output);
+                    require(
+                        count_lines(spatial_csv) == 9 &&
+                            spatial_csv.find(
+                                "net_crossings_per_injected_electron") !=
+                                std::string::npos &&
+                            spatial_csv.find(",yes,") !=
+                                std::string::npos,
+                        "spatial Townsend profile CSV is incomplete");
                     auto invalid_branch = branch_config;
                     invalid_branch.population_limit =
                         invalid_branch.particles;
@@ -3587,10 +3623,27 @@ int main() {
                         "branching swarm accepted an unsafe population "
                         "limit");
                     invalid_branch = branch_config;
+                    invalid_branch.spatial_work_item_limit = 1;
+                    require_throws_contains(
+                        [&] {
+                            (void)pic::run_swarm_benchmark(
+                                invalid_branch);
+                        },
+                        "spatial_work_item_limit",
+                        "spatial Townsend experiment ignored its "
+                        "work limit");
+                    invalid_branch = branch_config;
                     invalid_branch.population_model =
                         pic::SwarmPopulationModel::
                             FixedPopulationNoAvalanche;
                     invalid_branch.population_limit = 0;
+                    invalid_branch.spatial_histories = 0;
+                    invalid_branch.spatial_length_m = 0.0;
+                    invalid_branch.spatial_bins = 0;
+                    invalid_branch.spatial_fit_begin_bin = 0;
+                    invalid_branch.spatial_fit_end_bin = 0;
+                    invalid_branch.spatial_max_steps = 0;
+                    invalid_branch.spatial_min_r_squared = 0.0;
                     require_throws_contains(
                         [&] {
                             (void)pic::run_swarm_benchmark(
@@ -3608,6 +3661,7 @@ int main() {
                     std::filesystem::remove(swarm_branch_manifest);
                     std::filesystem::remove(swarm_branch_config_path);
                     std::filesystem::remove(swarm_branch_output);
+                    std::filesystem::remove(swarm_spatial_output);
                     throw;
                 }
                 std::filesystem::remove(swarm_table);
@@ -3619,6 +3673,7 @@ int main() {
                 std::filesystem::remove(swarm_branch_manifest);
                 std::filesystem::remove(swarm_branch_config_path);
                 std::filesystem::remove(swarm_branch_output);
+                std::filesystem::remove(swarm_spatial_output);
             }
             {
                 const auto invalid_path =
