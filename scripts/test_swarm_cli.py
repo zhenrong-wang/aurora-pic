@@ -57,6 +57,11 @@ def main(argv: list[str]) -> int:
             all(
                 row["population_model"]
                 == "fixed_population_no_avalanche"
+                and float(row["neutral_temperature_k"]) == 300.0
+                and 200.0
+                < float(row["neutral_velocity_stddev_m_s"])
+                < 300.0
+                and float(row["neutral_speed_limit_sigma"]) == 8.0
                 and float(row["maximum_observed_energy_ev"]) < 15.0
                 for row in rows
             ),
@@ -80,7 +85,7 @@ def main(argv: list[str]) -> int:
             "\n".join(
                 [
                     "[reference]",
-                    "swarm_reference_version = 1",
+                    "swarm_reference_version = 2",
                     f"data_file = {reference.name}",
                     "reference_id = aurorapic.synthetic.cli",
                     "reference_version = 1",
@@ -91,6 +96,7 @@ def main(argv: list[str]) -> int:
                     "citation = AuroraPIC synthetic fixture",
                     "retrieved = 2026-07-28",
                     "license = Synthetic test data",
+                    "neutral_temperature_k = 300",
                     "",
                     "[observable.drift]",
                     "simulation_column = electron_drift_velocity_m_s",

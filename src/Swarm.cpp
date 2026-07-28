@@ -448,6 +448,16 @@ void validate_config(
         throw std::runtime_error(
             "swarm max_energy_ev must be positive and finite");
     }
+    if (!std::isfinite(config.neutral_temperature) ||
+        config.neutral_temperature < 0.0) {
+        throw std::runtime_error(
+            "swarm neutral_temperature must be finite and non-negative");
+    }
+    if (config.neutral_temperature > 0.0 &&
+        dataset.unit_system != UnitSystem::SI) {
+        throw std::runtime_error(
+            "positive swarm neutral_temperature requires an SI gas dataset");
+    }
     if (config.reduced_fields_td.empty()) {
         throw std::runtime_error(
             "swarm requires at least one reduced field");
@@ -553,6 +563,7 @@ CollisionConfig collision_config(
     result.max_frequency = config.max_frequency;
     result.gas_name = dataset.gas_name;
     result.neutral_mass = dataset.neutral_mass;
+    result.neutral_temperature = config.neutral_temperature;
     result.data_provenance = dataset.data_provenance;
     result.gas_data_file = config.gas_data_file;
     result.gas_data_version = dataset.format_version;
@@ -955,6 +966,10 @@ SwarmBenchmarkResult run_field(
 
     SwarmBenchmarkResult result;
     result.collision_model_signature = model.signature();
+    result.neutral_velocity_stddev_m_s =
+        model.neutral_velocity_stddev();
+    result.neutral_speed_limit_sigma =
+        model.neutral_speed_limit_sigma();
     result.initial_total_electron_weight =
         static_cast<double>(config.particles);
     result.diffusion_available =
@@ -1241,6 +1256,7 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
         "swarm_config_version",
         "gas_data_file",
         "neutral_density",
+        "neutral_temperature",
         "reduced_fields_td",
         "max_frequency",
         "timestep",
@@ -1319,6 +1335,12 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
     result.neutral_density =
         required_number<double>(
             values, "neutral_density", context);
+    if (values.contains("neutral_temperature")) {
+        result.neutral_temperature =
+            parse_number<double>(
+                values.at("neutral_temperature"),
+                context + " key 'neutral_temperature'");
+    }
     result.reduced_fields_td = parse_fields(
         required_string("reduced_fields_td"), context);
     result.max_frequency =
@@ -1516,7 +1538,9 @@ void write_swarm_benchmark_csv(
     output
         << "dataset_id,dataset_version,gas,retrieved,provenance,"
         << "citation,license,gas_data_file,population_model,"
-        << "neutral_density_m3,timestep_s,steps,burn_in_steps,"
+        << "neutral_density_m3,neutral_temperature_k,"
+        << "neutral_velocity_stddev_m_s,neutral_speed_limit_sigma,"
+        << "timestep_s,steps,burn_in_steps,"
         << "particles,population_limit,work_item_limit,seed,"
         << "spatial_histories_requested,spatial_length_m,"
         << "spatial_bins,spatial_fit_begin_bin,"
@@ -1581,6 +1605,9 @@ void write_swarm_benchmark_csv(
             << csv_cell(config.gas_data_file.string()) << ','
             << csv_cell(to_string(config.population_model)) << ','
             << config.neutral_density << ','
+            << config.neutral_temperature << ','
+            << result.neutral_velocity_stddev_m_s << ','
+            << result.neutral_speed_limit_sigma << ','
             << config.timestep << ','
             << config.steps << ','
             << config.burn_in_steps << ','
@@ -1711,7 +1738,9 @@ void write_swarm_spatial_profile_csv(
     output << std::setprecision(17);
     output
         << "dataset_id,dataset_version,gas,population_model,"
-        << "collision_model_signature,reduced_field_td,seed,"
+        << "collision_model_signature,neutral_temperature_k,"
+        << "neutral_velocity_stddev_m_s,neutral_speed_limit_sigma,"
+        << "reduced_field_td,seed,"
         << "spatial_histories,spatial_length_m,spatial_bins,"
         << "spatial_max_steps,spatial_work_item_limit,"
         << "bin,distance_m,fit_selected,"
@@ -1738,6 +1767,9 @@ void write_swarm_spatial_profile_csv(
                 << csv_cell(to_string(config.population_model))
                 << ','
                 << result.collision_model_signature << ','
+                << config.neutral_temperature << ','
+                << result.neutral_velocity_stddev_m_s << ','
+                << result.neutral_speed_limit_sigma << ','
                 << result.reduced_field_td << ','
                 << config.seed +
                        static_cast<std::uint64_t>(field)

@@ -58,8 +58,10 @@ safety_factor * neutral_density * max_E(sum_i(sigma_i(E)) * speed(E))
 over the requested audit interval. The default upper energy is the largest
 tabulated energy. Set `--max-energy-ev` to the full energy envelope expected
 in the simulation. This calculation is a preflight bound for stationary
-neutrals and the imported tables; it does not replace runtime enforcement or
-an energy-coverage study.
+neutrals and the imported tables. Positive-temperature SI runs additionally
+enforce a conservative bound over the reachable bounded-Maxwellian relative
+speeds, so the stationary recommendation may need to be raised. The importer
+audit does not replace runtime enforcement or an energy-coverage study.
 
 Before publication or device simulation:
 

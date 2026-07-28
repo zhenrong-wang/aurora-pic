@@ -28,6 +28,7 @@ inline std::string to_string(SwarmPopulationModel model) {
 struct SwarmBenchmarkConfig {
     std::filesystem::path gas_data_file{};
     double neutral_density{0.0};
+    double neutral_temperature{0.0};
     std::vector<double> reduced_fields_td{};
     double max_frequency{0.0};
     double timestep{0.0};
@@ -70,6 +71,8 @@ struct SwarmSpatialFluxPoint {
 
 struct SwarmBenchmarkResult {
     std::uint64_t collision_model_signature{0};
+    double neutral_velocity_stddev_m_s{0.0};
+    double neutral_speed_limit_sigma{0.0};
     double reduced_field_td{0.0};
     double electric_field_v_m{0.0};
     double mean_velocity_x_m_s{0.0};

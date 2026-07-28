@@ -13,6 +13,8 @@
 namespace pic {
 namespace {
 
+constexpr double boltzmann_constant_si = 1.380649e-23;
+
 void hash_bytes(std::uint64_t& hash, const void* data, std::size_t size) {
     constexpr std::uint64_t prime = 1099511628211ULL;
     const auto* bytes = static_cast<const unsigned char*>(data);
@@ -129,6 +131,27 @@ Vec3 angular_velocity(
             cosine * direction.z +
             tangent_factor * tangent.z +
             bitangent_factor * bitangent.z)};
+}
+
+double speed(const Vec3& value) {
+    return std::sqrt(
+        value.x * value.x +
+        value.y * value.y +
+        value.z * value.z);
+}
+
+Vec3 subtract(const Vec3& first, const Vec3& second) {
+    return {
+        first.x - second.x,
+        first.y - second.y,
+        first.z - second.z};
+}
+
+Vec3 add(const Vec3& first, const Vec3& second) {
+    return {
+        first.x + second.x,
+        first.y + second.y,
+        first.z + second.z};
 }
 
 } // namespace
@@ -323,6 +346,21 @@ NullCollisionModel::NullCollisionModel(
         throw std::invalid_argument(
             "MCC neutral mass and temperature must be finite and non-negative");
     }
+    if (config_.gas_data_units == UnitSystem::SI &&
+        config_.neutral_temperature > 0.0) {
+        if (!(config_.neutral_mass > 0.0)) {
+            throw std::invalid_argument(
+                "thermal-neutral MCC requires positive neutral_mass");
+        }
+        neutral_velocity_stddev_ = std::sqrt(
+            boltzmann_constant_si * config_.neutral_temperature /
+            config_.neutral_mass);
+        if (!std::isfinite(neutral_velocity_stddev_) ||
+            !(neutral_velocity_stddev_ > 0.0)) {
+            throw std::invalid_argument(
+                "thermal-neutral velocity scale is not finite and positive");
+        }
+    }
 
     constexpr std::uint64_t fnv_offset = 1469598103934665603ULL;
     signature_ = fnv_offset;
@@ -342,7 +380,14 @@ NullCollisionModel::NullCollisionModel(
         hash_double(signature_, config_.neutral_mass);
         hash_double(signature_, config_.neutral_temperature);
         hash_string(signature_, config_.data_provenance);
-        if (config_.neutral_mass > 0.0) {
+        if (neutral_velocity_stddev_ > 0.0) {
+            hash_string(
+                signature_,
+                "bounded_maxwellian_neutral_kinematics_v1");
+            hash_double(signature_, neutral_velocity_stddev_);
+            hash_double(
+                signature_, neutral_speed_limit_sigma_);
+        } else if (config_.neutral_mass > 0.0) {
             hash_string(
                 signature_,
                 "stationary_finite_mass_neutral_kinematics_v2");
@@ -510,13 +555,6 @@ NullCollisionModel::NullCollisionModel(
     }
 }
 
-std::vector<double> NullCollisionModel::rates(double velocity) const {
-    if (!std::isfinite(velocity)) {
-        throw std::invalid_argument("MCC particle velocity must be finite");
-    }
-    return rates_for_speed(std::abs(velocity));
-}
-
 std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
     if (!std::isfinite(speed) || speed < 0.0) {
         throw std::invalid_argument(
@@ -551,9 +589,107 @@ std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
     return result;
 }
 
+void NullCollisionModel::validate_frequency_bound(
+    double projectile_speed) const {
+    if (neutral_velocity_stddev_ == 0.0) {
+        (void)rates_for_speed(projectile_speed);
+        return;
+    }
+    const double thermal_speed_limit =
+        neutral_speed_limit_sigma_ * neutral_velocity_stddev_;
+    const double maximum_relative_speed =
+        projectile_speed + thermal_speed_limit;
+    if (!std::isfinite(maximum_relative_speed)) {
+        throw std::overflow_error(
+            "thermal-neutral relative speed overflow");
+    }
+    const double maximum_energy =
+        0.5 * particle_mass_ *
+        maximum_relative_speed * maximum_relative_speed;
+    if (!std::isfinite(maximum_energy)) {
+        throw std::overflow_error(
+            "thermal-neutral relative energy overflow");
+    }
+    double frequency_bound = 0.0;
+    for (const auto& channel : channels_) {
+        if (maximum_energy < channel.config.threshold_energy) {
+            continue;
+        }
+        const double minimum_energy =
+            std::max(
+                channel.config.threshold_energy,
+                0.5 * particle_mass_ *
+                    std::max(
+                        0.0,
+                        projectile_speed - thermal_speed_limit) *
+                    std::max(
+                        0.0,
+                        projectile_speed - thermal_speed_limit));
+        double maximum_cross_section = std::max(
+            channel.table.evaluate(minimum_energy),
+            channel.table.evaluate(maximum_energy));
+        for (std::size_t index = 0;
+             index < channel.table.energies().size(); ++index) {
+            const double energy = channel.table.energies()[index];
+            if (energy >= minimum_energy && energy <= maximum_energy) {
+                maximum_cross_section = std::max(
+                    maximum_cross_section,
+                    channel.table.cross_sections()[index]);
+            }
+        }
+        frequency_bound +=
+            config_.neutral_density *
+            maximum_cross_section *
+            maximum_relative_speed;
+    }
+    if (!std::isfinite(frequency_bound)) {
+        throw std::overflow_error(
+            "thermal-neutral collision-frequency bound overflow");
+    }
+    const double tolerance =
+        64.0 * std::numeric_limits<double>::epsilon() *
+        std::max(config_.max_frequency, frequency_bound);
+    if (frequency_bound > config_.max_frequency + tolerance) {
+        throw std::runtime_error(
+            "MCC thermal-neutral collision-frequency bound exceeds "
+            "configured max_frequency");
+    }
+}
+
+double NullCollisionModel::sample_neutral_velocity(
+    std::mt19937_64& rng) const {
+    if (neutral_velocity_stddev_ == 0.0) return 0.0;
+    std::normal_distribution<double> normal(
+        0.0, neutral_velocity_stddev_);
+    const double limit =
+        neutral_speed_limit_sigma_ * neutral_velocity_stddev_;
+    for (std::size_t attempt = 0; attempt < 1024; ++attempt) {
+        const double value = normal(rng);
+        if (std::abs(value) <= limit) return value;
+    }
+    throw std::runtime_error(
+        "thermal-neutral scalar sampler exceeded its rejection limit");
+}
+
+Vec3 NullCollisionModel::sample_neutral_velocity_3v(
+    std::mt19937_64& rng) const {
+    if (neutral_velocity_stddev_ == 0.0) return {};
+    std::normal_distribution<double> normal(
+        0.0, neutral_velocity_stddev_);
+    const double limit =
+        neutral_speed_limit_sigma_ * neutral_velocity_stddev_;
+    for (std::size_t attempt = 0; attempt < 1024; ++attempt) {
+        const Vec3 value{normal(rng), normal(rng), normal(rng)};
+        if (speed(value) <= limit) return value;
+    }
+    throw std::runtime_error(
+        "thermal-neutral 3V sampler exceeded its rejection limit");
+}
+
 void NullCollisionModel::apply_channel(
     std::size_t channel_index,
     double& velocity,
+    double neutral_velocity,
     std::mt19937_64& rng) const {
     const auto& channel = channels_.at(channel_index);
     if (channel.config.process == CollisionProcessKind::Attachment) {
@@ -562,10 +698,13 @@ void NullCollisionModel::apply_channel(
     }
     if (channel.config.process ==
         CollisionProcessKind::ChargeExchange) {
-        velocity = 0.0;
+        velocity = neutral_velocity;
         return;
     }
-    double energy = 0.5 * particle_mass_ * velocity * velocity;
+    const double relative_velocity = velocity - neutral_velocity;
+    double energy =
+        0.5 * particle_mass_ *
+        relative_velocity * relative_velocity;
     if (channel.config.process == CollisionProcessKind::Excitation ||
         channel.config.process == CollisionProcessKind::Ionization) {
         energy = std::max(
@@ -583,16 +722,19 @@ void NullCollisionModel::apply_channel(
         const double total_mass =
             particle_mass_ + config_.neutral_mass;
         velocity =
-            (particle_mass_ / total_mass) * velocity +
+            (particle_mass_ * velocity +
+             config_.neutral_mass * neutral_velocity) /
+                total_mass +
             (config_.neutral_mass / total_mass) * scattered;
     } else {
-        velocity = scattered;
+        velocity = neutral_velocity + scattered;
     }
 }
 
 void NullCollisionModel::apply_channel(
     std::size_t channel_index,
     Vec3& velocity,
+    const Vec3& neutral_velocity,
     std::mt19937_64& rng) const {
     const auto& channel = channels_.at(channel_index);
     if (channel.config.process == CollisionProcessKind::Attachment) {
@@ -601,13 +743,12 @@ void NullCollisionModel::apply_channel(
     }
     if (channel.config.process ==
         CollisionProcessKind::ChargeExchange) {
-        velocity = {};
+        velocity = neutral_velocity;
         return;
     }
-    const double initial_speed = std::sqrt(
-        velocity.x * velocity.x +
-        velocity.y * velocity.y +
-        velocity.z * velocity.z);
+    const Vec3 initial_relative =
+        subtract(velocity, neutral_velocity);
+    const double initial_speed = speed(initial_relative);
     double energy =
         0.5 * particle_mass_ * initial_speed * initial_speed;
     if (channel.config.process == CollisionProcessKind::Excitation ||
@@ -625,27 +766,32 @@ void NullCollisionModel::apply_channel(
                   0.5 * particle_mass_ *
                   initial_speed * initial_speed)
             : 0.0;
-    const Vec3 scattered =
+    const Vec3 scattered_relative =
         channel.mean_cosine.has_value()
             ? angular_velocity(
-                  velocity, speed, mean_cosine, rng)
+                  initial_relative, speed, mean_cosine, rng)
             : isotropic_velocity(speed, rng);
     if (channel.config.process == CollisionProcessKind::Elastic &&
         config_.neutral_mass > 0.0) {
         const double total_mass =
             particle_mass_ + config_.neutral_mass;
-        const double center_factor = particle_mass_ / total_mass;
         const double relative_factor =
             config_.neutral_mass / total_mass;
         velocity = {
-            center_factor * velocity.x +
-                relative_factor * scattered.x,
-            center_factor * velocity.y +
-                relative_factor * scattered.y,
-            center_factor * velocity.z +
-                relative_factor * scattered.z};
+            (particle_mass_ * velocity.x +
+             config_.neutral_mass * neutral_velocity.x) /
+                    total_mass +
+                relative_factor * scattered_relative.x,
+            (particle_mass_ * velocity.y +
+             config_.neutral_mass * neutral_velocity.y) /
+                    total_mass +
+                relative_factor * scattered_relative.y,
+            (particle_mass_ * velocity.z +
+             config_.neutral_mass * neutral_velocity.z) /
+                    total_mass +
+                relative_factor * scattered_relative.z};
     } else {
-        velocity = scattered;
+        velocity = add(neutral_velocity, scattered_relative);
     }
 }
 
@@ -671,9 +817,9 @@ CollisionStepStatistics NullCollisionModel::collide(
     }
     CollisionStepStatistics statistics;
     statistics.channel_collisions.assign(channels_.size(), 0);
-    (void)rates(velocity);
     double elapsed = 0.0;
     while (true) {
+        validate_frequency_bound(std::abs(velocity));
         const double waiting_time =
             -std::log(open_unit_interval(rng)) / config_.max_frequency;
         if (!std::isfinite(waiting_time) ||
@@ -688,7 +834,10 @@ CollisionStepStatistics NullCollisionModel::collide(
                 "MCC candidate limit exceeded; reduce dt or increase "
                 "max_candidates_per_particle");
         }
-        const auto channel_rates = rates(velocity);
+        const double neutral_velocity =
+            sample_neutral_velocity(rng);
+        const auto channel_rates = rates_for_speed(
+            std::abs(velocity - neutral_velocity));
         const double selection =
             std::generate_canonical<double, 64>(rng) *
             config_.max_frequency;
@@ -698,11 +847,14 @@ CollisionStepStatistics NullCollisionModel::collide(
              channel < channel_rates.size(); ++channel) {
             cumulative += channel_rates[channel];
             if (selection < cumulative) {
-                apply_channel(channel, velocity, rng);
+                apply_channel(
+                    channel, velocity, neutral_velocity, rng);
                 ++statistics.channel_collisions[channel];
                 if (channels_[channel].config.process ==
                     CollisionProcessKind::Attachment) {
                     statistics.primary_removal_channel = channel;
+                    statistics.primary_removal_product_velocity =
+                        Vec3{neutral_velocity, 0.0, 0.0};
                 }
                 accepted = true;
                 break;
@@ -730,15 +882,12 @@ CollisionStepStatistics NullCollisionModel::collide(
     }
     CollisionStepStatistics statistics;
     statistics.channel_collisions.assign(channels_.size(), 0);
-    const auto speed = [&]() {
-        return std::sqrt(
-            velocity.x * velocity.x +
-            velocity.y * velocity.y +
-            velocity.z * velocity.z);
+    const auto projectile_speed = [&]() {
+        return speed(velocity);
     };
-    (void)rates_for_speed(speed());
     double elapsed = 0.0;
     while (true) {
+        validate_frequency_bound(projectile_speed());
         const double waiting_time =
             -std::log(open_unit_interval(rng)) / config_.max_frequency;
         if (!std::isfinite(waiting_time) ||
@@ -753,7 +902,10 @@ CollisionStepStatistics NullCollisionModel::collide(
                 "MCC candidate limit exceeded; reduce dt or increase "
                 "max_candidates_per_particle");
         }
-        const auto channel_rates = rates_for_speed(speed());
+        const Vec3 neutral_velocity =
+            sample_neutral_velocity_3v(rng);
+        const auto channel_rates = rates_for_speed(
+            speed(subtract(velocity, neutral_velocity)));
         const double selection =
             std::generate_canonical<double, 64>(rng) *
             config_.max_frequency;
@@ -763,18 +915,26 @@ CollisionStepStatistics NullCollisionModel::collide(
              channel < channel_rates.size(); ++channel) {
             cumulative += channel_rates[channel];
             if (selection < cumulative) {
-                apply_channel(channel, velocity, rng);
+                apply_channel(
+                    channel, velocity, neutral_velocity, rng);
                 if (channels_[channel].config.process ==
                     CollisionProcessKind::Ionization) {
-                    const double secondary_speed = speed();
+                    const double secondary_speed = speed(
+                        subtract(velocity, neutral_velocity));
                     statistics.secondaries.push_back({
                         channel,
-                        isotropic_velocity(secondary_speed, rng)});
+                        add(
+                            neutral_velocity,
+                            isotropic_velocity(
+                                secondary_speed, rng)),
+                        neutral_velocity});
                 }
                 ++statistics.channel_collisions[channel];
                 if (channels_[channel].config.process ==
                     CollisionProcessKind::Attachment) {
                     statistics.primary_removal_channel = channel;
+                    statistics.primary_removal_product_velocity =
+                        neutral_velocity;
                 }
                 accepted = true;
                 break;

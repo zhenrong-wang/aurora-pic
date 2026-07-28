@@ -54,9 +54,11 @@ struct CollisionStepStatistics {
     struct Secondary {
         std::size_t channel{0};
         Vec3 velocity{};
+        Vec3 ion_velocity{};
     };
     std::vector<Secondary> secondaries{};
     std::optional<std::size_t> primary_removal_channel{};
+    std::optional<Vec3> primary_removal_product_velocity{};
 };
 
 struct CollisionDiagnostics {
@@ -84,6 +86,14 @@ public:
         return channel_names_;
     }
     std::uint64_t signature() const { return signature_; }
+    double neutral_velocity_stddev() const {
+        return neutral_velocity_stddev_;
+    }
+    double neutral_speed_limit_sigma() const {
+        return neutral_velocity_stddev_ > 0.0
+                   ? neutral_speed_limit_sigma_
+                   : 0.0;
+    }
 
 private:
     struct Channel {
@@ -106,15 +116,19 @@ private:
         std::optional<MeanCosineTable> mean_cosine{};
     };
 
-    std::vector<double> rates(double velocity) const;
     std::vector<double> rates_for_speed(double speed) const;
+    void validate_frequency_bound(double projectile_speed) const;
+    double sample_neutral_velocity(std::mt19937_64& rng) const;
+    Vec3 sample_neutral_velocity_3v(std::mt19937_64& rng) const;
     void apply_channel(
         std::size_t channel,
         double& velocity,
+        double neutral_velocity,
         std::mt19937_64& rng) const;
     void apply_channel(
         std::size_t channel,
         Vec3& velocity,
+        const Vec3& neutral_velocity,
         std::mt19937_64& rng) const;
 
     CollisionConfig config_{};
@@ -122,6 +136,8 @@ private:
     std::vector<Channel> channels_{};
     std::vector<std::string> channel_names_{};
     std::uint64_t signature_{0};
+    double neutral_velocity_stddev_{0.0};
+    static constexpr double neutral_speed_limit_sigma_{8.0};
 };
 
 } // namespace pic

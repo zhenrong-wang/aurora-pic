@@ -21,8 +21,9 @@ collision model.
 
 ## Tabulated null-collision MCC
 
-The MCC slice supports stationary-neutral elastic and excitation channels for
-one named kinetic species. Imported 2D3V additionally supports bounded
+The MCC slice supports elastic and excitation channels for one named kinetic
+species against stationary or finite-temperature neutrals. Imported 2D3V
+additionally supports bounded
 electron-impact ionization, electron attachment with a kinetic negative-ion
 product, and resonant ion-neutral charge exchange:
 
@@ -90,22 +91,25 @@ run. In SI mode, `neutral_density` is in `m^-3`, cross section is in `m^2`,
 particle mass is in kg, and velocity is in `m/s`, producing a rate in `s^-1`.
 Normalized inputs must form the corresponding self-consistent normalized rate.
 
-For particle energy `E = m v^2 / 2`, channel frequency is
-`nu_i = neutral_density * sigma_i(E) * abs(v)`. Candidate times are sampled
+For relative speed `g = abs(v - u_n)` and the existing projectile-energy
+cross-section convention `E = m g^2 / 2`, the instantaneous channel frequency
+is `nu_i = neutral_density * sigma_i(E) * g`. Candidate times are sampled
 from an exponential distribution with `max_frequency`; a candidate is
 accepted into a channel in proportion to `nu_i / max_frequency`, otherwise it
 is a null collision. Multiple candidates per timestep are supported.
 
 `max_frequency` is a user-supplied conservative bound on the sum of channel
-frequencies. The run fails when an evaluated total exceeds it.
+frequencies. For thermal neutrals the kernel also bounds every channel over
+the complete reachable relative-speed interval and fails before sampling when
+the sum of those conservative per-channel bounds exceeds `max_frequency`.
 `max_candidates_per_particle` protects against an unreasonable
 `max_frequency * dt`; exceeding it also fails instead of truncating collision
 history.
 
 Without gas mass metadata, legacy elastic events preserve projectile kinetic
 energy and randomize the sign of the 1D velocity. With positive
-`neutral_mass`, elastic events use stationary-target two-body center-of-mass
-kinematics. Imported 2D3V samples the post-collision relative direction
+`neutral_mass`, elastic events use two-body center-of-mass kinematics.
+Imported 2D3V samples the post-collision relative direction
 isotropically; projectile plus implicit neutral recoil conserve momentum and
 total kinetic energy, while the tracked projectile can gain or lose energy.
 Excitation removes exactly `threshold_energy` and retains the heavy-neutral
@@ -116,7 +120,10 @@ Ionization is available only through the imported 2D3V interface. Each
 accepted event removes `threshold_energy`, divides the remaining incident
 electron energy equally between the scattered primary and one secondary
 electron, samples both directions independently and isotropically, and creates
-one stationary ion at the event position. The target and secondary species
+one ion at the event position. With thermal neutrals, electron energies and
+directions are evaluated in the sampled neutral frame and the new ion inherits
+the target-neutral velocity; neutral recoil remains neglected. The target and
+secondary species
 must have identical nonzero charge, mass, and macro weight; the ion must have
 the opposite charge and the same macro weight. These constraints make each
 macro-event charge conservative and make the implemented electron energy
@@ -126,14 +133,16 @@ their birth timestep.
 
 Attachment represents `electron + neutral -> negative ion` as a
 charge-conservative macro-event. The primary electron is retired and one
-stationary configured product is created at the event position. The product
+configured product is created at the event position. It inherits the sampled
+target-neutral velocity in thermal-neutral mode and is stationary otherwise.
+The product
 must be a distinct species heavier than the electron, with the same charge
 and macro weight. Attachment channels use zero `threshold_energy`; any onset
 or energy window is represented directly by zero/nonzero values in the
 cross-section table. Product storage is preflighted against
 `max_particles_per_species`, just like ionization.
 
-This is a bounded stationary-product model. It does not resolve dissociation
+This is a bounded target-velocity product model. It does not resolve dissociation
 fragments, product recoil, neutral depletion, detachment, or species-dependent
 branching ratios. The bundled `examples/imported_attachment_2d.cfg` and
 `mcc_2d3v_attachment.dat` are deterministic software-validation inputs, not
@@ -148,10 +157,10 @@ material data.
 Resonant charge exchange represents the identity swap
 `A+_fast + A_slow -> A_fast + A+_slow`. It requires projectile mass equal to
 `neutral_mass`, a charged target species, zero threshold, and imported 2D3V
-configuration. Because the present neutral background is stationary, an
-accepted event resets the kinetic ion velocity to zero without changing
-particle count or charge. The outgoing fast neutral is absorbed into the
-untracked neutral reservoir.
+configuration. An accepted event maps the tracked ion onto the sampled target
+neutral velocity without changing particle count or charge. At zero
+temperature this remains an exact reset to zero. The outgoing fast neutral is
+absorbed into the untracked neutral reservoir.
 
 ## Imported 2D3V gas metadata
 
@@ -171,8 +180,11 @@ max_frequency = 1.0e8
 ```
 
 `gas` is an explicit identity label. In SI, `neutral_mass` is kg,
-`neutral_temperature` is K, and `neutral_density` is `m^-3`; normalized runs
-must use a self-consistent normalized contract. Gas identity, mass,
+`neutral_temperature` is K, and `neutral_density` is `m^-3`.
+The one-component neutral velocity standard deviation is
+`sqrt(k_B * neutral_temperature / neutral_mass)`. Normalized runs lack a
+defined Boltzmann-temperature scale, so their neutral temperature remains
+metadata and their MCC neutrals remain stationary. Gas identity, mass,
 temperature, provenance, rate controls, target species, and effective tables
 are checkpoint-fingerprinted.
 
@@ -276,10 +288,16 @@ system differs from the simulation. The complete local conversion and audit
 workflow is documented in
 [`gas-data-workflow.md`](gas-data-workflow.md).
 
-The neutral background remains stationary. Neutral mass is active in elastic
-recoil and resonant charge-exchange validation; neutral temperature remains
-provenance and forward-compatibility metadata and does not yet add thermal
-neutral velocity. Gas heating and depletion are not modeled.
+For SI gas contracts with positive temperature, each null-collision candidate
+samples a three-dimensional Maxwellian target velocity. The distribution is
+truncated at eight one-component standard deviations in total speed; the
+omitted Maxwell-speed probability is approximately `8e-13`. This finite bound
+is required to make the null-collision majorant enforceable. The sampled
+velocity is used consistently for relative collision rates, elastic recoil,
+reactive electron-frame kinematics, charge exchange, and ion/attachment
+product velocity. Zero-temperature and normalized runs consume no additional
+random numbers and retain their historical stationary-neutral trajectory.
+Gas heating, depletion, and neutral bulk flow are not modeled.
 
 `examples/imported_mcc_2d.cfg` exercises the complete imported parser,
 isotropic scatter, diagnostics, and v6 restart path using deliberately
@@ -315,11 +333,13 @@ enabling finite-mass recoil.
 ## Current limitations
 
 - Collision sampling is currently serial to preserve deterministic RNG order.
-- Neutrals are stationary. Elastic recoil is finite-mass, but thermal motion,
-  excitation/ionization recoil, depletion, and gas heating are absent.
+- SI neutrals have a bounded Maxwellian at fixed configured temperature.
+  Neutral bulk flow, excitation/ionization recoil, depletion, and gas heating
+  are absent; normalized-unit neutrals remain stationary.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
 - Ionization is limited to the equal-sharing imported 2D3V model above.
-  Attachment is limited to the stationary negative-ion product model above.
+  Attachment is limited to the target-velocity negative-ion product model
+  above.
   Charge exchange is limited to the resonant mass-matched model above.
   Detachment, Coulomb collisions, and general reaction networks are not
   implemented.

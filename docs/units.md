@@ -50,13 +50,17 @@ Inputs have these meanings:
 | species mass | kg |
 | collision frequency | 1/s |
 | MCC neutral density | particles/m³ |
+| MCC neutral temperature | K |
 | MCC cross section | m² |
 | MCC table and threshold energy | J |
 | 3D number density | particles/m³ |
 
 `thermal_velocity` is a velocity-distribution standard deviation, not a
 temperature in kelvin or electron-volts. Convert a physical temperature to
-the desired thermal-speed convention before supplying it.
+the desired thermal-speed convention before supplying it. In contrast,
+positive SI MCC `neutral_temperature` is in kelvin and the collision kernel
+derives its one-component neutral standard deviation as
+`sqrt(k_B * neutral_temperature / neutral_mass)`.
 
 Reduced-dimensional electrostatic PIC represents the omitted dimensions per
 unit measure:

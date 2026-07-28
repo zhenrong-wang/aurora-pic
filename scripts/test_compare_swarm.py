@@ -24,7 +24,7 @@ def write_manifest(path: Path, data_file: Path) -> None:
         "\n".join(
             [
                 "[reference]",
-                "swarm_reference_version = 1",
+                "swarm_reference_version = 2",
                 f"data_file = {data_file.name}",
                 "reference_id = aurorapic.synthetic.reference",
                 "reference_version = 1",
@@ -35,6 +35,7 @@ def write_manifest(path: Path, data_file: Path) -> None:
                 "citation = AuroraPIC synthetic fixture",
                 "retrieved = 2026-07-28",
                 "license = Synthetic test data",
+                "neutral_temperature_k = 300",
                 "field_absolute_tolerance_td = 1e-12",
                 "field_relative_tolerance = 1e-12",
                 "",
@@ -102,16 +103,17 @@ def main() -> int:
         report = work / "report.json"
         simulation.write_text(
             "dataset_id,dataset_version,gas,population_model,"
-            "collision_model_signature,reduced_field_td,"
+            "collision_model_signature,neutral_temperature_k,"
+            "reduced_field_td,"
             "electron_drift_velocity_m_s,"
             "mean_velocity_x_standard_error_m_s,mean_energy_ev,"
             "mean_energy_standard_error_ev\n"
             "synthetic.dataset,1,synthetic_swarm_gas,"
-            "fixed_population_no_avalanche,12345,1,100,2,1.0,0.02\n"
+            "fixed_population_no_avalanche,12345,300,1,100,2,1.0,0.02\n"
             "synthetic.dataset,1,synthetic_swarm_gas,"
-            "fixed_population_no_avalanche,12345,5,200,3,2.0,0.03\n"
+            "fixed_population_no_avalanche,12345,300,5,200,3,2.0,0.03\n"
             "synthetic.dataset,1,synthetic_swarm_gas,"
-            "fixed_population_no_avalanche,12345,10,300,4,3.0,0.04\n",
+            "fixed_population_no_avalanche,12345,300,10,300,4,3.0,0.04\n",
             encoding="utf-8",
         )
         reference.write_text(
@@ -199,6 +201,25 @@ def main() -> int:
             and "do not match reference gas" in mismatch.stderr
             and not mismatch_report.exists(),
             "swarm comparator accepted a gas identity mismatch",
+        )
+
+        temperature_simulation = work / "temperature.csv"
+        temperature_report = work / "temperature_report.json"
+        temperature_simulation.write_text(
+            simulation.read_text(encoding="utf-8").replace(
+                ",300,1,100", ",0,1,100"
+            ),
+            encoding="utf-8",
+        )
+        temperature_mismatch = run(
+            temperature_simulation, manifest, temperature_report
+        )
+        require(
+            temperature_mismatch.returncode == 2
+            and "neutral_temperature_k values do not match"
+            in temperature_mismatch.stderr
+            and not temperature_report.exists(),
+            "swarm comparator accepted a neutral-temperature mismatch",
         )
 
     print("swarm comparison validation passed")

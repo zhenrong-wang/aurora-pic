@@ -20,6 +20,7 @@ recommendation from its `audit.json`.
 swarm_config_version = 1
 gas_data_file = local-gases/argon/Ar.gas
 neutral_density = 2.4e20
+neutral_temperature = 300
 reduced_fields_td = 1, 2, 5, 10, 20, 50, 100
 max_frequency = 2.0e8
 timestep = 2.5e-10
@@ -169,7 +170,7 @@ source and acceptance contract in a `.swarm-reference` manifest:
 
 ```ini
 [reference]
-swarm_reference_version = 1
+swarm_reference_version = 2
 data_file = argon-reference.csv
 reference_id = laboratory.argon.swarm
 reference_version = 2026-01
@@ -180,6 +181,7 @@ provenance = laboratory or evaluated database and source URL
 citation = citation requested by the contributor
 retrieved = 2026-01-15
 license = applicable dataset terms
+neutral_temperature_k = 300
 field_absolute_tolerance_td = 1e-12
 field_relative_tolerance = 1e-12
 
@@ -225,7 +227,11 @@ point within the declared field tolerance. The comparator does not silently
 interpolate reference data. Extra simulated points are retained in the report
 but do not affect acceptance. All simulation rows must also share one
 cross-section dataset ID/version and match the manifest's gas and
-`population_model`. `coefficient_convention` is recorded explicitly because
+`population_model`. Version 2 additionally requires
+`neutral_temperature_k` and rejects simulation rows at a different
+temperature. Version 1 remains readable for legacy stationary-neutral
+contracts but carries no temperature compatibility check.
+`coefficient_convention` is recorded explicitly because
 bulk and flux swarm coefficients are not interchangeable; the current
 fixed-population mean-velocity estimator is described as
 `flux_fixed_population`.
@@ -327,8 +333,10 @@ a self-consistent discharge. Attachment removes electron weight
 according to its tabulated channel, but the homogeneous runner does not track
 the negative-ion product. It does not yet include detachment, photoionization,
 space charge, or a self-consistent discharge-level Townsend experiment.
-Ionization uses the engine's current equal-sharing energy model. Both modes
-assume stationary zero-temperature neutrals. Elastic scattering is isotropic
+Ionization uses the engine's current equal-sharing energy model. A positive
+`neutral_temperature` with an SI gas package activates the same bounded
+Maxwellian neutral sampling used by imported geometry; zero is the default.
+Elastic scattering is isotropic
 unless the gas package explicitly supplies a validated energy-dependent
 Henyey-Greenstein mean-cosine table; configured neutral mass remains active
 in either elastic recoil path.
@@ -337,8 +345,8 @@ Consequently, this benchmark can validate the current MCC implementation's
 drift, mean energy, fixed-mode diffusion trend, collision rates, and bounded
 transient avalanche growth. It cannot yet claim high-accuracy transport for
 datasets requiring a full differential angular cross section beyond the
-mean-cosine phase-function approximation, thermal neutral motion, non-equal
-ionization energy sharing, or gas-specific spatial Townsend accuracy without
+mean-cosine phase-function approximation, non-equal ionization energy sharing,
+neutral bulk flow, or gas-specific spatial Townsend accuracy without
 independent measured or evaluated validation.
 
 ## Production study checklist

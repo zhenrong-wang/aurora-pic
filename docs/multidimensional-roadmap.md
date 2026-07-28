@@ -108,12 +108,16 @@ Post-M6 production hardening has unified transient and steady-state run semantic
 The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining
-1D BGK compatibility. Imported 2D3V adds isotropic stationary-heavy-neutral
+1D BGK compatibility. Imported 2D3V adds isotropic finite-mass neutral
 scattering, required gas/provenance metadata, bounded electron-impact
 ionization with paired charged products, and charge-conservative electron
 attachment to a kinetic negative-ion product. Stationary-target finite-mass
 elastic recoil and resonant mass-matched ion-neutral charge exchange are also
-covered.
+covered. Positive-temperature SI operation samples a bounded Maxwellian
+neutral at each null-collision candidate, applies relative-rate and
+center-of-mass kinematics, transfers the target velocity to reactive heavy
+products, and enforces a conservative thermal rate majorant while preserving
+the exact zero-temperature RNG path.
 A strict external `.gas` manifest
 interface now separates reusable table physics and licensing metadata from
 simulation operating conditions and fingerprints both for restart. A local
@@ -143,8 +147,8 @@ available through a strict mean-cosine table and Henyey-Greenstein phase
 function, with total-cross-section semantics, 3V-only enforcement,
 energy-coverage checks, and restart fingerprinting. Executing and publishing
 campaigns with authoritative gas-specific reference data, plus full
-differential cross-section models, remain subsequent work. Charge
-exchange beyond the resonant case, thermal neutral motion, richer ionization
+differential cross-section models, remain subsequent work. Charge exchange
+beyond the resonant case, neutral flow/heating/depletion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 
 ## Historical implementation phases

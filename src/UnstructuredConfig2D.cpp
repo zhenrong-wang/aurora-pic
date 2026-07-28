@@ -414,6 +414,8 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         }
         result.collisions.model = CollisionModelKind::NullCollision;
         if (result.collisions.enabled) {
+            result.collisions.gas_data_units =
+                result.units.system;
             result.collisions.species = required(
                 parsed.collisions, "species", "collisions");
             (void)required(

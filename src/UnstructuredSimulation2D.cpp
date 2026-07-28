@@ -196,19 +196,25 @@ std::string csv_quote(const std::string& value) {
 void write_collision_metadata(
     const std::filesystem::path& output_dir,
     const CollisionConfig& config,
-    std::uint64_t signature) {
+    std::uint64_t signature,
+    double neutral_velocity_stddev,
+    double neutral_speed_limit_sigma) {
     std::ofstream output(output_dir / "collision_data.txt");
     if (!output) {
         throw std::runtime_error(
             "cannot open imported collision metadata output");
     }
     output << std::setprecision(17);
-    output << "format 3\n";
+    output << "format 4\n";
     output << "gas " << std::quoted(config.gas_name) << '\n';
     output << "neutral_mass " << config.neutral_mass << '\n';
     output << "neutral_density " << config.neutral_density << '\n';
     output << "neutral_temperature "
            << config.neutral_temperature << '\n';
+    output << "neutral_velocity_stddev "
+           << neutral_velocity_stddev << '\n';
+    output << "neutral_speed_limit_sigma "
+           << neutral_speed_limit_sigma << '\n';
     output << "gas_data_file "
            << std::quoted(config.gas_data_file.string()) << '\n';
     output << "gas_data_version "
@@ -1304,11 +1310,13 @@ void UnstructuredSimulation2D::apply_collisions() {
     struct IonizationProduct {
         Vec2 position{};
         Vec3 secondary_velocity{};
+        Vec3 ion_velocity{};
         IonizationChannelRuntime channel{};
     };
     struct AttachmentProduct {
         Vec2 position{};
         std::size_t consumed_particle_id{0};
+        Vec3 product_velocity{};
         AttachmentChannelRuntime channel{};
     };
     std::vector<IonizationProduct> ionization_products;
@@ -1336,6 +1344,7 @@ void UnstructuredSimulation2D::apply_collisions() {
             ionization_products.push_back({
                 particle.position,
                 secondary.velocity,
+                secondary.ion_velocity,
                 *ionization_channels_[secondary.channel]});
         }
         if (statistics.primary_removal_channel) {
@@ -1349,6 +1358,8 @@ void UnstructuredSimulation2D::apply_collisions() {
             attachment_products.push_back({
                 particle.position,
                 particle_id,
+                statistics.primary_removal_product_velocity.value_or(
+                    Vec3{}),
                 *attachment_channels_[channel]});
             continue;
         }
@@ -1462,12 +1473,12 @@ void UnstructuredSimulation2D::apply_collisions() {
             product.position, product.secondary_velocity);
         append_product(
             product.channel.ion_species_id,
-            product.position, Vec3{});
+            product.position, product.ion_velocity);
     }
     for (const auto& product : attachment_products) {
         append_product(
             product.channel.product_species_id,
-            product.position, Vec3{});
+            product.position, product.product_velocity);
     }
 }
 
@@ -2100,7 +2111,9 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     if (mcc_model_) {
         write_collision_metadata(
             config_.output_dir, config_.collisions,
-            mcc_model_->signature());
+            mcc_model_->signature(),
+            mcc_model_->neutral_velocity_stddev(),
+            mcc_model_->neutral_speed_limit_sigma());
         collision_output.open(config_.output_dir / "collisions.csv");
         if (!collision_output) {
             throw std::runtime_error(

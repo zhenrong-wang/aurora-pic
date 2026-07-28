@@ -2,6 +2,7 @@
 swarm_config_version = 1
 gas_data_file = synthetic_swarm.gas
 neutral_density = 1.0e20
+neutral_temperature = 300.0
 reduced_fields_td = 1, 5, 10
 max_frequency = 1.0e7
 timestep = 1.0e-9

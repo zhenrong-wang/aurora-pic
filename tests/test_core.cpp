@@ -584,6 +584,36 @@ int main() {
                               ionization_stats.secondaries.size()),
                 ionizing_initial_energy, 1e-12,
                 "ionization energy partition is not conservative");
+            auto thermal_ionization_config =
+                ionization_config;
+            thermal_ionization_config.gas_data_units =
+                pic::UnitSystem::SI;
+            thermal_ionization_config.neutral_mass = 1.0;
+            thermal_ionization_config.neutral_temperature =
+                1.0 / 1.380649e-23;
+            thermal_ionization_config.max_frequency = 20.0;
+            pic::NullCollisionModel thermal_ionization(
+                thermal_ionization_config, 1.0);
+            std::mt19937_64 thermal_ionization_rng(223607);
+            bool thermal_ionized = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !thermal_ionized; ++attempt) {
+                pic::Vec3 electron{4.0, 0.0, 0.0};
+                const auto stats = thermal_ionization.collide(
+                    electron, 0.01, thermal_ionization_rng);
+                if (stats.secondaries.empty()) continue;
+                require(
+                    norm(stats.secondaries.front().ion_velocity) >
+                            0.0 &&
+                        norm(stats.secondaries.front().ion_velocity) <=
+                            8.0,
+                    "thermal ionization product did not inherit "
+                    "the target-neutral velocity");
+                thermal_ionized = true;
+            }
+            require(
+                thermal_ionized,
+                "thermal ionization was not sampled");
             require_throws(
                 [&] {
                     double velocity = 4.0;
@@ -621,6 +651,37 @@ int main() {
             require(
                 attached,
                 "electron attachment was not sampled");
+            auto thermal_attachment_config =
+                attachment_config;
+            thermal_attachment_config.gas_data_units =
+                pic::UnitSystem::SI;
+            thermal_attachment_config.neutral_mass = 1.0;
+            thermal_attachment_config.neutral_temperature =
+                1.0 / 1.380649e-23;
+            thermal_attachment_config.max_frequency = 20.0;
+            pic::NullCollisionModel thermal_attachment(
+                thermal_attachment_config, 1.0);
+            std::mt19937_64 thermal_attachment_rng(244949);
+            bool thermal_attached = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !thermal_attached; ++attempt) {
+                pic::Vec3 electron{2.0, 0.0, 0.0};
+                const auto stats = thermal_attachment.collide(
+                    electron, 0.01, thermal_attachment_rng);
+                if (!stats.primary_removal_channel) continue;
+                require(
+                    stats.primary_removal_product_velocity &&
+                        norm(*stats.primary_removal_product_velocity) >
+                            0.0 &&
+                        norm(*stats.primary_removal_product_velocity) <=
+                            8.0,
+                    "thermal attachment product did not inherit "
+                    "the target-neutral velocity");
+                thermal_attached = true;
+            }
+            require(
+                thermal_attached,
+                "thermal attachment was not sampled");
             auto unmapped_attachment = attachment_config;
             unmapped_attachment.channels.front()
                 .attachment_species.clear();
@@ -659,6 +720,57 @@ int main() {
             require(
                 exchanged,
                 "resonant charge exchange was not sampled");
+            auto thermal_exchange_config =
+                charge_exchange_config;
+            thermal_exchange_config.gas_data_units =
+                pic::UnitSystem::SI;
+            thermal_exchange_config.neutral_mass = 1.0;
+            thermal_exchange_config.neutral_temperature =
+                1.0 / 1.380649e-23;
+            thermal_exchange_config.max_frequency = 20.0;
+            pic::NullCollisionModel thermal_exchange(
+                thermal_exchange_config, 1.0);
+            require_near(
+                thermal_exchange.neutral_velocity_stddev(),
+                1.0, 1e-15,
+                "SI neutral temperature produced the wrong "
+                "Maxwellian component speed");
+            require(
+                thermal_exchange.signature() !=
+                    charge_exchange.signature(),
+                "MCC signature ignored thermal-neutral kinematics");
+            std::mt19937_64 thermal_exchange_rng(173205);
+            bool thermal_exchanged = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !thermal_exchanged; ++attempt) {
+                pic::Vec3 ion{2.0, 0.0, 0.0};
+                const auto stats = thermal_exchange.collide(
+                    ion, 0.01, thermal_exchange_rng);
+                if (stats.channel_collisions[0] == 0) continue;
+                require(
+                    norm(ion) > 0.0 && norm(ion) <= 8.0 &&
+                        stats.secondaries.empty(),
+                    "thermal resonant charge exchange did not map "
+                    "the sampled neutral velocity onto the ion");
+                thermal_exchanged = true;
+            }
+            require(
+                thermal_exchanged,
+                "thermal resonant charge exchange was not sampled");
+            auto unsafe_thermal_exchange =
+                thermal_exchange_config;
+            unsafe_thermal_exchange.max_frequency = 1.0;
+            pic::NullCollisionModel unsafe_thermal(
+                unsafe_thermal_exchange, 1.0);
+            require_throws_contains(
+                [&] {
+                    pic::Vec3 ion{2.0, 0.0, 0.0};
+                    (void)unsafe_thermal.collide(
+                        ion, 0.01, thermal_exchange_rng);
+                },
+                "thermal-neutral collision-frequency bound",
+                "thermal MCC accepted an unsafe null-collision "
+                "majorant");
             auto mismatched_exchange_config =
                 charge_exchange_config;
             require_throws_contains(
@@ -3322,6 +3434,7 @@ int main() {
                         << "gas_data_file = "
                         << swarm_manifest.string() << '\n'
                         << "neutral_density = 1e20\n"
+                        << "neutral_temperature = 300\n"
                         << "reduced_fields_td = 1\n"
                         << "max_frequency = 1e6\n"
                         << "timestep = 1e-8\n"
@@ -3413,7 +3526,13 @@ int main() {
                         swarm_results.size() == 1 &&
                             swarm_results.front().channels.size() == 1 &&
                             swarm_results.front().channels.front()
-                                    .collisions == 0,
+                                    .collisions == 0 &&
+                            swarm_results.front()
+                                    .neutral_velocity_stddev_m_s > 200.0 &&
+                            swarm_results.front()
+                                    .neutral_velocity_stddev_m_s < 300.0 &&
+                            swarm_results.front()
+                                    .neutral_speed_limit_sigma == 8.0,
                         "zero-cross-section swarm produced collisions");
                     constexpr double electron_mass =
                         9.1093837139e-31;

@@ -42,6 +42,7 @@ class Observable:
 class ReferenceContract:
     path: Path
     data_file: Path
+    manifest_version: int
     reference_id: str
     reference_version: str
     gas: str
@@ -51,6 +52,7 @@ class ReferenceContract:
     citation: str
     retrieved: str
     license: str
+    neutral_temperature_k: float | None
     field_absolute_tolerance_td: float
     field_relative_tolerance: float
     observables: tuple[Observable, ...]
@@ -131,6 +133,7 @@ def load_contract(path: Path) -> ReferenceContract:
         "citation",
         "retrieved",
         "license",
+        "neutral_temperature_k",
         "field_absolute_tolerance_td",
         "field_relative_tolerance",
     }
@@ -139,11 +142,28 @@ def load_contract(path: Path) -> ReferenceContract:
         raise ComparisonInputError(
             f"{path} [reference]: unknown keys {unknown}"
         )
-    if required(
+    version_text = required(
         reference, "swarm_reference_version", f"{path} [reference]"
-    ) != "1":
+    )
+    if version_text not in {"1", "2"}:
         raise ComparisonInputError(
-            f"{path} supports swarm_reference_version = 1"
+            f"{path} supports swarm_reference_version = 1 or 2"
+        )
+    manifest_version = int(version_text)
+    neutral_temperature_k: float | None = None
+    if manifest_version == 2:
+        neutral_temperature_k = nonnegative_number(
+            required(
+                reference,
+                "neutral_temperature_k",
+                f"{path} [reference]",
+            ),
+            f"{path} [reference] neutral_temperature_k",
+        )
+    elif "neutral_temperature_k" in reference:
+        raise ComparisonInputError(
+            f"{path} [reference]: neutral_temperature_k requires "
+            "swarm_reference_version = 2"
         )
     reference_id = required(
         reference, "reference_id", f"{path} [reference]"
@@ -267,6 +287,7 @@ def load_contract(path: Path) -> ReferenceContract:
     return ReferenceContract(
         path=path.resolve(),
         data_file=data_file,
+        manifest_version=manifest_version,
         reference_id=reference_id,
         reference_version=required(
             reference, "reference_version", f"{path} [reference]"
@@ -284,6 +305,7 @@ def load_contract(path: Path) -> ReferenceContract:
         license=required(
             reference, "license", f"{path} [reference]"
         ),
+        neutral_temperature_k=neutral_temperature_k,
         field_absolute_tolerance_td=absolute_field_tolerance,
         field_relative_tolerance=relative_field_tolerance,
         observables=tuple(observables),
@@ -403,6 +425,11 @@ def compare(
             "population_model",
             "collision_model_signature",
             *(
+                ["neutral_temperature_k"]
+                if contract.neutral_temperature_k is not None
+                else []
+            ),
+            *(
                 column
                 for observable in contract.observables
                 for column in (
@@ -451,6 +478,38 @@ def compare(
         row["collision_model_signature"]
         for _, row, _ in simulation_index
     }
+    simulation_temperature_k: float | None = None
+    if contract.neutral_temperature_k is not None:
+        simulation_temperatures = {
+            finite_number(
+                row["neutral_temperature_k"],
+                f"simulation CSV row {line} neutral_temperature_k",
+            )
+            for _, row, line in simulation_index
+        }
+        tolerance = (
+            64.0 * sys.float_info.epsilon *
+            max(
+                1.0,
+                abs(contract.neutral_temperature_k),
+                *(abs(value) for value in simulation_temperatures),
+            )
+        )
+        if (
+            len(simulation_temperatures) != 1
+            or abs(
+                next(iter(simulation_temperatures))
+                - contract.neutral_temperature_k
+            ) > tolerance
+        ):
+            raise ComparisonInputError(
+                "simulation neutral_temperature_k values do not match "
+                f"reference contract {contract.neutral_temperature_k}: "
+                f"{sorted(simulation_temperatures)}"
+            )
+        simulation_temperature_k = next(
+            iter(simulation_temperatures)
+        )
     if len(simulation_dataset_ids) != 1 or "" in simulation_dataset_ids:
         raise ComparisonInputError(
             "simulation rows must share one non-empty dataset_id"
@@ -601,6 +660,7 @@ def compare(
             "collision_model_signature": next(
                 iter(simulation_collision_signatures)
             ),
+            "neutral_temperature_k": simulation_temperature_k,
             "rows": len(simulation_rows),
         },
         "reference": {
@@ -609,6 +669,7 @@ def compare(
             "data_file": str(contract.data_file),
             "data_sha256": sha256(contract.data_file),
             "reference_id": contract.reference_id,
+            "manifest_version": contract.manifest_version,
             "reference_version": contract.reference_version,
             "gas": contract.gas,
             "population_model": contract.population_model,
@@ -617,6 +678,7 @@ def compare(
             "citation": contract.citation,
             "retrieved": contract.retrieved,
             "license": contract.license,
+            "neutral_temperature_k": contract.neutral_temperature_k,
             "rows": len(reference_rows),
         },
         "acceptance_rule": (

@@ -39,9 +39,12 @@ Imported-mesh quality reporting computes cell-area and edge-length extrema, the 
 
 The historical optional BGK velocity-reset model remains available for
 compatibility. The tabulated 1D and imported 2D3V MCC paths evaluate
-`nu_i(E) = neutral_density * sigma_i(E) * speed` and use exponential
+`nu_i(E) = neutral_density * sigma_i(E) * relative_speed` and use exponential
 null-collision candidate times with a strictly enforced user-supplied maximum
-frequency. Elastic events with gas mass metadata use stationary-target
+frequency. Positive-temperature SI runs sample a Maxwellian neutral velocity
+bounded at eight component standard deviations and enforce a conservative
+rate majorant over the reachable relative-speed interval. Elastic events with
+gas mass metadata use
 two-body kinematics that conserve projectile-plus-neutral momentum and energy;
 excitation events remove a configured threshold energy. The legacy 1D path
 without gas mass metadata randomizes velocity sign at fixed speed; the
@@ -50,7 +53,8 @@ interval/cumulative counts are written to `collisions.csv`. Checkpoint v3 in
 1D and v6 for imported geometry fingerprint effective tables and preserve
 counters. Imported 2D3V ionization removes its threshold, equally partitions
 the remaining primary/secondary electron energy, samples independent isotropic
-directions, and creates a stationary opposite-charge ion with bounded,
+directions, and creates an opposite-charge ion at the sampled target-neutral
+velocity with bounded,
 preflighted storage. Imported runs can load versioned external `.gas`
 manifests; packaged physics and provenance are kept separate from
 simulation-specific density, temperature, rate bounds, and reactive species
@@ -60,7 +64,7 @@ mappings. Effective dataset metadata and channel settings are emitted to
 constraints, and limitation contract.
 
 Imported resonant charge exchange requires ion and neutral masses to match and
-maps the tracked fast ion onto the stationary neutral velocity. This preserves
+maps the tracked fast ion onto the sampled neutral velocity. This preserves
 ion count and charge while transferring the fast neutral product to the
 implicit reservoir.
 
