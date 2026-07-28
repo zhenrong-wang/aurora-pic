@@ -10,6 +10,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | --- | ---: | ---: | ---: | ---: | --- |
 | `examples/two_stream.cfg` | 1D1V | 128 cells | 12,000 | 300 | Periodic electrostatic transient with multiple species. |
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
+| `examples/mcc_relaxation.cfg` | 1D1V | 32 cells | 1,000 | 50 | Synthetic tabulated elastic/excitation null-collision MCC with channel diagnostics. |
 | `examples/plasma_2d.cfg` | 2D2V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D2V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D2V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
@@ -69,4 +70,4 @@ The M6 baseline now includes:
 - an install/package smoke test that installs the built tree, runs the installed CLI, builds a downstream `find_package(AuroraPIC CONFIG REQUIRED)` consumer, and inspects the generated `TGZ` package;
 - this documented performance envelope.
 
-The remaining hardening work is to add measured benchmark history, publish signed release artifacts, expand compiler/platform coverage, and implement deeper physics validation for electromagnetic fields and improved collision models when those features exist.
+The remaining hardening work is to add measured benchmark history, publish signed release artifacts, expand compiler/platform coverage, and implement deeper physics validation for electromagnetic fields plus multidimensional/reactive collision models.

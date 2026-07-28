@@ -46,8 +46,9 @@ def rewrite_output_dir(config_path: Path, temp_root: Path, output_name: str) -> 
     if not replaced:
         rewritten.append(f"output_dir = {output_dir.as_posix()}")
     copied_config.write_text("\n".join(rewritten) + "\n", encoding="utf-8")
-    for mesh_path in EXAMPLES.glob("*.msh"):
-        shutil.copy2(mesh_path, temp_root / mesh_path.name)
+    for pattern in ("*.msh", "*.dat"):
+        for support_path in EXAMPLES.glob(pattern):
+            shutil.copy2(support_path, temp_root / support_path.name)
     return copied_config, output_dir
 
 
@@ -212,6 +213,43 @@ def check_sheath_steady(output_dir: Path) -> None:
     require_file(output_dir / "fields_0.csv")
     require(any(path.name.startswith("fields_") and path.suffix == ".csv" for path in output_dir.iterdir()),
             f"steady sheath did not write field CSVs in {output_dir}")
+    require_csv(output_dir / "collisions.csv", min_rows=2)
+
+
+def check_mcc_relaxation(output_dir: Path) -> None:
+    scalar_header, scalar_rows = require_csv(
+        output_dir / "scalars.csv",
+        expected_header=[
+            "step", "time", "kinetic_energy", "field_energy",
+            "total_energy", "charge_l1", "live_particles",
+        ],
+        min_rows=6,
+    )
+    require_step(scalar_rows, 50, output_dir / "scalars.csv")
+    initial_energy = float(
+        scalar_rows[0][scalar_header.index("kinetic_energy")]
+    )
+    final_energy = float(
+        scalar_rows[-1][scalar_header.index("kinetic_energy")]
+    )
+    require(
+        final_energy < initial_energy,
+        "MCC excitation case did not reduce kinetic energy",
+    )
+    collision_header, collision_rows = require_csv(
+        output_dir / "collisions.csv", min_rows=6
+    )
+    require_step(collision_rows, 50, output_dir / "collisions.csv")
+    final = {
+        name: float(value)
+        for name, value in zip(collision_header, collision_rows[-1])
+    }
+    require(
+        final["cumulative_candidates"] > 0 and
+        final["cumulative_collisions_elastic"] > 0 and
+        final["cumulative_collisions_excitation"] > 0,
+        "MCC example did not exercise every configured channel",
+    )
 
 
 def check_plasma_2d(output_dir: Path) -> None:
@@ -359,6 +397,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
     checks = [
         ("two_stream.cfg", "two_stream", check_two_stream),
         ("sheath_steady.cfg", "sheath_steady", check_sheath_steady),
+        ("mcc_relaxation.cfg", "mcc_relaxation", check_mcc_relaxation),
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),

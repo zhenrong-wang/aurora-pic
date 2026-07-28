@@ -4,6 +4,7 @@
 #include "pic/Runtime.hpp"
 #include "pic/Units.hpp"
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -17,6 +18,7 @@ namespace pic {
 namespace {
 constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
 constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
+constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 
 void validate_runtime_config(const Config& cfg) {
     if (!std::isfinite(cfg.dt) || cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive and finite");
@@ -56,6 +58,86 @@ template <typename T>
 void require_stream(T& stream, const std::string& message) {
     if (!stream) throw std::runtime_error(message);
 }
+
+void add_collision_statistics(
+    CollisionDiagnostics& destination,
+    const CollisionStepStatistics& source) {
+    destination.candidates += source.candidates;
+    destination.null_collisions += source.null_collisions;
+    if (destination.channel_collisions.size() !=
+        source.channel_collisions.size()) {
+        throw std::logic_error("collision diagnostic channel mismatch");
+    }
+    for (std::size_t channel = 0;
+         channel < source.channel_collisions.size(); ++channel) {
+        destination.channel_collisions[channel] +=
+            source.channel_collisions[channel];
+    }
+}
+
+void clear_collision_counts(CollisionDiagnostics& diagnostics) {
+    diagnostics.candidates = 0;
+    diagnostics.null_collisions = 0;
+    std::fill(
+        diagnostics.channel_collisions.begin(),
+        diagnostics.channel_collisions.end(), 0);
+}
+
+void write_collision_header(
+    std::ofstream& output,
+    const CollisionDiagnostics& diagnostics) {
+    output << "step,time,candidates,null_collisions";
+    for (const auto& name : diagnostics.channel_names) {
+        output << ",collisions_" << name;
+    }
+    output << ",cumulative_candidates,cumulative_null_collisions";
+    for (const auto& name : diagnostics.channel_names) {
+        output << ",cumulative_collisions_" << name;
+    }
+    output << '\n';
+}
+
+void write_collision_sample(
+    std::ofstream& output,
+    std::size_t step,
+    double time,
+    const CollisionDiagnostics& interval,
+    const CollisionDiagnostics& totals) {
+    output << step << ',' << std::setprecision(17) << time << ','
+           << interval.candidates << ',' << interval.null_collisions;
+    for (const auto count : interval.channel_collisions) {
+        output << ',' << count;
+    }
+    output << ',' << totals.candidates << ','
+           << totals.null_collisions;
+    for (const auto count : totals.channel_collisions) {
+        output << ',' << count;
+    }
+    output << '\n';
+    output.flush();
+}
+
+std::uint64_t collision_signature(
+    const Config& config,
+    const NullCollisionModel* model) {
+    if (!config.collisions.enabled) return 0;
+    if (model) return model->signature();
+    constexpr std::uint64_t offset = 1469598103934665603ULL;
+    constexpr std::uint64_t prime = 1099511628211ULL;
+    std::uint64_t hash = offset;
+    const auto append = [&](std::uint64_t value) {
+        for (unsigned byte = 0; byte < 8; ++byte) {
+            hash ^= static_cast<unsigned char>(
+                value >> (byte * 8));
+            hash *= prime;
+        }
+    };
+    append(std::bit_cast<std::uint64_t>(
+        config.collisions.frequency));
+    append(std::bit_cast<std::uint64_t>(
+        config.collisions.neutral_temperature_velocity));
+    return hash;
+}
 } // namespace
 
 Simulation::Simulation(Config cfg)
@@ -66,6 +148,35 @@ Simulation::Simulation(Config cfg)
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     validate_runtime_config(cfg_);
     for (const auto& sc : cfg_.species) species_.emplace_back(sc);
+    if (cfg_.collisions.enabled) {
+        if (cfg_.collisions.model ==
+            CollisionModelKind::NullCollision) {
+            const auto target = std::find_if(
+                species_.begin(), species_.end(),
+                [&](const Species& species) {
+                    return species.name() == cfg_.collisions.species;
+                });
+            if (target == species_.end()) {
+                throw std::invalid_argument(
+                    "MCC target species does not exist: " +
+                    cfg_.collisions.species);
+            }
+            mcc_species_id_ =
+                static_cast<std::size_t>(target - species_.begin());
+            mcc_model_ = std::make_unique<NullCollisionModel>(
+                cfg_.collisions, target->mass());
+            collision_totals_.channel_names =
+                mcc_model_->channel_names();
+        } else {
+            collision_totals_.channel_names = {"bgk"};
+        }
+        collision_totals_.channel_collisions.assign(
+            collision_totals_.channel_names.size(), 0);
+        collision_interval_.channel_names =
+            collision_totals_.channel_names;
+        collision_interval_.channel_collisions.assign(
+            collision_totals_.channel_names.size(), 0);
+    }
 }
 
 void Simulation::deposit_and_solve() {
@@ -90,8 +201,28 @@ void Simulation::initialize() {
     initialized_ = true;
 }
 
-void Simulation::apply_collisions(Species& sp) {
-    if (!cfg_.collisions.enabled || cfg_.collisions.frequency <= 0.0) return;
+void Simulation::apply_collisions(
+    Species& sp, std::size_t species_id) {
+    if (!cfg_.collisions.enabled) return;
+    if (cfg_.collisions.model ==
+        CollisionModelKind::NullCollision) {
+        if (species_id != mcc_species_id_) return;
+        const double qm = sp.charge() / sp.mass();
+        for (auto& part : sp.particles()) {
+            if (!part.alive) continue;
+            const auto statistics =
+                mcc_model_->collide(part.v, cfg_.dt, rng_);
+            add_collision_statistics(
+                collision_totals_, statistics);
+            add_collision_statistics(
+                collision_interval_, statistics);
+            initialize_leapfrog_half_step(
+                part, interpolate_electric(grid_, part.x), qm,
+                cfg_.dt);
+        }
+        return;
+    }
+    if (cfg_.collisions.frequency <= 0.0) return;
     const double p = 1.0 - std::exp(-cfg_.collisions.frequency * cfg_.dt);
     const double qm = sp.charge() / sp.mass();
     std::uniform_real_distribution<double> u(0.0, 1.0);
@@ -99,13 +230,19 @@ void Simulation::apply_collisions(Species& sp) {
     for (auto& part : sp.particles()) {
         if (!part.alive || u(rng_) >= p) continue;
         part.v = nv(rng_);
+        ++collision_totals_.candidates;
+        ++collision_totals_.channel_collisions[0];
+        ++collision_interval_.candidates;
+        ++collision_interval_.channel_collisions[0];
         initialize_leapfrog_half_step(part, interpolate_electric(grid_, part.x), qm, cfg_.dt);
     }
 }
 
 void Simulation::step() {
     if (!initialized_) initialize();
-    for (auto& sp : species_) {
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
         auto& particles = sp.particles();
         runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
@@ -121,14 +258,16 @@ void Simulation::step() {
         });
     }
     deposit_and_solve();
-    for (auto& sp : species_) {
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
         auto& particles = sp.particles();
         runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
             auto& p = particles[particle_id];
             if (p.alive) synchronize_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
         });
-        apply_collisions(sp);
+        apply_collisions(sp, species_id);
     }
     ++step_;
     time_ += cfg_.dt;
@@ -158,11 +297,24 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV2 << '\n';
+    out << kCheckpointMagicV3 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
         << cfg_.units.permittivity() << "\n";
+    const std::uint64_t configured_collision_signature =
+        pic::collision_signature(cfg_, mcc_model_.get());
+    out << "collision_model "
+        << to_string(cfg_.collisions.model) << ' '
+        << (cfg_.collisions.enabled ? 1 : 0) << ' '
+        << configured_collision_signature << "\n";
+    out << "collision_totals " << collision_totals_.candidates
+        << ' ' << collision_totals_.null_collisions << ' '
+        << collision_totals_.channel_collisions.size();
+    for (const auto count : collision_totals_.channel_collisions) {
+        out << ' ' << count;
+    }
+    out << "\n";
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -184,7 +336,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     std::getline(in, magic);
     const bool checkpoint_v1 = magic == kCheckpointMagicV1;
     const bool checkpoint_v2 = magic == kCheckpointMagicV2;
-    if (!checkpoint_v1 && !checkpoint_v2) {
+    const bool checkpoint_v3 = magic == kCheckpointMagicV3;
+    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -198,7 +351,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
-        if (!checkpoint_v2 ||
+        if ((!checkpoint_v2 && !checkpoint_v3) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -206,11 +359,47 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                 "checkpoint unit system does not match 1D config");
         }
         in >> key;
-    } else if (checkpoint_v2 ||
+    } else if (checkpoint_v2 || checkpoint_v3 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
             "legacy checkpoint without unit metadata requires normalized units");
+    }
+    if (key == "collision_model") {
+        std::string model;
+        int enabled = 0;
+        std::uint64_t signature = 0;
+        in >> model >> enabled >> signature;
+        const std::uint64_t expected_signature =
+            pic::collision_signature(cfg_, mcc_model_.get());
+        if (!checkpoint_v3 ||
+            model != to_string(cfg_.collisions.model) ||
+            enabled != (cfg_.collisions.enabled ? 1 : 0) ||
+            signature != expected_signature) {
+            throw std::runtime_error(
+                "checkpoint collision model does not match 1D config");
+        }
+        std::size_t channel_count = 0;
+        in >> key >> collision_totals_.candidates
+           >> collision_totals_.null_collisions >> channel_count;
+        if (key != "collision_totals" ||
+            channel_count !=
+                collision_totals_.channel_collisions.size()) {
+            throw std::runtime_error(
+                "checkpoint collision diagnostics do not match 1D config");
+        }
+        for (auto& count : collision_totals_.channel_collisions) {
+            in >> count;
+        }
+        clear_collision_counts(collision_interval_);
+        in >> key;
+    } else if (checkpoint_v3 ||
+               (cfg_.collisions.enabled &&
+                cfg_.collisions.model ==
+                    CollisionModelKind::NullCollision)) {
+        throw std::runtime_error(
+            "legacy checkpoint without MCC metadata cannot restart "
+            "null-collision MCC");
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
@@ -254,6 +443,22 @@ RunSummary Simulation::run() {
     auto s0 = diag.sample(step_, time_, grid_, species_);
     diag.write_sample(s0);
     diag.write_fields(step_, grid_);
+    std::ofstream collision_output;
+    if (cfg_.collisions.enabled) {
+        collision_output.open(
+            std::filesystem::path(cfg_.output_dir) /
+            "collisions.csv");
+        if (!collision_output) {
+            throw std::runtime_error(
+                "cannot open collision diagnostics output");
+        }
+        write_collision_header(
+            collision_output, collision_totals_);
+        write_collision_sample(
+            collision_output, step_, time_,
+            collision_interval_, collision_totals_);
+        clear_collision_counts(collision_interval_);
+    }
     if (cfg_.checkpoint_output) save_checkpoint(checkpoint_path_for_step(cfg_, step_));
 
     const std::size_t limit = cfg_.mode == RunMode::SteadyState ? cfg_.max_steps : cfg_.steps;
@@ -267,6 +472,12 @@ RunSummary Simulation::run() {
             auto s = diag.sample(step_, time_, grid_, species_);
             diag.write_sample(s);
             diag.write_fields(step_, grid_);
+            if (cfg_.collisions.enabled) {
+                write_collision_sample(
+                    collision_output, step_, time_,
+                    collision_interval_, collision_totals_);
+                clear_collision_counts(collision_interval_);
+            }
             summary.final_sample = s;
             reached_steady = cfg_.mode == RunMode::SteadyState &&
                              adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);

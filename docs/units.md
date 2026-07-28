@@ -49,6 +49,9 @@ Inputs have these meanings:
 | species charge | C |
 | species mass | kg |
 | collision frequency | 1/s |
+| MCC neutral density | particles/m³ |
+| MCC cross section | m² |
+| MCC table and threshold energy | J |
 | 3D number density | particles/m³ |
 
 `thermal_velocity` is a velocity-distribution standard deviation, not a
@@ -80,10 +83,10 @@ Each run writes `units.txt` beside `scalars.csv`. It records the unit system,
 relative and effective permittivity, spatial dimension, and the dimensional
 basis of macro-particle weight and energy.
 
-Structured checkpoint v2 and imported checkpoint v4 record and validate the
-unit contract. Historical structured v1 and imported v1–v3 checkpoints remain
-readable only with normalized units and `relative_permittivity = 1`, because
-those formats contain no unit metadata.
+Current 1D checkpoint v3, 2D/3D structured checkpoint v2, and imported
+checkpoint v4 record and validate the unit contract. Historical structured v1
+and imported v1–v3 checkpoints remain readable only with normalized units and
+`relative_permittivity = 1`, because those formats contain no unit metadata.
 
 ## Current limitations
 

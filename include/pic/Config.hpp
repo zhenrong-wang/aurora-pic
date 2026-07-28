@@ -2,6 +2,7 @@
 #include "pic/Runtime.hpp"
 #include "pic/Types.hpp"
 #include <cstddef>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -22,10 +23,44 @@ struct SpeciesConfig {
     double init_x_max{-1.0}; // negative means full domain
 };
 
+enum class CollisionModelKind { BGK, NullCollision };
+enum class CollisionProcessKind { Elastic, Excitation };
+
+inline std::string to_string(CollisionModelKind model) {
+    switch (model) {
+        case CollisionModelKind::BGK: return "bgk";
+        case CollisionModelKind::NullCollision: return "null_collision";
+    }
+    return "unknown";
+}
+
+inline std::string to_string(CollisionProcessKind process) {
+    switch (process) {
+        case CollisionProcessKind::Elastic: return "elastic";
+        case CollisionProcessKind::Excitation: return "excitation";
+    }
+    return "unknown";
+}
+
+struct CollisionChannelConfig {
+    std::string name{};
+    CollisionProcessKind process{CollisionProcessKind::Elastic};
+    std::filesystem::path cross_section_file{};
+    double threshold_energy{0.0};
+    double energy_scale{1.0};
+    double cross_section_scale{1.0};
+};
+
 struct CollisionConfig {
     bool enabled{false};
+    CollisionModelKind model{CollisionModelKind::BGK};
     double frequency{0.0};
     double neutral_temperature_velocity{0.0};
+    double neutral_density{0.0};
+    std::string species{};
+    double max_frequency{0.0};
+    std::size_t max_candidates_per_particle{64};
+    std::vector<CollisionChannelConfig> channels{};
 };
 
 struct Config {

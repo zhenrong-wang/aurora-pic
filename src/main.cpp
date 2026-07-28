@@ -89,7 +89,12 @@ int main(int argc, char** argv) {
                   << " mode=" << pic::to_string(cfg.mode)
                   << " units=" << pic::to_string(cfg.units.system)
                   << " permittivity=" << cfg.units.permittivity()
-                  << " boundary=" << pic::to_string(cfg.boundary) << "\n";
+                  << " boundary=" << pic::to_string(cfg.boundary)
+                  << " collisions="
+                  << (cfg.collisions.enabled
+                          ? pic::to_string(cfg.collisions.model)
+                          : "off")
+                  << "\n";
         pic::Simulation sim(std::move(cfg));
         auto summary = sim.run();
         std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time

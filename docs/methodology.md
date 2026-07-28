@@ -37,7 +37,16 @@ Imported-mesh quality reporting computes cell-area and edge-length extrema, the 
 
 ## Collisions
 
-Optional Monte-Carlo BGK-like velocity reset collisions model scattering against a prescribed neutral bath. The collision probability is `1 - exp(-nu dt)`.
+The historical optional BGK velocity-reset model remains available for
+compatibility. The tabulated 1D MCC path evaluates
+`nu_i(E) = neutral_density * sigma_i(E) * abs(v)` and uses exponential
+null-collision candidate times with a strictly enforced user-supplied maximum
+frequency. Elastic events conserve particle kinetic energy; excitation events
+remove a configured threshold energy. Both randomize the sign of the 1D
+velocity. Named interval/cumulative counts are written to `collisions.csv`,
+and 1D checkpoint v3 fingerprints the effective tables and preserves the
+counters. See `docs/collisions.md` for the table, scaling, and limitation
+contract.
 
 ## Stability guidance
 

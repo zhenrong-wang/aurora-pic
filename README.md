@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, structured `2D2V`, and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline also provides optional Monte-Carlo collisions. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, structured `2D2V`, and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
 
 ## Why this methodology
 
@@ -11,6 +11,8 @@ For the recommended multidimensional expansion strategy, geometry/mesh format ch
 The first end-to-end nontrivial geometry case is documented in [`docs/real-case-validation.md`](docs/real-case-validation.md). It includes a Gmsh-authored chamber with an internal circular biased probe, a committed regenerable mesh, mesh-quality gates, tagged-boundary physics, and a deterministic simulation acceptance envelope. It is an integration-grade real geometry case, not yet an experimentally validated device model.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI reduced-dimensional runs report per-unit omitted measure (`J/m²` in 1D and `J/m` in planar 2D).
+
+The collision contract is defined in [`docs/collisions.md`](docs/collisions.md). The cross-section MCC path uses strict two-column tables, relative path resolution, explicit column scales, conservative maximum-frequency enforcement, named-channel diagnostics, and restart fingerprints. Its committed data are synthetic validation inputs, not material data.
 
 ## Production milestone baseline
 
@@ -150,9 +152,16 @@ thermal_velocity = 0.1
 
 [collisions]
 enabled = false
+model = bgk
 frequency = 0.0
 neutral_temperature_velocity = 0.0
 ```
+
+For tabulated MCC, select `model = null_collision`, name the target `species`,
+set `neutral_density` and a conservative `max_frequency`, then add one or more
+`[collision.<name>]` elastic/excitation sections. See
+[`examples/mcc_relaxation.cfg`](examples/mcc_relaxation.cfg) and the collision
+contract for the complete format.
 
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
 
@@ -261,7 +270,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. Structured checkpoint v2 and imported checkpoint v4 record and validate unit metadata. Imported v4 also records source and emission configuration, cumulative injection/emission counts, and boundary-flux accumulators. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; physical flux history begins at zero when loading imported v1 or v2. Loading validates unit/source/emission/species metadata and bounded dynamic particle counts before recomputing fields.
+All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v3 format also fingerprints collision inputs and preserves collision counters; 2D/3D structured v2 and imported v4 record unit metadata. Imported v4 records source and emission configuration, cumulative injection/emission counts, and boundary-flux accumulators. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2. Loading validates unit/collision/source/emission/species metadata and bounded dynamic particle counts before recomputing fields.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.
@@ -304,10 +313,10 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 - 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
 - Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
 
-The parser is intentionally strict: unsupported `config_version` values, unknown sections/keys, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+The parser is intentionally strict: unsupported `config_version` values, unknown sections/keys, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
 
 ## Performance and validation envelope
 
 The verified smoke/performance envelope is documented in `docs/performance-envelope.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. In short, the checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. They do not prove convergence for arbitrary plasma regimes. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, simplified collision model, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, MCC is limited to stationary-neutral 1D elastic/excitation channels without ionization or physical 3D scattering, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.

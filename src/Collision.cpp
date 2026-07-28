@@ -1,0 +1,320 @@
+#include "pic/Collision.hpp"
+
+#include <algorithm>
+#include <bit>
+#include <cctype>
+#include <cmath>
+#include <fstream>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+
+namespace pic {
+namespace {
+
+void hash_bytes(std::uint64_t& hash, const void* data, std::size_t size) {
+    constexpr std::uint64_t prime = 1099511628211ULL;
+    const auto* bytes = static_cast<const unsigned char*>(data);
+    for (std::size_t i = 0; i < size; ++i) {
+        hash ^= bytes[i];
+        hash *= prime;
+    }
+}
+
+void hash_string(std::uint64_t& hash, const std::string& value) {
+    hash_bytes(hash, value.data(), value.size());
+    const unsigned char separator = 0xff;
+    hash_bytes(hash, &separator, 1);
+}
+
+void hash_uint64(std::uint64_t& hash, std::uint64_t value) {
+    unsigned char bytes[8]{};
+    for (unsigned byte = 0; byte < 8; ++byte) {
+        bytes[byte] =
+            static_cast<unsigned char>(value >> (byte * 8));
+    }
+    hash_bytes(hash, bytes, sizeof(bytes));
+}
+
+void hash_double(std::uint64_t& hash, double value) {
+    hash_uint64(hash, std::bit_cast<std::uint64_t>(value));
+}
+
+double open_unit_interval(std::mt19937_64& rng) {
+    std::uniform_real_distribution<double> unit(0.0, 1.0);
+    double value = unit(rng);
+    while (!(value > 0.0)) value = unit(rng);
+    return value;
+}
+
+} // namespace
+
+CrossSectionTable::CrossSectionTable(
+    const std::filesystem::path& path,
+    double energy_scale,
+    double cross_section_scale) {
+    if (!std::isfinite(energy_scale) || !(energy_scale > 0.0)) {
+        throw std::invalid_argument(
+            "collision cross-section energy_scale must be positive and finite");
+    }
+    if (!std::isfinite(cross_section_scale) ||
+        !(cross_section_scale > 0.0)) {
+        throw std::invalid_argument(
+            "collision cross_section_scale must be positive and finite");
+    }
+    std::ifstream input(path);
+    if (!input) {
+        throw std::runtime_error(
+            "cannot open collision cross-section table: " + path.string());
+    }
+    std::string line;
+    std::size_t line_number = 0;
+    while (std::getline(input, line)) {
+        ++line_number;
+        const auto comment = line.find_first_of("#;");
+        if (comment != std::string::npos) line.resize(comment);
+        std::istringstream row(line);
+        double energy = 0.0;
+        double cross_section = 0.0;
+        if (!(row >> energy)) continue;
+        if (!(row >> cross_section)) {
+            throw std::runtime_error(
+                "collision table " + path.string() + ":" +
+                std::to_string(line_number) +
+                " must contain energy and cross section");
+        }
+        std::string trailing;
+        if (row >> trailing) {
+            throw std::runtime_error(
+                "collision table " + path.string() + ":" +
+                std::to_string(line_number) +
+                " has trailing columns");
+        }
+        energy *= energy_scale;
+        cross_section *= cross_section_scale;
+        if (!std::isfinite(energy) || energy < 0.0 ||
+            !std::isfinite(cross_section) || cross_section < 0.0) {
+            throw std::runtime_error(
+                "collision table values must be finite and non-negative");
+        }
+        if (!energies_.empty() && !(energy > energies_.back())) {
+            throw std::runtime_error(
+                "collision table energies must be strictly increasing");
+        }
+        energies_.push_back(energy);
+        cross_sections_.push_back(cross_section);
+    }
+    if (energies_.size() < 2) {
+        throw std::runtime_error(
+            "collision cross-section table requires at least two rows: " +
+            path.string());
+    }
+}
+
+double CrossSectionTable::evaluate(double energy) const {
+    if (!std::isfinite(energy) || energy < 0.0) {
+        throw std::invalid_argument(
+            "collision lookup energy must be finite and non-negative");
+    }
+    if (energy <= energies_.front()) return cross_sections_.front();
+    if (energy >= energies_.back()) return cross_sections_.back();
+    const auto upper =
+        std::upper_bound(energies_.begin(), energies_.end(), energy);
+    const std::size_t high =
+        static_cast<std::size_t>(upper - energies_.begin());
+    const std::size_t low = high - 1;
+    const double fraction =
+        (energy - energies_[low]) / (energies_[high] - energies_[low]);
+    return cross_sections_[low] +
+           fraction * (cross_sections_[high] - cross_sections_[low]);
+}
+
+NullCollisionModel::NullCollisionModel(
+    CollisionConfig config,
+    double particle_mass)
+    : config_(std::move(config)),
+      particle_mass_(particle_mass) {
+    if (!std::isfinite(particle_mass_) || !(particle_mass_ > 0.0)) {
+        throw std::invalid_argument(
+            "MCC particle mass must be positive and finite");
+    }
+    if (!std::isfinite(config_.neutral_density) ||
+        !(config_.neutral_density > 0.0)) {
+        throw std::invalid_argument(
+            "MCC neutral_density must be positive and finite");
+    }
+    if (!std::isfinite(config_.max_frequency) ||
+        !(config_.max_frequency > 0.0)) {
+        throw std::invalid_argument(
+            "MCC max_frequency must be positive and finite");
+    }
+    if (config_.max_candidates_per_particle == 0) {
+        throw std::invalid_argument(
+            "MCC max_candidates_per_particle must be positive");
+    }
+    if (config_.channels.empty()) {
+        throw std::invalid_argument(
+            "MCC requires at least one collision channel");
+    }
+
+    constexpr std::uint64_t fnv_offset = 1469598103934665603ULL;
+    signature_ = fnv_offset;
+    hash_string(signature_, to_string(config_.model));
+    hash_string(signature_, config_.species);
+    hash_double(signature_, config_.neutral_density);
+    hash_double(signature_, config_.max_frequency);
+    hash_double(signature_, particle_mass_);
+    const std::uint64_t candidate_limit =
+        config_.max_candidates_per_particle;
+    hash_uint64(signature_, candidate_limit);
+    for (const auto& channel_config : config_.channels) {
+        if (channel_config.name.empty()) {
+            throw std::invalid_argument(
+                "MCC collision channel name must not be empty");
+        }
+        if (!std::all_of(
+                channel_config.name.begin(),
+                channel_config.name.end(),
+                [](unsigned char character) {
+                    return std::isalnum(character) ||
+                           character == '_' || character == '-' ||
+                           character == '.';
+                })) {
+            throw std::invalid_argument(
+                "MCC collision channel names may contain only letters, "
+                "digits, '_', '-', and '.'");
+        }
+        if (!std::isfinite(channel_config.threshold_energy) ||
+            channel_config.threshold_energy < 0.0) {
+            throw std::invalid_argument(
+                "MCC threshold_energy must be finite and non-negative");
+        }
+        if (channel_config.process == CollisionProcessKind::Elastic &&
+            channel_config.threshold_energy != 0.0) {
+            throw std::invalid_argument(
+                "elastic MCC channel threshold_energy must be zero");
+        }
+        if (channel_config.process == CollisionProcessKind::Excitation &&
+            !(channel_config.threshold_energy > 0.0)) {
+            throw std::invalid_argument(
+                "excitation MCC channel threshold_energy must be positive");
+        }
+        if (std::find(channel_names_.begin(), channel_names_.end(),
+                      channel_config.name) != channel_names_.end()) {
+            throw std::invalid_argument(
+                "duplicate MCC collision channel name: " +
+                channel_config.name);
+        }
+        channels_.emplace_back(channel_config);
+        channel_names_.push_back(channel_config.name);
+        hash_string(signature_, channel_config.name);
+        hash_string(signature_, to_string(channel_config.process));
+        hash_double(signature_, channel_config.threshold_energy);
+        for (std::size_t i = 0;
+             i < channels_.back().table.energies().size(); ++i) {
+            hash_double(signature_, channels_.back().table.energies()[i]);
+            hash_double(
+                signature_, channels_.back().table.cross_sections()[i]);
+        }
+    }
+}
+
+std::vector<double> NullCollisionModel::rates(double velocity) const {
+    if (!std::isfinite(velocity)) {
+        throw std::invalid_argument("MCC particle velocity must be finite");
+    }
+    const double speed = std::abs(velocity);
+    const double energy = 0.5 * particle_mass_ * speed * speed;
+    if (!std::isfinite(energy)) {
+        throw std::overflow_error("MCC particle energy overflow");
+    }
+    std::vector<double> result;
+    result.reserve(channels_.size());
+    double total = 0.0;
+    for (const auto& channel : channels_) {
+        double rate = 0.0;
+        if (energy >= channel.config.threshold_energy) {
+            rate = config_.neutral_density *
+                   channel.table.evaluate(energy) * speed;
+        }
+        if (!std::isfinite(rate) || rate < 0.0) {
+            throw std::overflow_error("MCC collision rate overflow");
+        }
+        result.push_back(rate);
+        total += rate;
+    }
+    const double tolerance =
+        64.0 * std::numeric_limits<double>::epsilon() *
+        std::max(config_.max_frequency, total);
+    if (total > config_.max_frequency + tolerance) {
+        throw std::runtime_error(
+            "MCC total collision frequency exceeds configured max_frequency");
+    }
+    return result;
+}
+
+void NullCollisionModel::apply_channel(
+    std::size_t channel_index,
+    double& velocity,
+    std::mt19937_64& rng) const {
+    const auto& channel = channels_.at(channel_index);
+    double energy = 0.5 * particle_mass_ * velocity * velocity;
+    if (channel.config.process == CollisionProcessKind::Excitation) {
+        energy = std::max(
+            0.0, energy - channel.config.threshold_energy);
+    }
+    const double speed = std::sqrt(2.0 * energy / particle_mass_);
+    std::uniform_int_distribution<int> direction(0, 1);
+    velocity = direction(rng) == 0 ? -speed : speed;
+}
+
+CollisionStepStatistics NullCollisionModel::collide(
+    double& velocity,
+    double timestep,
+    std::mt19937_64& rng) const {
+    if (!std::isfinite(timestep) || !(timestep > 0.0)) {
+        throw std::invalid_argument(
+            "MCC timestep must be positive and finite");
+    }
+    CollisionStepStatistics statistics;
+    statistics.channel_collisions.assign(channels_.size(), 0);
+    (void)rates(velocity);
+    double elapsed = 0.0;
+    while (true) {
+        const double waiting_time =
+            -std::log(open_unit_interval(rng)) / config_.max_frequency;
+        if (!std::isfinite(waiting_time) ||
+            waiting_time >= timestep - elapsed) {
+            break;
+        }
+        elapsed += waiting_time;
+        ++statistics.candidates;
+        if (statistics.candidates >
+            config_.max_candidates_per_particle) {
+            throw std::runtime_error(
+                "MCC candidate limit exceeded; reduce dt or increase "
+                "max_candidates_per_particle");
+        }
+        const auto channel_rates = rates(velocity);
+        const double selection =
+            std::generate_canonical<double, 64>(rng) *
+            config_.max_frequency;
+        double cumulative = 0.0;
+        bool accepted = false;
+        for (std::size_t channel = 0;
+             channel < channel_rates.size(); ++channel) {
+            cumulative += channel_rates[channel];
+            if (selection < cumulative) {
+                apply_channel(channel, velocity, rng);
+                ++statistics.channel_collisions[channel];
+                accepted = true;
+                break;
+            }
+        }
+        if (!accepted) ++statistics.null_collisions;
+    }
+    return statistics;
+}
+
+} // namespace pic

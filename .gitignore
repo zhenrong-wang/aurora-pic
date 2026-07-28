@@ -18,6 +18,7 @@ test_output_*/
 *.apc
 *.csv
 *.dat
+!examples/*.dat
 *.log
 
 # Local editor/OS files

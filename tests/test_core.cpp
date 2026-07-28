@@ -1,3 +1,4 @@
+#include "pic/Collision.hpp"
 #include "pic/Config.hpp"
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
@@ -266,6 +267,194 @@ int main() {
             require_throws(
                 []() { (void)pic::FieldSolver(0.0); },
                 "field solver accepted zero permittivity");
+        }
+        {
+            const auto table_path =
+                std::filesystem::path("test_cross_section_table.dat");
+            {
+                std::ofstream table(table_path);
+                table << "# energy cross_section\n"
+                      << "0 0\n"
+                      << "1 0.5\n"
+                      << "2 1\n";
+            }
+            pic::CrossSectionTable table(table_path);
+            require_near(
+                table.evaluate(0.5), 0.25, 1e-15,
+                "cross-section interpolation is incorrect");
+            require_near(
+                table.evaluate(3.0), 1.0, 1e-15,
+                "cross-section upper endpoint behavior changed");
+            pic::CrossSectionTable scaled_table(
+                table_path, 2.0, 3.0);
+            require_near(
+                scaled_table.evaluate(1.0), 0.75, 1e-15,
+                "cross-section column scaling is incorrect");
+            const auto malformed_path =
+                std::filesystem::path(
+                    "test_cross_section_table_malformed.dat");
+            {
+                std::ofstream malformed(malformed_path);
+                malformed << "0 0.1\n0 0.2\n";
+            }
+            require_throws(
+                [&] {
+                    (void)pic::CrossSectionTable(malformed_path);
+                },
+                "cross-section table accepted duplicate energies");
+            std::filesystem::remove(malformed_path);
+
+            pic::CollisionConfig elastic_config;
+            elastic_config.enabled = true;
+            elastic_config.model =
+                pic::CollisionModelKind::NullCollision;
+            elastic_config.neutral_density = 1.0;
+            elastic_config.species = "test";
+            elastic_config.max_frequency = 2.0;
+            elastic_config.channels = {
+                pic::CollisionChannelConfig{
+                    "elastic",
+                    pic::CollisionProcessKind::Elastic,
+                    table_path, 0.0, 1.0, 1.0}};
+            pic::NullCollisionModel elastic(elastic_config, 1.0);
+            std::mt19937_64 rng(8128);
+            std::uint64_t candidates = 0;
+            std::uint64_t accepted = 0;
+            for (std::size_t sample = 0; sample < 10000; ++sample) {
+                double velocity = std::sqrt(2.0);
+                const auto stats =
+                    elastic.collide(velocity, 0.1, rng);
+                candidates += stats.candidates;
+                accepted += stats.channel_collisions[0];
+                require_near(
+                    std::abs(velocity), std::sqrt(2.0), 1e-14,
+                    "elastic MCC did not preserve particle energy");
+            }
+            require(
+                candidates > 1800 && candidates < 2200,
+                "null-collision candidate rate left its statistical envelope");
+            require(
+                accepted > 620 && accepted < 800,
+                "elastic collision acceptance left its statistical envelope");
+
+            auto excitation_config = elastic_config;
+            excitation_config.max_frequency = 4.0;
+            excitation_config.channels = {
+                pic::CollisionChannelConfig{
+                    "excitation",
+                    pic::CollisionProcessKind::Excitation,
+                    table_path, 0.5, 1.0, 2.0}};
+            pic::NullCollisionModel excitation(
+                excitation_config, 1.0);
+            double excited_velocity = 2.0;
+            const double initial_energy =
+                0.5 * excited_velocity * excited_velocity;
+            const auto excitation_stats =
+                excitation.collide(excited_velocity, 2.0, rng);
+            require(
+                excitation_stats.channel_collisions[0] > 0,
+                "excitation MCC did not accept a collision");
+            const double final_energy =
+                0.5 * excited_velocity * excited_velocity;
+            require_near(
+                initial_energy - final_energy,
+                0.5 * static_cast<double>(
+                          excitation_stats.channel_collisions[0]),
+                1e-13,
+                "excitation MCC removed the wrong threshold energy");
+
+            auto unsafe_config = elastic_config;
+            unsafe_config.max_frequency = 0.1;
+            pic::NullCollisionModel unsafe(unsafe_config, 1.0);
+            require_throws(
+                [&] {
+                    double velocity = std::sqrt(2.0);
+                    (void)unsafe.collide(velocity, 0.1, rng);
+                },
+                "MCC accepted a total rate above max_frequency");
+            std::filesystem::remove(table_path);
+        }
+        {
+            const auto table_path =
+                std::filesystem::absolute(
+                    "test_mcc_checkpoint_table.dat");
+            const auto output_dir =
+                std::filesystem::path("test_output_mcc_checkpoint");
+            const auto checkpoint_path =
+                output_dir / "manual.apc";
+            std::filesystem::remove_all(output_dir);
+            {
+                std::ofstream table(table_path);
+                table << "0 0.2\n10 0.2\n";
+            }
+
+            pic::Config config;
+            config.nx = 16;
+            config.length = 1.0;
+            config.dt = 0.02;
+            config.steps = 5;
+            config.output_interval = 5;
+            config.output_dir = output_dir.string();
+            config.seed = 441;
+            config.collisions.enabled = true;
+            config.collisions.model =
+                pic::CollisionModelKind::NullCollision;
+            config.collisions.species = "tracer";
+            config.collisions.neutral_density = 2.0;
+            config.collisions.max_frequency = 1.0;
+            config.collisions.channels = {
+                pic::CollisionChannelConfig{
+                    "elastic",
+                    pic::CollisionProcessKind::Elastic,
+                    table_path, 0.0, 1.0, 1.0}};
+            config.species = {
+                pic::SpeciesConfig{
+                    "tracer", 0.0, 1.0, 1.0, 128, 1.0,
+                    1.0, 0.05, 0.0, -1.0}};
+
+            pic::Simulation continuous(config);
+            continuous.initialize();
+            continuous.step();
+            continuous.step();
+            continuous.save_checkpoint(checkpoint_path);
+            for (std::size_t step = continuous.step_count();
+                 step < config.steps; ++step) {
+                continuous.step();
+            }
+
+            pic::Simulation restarted(config);
+            restarted.load_checkpoint(checkpoint_path);
+            for (std::size_t step = restarted.step_count();
+                 step < config.steps; ++step) {
+                restarted.step();
+            }
+            require_species_close(
+                continuous.species(), restarted.species(),
+                "MCC checkpoint restart determinism");
+            const auto& expected =
+                continuous.collision_diagnostics();
+            const auto& actual =
+                restarted.collision_diagnostics();
+            require(
+                expected.candidates == actual.candidates &&
+                    expected.null_collisions ==
+                        actual.null_collisions &&
+                    expected.channel_collisions ==
+                        actual.channel_collisions,
+                "MCC checkpoint did not preserve collision diagnostics");
+
+            {
+                std::ofstream changed_table(table_path);
+                changed_table << "0 0.1\n10 0.1\n";
+            }
+            require_throws(
+                [&] {
+                    pic::Simulation changed(config);
+                    changed.load_checkpoint(checkpoint_path);
+                },
+                "MCC checkpoint accepted changed cross-section data");
+            std::filesystem::remove_all(output_dir);
+            std::filesystem::remove(table_path);
         }
         {
             constexpr std::size_t nx = 16;

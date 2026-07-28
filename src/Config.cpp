@@ -157,6 +157,31 @@ RunMode parse_mode(const KeyValue& kv, RunMode def) {
     throw std::runtime_error("invalid mode value: '" + value + "'");
 }
 
+CollisionModelKind parse_collision_model(
+    const KeyValue& kv, CollisionModelKind def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "model", to_string(def))));
+    if (value == "bgk") return CollisionModelKind::BGK;
+    if (value == "null_collision" || value == "null-collision" ||
+        value == "mcc") {
+        return CollisionModelKind::NullCollision;
+    }
+    throw std::runtime_error(
+        "invalid collision model: '" + value +
+        "'; expected bgk or null_collision");
+}
+
+CollisionProcessKind parse_collision_process(
+    const KeyValue& kv, CollisionProcessKind def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "type", to_string(def))));
+    if (value == "elastic") return CollisionProcessKind::Elastic;
+    if (value == "excitation") return CollisionProcessKind::Excitation;
+    throw std::runtime_error(
+        "invalid collision channel type: '" + value +
+        "'; expected elastic or excitation");
+}
+
 UnitSystemConfig parse_units(
     const KeyValue& kv, const UnitSystemConfig& defaults) {
     UnitSystemConfig result = defaults;
@@ -213,6 +238,84 @@ void validate_config(const Config& cfg) {
     if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) throw std::runtime_error("max_steps must be positive for steady-state mode");
     validate_non_negative(cfg.collisions.frequency, "collision frequency");
     validate_non_negative(cfg.collisions.neutral_temperature_velocity, "neutral_temperature_velocity");
+    validate_non_negative(cfg.collisions.neutral_density, "neutral_density");
+    validate_non_negative(cfg.collisions.max_frequency, "max_frequency");
+    if (cfg.collisions.max_candidates_per_particle == 0) {
+        throw std::runtime_error(
+            "max_candidates_per_particle must be positive");
+    }
+    if (cfg.collisions.enabled &&
+        cfg.collisions.model == CollisionModelKind::NullCollision) {
+        validate_positive(cfg.collisions.neutral_density, "neutral_density");
+        validate_positive(cfg.collisions.max_frequency, "max_frequency");
+        if (cfg.collisions.species.empty()) {
+            throw std::runtime_error(
+                "null-collision MCC requires a target species");
+        }
+        if (cfg.collisions.channels.empty()) {
+            throw std::runtime_error(
+                "null-collision MCC requires at least one channel");
+        }
+        const auto target = std::find_if(
+            cfg.species.begin(), cfg.species.end(),
+            [&](const SpeciesConfig& species) {
+                return species.name == cfg.collisions.species;
+            });
+        if (target == cfg.species.end()) {
+            throw std::runtime_error(
+                "null-collision MCC target species does not exist: " +
+                cfg.collisions.species);
+        }
+    }
+    std::unordered_set<std::string> collision_channel_names;
+    for (const auto& channel : cfg.collisions.channels) {
+        if (channel.name.empty()) {
+            throw std::runtime_error(
+                "collision channel name must not be empty");
+        }
+        if (!std::all_of(
+                channel.name.begin(), channel.name.end(),
+                [](unsigned char character) {
+                    return std::isalnum(character) ||
+                           character == '_' || character == '-' ||
+                           character == '.';
+                })) {
+            throw std::runtime_error(
+                "collision channel names may contain only letters, "
+                "digits, '_', '-', and '.'");
+        }
+        if (!collision_channel_names.insert(channel.name).second) {
+            throw std::runtime_error(
+                "duplicate collision channel name: " + channel.name);
+        }
+        if (channel.cross_section_file.empty()) {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' requires cross_section_file");
+        }
+        validate_non_negative(
+            channel.threshold_energy,
+            "collision channel '" + channel.name + "' threshold_energy");
+        validate_positive(
+            channel.energy_scale,
+            "collision channel '" + channel.name + "' energy_scale");
+        validate_positive(
+            channel.cross_section_scale,
+            "collision channel '" + channel.name +
+                "' cross_section_scale");
+        if (channel.process == CollisionProcessKind::Elastic &&
+            channel.threshold_energy != 0.0) {
+            throw std::runtime_error(
+                "elastic collision channel '" + channel.name +
+                "' threshold_energy must be zero");
+        }
+        if (channel.process == CollisionProcessKind::Excitation &&
+            !(channel.threshold_energy > 0.0)) {
+            throw std::runtime_error(
+                "excitation collision channel '" + channel.name +
+                "' threshold_energy must be positive");
+        }
+    }
     validate_runtime_policy(cfg.runtime);
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("species name must not be empty");
@@ -323,6 +426,7 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
 struct ParsedBlocks {
     KeyValue global;
     KeyValue collisions;
+    std::vector<KeyValue> collision_channel_blocks;
     std::vector<KeyValue> species_blocks;
 };
 
@@ -330,6 +434,8 @@ ParsedBlocks parse_config_blocks(const std::string& path,
                                  const std::unordered_set<std::string>& global_keys,
                                  const std::unordered_set<std::string>& species_keys,
                                  const std::unordered_set<std::string>* collision_keys,
+                                 const std::unordered_set<std::string>*
+                                     collision_channel_keys,
                                  const std::string& loader_name) {
     std::ifstream in(path);
     if (!in) throw std::runtime_error("cannot open config: " + path);
@@ -351,6 +457,25 @@ ParsedBlocks parse_config_blocks(const std::string& path,
             if (collision_keys && section == "collisions") {
                 current = &blocks.collisions;
                 allowed = collision_keys;
+            } else if (collision_channel_keys &&
+                       (starts_with(section, "collision.") ||
+                        starts_with(section, "collision_channel."))) {
+                const std::string prefix =
+                    starts_with(section, "collision.")
+                        ? "collision."
+                        : "collision_channel.";
+                const std::string channel_name =
+                    trim(section.substr(prefix.size()));
+                if (channel_name.empty()) {
+                    throw config_error(
+                        line_number,
+                        "empty collision channel section suffix");
+                }
+                blocks.collision_channel_blocks.emplace_back();
+                current = &blocks.collision_channel_blocks.back();
+                allowed = collision_channel_keys;
+                assign_key(
+                    *current, "name", channel_name, line_number);
             } else if (section == "species" || starts_with(section, "species.")) {
                 blocks.species_blocks.emplace_back();
                 current = &blocks.species_blocks.back();
@@ -385,14 +510,22 @@ Config load_config(const std::string& path) {
         "units", "relative_permittivity"
     };
     static const std::unordered_set<std::string> collision_keys{
-        "enabled", "frequency", "neutral_temperature_velocity"
+        "enabled", "model", "frequency", "neutral_temperature_velocity",
+        "neutral_density", "species", "max_frequency",
+        "max_candidates_per_particle"
+    };
+    static const std::unordered_set<std::string> collision_channel_keys{
+        "name", "type", "cross_section_file", "threshold_energy",
+        "energy_scale", "cross_section_scale"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density", "drift_velocity",
         "thermal_velocity", "init_x_min", "init_x_max"
     };
 
-    auto blocks = parse_config_blocks(path, global_keys, species_keys, &collision_keys, "1D");
+    auto blocks = parse_config_blocks(
+        path, global_keys, species_keys, &collision_keys,
+        &collision_channel_keys, "1D");
     const auto& global = blocks.global;
     const auto& collision = blocks.collisions;
 
@@ -417,8 +550,25 @@ Config load_config(const std::string& path) {
     cfg.boundary = parse_boundary(global, cfg.boundary);
     cfg.mode = parse_mode(global, cfg.mode);
     cfg.collisions.enabled = parse_bool(collision, "enabled", cfg.collisions.enabled);
+    cfg.collisions.model =
+        parse_collision_model(collision, cfg.collisions.model);
     cfg.collisions.frequency = as<double>(collision, "frequency", cfg.collisions.frequency);
     cfg.collisions.neutral_temperature_velocity = as<double>(collision, "neutral_temperature_velocity", cfg.collisions.neutral_temperature_velocity);
+    cfg.collisions.neutral_density =
+        as<double>(
+            collision, "neutral_density",
+            cfg.collisions.neutral_density);
+    cfg.collisions.species =
+        as<std::string>(
+            collision, "species", cfg.collisions.species);
+    cfg.collisions.max_frequency =
+        as<double>(
+            collision, "max_frequency",
+            cfg.collisions.max_frequency);
+    cfg.collisions.max_candidates_per_particle =
+        as<std::size_t>(
+            collision, "max_candidates_per_particle",
+            cfg.collisions.max_candidates_per_particle);
     cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path);
@@ -447,6 +597,39 @@ Config load_config(const std::string& path) {
         cfg.species.push_back(s);
     }
     if (cfg.species.empty()) cfg.species.push_back(SpeciesConfig{});
+    cfg.collisions.channels.clear();
+    const auto config_directory =
+        std::filesystem::absolute(std::filesystem::path(path))
+            .parent_path();
+    for (const auto& block : blocks.collision_channel_blocks) {
+        CollisionChannelConfig channel;
+        channel.name =
+            as<std::string>(block, "name", channel.name);
+        channel.process =
+            parse_collision_process(block, channel.process);
+        const auto cross_section_file =
+            as<std::string>(block, "cross_section_file", "");
+        if (!cross_section_file.empty()) {
+            const std::filesystem::path configured(cross_section_file);
+            channel.cross_section_file =
+                (configured.is_absolute()
+                     ? configured
+                     : config_directory / configured)
+                    .lexically_normal();
+        }
+        channel.threshold_energy =
+            as<double>(
+                block, "threshold_energy",
+                channel.threshold_energy);
+        channel.energy_scale =
+            as<double>(
+                block, "energy_scale", channel.energy_scale);
+        channel.cross_section_scale =
+            as<double>(
+                block, "cross_section_scale",
+                channel.cross_section_scale);
+        cfg.collisions.channels.push_back(std::move(channel));
+    }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config(cfg);
     return cfg;
@@ -501,7 +684,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "init_y_min", "init_y_max"
     };
 
-    auto blocks = parse_config_blocks(path, global_keys, species_keys, nullptr, "2D");
+    auto blocks = parse_config_blocks(
+        path, global_keys, species_keys, nullptr, nullptr, "2D");
     const auto& global = blocks.global;
 
     (void)parse_config_version(global, "2D");
@@ -603,7 +787,8 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "init_y_min", "init_y_max", "init_z_min", "init_z_max"
     };
 
-    auto blocks = parse_config_blocks(path, global_keys, species_keys, nullptr, "3D");
+    auto blocks = parse_config_blocks(
+        path, global_keys, species_keys, nullptr, nullptr, "3D");
     const auto& global = blocks.global;
 
     (void)parse_config_version(global, "3D");
