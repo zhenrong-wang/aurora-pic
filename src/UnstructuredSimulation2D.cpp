@@ -394,6 +394,19 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
             }
             region_triangles.push_back(
                 {sampling_triangles_.size() - 1, region_area});
+            auto bounds = region_sampling_bounds_.try_emplace(
+                cell.label,
+                std::pair<Vec2, Vec2>{first, first}).first;
+            for (const Vec2 vertex : {first, second, third}) {
+                bounds->second.first.x =
+                    std::min(bounds->second.first.x, vertex.x);
+                bounds->second.first.y =
+                    std::min(bounds->second.first.y, vertex.y);
+                bounds->second.second.x =
+                    std::max(bounds->second.second.x, vertex.x);
+                bounds->second.second.y =
+                    std::max(bounds->second.second.y, vertex.y);
+            }
         };
         append_triangle(position(0), position(1), position(2));
         if (cell.shape == ImportedCellShape2D::Quadrilateral) {
@@ -447,6 +460,10 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         validate_particle_initialization(
             species_config.initialization, 3,
             species_config.thermal_velocity,
+            "unstructured species '" + species_config.name + "'");
+        validate_density_profile(
+            species_config.initialization, 2,
+            species_config.particles,
             "unstructured species '" + species_config.name + "'");
         species_configs_.push_back(species_config);
         species_.emplace_back(particle_storage_config(species_config));
@@ -704,7 +721,8 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
 Vec2 UnstructuredSimulation2D::sample_position(
     const UnstructuredSpecies2DConfig& config,
     std::size_t particle_index,
-    std::size_t particle_count) {
+    std::size_t particle_count,
+    std::size_t& profile_attempts) {
     const bool uses_region =
         !config.initialization_region.empty();
     const std::vector<RegionSamplingTriangle>* region_triangles =
@@ -722,13 +740,48 @@ Vec2 UnstructuredSimulation2D::sample_position(
         region_triangles
             ? region_triangles->back().cumulative_area
             : sampling_triangles_.back().cumulative_area;
-    for (std::size_t attempt = 0; attempt < 100000; ++attempt) {
+    const bool profiled =
+        config.initialization.density_profile !=
+        DensityProfileKind::Uniform;
+    const auto region_bounds =
+        uses_region
+            ? std::optional{region_sampling_bounds_.at(
+                  config.initialization_region)}
+            : std::nullopt;
+    const Vec2 profile_minimum =
+        config.initialization_minimum.value_or(
+            region_bounds
+                ? region_bounds->first
+                : mesh_.topology().min_corner());
+    const Vec2 profile_maximum =
+        config.initialization_maximum.value_or(
+            region_bounds
+                ? region_bounds->second
+                : mesh_.topology().max_corner());
+    const std::size_t per_particle_limit = profiled
+        ? config.initialization.max_profile_sampling_attempts
+        : std::size_t{100000};
+    for (std::size_t attempt = 0;
+         attempt < per_particle_limit; ++attempt) {
         const bool quiet =
             config.initialization.loading == ParticleLoading::QuietStart;
+        std::size_t sequence = particle_index;
+        if (profiled) {
+            if (profile_attempts >=
+                config.initialization
+                    .max_profile_sampling_attempts) {
+                throw std::runtime_error(
+                    "unstructured species density-profile sampling exceeded max_profile_sampling_attempts");
+            }
+            sequence = profile_attempts++;
+        }
         const double target =
             (quiet
-                 ? quiet_unit_coordinate(
-                       particle_index, particle_count, 0)
+                 ? (profiled
+                        ? quiet_sequence_coordinate(sequence, 0)
+                        : quiet_unit_coordinate(
+                              particle_index,
+                              particle_count, 0))
                  : unit(rng_)) *
             total_area;
         const SamplingTriangle* selected = nullptr;
@@ -761,13 +814,19 @@ Vec2 UnstructuredSimulation2D::sample_position(
         }
         const double root = std::sqrt(
             quiet
-                ? quiet_unit_coordinate(
-                      particle_index, particle_count, 1)
+                ? (profiled
+                       ? quiet_sequence_coordinate(sequence, 1)
+                       : quiet_unit_coordinate(
+                             particle_index,
+                             particle_count, 1))
                 : unit(rng_));
         const double second =
             quiet
-                ? quiet_unit_coordinate(
-                      particle_index, particle_count, 2)
+                ? (profiled
+                       ? quiet_sequence_coordinate(sequence, 2)
+                       : quiet_unit_coordinate(
+                             particle_index,
+                             particle_count, 2))
                 : unit(rng_);
         const std::array<double, 3> weights{
             1.0 - root,
@@ -787,10 +846,24 @@ Vec2 UnstructuredSimulation2D::sample_position(
                 continue;
             }
         }
+        if (profiled) {
+            const double threshold = quiet
+                ? quiet_sequence_coordinate(sequence, 3)
+                : unit(rng_);
+            if (threshold > density_profile_acceptance(
+                    config.initialization,
+                    {point.x, point.y, 0.0},
+                    {profile_minimum.x, profile_minimum.y, 0.0},
+                    {profile_maximum.x, profile_maximum.y, 1.0})) {
+                continue;
+            }
+        }
         return point;
     }
     throw std::runtime_error(
-        "could not sample the requested unstructured species initialization region");
+        profiled
+            ? "could not sample the requested unstructured density profile within max_profile_sampling_attempts"
+            : "could not sample the requested unstructured species initialization region");
 }
 
 void UnstructuredSimulation2D::inject_boundary_sources() {
@@ -930,6 +1003,7 @@ void UnstructuredSimulation2D::initialize() {
         const auto& species_config = species_configs_[species_id];
         particles.assign(species_config.particles, Particle2D{});
         locations.assign(species_config.particles, UnstructuredParticleLocation2D{});
+        std::size_t profile_attempts = 0;
         const double thermal_x = resolved_thermal_velocity(
             species_config.initialization, 0,
             species_config.thermal_velocity);
@@ -951,7 +1025,8 @@ void UnstructuredSimulation2D::initialize() {
                  particle_index < particles.size(); ++particle_index) {
                 auto& particle = particles[particle_index];
                 particle.position = sample_position(
-                    species_config, particle_index, particles.size());
+                    species_config, particle_index,
+                    particles.size(), profile_attempts);
                 particle.velocity = {
                     velocity_x(rng_), velocity_y(rng_)};
                 particle.velocity_z = velocity_z(rng_);
@@ -975,7 +1050,8 @@ void UnstructuredSimulation2D::initialize() {
              particle_index < particles.size(); ++particle_index) {
             auto& particle = particles[particle_index];
             particle.position = sample_position(
-                species_config, particle_index, particles.size());
+                species_config, particle_index,
+                particles.size(), profile_attempts);
             particle.velocity = {
                 velocity_x[particle_index],
                 velocity_y[particle_index]};

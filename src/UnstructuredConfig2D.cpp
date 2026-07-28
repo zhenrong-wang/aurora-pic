@@ -89,6 +89,10 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
         "initialization_version", "loading",
         "initialization_region",
+        "density_profile", "profile_center_x", "profile_center_y",
+        "profile_scale_x", "profile_scale_y", "profile_amplitude",
+        "profile_phase", "profile_mode_x", "profile_mode_y",
+        "max_profile_sampling_attempts",
         "init_x_min", "init_x_max",
         "init_y_min", "init_y_max",
     };
@@ -587,6 +591,50 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 species.values, "initialization_region",
                 "species '" + species.name + "'");
         }
+        if (species.values.contains("density_profile")) {
+            value.initialization.density_profile =
+                density_profile_from_string(lower(required(
+                    species.values, "density_profile",
+                    "species '" + species.name + "'")));
+        }
+        if (species.values.contains("profile_center_x")) {
+            value.initialization.profile_center_x = number<double>(
+                species.values, "profile_center_x", 0.0);
+        }
+        if (species.values.contains("profile_center_y")) {
+            value.initialization.profile_center_y = number<double>(
+                species.values, "profile_center_y", 0.0);
+        }
+        if (species.values.contains("profile_scale_x")) {
+            value.initialization.profile_scale_x = number<double>(
+                species.values, "profile_scale_x", 0.0);
+        }
+        if (species.values.contains("profile_scale_y")) {
+            value.initialization.profile_scale_y = number<double>(
+                species.values, "profile_scale_y", 0.0);
+        }
+        if (species.values.contains("profile_amplitude")) {
+            value.initialization.profile_amplitude = number<double>(
+                species.values, "profile_amplitude", 0.0);
+        }
+        if (species.values.contains("profile_phase")) {
+            value.initialization.profile_phase = number<double>(
+                species.values, "profile_phase", 0.0);
+        }
+        if (species.values.contains("profile_mode_x")) {
+            value.initialization.profile_mode_x =
+                number<std::size_t>(
+                    species.values, "profile_mode_x", 0);
+        }
+        if (species.values.contains("profile_mode_y")) {
+            value.initialization.profile_mode_y =
+                number<std::size_t>(
+                    species.values, "profile_mode_y", 0);
+        }
+        value.initialization.max_profile_sampling_attempts =
+            number<std::size_t>(
+                species.values, "max_profile_sampling_attempts",
+                value.initialization.max_profile_sampling_attempts);
         const bool any_bounds =
             species.values.contains("init_x_min") ||
             species.values.contains("init_x_max") ||

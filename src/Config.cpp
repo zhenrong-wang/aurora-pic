@@ -157,6 +157,65 @@ RunMode parse_mode(const KeyValue& kv, RunMode def) {
     throw std::runtime_error("invalid mode value: '" + value + "'");
 }
 
+void parse_density_profile(
+    const KeyValue& values,
+    ParticleInitializationConfig& initialization,
+    std::size_t spatial_dimensions) {
+    if (values.count("density_profile")) {
+        initialization.density_profile =
+            density_profile_from_string(lower(trim(
+                as<std::string>(
+                    values, "density_profile", "uniform"))));
+    }
+    const auto optional_double =
+        [&](const std::string& key,
+            std::optional<double>& destination) {
+            if (values.count(key)) {
+                destination = as<double>(values, key, 0.0);
+            }
+        };
+    const auto optional_size =
+        [&](const std::string& key,
+            std::optional<std::size_t>& destination) {
+            if (values.count(key)) {
+                destination =
+                    as<std::size_t>(values, key, 0);
+            }
+        };
+    optional_double(
+        "profile_center_x", initialization.profile_center_x);
+    optional_double(
+        "profile_scale_x", initialization.profile_scale_x);
+    optional_size(
+        "profile_mode_x", initialization.profile_mode_x);
+    if (spatial_dimensions >= 2) {
+        optional_double(
+            "profile_center_y",
+            initialization.profile_center_y);
+        optional_double(
+            "profile_scale_y", initialization.profile_scale_y);
+        optional_size(
+            "profile_mode_y", initialization.profile_mode_y);
+    }
+    if (spatial_dimensions >= 3) {
+        optional_double(
+            "profile_center_z",
+            initialization.profile_center_z);
+        optional_double(
+            "profile_scale_z", initialization.profile_scale_z);
+        optional_size(
+            "profile_mode_z", initialization.profile_mode_z);
+    }
+    optional_double(
+        "profile_amplitude", initialization.profile_amplitude);
+    optional_double(
+        "profile_phase", initialization.profile_phase);
+    initialization.max_profile_sampling_attempts =
+        as<std::size_t>(
+            values, "max_profile_sampling_attempts",
+            initialization.max_profile_sampling_attempts);
+}
+
 CollisionModelKind parse_collision_model(
     const KeyValue& kv, CollisionModelKind def) {
     const auto value = lower(trim(as<std::string>(
@@ -342,6 +401,9 @@ void validate_config(const Config& cfg) {
         validate_particle_initialization(
             s.initialization, 1, s.thermal_velocity,
             "species '" + s.name + "'");
+        validate_density_profile(
+            s.initialization, 1, s.particles,
+            "species '" + s.name + "'");
         if (s.init_x_min < 0.0) throw std::runtime_error("species '" + s.name + "' init_x_min must be non-negative");
         const double xmax = s.init_x_max < 0.0 ? cfg.length : s.init_x_max;
         if (xmax > cfg.length) throw std::runtime_error("species '" + s.name + "' init_x_max exceeds domain length");
@@ -394,6 +456,9 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         validate_particle_initialization(
             s.initialization, 3, s.thermal_velocity,
             "2D species '" + s.name + "'");
+        validate_density_profile(
+            s.initialization, 2, s.particles,
+            "2D species '" + s.name + "'");
         if (s.init_x_min < 0.0) throw std::runtime_error("2D species '" + s.name + "' init_x_min must be non-negative");
         if (s.init_y_min < 0.0) throw std::runtime_error("2D species '" + s.name + "' init_y_min must be non-negative");
         const double xmax = s.init_x_max < 0.0 ? cfg.length_x : s.init_x_max;
@@ -437,6 +502,9 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
         validate_non_negative(s.thermal_velocity, "3D species '" + s.name + "' thermal_velocity");
         validate_particle_initialization(
             s.initialization, 3, s.thermal_velocity,
+            "3D species '" + s.name + "'");
+        validate_density_profile(
+            s.initialization, 3, s.particles,
             "3D species '" + s.name + "'");
         if (s.init_x_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_x_min must be non-negative");
         if (s.init_y_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_y_min must be non-negative");
@@ -550,7 +618,10 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density", "drift_velocity",
         "thermal_velocity", "thermal_velocity_x", "initialization_version",
-        "loading", "init_x_min", "init_x_max"
+        "loading", "density_profile", "profile_center_x",
+        "profile_scale_x", "profile_amplitude", "profile_phase",
+        "profile_mode_x", "max_profile_sampling_attempts",
+        "init_x_min", "init_x_max"
     };
 
     auto blocks = parse_config_blocks(
@@ -625,6 +696,7 @@ Config load_config(const std::string& path) {
             s.initialization.thermal_velocity_x =
                 as<double>(block, "thermal_velocity_x", 0.0);
         }
+        parse_density_profile(block, s.initialization, 1);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         require_species_scale_source(block, s.name, "");
@@ -724,6 +796,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
         "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
         "initialization_version", "loading",
+        "density_profile", "profile_center_x", "profile_center_y",
+        "profile_scale_x", "profile_scale_y", "profile_amplitude",
+        "profile_phase", "profile_mode_x", "profile_mode_y",
+        "max_profile_sampling_attempts",
         "init_x_min", "init_x_max",
         "init_y_min", "init_y_max"
     };
@@ -817,6 +893,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             s.initialization.thermal_velocity_z =
                 as<double>(block, "thermal_velocity_z", 0.0);
         }
+        parse_density_profile(block, s.initialization, 2);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         s.init_y_min = as<double>(block, "init_y_min", s.init_y_min);
@@ -857,7 +934,12 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
         "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
         "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
-        "initialization_version", "loading", "init_x_min", "init_x_max",
+        "initialization_version", "loading",
+        "density_profile", "profile_center_x", "profile_center_y",
+        "profile_center_z", "profile_scale_x", "profile_scale_y",
+        "profile_scale_z", "profile_amplitude", "profile_phase",
+        "profile_mode_x", "profile_mode_y", "profile_mode_z",
+        "max_profile_sampling_attempts", "init_x_min", "init_x_max",
         "init_y_min", "init_y_max", "init_z_min", "init_z_max"
     };
 
@@ -939,6 +1021,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
             s.initialization.thermal_velocity_z =
                 as<double>(block, "thermal_velocity_z", 0.0);
         }
+        parse_density_profile(block, s.initialization, 3);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         s.init_y_min = as<double>(block, "init_y_min", s.init_y_min);

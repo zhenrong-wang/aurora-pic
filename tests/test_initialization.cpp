@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -115,6 +116,42 @@ int main() {
         }
 
         {
+            pic::SpeciesConfig config;
+            config.particles = 2000;
+            config.thermal_velocity = 0.0;
+            config.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            config.initialization.density_profile =
+                pic::DensityProfileKind::Gaussian;
+            config.initialization.profile_center_x = 0.72;
+            config.initialization.profile_scale_x = 0.08;
+            config.initialization.max_profile_sampling_attempts =
+                100000;
+            pic::Species species(config);
+            pic::Grid grid(33, 1.0, pic::Boundary::Dirichlet);
+            std::mt19937_64 rng(101);
+            species.initialize(grid, rng);
+            double mean_position = 0.0;
+            for (const auto& particle : species.particles()) {
+                mean_position += particle.x;
+            }
+            mean_position /= static_cast<double>(
+                species.particles().size());
+            require_near(
+                mean_position, 0.72, 0.01,
+                "1D Gaussian profile realized the wrong center");
+            const auto moments =
+                pic::summarize_initialization(species);
+            require_near(
+                moments.mean_position_x, mean_position, 1e-15,
+                "Gaussian initialization audit position mean is wrong");
+            require(
+                moments.position_stddev_x > 0.06 &&
+                    moments.position_stddev_x < 0.10,
+                "Gaussian initialization audit position spread is wrong");
+        }
+
+        {
             pic::Species2DConfig config;
             config.particles = 10;
             config.drift_velocity_x = 0.25;
@@ -177,6 +214,38 @@ int main() {
         }
 
         {
+            pic::Species2DConfig config;
+            config.particles = 2000;
+            config.thermal_velocity = 0.0;
+            config.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            config.initialization.density_profile =
+                pic::DensityProfileKind::Sinusoidal;
+            config.initialization.profile_amplitude = 1.0;
+            config.initialization.profile_mode_x = 1;
+            config.initialization.max_profile_sampling_attempts =
+                10000;
+            pic::Species2D species(config);
+            pic::Mesh2D mesh(
+                17, 17, 1.0, 1.0,
+                pic::Boundary::Dirichlet);
+            std::mt19937_64 rng(202);
+            species.initialize(mesh, rng);
+            double cosine_moment = 0.0;
+            for (const auto& particle : species.particles()) {
+                cosine_moment += std::cos(
+                    2.0 * std::numbers::pi *
+                    particle.position.x);
+            }
+            cosine_moment /= static_cast<double>(
+                species.particles().size());
+            require(
+                cosine_moment > 0.4 &&
+                    cosine_moment < 0.6,
+                "2D sinusoidal profile realized the wrong spatial moment");
+        }
+
+        {
             pic::Species3DConfig config;
             config.particles = 6;
             config.initialization.loading =
@@ -212,6 +281,48 @@ int main() {
         }
 
         {
+            pic::Species3DConfig config;
+            config.particles = 1200;
+            config.thermal_velocity = 0.0;
+            config.initialization.density_profile =
+                pic::DensityProfileKind::Gaussian;
+            config.initialization.profile_center_x = 0.25;
+            config.initialization.profile_center_y = 0.50;
+            config.initialization.profile_center_z = 0.75;
+            config.initialization.profile_scale_x = 0.08;
+            config.initialization.profile_scale_y = 0.10;
+            config.initialization.profile_scale_z = 0.08;
+            config.initialization.max_profile_sampling_attempts =
+                200000;
+            pic::Species3D species(config);
+            pic::Mesh3D mesh(
+                9, 9, 9, 1.0, 1.0, 1.0,
+                pic::Boundary::Dirichlet);
+            std::mt19937_64 rng(303);
+            species.initialize(mesh, rng);
+            pic::Vec3 mean_position{};
+            for (const auto& particle : species.particles()) {
+                mean_position.x += particle.position.x;
+                mean_position.y += particle.position.y;
+                mean_position.z += particle.position.z;
+            }
+            const double inverse = 1.0 /
+                static_cast<double>(species.particles().size());
+            mean_position.x *= inverse;
+            mean_position.y *= inverse;
+            mean_position.z *= inverse;
+            require_near(
+                mean_position.x, 0.25, 0.02,
+                "3D Gaussian profile x center is wrong");
+            require_near(
+                mean_position.y, 0.50, 0.02,
+                "3D Gaussian profile y center is wrong");
+            require_near(
+                mean_position.z, 0.75, 0.02,
+                "3D Gaussian profile z center is wrong");
+        }
+
+        {
             const auto config_path =
                 std::filesystem::path("test_initialization_config.cfg");
             {
@@ -231,6 +342,11 @@ int main() {
                     << "thermal_velocity_x = 0.1\n"
                     << "thermal_velocity_y = 0.2\n"
                     << "thermal_velocity_z = 0.3\n";
+                output
+                    << "density_profile = sinusoidal\n"
+                    << "profile_amplitude = 0.5\n"
+                    << "profile_mode_x = 2\n"
+                    << "max_profile_sampling_attempts = 1000\n";
             }
             const auto config =
                 pic::load_config_2d(config_path.string());
@@ -243,6 +359,12 @@ int main() {
                 *config.species.front().initialization.thermal_velocity_z,
                 0.3, 1e-15,
                 "2D config did not parse per-axis thermal velocity");
+            require(
+                config.species.front().initialization.density_profile ==
+                        pic::DensityProfileKind::Sinusoidal &&
+                    config.species.front().initialization
+                            .profile_mode_x.value_or(0) == 2,
+                "2D config did not parse analytic density profile");
         }
 
         {
@@ -276,7 +398,10 @@ int main() {
                     << "charge = 0\nmass = 1\nweight = 1\n"
                     << "particles = 8\n"
                     << "initialization_region = region_a\n"
-                    << "loading = quiet_start\n";
+                    << "loading = quiet_start\n"
+                    << "density_profile = sinusoidal\n"
+                    << "profile_amplitude = 0.5\n"
+                    << "profile_mode_x = 1\n";
             }
             const auto parsed =
                 pic::load_unstructured_config_2d(config_path);
@@ -284,7 +409,10 @@ int main() {
             require(
                 parsed.species.size() == 1 &&
                     parsed.species.front().initialization_region ==
-                        "region_a",
+                        "region_a" &&
+                    parsed.species.front().initialization
+                            .density_profile ==
+                        pic::DensityProfileKind::Sinusoidal,
                 "imported config did not parse initialization_region");
         }
 
@@ -314,6 +442,10 @@ int main() {
             species.initialization.loading =
                 pic::ParticleLoading::QuietStart;
             species.initialization_region = "region_a";
+            species.initialization.density_profile =
+                pic::DensityProfileKind::Sinusoidal;
+            species.initialization.profile_amplitude = 0.5;
+            species.initialization.profile_mode_x = 1;
             species.initialization.thermal_velocity_x = 0.2;
             species.initialization.thermal_velocity_y = 0.1;
             species.initialization.thermal_velocity_z = 0.0;
@@ -351,7 +483,8 @@ int main() {
                 species.initialization_region);
             require(
                 moments.region == "region_a" &&
-                    moments.macroparticles == species.particles,
+                    moments.macroparticles == species.particles &&
+                    moments.density_profile == "sinusoidal",
                 "imported initialization summary lost its physical region");
 
             species.initialization_minimum = pic::Vec2{0.1, 0.1};
@@ -383,6 +516,58 @@ int main() {
                         invalid, 3, 0.1, "test species");
                 },
                 "unsupported initialization version was accepted");
+
+            pic::ParticleInitializationConfig invalid_uniform;
+            invalid_uniform.profile_amplitude = 0.5;
+            require_throws(
+                [&] {
+                    pic::validate_density_profile(
+                        invalid_uniform, 1, 10,
+                        "test species");
+                },
+                "uniform profile silently accepted profile parameters");
+
+            pic::ParticleInitializationConfig invalid_gaussian;
+            invalid_gaussian.density_profile =
+                pic::DensityProfileKind::Gaussian;
+            invalid_gaussian.profile_center_x = 0.5;
+            require_throws(
+                [&] {
+                    pic::validate_density_profile(
+                        invalid_gaussian, 1, 10,
+                        "test species");
+                },
+                "Gaussian profile without scale was accepted");
+
+            pic::ParticleInitializationConfig invalid_sinusoidal;
+            invalid_sinusoidal.density_profile =
+                pic::DensityProfileKind::Sinusoidal;
+            invalid_sinusoidal.profile_amplitude = 1.1;
+            invalid_sinusoidal.profile_mode_x = 1;
+            require_throws(
+                [&] {
+                    pic::validate_density_profile(
+                        invalid_sinusoidal, 1, 10,
+                        "test species");
+                },
+                "sinusoidal profile accepted amplitude above one");
+        }
+
+        {
+            pic::SpeciesConfig config;
+            config.particles = 1;
+            config.thermal_velocity = 0.0;
+            config.initialization.density_profile =
+                pic::DensityProfileKind::Gaussian;
+            config.initialization.profile_center_x = 100.0;
+            config.initialization.profile_scale_x = 0.1;
+            config.initialization.max_profile_sampling_attempts = 10;
+            pic::Species species(config);
+            pic::Grid grid(5, 1.0, pic::Boundary::Dirichlet);
+            std::mt19937_64 rng(404);
+            require_throws(
+                [&] { species.initialize(grid, rng); },
+                "exhausted density-profile work budget did not fail");
         }
 
         {
@@ -434,7 +619,8 @@ int main() {
                 contents.find(
                     "initialization_version,state_source,dimension") !=
                     std::string::npos &&
-                    contents.find("\"generated\",1,\"electrons\"") !=
+                    contents.find(
+                        "\"generated\",1,\"electrons\",\"random\",\"uniform\"") !=
                     std::string::npos &&
                     contents.find(",-24,") != std::string::npos,
                 "initialization.csv is missing schema or represented charge");
@@ -453,7 +639,7 @@ int main() {
                 restart_output / "initialization.csv");
             require(
                 restart_contents.find(
-                    "\"restart\",1,\"electrons\",\"restart\",\"\"") !=
+                    "\"restart\",1,\"electrons\",\"restart\",\"restart\",\"\"") !=
                     std::string::npos,
                 "restart initialization report did not identify restored state");
             std::filesystem::remove_all(output_directory);

@@ -91,6 +91,18 @@ name. Unknown or empty regions fail during construction. Region selection
 supports both random and quiet-start loading and is mutually exclusive with
 the rectangular `init_x_*`/`init_y_*` clip.
 
+All dimensions accept `density_profile = uniform | gaussian | sinusoidal`.
+Uniform is the backward-compatible default and rejects profile parameters.
+Gaussian profiles require `profile_center_<axis>` and positive
+`profile_scale_<axis>` for every active spatial axis, in physical/configured
+coordinates. Sinusoidal profiles require `profile_amplitude` with
+`|amplitude| <= 1`, at least one nonzero integer `profile_mode_<axis>`, and an
+optional radian `profile_phase`; modes are evaluated over the active
+initialization envelope. `max_profile_sampling_attempts` is a total
+per-species work budget and must be at least the requested particle count.
+Exhaustion fails the run instead of continuing with a biased or incomplete
+population.
+
 Optional `[source.<name>]` sections inject a fixed number of macro-particles per step from a tagged boundary. They require `species`, `boundary`, and positive `particles_per_step`; optional controls are `start_step`, exclusive `end_step` (`0` means unlimited), non-negative inward `normal_velocity`, signed `tangential_velocity`, signed `out_of_plane_velocity`, and non-negative `thermal_velocity`. Boundary segments are sampled in proportion to length. The normal thermal component is half-range inward, while the tangent and out-of-plane thermal components are signed Gaussians; positive tangent is defined as a clockwise rotation of the inward normal. The represented source rate is `particles_per_step * species_weight / dt`. Dead slots are reused before particle storage grows, and `max_particles_per_species` bounds both growth and checkpoint loading. See [`examples/imported_plasma_2d.cfg`](examples/imported_plasma_2d.cfg) and its companion mesh for the complete strict syntax. The CLI automatically dispatches these configs to the imported runtime.
 
 Optional `[emission.<name>]` sections attach secondary emission to an absorbing tagged boundary. They require `boundary`, `incident_species`, `emitted_species`, and a positive physical `yield`. The expected emitted macro-particle count per impact is `yield * incident_weight / emitted_weight`; deterministic integer production and stochastic rounding preserve that expectation. `max_particles_per_impact` bounds weight-ratio expansion, while `normal_velocity`, `tangential_velocity`, `out_of_plane_velocity`, and `thermal_velocity` use the same convention as boundary sources. Impacts are sorted by species and particle ID before emission, making RNG use reproducible across serial and OpenMP execution. Diagnostics report cumulative emitted counts and, for every species/absorbing-boundary pair, cumulative macro-particles, represented physical particles, charge, full 3V incident kinetic energy, last-step physical-particle rate, and rate per boundary length.
@@ -99,9 +111,9 @@ For a larger imported example, run `examples/biased_probe_2d.cfg`. Its source ge
 
 Every run writes `initialization.csv` under `output_dir`. One row per species
 records the IC schema version, generated/restart source, dimension, loading
-model, imported region when applicable, live macro-particle count and weight,
+and density-profile models, imported region when applicable, live macro-particle count and weight,
 represented physical particles and charge, and realized mean and standard
-deviation of each velocity component. Restart reports label the loading model
+deviation of each position and velocity component. Restart reports label the loading model
 as `restart` and do not claim an original imported region.
 
 All 2D runs write `scalars.csv` with:
@@ -179,6 +191,10 @@ thermal_velocity = 0.1
 # initialization_version = 1
 # loading = quiet_start    # random (default) or quiet_start
 # thermal_velocity_x = 0.1 # overrides thermal_velocity for 1D1V
+# density_profile = gaussian
+# profile_center_x = 0.5    # physical coordinate
+# profile_scale_x = 0.1     # positive Gaussian standard deviation
+# max_profile_sampling_attempts = 1000000
 
 [collisions]
 enabled = false
@@ -400,10 +416,10 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 - 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
 - Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
 
-The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models or component thermal velocities, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, or component thermal velocities, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 
 ## Performance and validation envelope
 
 The verified smoke/performance envelope is documented in `docs/performance-envelope.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. In short, the checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. They do not prove convergence for arbitrary plasma regimes. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, initial particle loading does not yet support analytic density profiles or external high-volume particle states, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, initial particle loading does not yet support external high-volume particle states or charge/current acceptance gates, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.

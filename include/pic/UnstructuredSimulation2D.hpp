@@ -214,7 +214,8 @@ private:
     Vec2 sample_position(
         const UnstructuredSpecies2DConfig& config,
         std::size_t particle_index,
-        std::size_t particle_count);
+        std::size_t particle_count,
+        std::size_t& profile_attempts);
     void inject_boundary_sources();
     void process_boundary_impacts(std::vector<BoundaryImpact> impacts);
     void apply_collisions();
@@ -238,6 +239,8 @@ private:
     std::vector<SamplingTriangle> sampling_triangles_;
     std::map<std::string, std::vector<RegionSamplingTriangle>>
         region_sampling_triangles_;
+    std::map<std::string, std::pair<Vec2, Vec2>>
+        region_sampling_bounds_;
     std::vector<BoundarySourceRuntime> sources_;
     std::vector<SecondaryEmissionRuntime> emissions_;
     std::vector<std::optional<IonizationChannelRuntime>>

@@ -7,7 +7,9 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <numeric>
+#include <numbers>
 #include <stdexcept>
 
 namespace pic {
@@ -28,6 +30,28 @@ void validate_thermal_velocity(
         throw std::invalid_argument(
             context + " " + name + " must be non-negative and finite");
     }
+}
+
+void validate_optional_finite(
+    const std::optional<double>& value,
+    const std::string& name,
+    const std::string& context) {
+    if (value && !std::isfinite(*value)) {
+        throw std::invalid_argument(
+            context + " " + name + " must be finite");
+    }
+}
+
+double radical_inverse(std::size_t index, std::size_t base) {
+    double inverse_base = 1.0 / static_cast<double>(base);
+    double factor = inverse_base;
+    double result = 0.0;
+    while (index != 0) {
+        result += factor * static_cast<double>(index % base);
+        index /= base;
+        factor *= inverse_base;
+    }
+    return result;
 }
 
 std::string csv_quote(const std::string& value) {
@@ -68,46 +92,75 @@ InitializationSpeciesMoments finish_moments(
     std::size_t initialization_version,
     std::string species,
     std::string loading,
+    std::string density_profile,
     std::string region,
     double charge,
     double weight,
-    const VelocityMomentAccumulator& accumulator) {
+    const VelocityMomentAccumulator& position_accumulator,
+    const VelocityMomentAccumulator& velocity_accumulator) {
     InitializationSpeciesMoments result;
     result.initialization_version = initialization_version;
     result.species = std::move(species);
     result.loading = std::move(loading);
+    result.density_profile = std::move(density_profile);
     result.region = std::move(region);
-    result.macroparticles = accumulator.count;
+    if (position_accumulator.count !=
+        velocity_accumulator.count) {
+        throw std::logic_error(
+            "initialization position/velocity moment counts differ");
+    }
+    result.macroparticles = velocity_accumulator.count;
     result.macro_weight = weight;
     result.physical_particles =
-        weight * static_cast<double>(accumulator.count);
+        weight * static_cast<double>(velocity_accumulator.count);
     result.represented_charge = charge * result.physical_particles;
     if (!std::isfinite(result.physical_particles) ||
         !std::isfinite(result.represented_charge) ||
-        !std::isfinite(accumulator.mean_x) ||
-        !std::isfinite(accumulator.mean_y) ||
-        !std::isfinite(accumulator.mean_z) ||
-        !std::isfinite(accumulator.moment_x) ||
-        !std::isfinite(accumulator.moment_y) ||
-        !std::isfinite(accumulator.moment_z)) {
+        !std::isfinite(position_accumulator.mean_x) ||
+        !std::isfinite(position_accumulator.mean_y) ||
+        !std::isfinite(position_accumulator.mean_z) ||
+        !std::isfinite(position_accumulator.moment_x) ||
+        !std::isfinite(position_accumulator.moment_y) ||
+        !std::isfinite(position_accumulator.moment_z) ||
+        !std::isfinite(velocity_accumulator.mean_x) ||
+        !std::isfinite(velocity_accumulator.mean_y) ||
+        !std::isfinite(velocity_accumulator.mean_z) ||
+        !std::isfinite(velocity_accumulator.moment_x) ||
+        !std::isfinite(velocity_accumulator.moment_y) ||
+        !std::isfinite(velocity_accumulator.moment_z)) {
         throw std::overflow_error(
             "initialization moment accumulation overflow for species '" +
             result.species + "'");
     }
-    if (accumulator.count == 0) return result;
+    if (velocity_accumulator.count == 0) return result;
 
     const double inverse =
-        1.0 / static_cast<double>(accumulator.count);
-    result.mean_velocity_x = accumulator.mean_x;
-    result.mean_velocity_y = accumulator.mean_y;
-    result.mean_velocity_z = accumulator.mean_z;
+        1.0 / static_cast<double>(velocity_accumulator.count);
+    result.mean_position_x = position_accumulator.mean_x;
+    result.mean_position_y = position_accumulator.mean_y;
+    result.mean_position_z = position_accumulator.mean_z;
+    result.position_stddev_x = std::sqrt(std::max(
+        0.0, position_accumulator.moment_x * inverse));
+    result.position_stddev_y = std::sqrt(std::max(
+        0.0, position_accumulator.moment_y * inverse));
+    result.position_stddev_z = std::sqrt(std::max(
+        0.0, position_accumulator.moment_z * inverse));
+    result.mean_velocity_x = velocity_accumulator.mean_x;
+    result.mean_velocity_y = velocity_accumulator.mean_y;
+    result.mean_velocity_z = velocity_accumulator.mean_z;
     result.thermal_velocity_x = std::sqrt(std::max(
-        0.0, accumulator.moment_x * inverse));
+        0.0, velocity_accumulator.moment_x * inverse));
     result.thermal_velocity_y = std::sqrt(std::max(
-        0.0, accumulator.moment_y * inverse));
+        0.0, velocity_accumulator.moment_y * inverse));
     result.thermal_velocity_z = std::sqrt(std::max(
-        0.0, accumulator.moment_z * inverse));
-    if (!std::isfinite(result.mean_velocity_x) ||
+        0.0, velocity_accumulator.moment_z * inverse));
+    if (!std::isfinite(result.mean_position_x) ||
+        !std::isfinite(result.mean_position_y) ||
+        !std::isfinite(result.mean_position_z) ||
+        !std::isfinite(result.position_stddev_x) ||
+        !std::isfinite(result.position_stddev_y) ||
+        !std::isfinite(result.position_stddev_z) ||
+        !std::isfinite(result.mean_velocity_x) ||
         !std::isfinite(result.mean_velocity_y) ||
         !std::isfinite(result.mean_velocity_z) ||
         !std::isfinite(result.thermal_velocity_x) ||
@@ -137,6 +190,26 @@ ParticleLoading particle_loading_from_string(const std::string& value) {
     }
     throw std::invalid_argument(
         "particle loading must be random or quiet_start");
+}
+
+std::string to_string(DensityProfileKind profile) {
+    switch (profile) {
+        case DensityProfileKind::Uniform: return "uniform";
+        case DensityProfileKind::Gaussian: return "gaussian";
+        case DensityProfileKind::Sinusoidal: return "sinusoidal";
+    }
+    return "unknown";
+}
+
+DensityProfileKind density_profile_from_string(
+    const std::string& value) {
+    if (value == "uniform") return DensityProfileKind::Uniform;
+    if (value == "gaussian") return DensityProfileKind::Gaussian;
+    if (value == "sinusoidal" || value == "sinusoid") {
+        return DensityProfileKind::Sinusoidal;
+    }
+    throw std::invalid_argument(
+        "density_profile must be uniform, gaussian, or sinusoidal");
 }
 
 void validate_particle_initialization(
@@ -175,6 +248,119 @@ void validate_particle_initialization(
     }
 }
 
+void validate_density_profile(
+    const ParticleInitializationConfig& config,
+    std::size_t spatial_dimensions,
+    std::size_t particle_count,
+    const std::string& context) {
+    if (spatial_dimensions == 0 || spatial_dimensions > 3) {
+        throw std::invalid_argument(
+            context + " has an invalid spatial dimension");
+    }
+    if (config.max_profile_sampling_attempts == 0) {
+        throw std::invalid_argument(
+            context +
+            " max_profile_sampling_attempts must be positive");
+    }
+
+    const std::array<std::optional<double>, 3> centers{
+        config.profile_center_x, config.profile_center_y,
+        config.profile_center_z};
+    const std::array<std::optional<double>, 3> scales{
+        config.profile_scale_x, config.profile_scale_y,
+        config.profile_scale_z};
+    const std::array<std::optional<std::size_t>, 3> modes{
+        config.profile_mode_x, config.profile_mode_y,
+        config.profile_mode_z};
+    for (std::size_t component = 0; component < 3; ++component) {
+        validate_optional_finite(
+            centers[component],
+            "profile_center_" +
+                std::string(1, "xyz"[component]),
+            context);
+        validate_optional_finite(
+            scales[component],
+            "profile_scale_" +
+                std::string(1, "xyz"[component]),
+            context);
+        if (component >= spatial_dimensions &&
+            (centers[component] || scales[component] ||
+             modes[component])) {
+            throw std::invalid_argument(
+                context +
+                " density profile configures an inactive spatial component");
+        }
+    }
+    validate_optional_finite(
+        config.profile_amplitude, "profile_amplitude", context);
+    validate_optional_finite(
+        config.profile_phase, "profile_phase", context);
+
+    if (config.density_profile == DensityProfileKind::Uniform) {
+        if (config.profile_center_x || config.profile_center_y ||
+            config.profile_center_z || config.profile_scale_x ||
+            config.profile_scale_y || config.profile_scale_z ||
+            config.profile_amplitude || config.profile_phase ||
+            config.profile_mode_x || config.profile_mode_y ||
+            config.profile_mode_z) {
+            throw std::invalid_argument(
+                context +
+                " uniform density_profile does not accept profile parameters");
+        }
+        return;
+    }
+    if (config.max_profile_sampling_attempts < particle_count) {
+        throw std::invalid_argument(
+            context +
+            " max_profile_sampling_attempts must be at least particles");
+    }
+
+    if (config.density_profile == DensityProfileKind::Gaussian) {
+        if (config.profile_amplitude || config.profile_phase ||
+            config.profile_mode_x || config.profile_mode_y ||
+            config.profile_mode_z) {
+            throw std::invalid_argument(
+                context +
+                " gaussian density_profile does not accept sinusoidal parameters");
+        }
+        for (std::size_t component = 0;
+             component < spatial_dimensions; ++component) {
+            if (!centers[component] || !scales[component] ||
+                !(*scales[component] > 0.0)) {
+                throw std::invalid_argument(
+                    context +
+                    " gaussian density_profile requires finite centers and positive scales for every active axis");
+            }
+        }
+        return;
+    }
+
+    if (config.profile_center_x || config.profile_center_y ||
+        config.profile_center_z || config.profile_scale_x ||
+        config.profile_scale_y || config.profile_scale_z) {
+        throw std::invalid_argument(
+            context +
+            " sinusoidal density_profile does not accept gaussian parameters");
+    }
+    if (!config.profile_amplitude ||
+        std::abs(*config.profile_amplitude) > 1.0) {
+        throw std::invalid_argument(
+            context +
+            " sinusoidal density_profile requires profile_amplitude with absolute value at most one");
+    }
+    bool has_mode = false;
+    for (std::size_t component = 0;
+         component < spatial_dimensions; ++component) {
+        has_mode = has_mode ||
+                   modes[component].value_or(0) != 0;
+    }
+    if (!has_mode) {
+        throw std::invalid_argument(
+            context +
+            " sinusoidal density_profile requires a nonzero active profile mode");
+    }
+}
+
 double resolved_thermal_velocity(
     const ParticleInitializationConfig& config,
     std::size_t component,
@@ -207,6 +393,88 @@ double quiet_unit_coordinate(
         (multiplier * particle_index + offset) % particle_count;
     return (static_cast<double>(stratum) + 0.5) /
            static_cast<double>(particle_count);
+}
+
+double quiet_sequence_coordinate(
+    std::size_t sequence_index,
+    std::size_t component) {
+    static constexpr std::array<std::size_t, 7> primes{
+        2, 3, 5, 7, 11, 13, 17};
+    if (component >= primes.size()) {
+        throw std::invalid_argument(
+            "quiet sequence component exceeds supported dimensions");
+    }
+    if (sequence_index == std::numeric_limits<std::size_t>::max()) {
+        throw std::overflow_error("quiet sequence index overflow");
+    }
+    return radical_inverse(
+        sequence_index + 1, primes[component]);
+}
+
+double density_profile_acceptance(
+    const ParticleInitializationConfig& config,
+    const std::array<double, 3>& position,
+    const std::array<double, 3>& minimum,
+    const std::array<double, 3>& maximum) {
+    if (config.density_profile == DensityProfileKind::Uniform) {
+        return 1.0;
+    }
+    if (config.density_profile == DensityProfileKind::Gaussian) {
+        const std::array<std::optional<double>, 3> centers{
+            config.profile_center_x, config.profile_center_y,
+            config.profile_center_z};
+        const std::array<std::optional<double>, 3> scales{
+            config.profile_scale_x, config.profile_scale_y,
+            config.profile_scale_z};
+        double exponent = 0.0;
+        for (std::size_t component = 0; component < 3; ++component) {
+            if (centers[component].has_value() !=
+                scales[component].has_value()) {
+                throw std::invalid_argument(
+                    "gaussian density profile has incomplete center/scale parameters");
+            }
+            if (!centers[component]) continue;
+            if (!(*scales[component] > 0.0) ||
+                !std::isfinite(*scales[component])) {
+                throw std::invalid_argument(
+                    "gaussian density profile scale must be positive and finite");
+            }
+            const double normalized =
+                (position[component] - *centers[component]) /
+                *scales[component];
+            exponent += normalized * normalized;
+        }
+        return std::exp(-0.5 * exponent);
+    }
+
+    const std::array<std::optional<std::size_t>, 3> modes{
+        config.profile_mode_x, config.profile_mode_y,
+        config.profile_mode_z};
+    double argument = config.profile_phase.value_or(0.0);
+    for (std::size_t component = 0; component < 3; ++component) {
+        const std::size_t mode = modes[component].value_or(0);
+        if (mode == 0) continue;
+        const double length = maximum[component] - minimum[component];
+        if (!(length > 0.0) || !std::isfinite(length)) {
+            throw std::invalid_argument(
+                "density profile envelope must have positive finite active lengths");
+        }
+        const double normalized =
+            (position[component] - minimum[component]) / length;
+        argument += 2.0 * std::numbers::pi *
+                    static_cast<double>(mode) * normalized;
+    }
+    if (!config.profile_amplitude ||
+        !std::isfinite(*config.profile_amplitude) ||
+        std::abs(*config.profile_amplitude) > 1.0) {
+        throw std::invalid_argument(
+            "sinusoidal density profile amplitude is missing or invalid");
+    }
+    const double amplitude = *config.profile_amplitude;
+    const double result =
+        (1.0 + amplitude * std::cos(argument)) /
+        (1.0 + std::abs(amplitude));
+    return std::clamp(result, 0.0, 1.0);
 }
 
 std::vector<double> initialize_velocity_component(
@@ -247,45 +515,63 @@ std::vector<double> initialize_velocity_component(
 
 InitializationSpeciesMoments summarize_initialization(
     const Species& species, const std::string& region) {
-    VelocityMomentAccumulator accumulator;
+    VelocityMomentAccumulator position_accumulator;
+    VelocityMomentAccumulator velocity_accumulator;
     for (const auto& particle : species.particles()) {
         if (!particle.alive) continue;
-        accumulator.add(particle.v, 0.0, 0.0);
+        position_accumulator.add(particle.x, 0.0, 0.0);
+        velocity_accumulator.add(particle.v, 0.0, 0.0);
     }
     return finish_moments(
         species.config().initialization.version, species.name(),
-        to_string(species.config().initialization.loading), region,
-        species.charge(), species.weight(), accumulator);
+        to_string(species.config().initialization.loading),
+        to_string(species.config().initialization.density_profile),
+        region,
+        species.charge(), species.weight(),
+        position_accumulator, velocity_accumulator);
 }
 
 InitializationSpeciesMoments summarize_initialization(
     const Species2D& species, const std::string& region) {
-    VelocityMomentAccumulator accumulator;
+    VelocityMomentAccumulator position_accumulator;
+    VelocityMomentAccumulator velocity_accumulator;
     for (const auto& particle : species.particles()) {
         if (!particle.alive) continue;
-        accumulator.add(
+        position_accumulator.add(
+            particle.position.x, particle.position.y, 0.0);
+        velocity_accumulator.add(
             particle.velocity.x, particle.velocity.y,
             particle.velocity_z);
     }
     return finish_moments(
         species.config().initialization.version, species.name(),
-        to_string(species.config().initialization.loading), region,
-        species.charge(), species.weight(), accumulator);
+        to_string(species.config().initialization.loading),
+        to_string(species.config().initialization.density_profile),
+        region,
+        species.charge(), species.weight(),
+        position_accumulator, velocity_accumulator);
 }
 
 InitializationSpeciesMoments summarize_initialization(
     const Species3D& species, const std::string& region) {
-    VelocityMomentAccumulator accumulator;
+    VelocityMomentAccumulator position_accumulator;
+    VelocityMomentAccumulator velocity_accumulator;
     for (const auto& particle : species.particles()) {
         if (!particle.alive) continue;
-        accumulator.add(
+        position_accumulator.add(
+            particle.position.x, particle.position.y,
+            particle.position.z);
+        velocity_accumulator.add(
             particle.velocity.x, particle.velocity.y,
             particle.velocity.z);
     }
     return finish_moments(
         species.config().initialization.version, species.name(),
-        to_string(species.config().initialization.loading), region,
-        species.charge(), species.weight(), accumulator);
+        to_string(species.config().initialization.loading),
+        to_string(species.config().initialization.density_profile),
+        region,
+        species.charge(), species.weight(),
+        position_accumulator, velocity_accumulator);
 }
 
 void write_initialization_report(
@@ -309,8 +595,10 @@ void write_initialization_report(
             "cannot write initialization report: " + path.string());
     }
     output
-        << "initialization_version,state_source,dimension,species,loading,region,"
+        << "initialization_version,state_source,dimension,species,loading,density_profile,region,"
         << "macroparticles,macro_weight,physical_particles,represented_charge,"
+        << "mean_position_x,mean_position_y,mean_position_z,"
+        << "position_stddev_x,position_stddev_y,position_stddev_z,"
         << "mean_velocity_x,mean_velocity_y,mean_velocity_z,"
         << "thermal_velocity_x,thermal_velocity_y,thermal_velocity_z\n"
         << std::setprecision(17);
@@ -322,11 +610,21 @@ void write_initialization_report(
             << csv_quote(value.species) << ','
             << csv_quote(
                    state_source == "restart" ? "restart" : value.loading)
+            << ',' << csv_quote(
+                   state_source == "restart"
+                       ? "restart"
+                       : value.density_profile)
             << ',' << csv_quote(value.region) << ','
             << value.macroparticles << ','
             << value.macro_weight << ','
             << value.physical_particles << ','
             << value.represented_charge << ','
+            << value.mean_position_x << ','
+            << value.mean_position_y << ','
+            << value.mean_position_z << ','
+            << value.position_stddev_x << ','
+            << value.position_stddev_y << ','
+            << value.position_stddev_z << ','
             << value.mean_velocity_x << ','
             << value.mean_velocity_y << ','
             << value.mean_velocity_z << ','

@@ -22,6 +22,8 @@ Species2D::Species2D(Species2DConfig cfg) : cfg_(std::move(cfg)) {
     }
     validate_particle_initialization(
         cfg_.initialization, 3, cfg_.thermal_velocity, "2D species");
+    validate_density_profile(
+        cfg_.initialization, 2, cfg_.particles, "2D species");
 }
 
 void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
@@ -37,7 +39,9 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
     const double thermal_z = resolved_thermal_velocity(
         cfg_.initialization, 2, cfg_.thermal_velocity);
 
-    if (cfg_.initialization.loading == ParticleLoading::Random) {
+    if (cfg_.initialization.density_profile ==
+            DensityProfileKind::Uniform &&
+        cfg_.initialization.loading == ParticleLoading::Random) {
         std::uniform_real_distribution<double> ux(xmin, xmax);
         std::uniform_real_distribution<double> uy(ymin, ymax);
         std::normal_distribution<double> vx(
@@ -76,6 +80,54 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
     const auto velocity_z = initialize_velocity_component(
         particles_.size(), cfg_.drift_velocity_z, thermal_z,
         cfg_.initialization.loading, rng);
+
+    if (cfg_.initialization.density_profile !=
+        DensityProfileKind::Uniform) {
+        std::uniform_real_distribution<double> unit(0.0, 1.0);
+        const std::array<double, 3> minimum{xmin, ymin, 0.0};
+        const std::array<double, 3> maximum{xmax, ymax, 1.0};
+        std::size_t accepted = 0;
+        std::size_t attempts = 0;
+        while (accepted < particles_.size()) {
+            if (attempts >=
+                cfg_.initialization.max_profile_sampling_attempts) {
+                throw std::runtime_error(
+                    "2D species density-profile sampling exceeded max_profile_sampling_attempts");
+            }
+            const std::size_t sequence = attempts++;
+            const bool quiet =
+                cfg_.initialization.loading ==
+                ParticleLoading::QuietStart;
+            const double x_coordinate = quiet
+                ? quiet_sequence_coordinate(sequence, 0)
+                : unit(rng);
+            const double y_coordinate = quiet
+                ? quiet_sequence_coordinate(sequence, 1)
+                : unit(rng);
+            const double threshold = quiet
+                ? quiet_sequence_coordinate(sequence, 2)
+                : unit(rng);
+            const Vec2 position{
+                xmin + (xmax - xmin) * x_coordinate,
+                ymin + (ymax - ymin) * y_coordinate};
+            if (threshold > density_profile_acceptance(
+                    cfg_.initialization,
+                    {position.x, position.y, 0.0},
+                    minimum, maximum)) {
+                continue;
+            }
+            auto& particle = particles_[accepted];
+            particle.position = position;
+            particle.velocity.x = velocity_x[accepted];
+            particle.velocity.y = velocity_y[accepted];
+            particle.velocity_z = velocity_z[accepted];
+            particle.velocity_half = particle.velocity;
+            particle.velocity_half_z = particle.velocity_z;
+            particle.alive = true;
+            ++accepted;
+        }
+        return;
+    }
 
     for (std::size_t index = 0; index < particles_.size(); ++index) {
         auto& particle = particles_[index];

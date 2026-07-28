@@ -37,6 +37,26 @@ while retaining a sampled thermal spread. Imported 2D quiet-start loading
 stratifies area-weighted cell selection and triangle coordinates, so all
 particles remain in the validated geometry.
 
+`density_profile = uniform` retains those historical position paths exactly.
+`gaussian` defines a relative density proportional to
+`exp(-0.5 * sum(((x_i-center_i)/scale_i)^2))` in physical/configured
+coordinates and requires a center and positive scale on every active spatial
+axis. `sinusoidal` defines a relative density
+`1 + amplitude*cos(2*pi*sum(mode_i*xi_i) + phase)`, where each `xi_i` is
+normalized over the active initialization envelope, modes are non-negative
+integers with at least one nonzero component, phase is in radians, and
+`|amplitude| <= 1` keeps density non-negative. The requested macro-particle
+count and weight still fix the total represented population; profiles are
+normalized spatial shapes rather than new weight conventions.
+
+Nonuniform profiles use acceptance sampling from the existing uniform geometry
+measure. Random loading uses pseudorandom candidates. Quiet-start uses a
+deterministic low-discrepancy sequence for position and acceptance coordinates,
+while retaining antithetic velocity pairs. Every species has an explicit
+`max_profile_sampling_attempts` total work budget. A profile that cannot load
+the requested population within that budget fails without returning a partial
+or silently biased state.
+
 For imported meshes, `initialization_region` selects a named Gmsh
 dimension-two physical group. AuroraPIC builds a separate cumulative area
 distribution for every cell label and samples only triangles belonging to the
@@ -55,18 +75,19 @@ contract.
 
 Every run emits `initialization.csv` after generated initialization or
 checkpoint restoration. Its versioned rows report the state source, species,
-loading model or `restart`, selected region where meaningful, live
+loading and density-profile models or `restart`, selected region where meaningful, live
 macro-particle count and weight, represented physical-particle number and
-charge, mean velocity, and realized component velocity standard deviations.
+charge, mean position and velocity, and realized component position and
+velocity standard deviations.
 This is an audit of the actually loaded numerical state rather than a copy of
 requested configuration values.
 
 The current imported quiet-start implementation intentionally rejects a
 rectangular `init_x_*`/`init_y_*` clip instead of silently degrading to random
 or biased rejection sampling. Random loading continues to support those
-bounds. Analytic density perturbations, physical-temperature inputs,
-charge/current acceptance gates, and external openPMD/HDF5 particle states
-remain subsequent initial-condition milestones.
+bounds. Physical-temperature inputs, charge/current acceptance gates, general
+tabulated profiles, and external openPMD/HDF5 particle states remain subsequent
+initial-condition milestones.
 
 ## Field solvers
 
