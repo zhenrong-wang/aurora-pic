@@ -4,7 +4,7 @@
 This script validates the release artifact path that static checks cannot cover:
 
 1. install the already-built tree into a temporary prefix;
-2. run the installed CLI against a tiny config;
+2. verify both simulation and swarm CLIs and run the simulation CLI;
 3. configure, build, and run a downstream CMake consumer using
    ``find_package(AuroraPIC CONFIG REQUIRED)``;
 4. build and inspect the CPack TGZ package for the same install surface.
@@ -80,6 +80,7 @@ def write_cli_smoke_config(path: Path, output_dir: Path) -> None:
 
 def smoke_installed_cli(prefix: Path, work: Path) -> None:
     cli = require_file(prefix / "bin" / "aurorapic_cli")
+    require_file(prefix / "bin" / "aurorapic_swarm")
     output_dir = work / "cli-output"
     config = work / "install_smoke.cfg"
     write_cli_smoke_config(config, output_dir)
@@ -189,6 +190,7 @@ def smoke_tgz_package(
     require(len(roots) == 1, f"expected one top-level package directory in {package}, found {len(roots)}")
     packaged_prefix = roots[0]
     require_file(packaged_prefix / "bin" / "aurorapic_cli")
+    require_file(packaged_prefix / "bin" / "aurorapic_swarm")
     require_file(packaged_prefix / "lib" / "cmake" / "AuroraPIC" / "AuroraPICConfig.cmake")
     require_file(packaged_prefix / "lib" / "cmake" / "AuroraPIC" / "AuroraPICConfigVersion.cmake")
     require_file(packaged_prefix / "lib" / "cmake" / "AuroraPIC" / "AuroraPICTargets.cmake")

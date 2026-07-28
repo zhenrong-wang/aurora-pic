@@ -16,6 +16,7 @@
 #include "pic/Species.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/Species3D.hpp"
+#include "pic/Swarm.hpp"
 #include "pic/UnstructuredFieldSolver2D.hpp"
 #include "pic/UnstructuredMesh2D.hpp"
 #include "pic/UnstructuredSimulation2D.hpp"
@@ -3101,6 +3102,144 @@ int main() {
                     },
                     "do not match simulation units",
                     "simulation accepted mismatched gas dataset units");
+
+                const auto swarm_table =
+                    std::filesystem::absolute(
+                        "test_swarm_zero_elastic.dat");
+                const auto swarm_manifest =
+                    std::filesystem::absolute(
+                        "test_swarm_zero_elastic.gas");
+                const auto swarm_config_path =
+                    std::filesystem::absolute(
+                        "test_swarm_zero_elastic.cfg");
+                const auto swarm_output =
+                    std::filesystem::absolute(
+                        "test_swarm_zero_elastic.csv");
+                {
+                    std::ofstream table_output(swarm_table);
+                    table_output << "0 0\n10 0\n";
+                    std::ofstream manifest_output(swarm_manifest);
+                    manifest_output
+                        << "gas_data_version = 2\n"
+                        << "units = si\n"
+                        << "gas = synthetic_swarm\n"
+                        << "neutral_mass = 6.6335209e-26\n"
+                        << "dataset_id = aurorapic.synthetic.swarm\n"
+                        << "dataset_version = 1\n"
+                        << "data_provenance = AuroraPIC test\n"
+                        << "citation = Synthetic fixture\n"
+                        << "retrieved = 2026-07-28\n"
+                        << "license = Synthetic test data\n\n"
+                        << "[collision.elastic]\n"
+                        << "type = elastic\n"
+                        << "cross_section_file = "
+                        << swarm_table.string() << '\n'
+                        << "energy_scale = 1.602176634e-19\n";
+                    std::ofstream config_output(swarm_config_path);
+                    config_output
+                        << "swarm_config_version = 1\n"
+                        << "gas_data_file = "
+                        << swarm_manifest.string() << '\n'
+                        << "neutral_density = 1e20\n"
+                        << "reduced_fields_td = 1\n"
+                        << "max_frequency = 1e6\n"
+                        << "timestep = 1e-8\n"
+                        << "steps = 6\n"
+                        << "burn_in_steps = 2\n"
+                        << "particles = 4\n"
+                        << "uncertainty_blocks = 2\n"
+                        << "initial_mean_energy_ev = 0\n"
+                        << "max_energy_ev = 1\n"
+                        << "seed = 17\n"
+                        << "output_file = "
+                        << swarm_output.string() << '\n';
+                }
+                try {
+                    const auto swarm_config =
+                        pic::load_swarm_benchmark_config(
+                            swarm_config_path);
+                    const auto swarm_results =
+                        pic::run_swarm_benchmark(swarm_config);
+                    require(
+                        swarm_results.size() == 1 &&
+                            swarm_results.front().channels.size() == 1 &&
+                            swarm_results.front().channels.front()
+                                    .collisions == 0,
+                        "zero-cross-section swarm produced collisions");
+                    constexpr double electron_mass =
+                        9.1093837139e-31;
+                    constexpr double elementary_charge =
+                        1.602176634e-19;
+                    const double acceleration_step =
+                        elementary_charge * 0.1 / electron_mass *
+                        swarm_config.timestep;
+                    const double expected_drift =
+                        4.5 * acceleration_step;
+                    require_near(
+                        swarm_results.front()
+                            .electron_drift_velocity_m_s,
+                        expected_drift,
+                        expected_drift * 1e-13,
+                        "swarm uniform-field drift is incorrect");
+                    const double expected_mean_energy =
+                        0.5 * electron_mass *
+                        acceleration_step * acceleration_step *
+                        21.5 / elementary_charge;
+                    require_near(
+                        swarm_results.front().mean_energy_ev,
+                        expected_mean_energy,
+                        expected_mean_energy * 1e-13,
+                        "swarm uniform-field mean energy is incorrect");
+                    require_near(
+                        swarm_results.front()
+                            .longitudinal_diffusion_m2_s,
+                        0.0, 1e-30,
+                        "identical swarm particles diffused");
+                    const auto swarm_dataset =
+                        pic::load_gas_dataset(swarm_manifest);
+                    pic::write_swarm_benchmark_csv(
+                        swarm_output, swarm_config,
+                        swarm_dataset, swarm_results);
+                    const std::string csv =
+                        read_file_text(swarm_output);
+                    require(
+                        csv.find(
+                            "fixed_population_no_avalanche") !=
+                                std::string::npos &&
+                            csv.find(
+                                "electron_drift_velocity_m_s") !=
+                                std::string::npos,
+                        "swarm CSV omitted method metadata");
+
+                    auto invalid_swarm = swarm_config;
+                    invalid_swarm.max_energy_ev = 11.0;
+                    require_throws_contains(
+                        [&] {
+                            (void)pic::run_swarm_benchmark(
+                                invalid_swarm);
+                        },
+                        "table coverage",
+                        "swarm accepted an uncovered energy range");
+                    invalid_swarm = swarm_config;
+                    invalid_swarm.work_item_limit = 1;
+                    require_throws_contains(
+                        [&] {
+                            (void)pic::run_swarm_benchmark(
+                                invalid_swarm);
+                        },
+                        "work_item_limit",
+                        "swarm ignored its conservative work limit");
+                } catch (...) {
+                    std::filesystem::remove(swarm_table);
+                    std::filesystem::remove(swarm_manifest);
+                    std::filesystem::remove(swarm_config_path);
+                    std::filesystem::remove(swarm_output);
+                    throw;
+                }
+                std::filesystem::remove(swarm_table);
+                std::filesystem::remove(swarm_manifest);
+                std::filesystem::remove(swarm_config_path);
+                std::filesystem::remove(swarm_output);
             }
             {
                 const auto invalid_path =

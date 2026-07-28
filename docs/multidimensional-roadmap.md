@@ -117,7 +117,11 @@ interface now separates reusable table physics and licensing metadata from
 simulation operating conditions and fingerprints both for restart. A local
 LXCat/BOLSIG+ converter now generates SI manifests and audit reports from
 user-supplied complete sets while rejecting unit, threshold, mass-ratio, and
-coverage ambiguity. Charge
+coverage ambiguity. A homogeneous fixed-population electron-swarm runner now
+uses the production 3V MCC kernel for reproducible E/N scans with enforced
+energy coverage, block uncertainty estimates, diffusion diagnostics, and
+per-channel rates. Avalanche multiplication, differential scattering, and
+reference-data comparison remain subsequent validation work. Charge
 exchange beyond the resonant case, thermal neutral motion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 

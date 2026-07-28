@@ -1,0 +1,15 @@
+# Small deterministic interface example. The gas tables are synthetic.
+swarm_config_version = 1
+gas_data_file = synthetic_swarm.gas
+neutral_density = 1.0e20
+reduced_fields_td = 1, 5, 10
+max_frequency = 1.0e7
+timestep = 1.0e-9
+steps = 2000
+burn_in_steps = 1000
+particles = 256
+uncertainty_blocks = 10
+initial_mean_energy_ev = 0.1
+max_energy_ev = 15
+seed = 271828
+output_file = synthetic_swarm.csv

@@ -45,7 +45,7 @@ def validate_cmake_packaging() -> None:
         "include(GNUInstallDirs)",
         "include(CMakePackageConfigHelpers)",
         "target_compile_features(aurorapic PUBLIC cxx_std_20)",
-        "install(TARGETS aurorapic aurorapic_cli",
+        "install(TARGETS aurorapic aurorapic_cli aurorapic_swarm",
         "install(DIRECTORY include/",
         "install(DIRECTORY examples/",
         "docs/performance-envelope.md",
@@ -72,6 +72,7 @@ def validate_ci_matrix() -> None:
         "AURORA_ENABLE_OPENMP=${{ matrix.openmp }}",
         "python3 scripts/validate_release_artifacts.py",
         "python3 scripts/test_import_lxcat.py",
+        "python3 scripts/test_swarm_cli.py build/aurorapic_swarm",
         "ctest --test-dir build --parallel 1 --output-on-failure",
         "python3 scripts/verify_examples.py build/aurorapic_cli",
         "python3 scripts/verify_install_package.py build --jobs 2",
@@ -92,6 +93,7 @@ def validate_install_smoke_script() -> None:
         '"package"',
         "AuroraPICConfig.cmake",
         "aurorapic_cli",
+        "aurorapic_swarm",
     ):
         require(term in script, f"install/package smoke script must include {term!r}")
 

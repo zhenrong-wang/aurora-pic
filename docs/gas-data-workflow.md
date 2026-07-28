@@ -57,7 +57,9 @@ Before publication or device simulation:
 1. Review the original contributor's references, comments, and license.
 2. Keep a complete internally consistent set from one source when possible.
 3. Retain the source file and compare its SHA-256 with `audit.json`.
-4. Run swarm validation over the intended reduced-field range.
+4. Run the documented
+   [electron-swarm validation](swarm-validation.md) over the intended
+   reduced-field range.
 5. Use the same validated gas package unchanged in the geometry simulation.
 
 The checked-in LXCat fixture is synthetic parser-validation data only.

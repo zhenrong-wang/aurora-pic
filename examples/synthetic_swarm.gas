@@ -1,0 +1,28 @@
+# Synthetic software-validation package. This is not material data.
+gas_data_version = 2
+units = si
+gas = synthetic_swarm_gas
+neutral_mass = 6.6335209e-26
+dataset_id = aurorapic.synthetic.swarm
+dataset_version = 1
+data_provenance = AuroraPIC synthetic swarm example
+citation = AuroraPIC synthetic software-validation fixture
+retrieved = 2026-07-28
+license = Synthetic test data
+
+[collision.elastic]
+type = elastic
+cross_section_file = synthetic_swarm_elastic.dat
+energy_scale = 1.602176634e-19
+
+[collision.excitation]
+type = excitation
+cross_section_file = synthetic_swarm_excitation.dat
+energy_scale = 1.602176634e-19
+threshold_energy = 3.204353268e-19
+
+[collision.ionization]
+type = ionization
+cross_section_file = synthetic_swarm_ionization.dat
+energy_scale = 1.602176634e-19
+threshold_energy = 8.01088317e-19

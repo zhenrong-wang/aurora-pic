@@ -28,6 +28,7 @@ add_library(aurorapic
   src/Species.cpp
   src/Species2D.cpp
   src/Species3D.cpp
+  src/Swarm.cpp
   src/UnstructuredConfig2D.cpp
   src/UnstructuredFieldSolver2D.cpp
   src/UnstructuredMesh2D.cpp
@@ -55,7 +56,11 @@ add_executable(aurorapic_cli src/main.cpp)
 target_link_libraries(aurorapic_cli PRIVATE aurorapic)
 target_compile_options(aurorapic_cli PRIVATE -Wall -Wextra -Wpedantic -O3)
 
-install(TARGETS aurorapic aurorapic_cli
+add_executable(aurorapic_swarm src/swarm_main.cpp)
+target_link_libraries(aurorapic_swarm PRIVATE aurorapic)
+target_compile_options(aurorapic_swarm PRIVATE -Wall -Wextra -Wpedantic -O3)
+
+install(TARGETS aurorapic aurorapic_cli aurorapic_swarm
   EXPORT AuroraPICTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -64,10 +69,10 @@ install(TARGETS aurorapic aurorapic_cli
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples
   FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh" PATTERN "*.geo"
-  PATTERN "*.dat" PATTERN "*.gas")
+  PATTERN "*.dat" PATTERN "*.gas" PATTERN "*.swarm")
 install(PROGRAMS scripts/generate_real_case_mesh.py scripts/import_lxcat.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
-install(FILES README.md docs/collisions.md docs/gas-data-workflow.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(FILES README.md docs/collisions.md docs/gas-data-workflow.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md docs/swarm-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 install(EXPORT AuroraPICTargets
   FILE AuroraPICTargets.cmake
   NAMESPACE AuroraPIC::

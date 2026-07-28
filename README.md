@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support tabulated stationary-neutral finite-mass elastic scattering, excitation, bounded electron-impact ionization, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support tabulated stationary-neutral finite-mass elastic scattering, excitation, bounded electron-impact ionization, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
 
 ## Why this methodology
 
@@ -27,7 +27,9 @@ cmake --build build --parallel 1
 
 OpenMP support is enabled by default when CMake finds a C++ OpenMP toolchain. Disable it explicitly with `-DAURORA_ENABLE_OPENMP=OFF` to force serial-only builds.
 
-To install the current build into a local prefix, create the `TGZ` package, and smoke-test the installed CLI plus downstream CMake package metadata, run:
+To install the current build into a local prefix, create the `TGZ` package,
+and smoke-test the installed simulation and swarm CLIs plus downstream CMake
+package metadata, run:
 
 ```sh
 python3 scripts/verify_install_package.py build
@@ -42,7 +44,13 @@ target_link_libraries(your_target PRIVATE AuroraPIC::aurorapic)
 
 ## Verify
 
-The full smoke suite builds the project, validates milestone and release-engineering artifacts, runs the CTest regression executable, runs the standalone pusher validation script (leapfrog plus Boris checks), runs isolated CLI smoke tests for the included 1D/2D/3D examples, and runs the install/package smoke test for the installed CLI, CPack `TGZ`, and downstream `find_package(AuroraPIC CONFIG REQUIRED)` consumer:
+The full smoke suite builds the project, validates milestone and
+release-engineering artifacts, tests local gas import and the homogeneous
+swarm CLI, runs the CTest regression executable, runs the standalone pusher
+validation script (leapfrog plus Boris checks), runs isolated CLI smoke tests
+for the included 1D/2D/3D examples, and runs the install/package smoke test
+for the installed CLIs, CPack `TGZ`, and downstream
+`find_package(AuroraPIC CONFIG REQUIRED)` consumer:
 
 ```sh
 scripts/verify.sh
@@ -183,7 +191,11 @@ inputs, not gas-property data. The
 [local real-gas workflow](docs/gas-data-workflow.md) converts a user-supplied
 LXCat/BOLSIG+ export, records its SHA-256 and provenance, audits its collision
 envelope, and produces a unit-safe versioned manifest without downloading or
-vendoring the source dataset.
+vendoring the source dataset. The resulting package can be checked outside a
+device geometry with the
+[homogeneous electron-swarm runner](docs/swarm-validation.md), which scans
+E/N using the production collision kernel and emits traceable transport and
+channel-rate diagnostics.
 
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
 

@@ -21,6 +21,7 @@ cmake --build build --parallel "$BUILD_JOBS"
 python3 scripts/validate_milestones.py
 python3 scripts/validate_release_artifacts.py
 python3 scripts/test_import_lxcat.py
+python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
 python3 scripts/validate_pushers.py
 python3 scripts/verify_examples.py build/aurorapic_cli
