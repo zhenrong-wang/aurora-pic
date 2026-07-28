@@ -63,7 +63,9 @@ struct DiagnosticSample3D {
 
 class Diagnostics {
 public:
-    explicit Diagnostics(std::filesystem::path output_dir);
+    explicit Diagnostics(
+        std::filesystem::path output_dir,
+        double permittivity = EPS0);
     void write_header();
     DiagnosticSample sample(std::size_t step, double time, const Grid& grid, const std::vector<Species>& species);
     void write_sample(const DiagnosticSample& s);
@@ -72,12 +74,16 @@ public:
 private:
     std::filesystem::path output_dir_;
     std::ofstream scalar_file_;
+    double permittivity_{EPS0};
     std::vector<DiagnosticSample> history_;
 };
 
 class Diagnostics2D {
 public:
-    Diagnostics2D(std::filesystem::path output_dir, const std::vector<Species2D>& species);
+    Diagnostics2D(
+        std::filesystem::path output_dir,
+        const std::vector<Species2D>& species,
+        double permittivity = EPS0);
     void write_header();
     DiagnosticSample2D sample(std::size_t step,
                               double time,
@@ -94,12 +100,16 @@ private:
     std::filesystem::path output_dir_;
     std::ofstream scalar_file_;
     std::vector<std::string> species_names_;
+    double permittivity_{EPS0};
     std::vector<DiagnosticSample2D> history_;
 };
 
 class Diagnostics3D {
 public:
-    Diagnostics3D(std::filesystem::path output_dir, const std::vector<Species3D>& species);
+    Diagnostics3D(
+        std::filesystem::path output_dir,
+        const std::vector<Species3D>& species,
+        double permittivity = EPS0);
     void write_header();
     DiagnosticSample3D sample(std::size_t step,
                               double time,
@@ -116,6 +126,7 @@ private:
     std::filesystem::path output_dir_;
     std::ofstream scalar_file_;
     std::vector<std::string> species_names_;
+    double permittivity_{EPS0};
     std::vector<DiagnosticSample3D> history_;
 };
 }

@@ -2,6 +2,7 @@
 #include "pic/Convergence.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
+#include "pic/Units.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -14,7 +15,8 @@
 
 namespace pic {
 namespace {
-constexpr const char* kCheckpointMagic = "AuroraPIC-checkpoint-v1";
+constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
+constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 
 void validate_runtime_config(const Config& cfg) {
     if (!std::isfinite(cfg.dt) || cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive and finite");
@@ -57,7 +59,10 @@ void require_stream(T& stream, const std::string& message) {
 } // namespace
 
 Simulation::Simulation(Config cfg)
-    : cfg_(std::move(cfg)), grid_(cfg_.nx, cfg_.length, cfg_.boundary), rng_(cfg_.seed) {
+    : cfg_(std::move(cfg)),
+      grid_(cfg_.nx, cfg_.length, cfg_.boundary),
+      solver_(cfg_.units.permittivity()),
+      rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     validate_runtime_config(cfg_);
     for (const auto& sc : cfg_.species) species_.emplace_back(sc);
@@ -139,7 +144,9 @@ DiagnosticSample Simulation::sample() const {
     }
     for (std::size_t i = 0; i < grid_.nx(); ++i) {
         const double volume = grid_.node_volume(i);
-        s.field_energy += 0.5 * EPS0 * grid_.electric()[i] * grid_.electric()[i] * volume;
+        s.field_energy +=
+            0.5 * cfg_.units.permittivity() *
+            grid_.electric()[i] * grid_.electric()[i] * volume;
         s.charge_l1 += std::abs(grid_.rho()[i]) * volume;
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
@@ -151,8 +158,11 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagic << '\n';
+    out << kCheckpointMagicV2 << '\n';
     out << "dimension 1\n";
+    out << "units " << to_string(cfg_.units.system) << ' '
+        << cfg_.units.relative_permittivity << ' '
+        << cfg_.units.permittivity() << "\n";
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -172,13 +182,37 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     if (!in) throw std::runtime_error("cannot open checkpoint for reading: " + path.string());
     std::string magic;
     std::getline(in, magic);
-    if (magic != kCheckpointMagic) throw std::runtime_error("invalid checkpoint magic in: " + path.string());
+    const bool checkpoint_v1 = magic == kCheckpointMagicV1;
+    const bool checkpoint_v2 = magic == kCheckpointMagicV2;
+    if (!checkpoint_v1 && !checkpoint_v2) {
+        throw std::runtime_error("invalid checkpoint magic in: " + path.string());
+    }
 
     std::string key;
     unsigned dimension = 0;
     in >> key >> dimension;
     if (key != "dimension" || dimension != 1) throw std::runtime_error("checkpoint dimension does not match 1D simulation");
-    in >> key >> step_;
+    in >> key;
+    if (key == "units") {
+        std::string unit_system;
+        double relative_permittivity = 0.0;
+        double permittivity = 0.0;
+        in >> unit_system >> relative_permittivity >> permittivity;
+        if (!checkpoint_v2 ||
+            unit_system != to_string(cfg_.units.system) ||
+            relative_permittivity != cfg_.units.relative_permittivity ||
+            permittivity != cfg_.units.permittivity()) {
+            throw std::runtime_error(
+                "checkpoint unit system does not match 1D config");
+        }
+        in >> key;
+    } else if (checkpoint_v2 ||
+               cfg_.units.system != UnitSystem::Normalized ||
+               cfg_.units.relative_permittivity != 1.0) {
+        throw std::runtime_error(
+            "legacy checkpoint without unit metadata requires normalized units");
+    }
+    in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
     in >> key >> time_;
     if (key != "time") throw std::runtime_error("checkpoint missing time");
@@ -214,7 +248,8 @@ RunSummary Simulation::run() {
     if (!cfg_.restart_path.empty()) load_checkpoint(cfg_.restart_path);
     else initialize();
 
-    Diagnostics diag(cfg_.output_dir);
+    write_unit_metadata(cfg_.output_dir, cfg_.units, 1);
+    Diagnostics diag(cfg_.output_dir, cfg_.units.permittivity());
     diag.write_header();
     auto s0 = diag.sample(step_, time_, grid_, species_);
     diag.write_sample(s0);

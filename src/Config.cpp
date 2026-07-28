@@ -157,6 +157,28 @@ RunMode parse_mode(const KeyValue& kv, RunMode def) {
     throw std::runtime_error("invalid mode value: '" + value + "'");
 }
 
+UnitSystemConfig parse_units(
+    const KeyValue& kv, const UnitSystemConfig& defaults) {
+    UnitSystemConfig result = defaults;
+    const std::string value =
+        lower(trim(as<std::string>(
+            kv, "units", to_string(result.system))));
+    if (value == "normalized" || value == "normalised") {
+        result.system = UnitSystem::Normalized;
+    } else if (value == "si") {
+        result.system = UnitSystem::SI;
+    } else {
+        throw std::runtime_error(
+            "invalid units value: '" + value +
+            "'; expected normalized or si");
+    }
+    result.relative_permittivity = as<double>(
+        kv, "relative_permittivity",
+        result.relative_permittivity);
+    (void)result.permittivity();
+    return result;
+}
+
 ParticleBoundary parse_particle_boundary(const KeyValue& kv, const std::string& key, ParticleBoundary def) {
     const auto value = lower(as<std::string>(kv, key, to_string(def)));
     if (value == "auto") return ParticleBoundary::Auto;
@@ -181,6 +203,7 @@ void require_species_scale_source(const KeyValue& block, const std::string& spec
 }
 
 void validate_config(const Config& cfg) {
+    (void)cfg.units.permittivity();
     if (cfg.nx < 3) throw std::runtime_error("nx must be at least 3");
     validate_positive(cfg.length, "length");
     validate_positive(cfg.dt, "dt");
@@ -213,6 +236,7 @@ void validate_boundary_side(const BoundarySide2D& side, const std::string& name)
 }
 
 void validate_config_2d(const Simulation2DConfig& cfg) {
+    (void)cfg.units.permittivity();
     if (cfg.nx < 3) throw std::runtime_error("2D nx must be at least 3");
     if (cfg.ny < 3) throw std::runtime_error("2D ny must be at least 3");
     validate_positive(cfg.length_x, "length_x");
@@ -253,6 +277,7 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
 }
 
 void validate_config_3d(const Simulation3DConfig& cfg) {
+    (void)cfg.units.permittivity();
     if (cfg.nx < 3) throw std::runtime_error("3D nx must be at least 3");
     if (cfg.ny < 3) throw std::runtime_error("3D ny must be at least 3");
     if (cfg.nz < 3) throw std::runtime_error("3D nz must be at least 3");
@@ -356,7 +381,8 @@ Config load_config(const std::string& path) {
         "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "boundary", "mode", "dimension", "config_version", "checkpoint_output", "checkpoint_interval",
-        "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads"
+        "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads",
+        "units", "relative_permittivity"
     };
     static const std::unordered_set<std::string> collision_keys{
         "enabled", "frequency", "neutral_temperature_velocity"
@@ -375,6 +401,7 @@ Config load_config(const std::string& path) {
     if (dimension != 1) throw std::runtime_error("1D config loader requires dimension = 1 or no dimension key");
 
     Config cfg;
+    cfg.units = parse_units(global, cfg.units);
     cfg.nx = as<std::size_t>(global, "nx", cfg.nx);
     cfg.length = as<double>(global, "length", cfg.length);
     cfg.dt = as<double>(global, "dt", cfg.dt);
@@ -465,7 +492,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
-        "boundary_left_tag", "boundary_right_tag", "boundary_bottom_tag", "boundary_top_tag"
+        "boundary_left_tag", "boundary_right_tag", "boundary_bottom_tag",
+        "boundary_top_tag", "units", "relative_permittivity"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
@@ -482,6 +510,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     if (dimension != 2) throw std::runtime_error("2D config loader requires dimension = 2");
 
     Simulation2DConfig cfg;
+    cfg.units = parse_units(global, cfg.units);
     cfg.nx = as<std::size_t>(global, "nx", cfg.nx);
     cfg.ny = as<std::size_t>(global, "ny", cfg.ny);
     cfg.length_x = as<double>(global, "length_x", cfg.length_x);
@@ -564,7 +593,9 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
         "runtime_backend", "runtime_threads", "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
-        "particle_boundary_bottom", "particle_boundary_top", "particle_boundary_back", "particle_boundary_front"
+        "particle_boundary_bottom", "particle_boundary_top",
+        "particle_boundary_back", "particle_boundary_front", "units",
+        "relative_permittivity"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
@@ -581,6 +612,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     if (dimension != 3) throw std::runtime_error("3D config loader requires dimension = 3");
 
     Simulation3DConfig cfg;
+    cfg.units = parse_units(global, cfg.units);
     cfg.nx = as<std::size_t>(global, "nx", cfg.nx);
     cfg.ny = as<std::size_t>(global, "ny", cfg.ny);
     cfg.nz = as<std::size_t>(global, "nz", cfg.nz);

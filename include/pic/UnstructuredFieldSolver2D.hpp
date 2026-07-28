@@ -13,6 +13,7 @@ struct UnstructuredPoissonOptions2D {
     double relative_tolerance{1e-10};
     double absolute_tolerance{1e-12};
     std::size_t max_iterations{0}; // zero selects a mesh-dependent bound
+    double permittivity{EPS0};
 };
 
 struct UnstructuredPoissonSummary2D {

@@ -30,6 +30,7 @@ add_library(aurorapic
   src/UnstructuredFieldSolver2D.cpp
   src/UnstructuredMesh2D.cpp
   src/UnstructuredSimulation2D.cpp
+  src/Units.cpp
   src/VTKWriter.cpp
 )
 target_include_directories(aurorapic PUBLIC
@@ -63,7 +64,7 @@ install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examp
   FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh" PATTERN "*.geo")
 install(PROGRAMS scripts/generate_real_case_mesh.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
-install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 install(EXPORT AuroraPICTargets
   FILE AuroraPICTargets.cmake
   NAMESPACE AuroraPIC::

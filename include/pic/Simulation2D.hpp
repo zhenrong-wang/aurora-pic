@@ -24,6 +24,7 @@ struct ParticleBoundaryConfig2D {
 };
 
 struct Simulation2DConfig {
+    UnitSystemConfig units{};
     std::size_t nx{64};
     std::size_t ny{64};
     double length_x{1.0};

@@ -178,6 +178,15 @@ def run_example(cli: Path, config_name: str, output_name: str, temp_root: Path) 
     print(f"[smoke] {config_name} -> {output_dir.relative_to(temp_root)}", flush=True)
     subprocess.run([str(cli), str(copied_config)], cwd=ROOT, check=True)
     require(output_dir.is_dir(), f"example did not create output directory: {output_dir}")
+    unit_metadata = require_file(output_dir / "units.txt").read_text(
+        encoding="utf-8"
+    )
+    require(
+        "unit_system normalized\n" in unit_metadata and
+        "relative_permittivity 1\n" in unit_metadata and
+        "permittivity 1\n" in unit_metadata,
+        f"example unit metadata is missing or inconsistent: {output_dir}",
+    )
     return output_dir
 
 

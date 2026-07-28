@@ -20,6 +20,8 @@ int main(int argc, char** argv) {
                 std::cout << "AuroraPIC imported 2D: mesh=" << cfg.mesh_path.string()
                           << " dt=" << cfg.dt
                           << " mode=" << pic::to_string(cfg.mode)
+                          << " units=" << pic::to_string(cfg.units.system)
+                          << " permittivity=" << cfg.units.permittivity()
                           << " vtk_output=" << (cfg.vtk_output ? "yes" : "no")
                           << "\n";
                 pic::UnstructuredSimulation2D sim(std::move(cfg));
@@ -51,6 +53,8 @@ int main(int argc, char** argv) {
             std::cout << "AuroraPIC 2D: nx=" << cfg.nx << " ny=" << cfg.ny
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
                       << " dt=" << cfg.dt << " mode=" << pic::to_string(cfg.mode)
+                      << " units=" << pic::to_string(cfg.units.system)
+                      << " permittivity=" << cfg.units.permittivity()
                       << " boundary=" << pic::to_string(cfg.boundary)
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
             pic::Simulation2D sim(std::move(cfg));
@@ -67,6 +71,8 @@ int main(int argc, char** argv) {
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
                       << " length_z=" << cfg.length_z << " dt=" << cfg.dt
                       << " mode=" << pic::to_string(cfg.mode)
+                      << " units=" << pic::to_string(cfg.units.system)
+                      << " permittivity=" << cfg.units.permittivity()
                       << " boundary=" << pic::to_string(cfg.boundary)
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
             pic::Simulation3D sim(std::move(cfg));
@@ -80,7 +86,10 @@ int main(int argc, char** argv) {
 
         auto cfg = pic::load_config(argv[1]);
         std::cout << "AuroraPIC 1D: nx=" << cfg.nx << " length=" << cfg.length << " dt=" << cfg.dt
-                  << " mode=" << pic::to_string(cfg.mode) << " boundary=" << pic::to_string(cfg.boundary) << "\n";
+                  << " mode=" << pic::to_string(cfg.mode)
+                  << " units=" << pic::to_string(cfg.units.system)
+                  << " permittivity=" << cfg.units.permittivity()
+                  << " boundary=" << pic::to_string(cfg.boundary) << "\n";
         pic::Simulation sim(std::move(cfg));
         auto summary = sim.run();
         std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time

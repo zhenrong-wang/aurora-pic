@@ -1,13 +1,44 @@
 #pragma once
 #include <cstddef>
+#include <cmath>
+#include <stdexcept>
 #include <string>
 namespace pic {
-constexpr double EPS0 = 1.0; // normalized permittivity; SI scaling can be layered via config later.
+constexpr double NORMALIZED_PERMITTIVITY = 1.0;
+constexpr double VACUUM_PERMITTIVITY_SI = 8.8541878128e-12;
+constexpr double EPS0 = NORMALIZED_PERMITTIVITY; // compatibility alias
+
+enum class UnitSystem { Normalized, SI };
+
+struct UnitSystemConfig {
+    UnitSystem system{UnitSystem::Normalized};
+    double relative_permittivity{1.0};
+
+    double permittivity() const {
+        if (!std::isfinite(relative_permittivity) ||
+            !(relative_permittivity > 0.0)) {
+            throw std::invalid_argument(
+                "relative_permittivity must be positive and finite");
+        }
+        const double base = system == UnitSystem::SI
+                                ? VACUUM_PERMITTIVITY_SI
+                                : NORMALIZED_PERMITTIVITY;
+        return base * relative_permittivity;
+    }
+};
 
 enum class Boundary { Periodic, Dirichlet };
 enum class RunMode { Transient, SteadyState };
 enum class ParticleBoundary { Auto, Absorbing, Reflecting, Periodic };
 enum class VTKOutputFormat { Legacy, Xml, Both };
+
+inline std::string to_string(UnitSystem system) {
+    switch (system) {
+        case UnitSystem::Normalized: return "normalized";
+        case UnitSystem::SI: return "si";
+    }
+    return "unknown";
+}
 
 inline std::string to_string(Boundary boundary) {
     switch (boundary) {

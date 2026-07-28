@@ -32,7 +32,7 @@ when starting any imported-mesh run.
 - ion-induced, weight-aware secondary-electron emission from the probe;
 - species/tag-resolved particle, charge, energy, rate, and flux diagnostics;
 - prescribed magnetic field, VTU field output, particle sampling, and
-  checkpoint v3.
+  checkpoint v4.
 
 The smoke acceptance envelope requires 20 completed timesteps, 350–450 live
 macro-particles, at least 250 outlet impacts, at least 80 probe impacts,
@@ -52,8 +52,8 @@ the following work:
 
 1. Choose a published experiment or device with accessible geometry,
    operating conditions, material properties, and diagnostic data.
-2. Pin an explicit SI/normalized-unit contract and verify dimensional
-   consistency of every input and diagnostic.
+2. Apply the now-explicit SI/normalized-unit contract to the selected case
+   and verify dimensional consistency and provenance of every input.
 3. Add the dominant device physics, likely neutral background gas,
    electron-neutral and ion-neutral collisions, energy/angle-dependent wall
    yields, and possibly an external circuit or RF waveform.

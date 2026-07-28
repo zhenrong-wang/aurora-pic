@@ -66,6 +66,7 @@ struct UnstructuredBoundaryFlux2D {
 };
 
 struct UnstructuredSimulation2DConfig {
+    UnitSystemConfig units{};
     std::filesystem::path mesh_path;
     double dt{0.02};
     std::size_t steps{100};

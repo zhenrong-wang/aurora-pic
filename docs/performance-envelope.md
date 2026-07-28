@@ -56,7 +56,8 @@ For credible physical studies, document these checks with the run configuration 
 5. **Output cadence:** output intervals are short enough to detect transients but not so frequent that I/O dominates.
 6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses cached element-local shapes with spatial fallback, their electrostatic solve supports strict mixed Dirichlet/Neumann labels, and the runtime applies segment-based absorbing/reflecting and length-weighted injection policies by physical label.
 7. **Mesh convergence:** use the reported minimum angle and maximum edge ratio as quality guards, then repeat the physical study on at least three systematically refined meshes. The biased-probe smoke case verifies one mesh artifact; it does not establish mesh-independent physics.
-7. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform magnetic rotation. There is no self-consistent electromagnetic field update yet.
+8. **Units:** require an explicit `units` declaration for maintained studies, archive `units.txt`, and apply the 1D/2D per-unit omitted-measure convention when comparing energy, current, or flux with physical data.
+9. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform magnetic rotation. There is no self-consistent electromagnetic field update yet.
 
 ## Release-engineering envelope
 

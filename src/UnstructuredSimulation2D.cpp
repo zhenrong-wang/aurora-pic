@@ -2,6 +2,7 @@
 
 #include "pic/Convergence.hpp"
 #include "pic/Pusher.hpp"
+#include "pic/Units.hpp"
 #include "pic/VTKWriter.hpp"
 
 #include <algorithm>
@@ -29,6 +30,8 @@ constexpr const char* CHECKPOINT_MAGIC_V2 =
     "AuroraPIC-unstructured-2D-checkpoint-v2";
 constexpr const char* CHECKPOINT_MAGIC_V3 =
     "AuroraPIC-unstructured-2D-checkpoint-v3";
+constexpr const char* CHECKPOINT_MAGIC_V4 =
+    "AuroraPIC-unstructured-2D-checkpoint-v4";
 
 double cross(Vec2 first, Vec2 second) {
     return first.x * second.y - first.y * second.x;
@@ -185,6 +188,7 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         }
     }
     validate_runtime_policy(config_.runtime);
+    config_.poisson.permittivity = config_.units.permittivity();
 
     const auto labels = mesh_.topology().boundary_labels();
     const std::set<std::string> label_set(labels.begin(), labels.end());
@@ -1025,7 +1029,8 @@ UnstructuredDiagnosticSample2D UnstructuredSimulation2D::sample() const {
         const double area = mesh_.node_control_areas()[i];
         const Vec2 electric = mesh_.electric()[i];
         result.field_energy +=
-            0.5 * EPS0 * (electric.x * electric.x + electric.y * electric.y) * area;
+            0.5 * config_.units.permittivity() *
+            (electric.x * electric.x + electric.y * electric.y) * area;
         result.charge_l1 += std::abs(mesh_.rho()[i]) * area;
     }
     result.total_energy = result.kinetic_energy + result.field_energy;
@@ -1191,8 +1196,11 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
                                  path.string());
     }
     output << std::setprecision(17);
-    output << CHECKPOINT_MAGIC_V3 << '\n';
+    output << CHECKPOINT_MAGIC_V4 << '\n';
     output << "mesh_signature " << mesh_signature() << '\n';
+    output << "units " << to_string(config_.units.system) << ' '
+           << config_.units.relative_permittivity << ' '
+           << config_.units.permittivity() << '\n';
     output << "step " << step_ << '\n';
     output << "time " << time_ << '\n';
     output << "absorbed_count " << absorbed_by_label_.size() << '\n';
@@ -1276,7 +1284,9 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
     const bool checkpoint_v1 = magic == CHECKPOINT_MAGIC_V1;
     const bool checkpoint_v2 = magic == CHECKPOINT_MAGIC_V2;
     const bool checkpoint_v3 = magic == CHECKPOINT_MAGIC_V3;
-    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3) {
+    const bool checkpoint_v4 = magic == CHECKPOINT_MAGIC_V4;
+    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
+        !checkpoint_v4) {
         throw std::runtime_error("invalid unstructured checkpoint magic");
     }
     std::string key;
@@ -1285,7 +1295,29 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
     if (key != "mesh_signature" || signature != mesh_signature()) {
         throw std::runtime_error("unstructured checkpoint mesh does not match configured geometry");
     }
-    input >> key >> step_;
+    input >> key;
+    if (key == "units") {
+        std::string unit_system;
+        double relative_permittivity = 0.0;
+        double permittivity = 0.0;
+        input >> unit_system >> relative_permittivity >> permittivity;
+        if (!checkpoint_v4 ||
+            unit_system != to_string(config_.units.system) ||
+            relative_permittivity !=
+                config_.units.relative_permittivity ||
+            permittivity != config_.units.permittivity()) {
+            throw std::runtime_error(
+                "unstructured checkpoint unit system mismatch");
+        }
+        input >> key;
+    } else if (checkpoint_v4 ||
+               config_.units.system != UnitSystem::Normalized ||
+               config_.units.relative_permittivity != 1.0) {
+        throw std::runtime_error(
+            "legacy unstructured checkpoint without unit metadata "
+            "requires normalized units");
+    }
+    input >> step_;
     if (key != "step") throw std::runtime_error("unstructured checkpoint missing step");
     input >> key >> time_;
     if (key != "time" || !std::isfinite(time_) || time_ < 0.0) {
@@ -1358,7 +1390,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
             source->injected_particles = injected_particles;
         }
     }
-    if (!checkpoint_v3) {
+    if (!checkpoint_v3 && !checkpoint_v4) {
         if (!emissions_.empty()) {
             throw std::runtime_error(
                 "legacy unstructured checkpoint cannot restart configured "
@@ -1521,6 +1553,7 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
         load_checkpoint(config_.restart_path);
     }
     std::filesystem::create_directories(config_.output_dir);
+    write_unit_metadata(config_.output_dir, config_.units, 2);
     std::ofstream diagnostics(config_.output_dir / "scalars.csv");
     if (!diagnostics) throw std::runtime_error("cannot open unstructured diagnostics output");
     write_diagnostics_header(diagnostics);

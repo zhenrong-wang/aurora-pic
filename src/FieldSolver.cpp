@@ -174,6 +174,14 @@ void apply_grounded_dirichlet_boundary(Mesh3D& mesh) {
 }
 }
 
+FieldSolver::FieldSolver(double permittivity)
+    : permittivity_(permittivity) {
+    if (!std::isfinite(permittivity_) || !(permittivity_ > 0.0)) {
+        throw std::invalid_argument(
+            "field-solver permittivity must be positive and finite");
+    }
+}
+
 void FieldSolver::solve(Grid& grid, double phi_left, double phi_right) const {
     if (grid.boundary() == Boundary::Periodic) solve_periodic_spectral(grid);
     else solve_dirichlet_tridiagonal(grid, phi_left, phi_right);
@@ -217,7 +225,8 @@ void FieldSolver::solve_periodic_spectral(Grid& grid) const {
             rhok += (rho[j] - mean) * std::complex<double>(std::cos(angle), std::sin(angle));
         }
         rhok /= static_cast<double>(n);
-        std::complex<double> phik = rhok / (EPS0 * wave * wave);
+        std::complex<double> phik =
+            rhok / (permittivity_ * wave * wave);
         std::complex<double> Ek = -std::complex<double>(0.0, 1.0) * wave * phik;
         for (std::size_t j = 0; j < n; ++j) {
             double angle = twopi * static_cast<double>(k*j) / static_cast<double>(n);
@@ -266,7 +275,8 @@ void FieldSolver::solve_periodic_spectral(Mesh2D& mesh) const {
             const double kx = twopi * kx_mode / Lx;
             const double k2 = kx * kx + ky * ky;
             const auto idx = mesh.index(kx_index, ky_index);
-            const Complex phik = rho_hat[idx] / (EPS0 * k2);
+            const Complex phik =
+                rho_hat[idx] / (permittivity_ * k2);
             phi_hat[idx] = phik;
             ex_hat[idx] = -Complex{0.0, 1.0} * kx * phik;
             ey_hat[idx] = -Complex{0.0, 1.0} * ky * phik;
@@ -333,7 +343,8 @@ void FieldSolver::solve_periodic_spectral(Mesh3D& mesh) const {
                 const double kx = twopi * kx_mode / Lx;
                 const double k2 = kx * kx + ky * ky + kz * kz;
                 const auto idx = mesh.index(kx_index, ky_index, kz_index);
-                const Complex phik = rho_hat[idx] / (EPS0 * k2);
+                const Complex phik =
+                    rho_hat[idx] / (permittivity_ * k2);
                 phi_hat[idx] = phik;
                 ex_hat[idx] = -Complex{0.0, 1.0} * kx * phik;
                 ey_hat[idx] = -Complex{0.0, 1.0} * ky * phik;
@@ -370,7 +381,9 @@ void FieldSolver::solve_dirichlet_tridiagonal(Grid& grid, double phi_left, doubl
     phi[n-1] = phi_right;
     const std::size_t m = n - 2;
     std::vector<double> c(m, -1.0), d(m, 0.0);
-    for (std::size_t i = 0; i < m; ++i) d[i] = rho[i+1] * dx2 / EPS0;
+    for (std::size_t i = 0; i < m; ++i) {
+        d[i] = rho[i + 1] * dx2 / permittivity_;
+    }
     d[0] += phi_left; d[m-1] += phi_right;
     std::vector<double> cp(m, 0.0), dp(m, 0.0);
     cp[0] = c[0] / 2.0; dp[0] = d[0] / 2.0;
@@ -409,7 +422,7 @@ void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
         for (std::size_t j = 1; j + 1 < ny; ++j) {
             for (std::size_t i = 1; i + 1 < nx; ++i) {
                 const auto idx = mesh.index(i, j);
-                const double rhs = rho[idx] / EPS0;
+                const double rhs = rho[idx] / permittivity_;
                 const double updated = ((phi[mesh.index(i - 1, j)] + phi[mesh.index(i + 1, j)]) * inv_dx2
                                       + (phi[mesh.index(i, j - 1)] + phi[mesh.index(i, j + 1)]) * inv_dy2
                                       + rhs) / diagonal;
@@ -476,7 +489,7 @@ void FieldSolver::solve_dirichlet_iterative(Mesh3D& mesh) const {
             for (std::size_t j = 1; j + 1 < ny; ++j) {
                 for (std::size_t i = 1; i + 1 < nx; ++i) {
                     const auto idx = mesh.index(i, j, k);
-                    const double rhs = rho[idx] / EPS0;
+                    const double rhs = rho[idx] / permittivity_;
                     const double updated = ((phi[mesh.index(i - 1, j, k)] + phi[mesh.index(i + 1, j, k)]) * inv_dx2
                                           + (phi[mesh.index(i, j - 1, k)] + phi[mesh.index(i, j + 1, k)]) * inv_dy2
                                           + (phi[mesh.index(i, j, k - 1)] + phi[mesh.index(i, j, k + 1)]) * inv_dz2

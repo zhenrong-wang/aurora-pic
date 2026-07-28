@@ -10,14 +10,16 @@ Particles carry position `x`, velocity `vx`, charge, mass, and macro-particle we
 d²phi/dx² = -rho / eps0,      E = -dphi/dx
 ```
 
-in normalized units with `eps0 = 1`.
+with the configured homogeneous permittivity. Normalized mode uses a base
+permittivity of `1`; SI mode uses `8.8541878128e-12 F/m`. See
+`docs/units.md` for reduced-dimensional weight and energy conventions.
 
 ## Field solvers
 
 - Periodic domains use a direct spectral Poisson solve. The zero mode is removed, enforcing global quasi-neutral compatibility.
 - Dirichlet domains use a tridiagonal finite-difference Poisson solve with prescribed endpoint potentials.
 - Imported finite-element domains support label-wise constant Dirichlet values and Neumann outward normal derivatives. For `-laplacian(phi) = rho / epsilon_0`, the Neumann term `dphi/dn` enters the weak-form right-hand side with a positive sign; therefore `E dot n = -dphi/dn`. At least one Dirichlet label is required to remove the constant-potential nullspace.
-- Validated imported 2D domains use triangle/bilinear-quadrilateral finite-element stiffness assembly with lumped nodal charge, physical-label Dirichlet constraints, CSR storage, and Jacobi-preconditioned conjugate gradients. The solve reports its residual and iteration count, and projects element electric fields back to nodes. This API is not yet connected to the CLI simulation loop.
+- Validated imported 2D domains use triangle/bilinear-quadrilateral finite-element stiffness assembly with lumped nodal charge, physical-label Dirichlet constraints, CSR storage, and Jacobi-preconditioned conjugate gradients. The solve reports its residual and iteration count, projects element electric fields back to nodes, and is integrated with the imported-mesh CLI simulation loop.
 
 ## Particle advance and steady state
 
@@ -27,9 +29,9 @@ The C++ imported-domain runtime follows the same cycle. It samples particles uni
 
 Imported runs are reachable from the CLI with `mesh = imported`. Their checkpoints include a deterministic signature over node coordinates, element connectivity, physical tags, and labels; a restart is rejected if the configured geometry differs.
 
-Imported boundary sources inject a configured integer number of macro-particles at the beginning of each active timestep. Boundary faces sharing a physical label are selected by length, then sampled uniformly along the selected face and inset into the adjacent domain. The configured normal velocity is inward; thermal normal speed uses an inward half-range Gaussian magnitude, while tangential thermal velocity remains signed Gaussian. New particles are initialized into the same leapfrog/Boris time staggering as initial particles before joining the push. Dead storage slots are reused deterministically. Checkpoint v2 records source identity, schedule, velocity parameters, cumulative counts, dynamic particle state, and RNG state so continuation reproduces uninterrupted injection.
+Imported boundary sources inject a configured integer number of macro-particles at the beginning of each active timestep. Boundary faces sharing a physical label are selected by length, then sampled uniformly along the selected face and inset into the adjacent domain. The configured normal velocity is inward; thermal normal speed uses an inward half-range Gaussian magnitude, while tangential thermal velocity remains signed Gaussian. New particles are initialized into the same leapfrog/Boris time staggering as initial particles before joining the push. Dead storage slots are reused deterministically. Imported checkpoint v4 records the source identity, schedule, velocity parameters, cumulative counts, dynamic particle state, RNG state, and unit contract so continuation reproduces uninterrupted injection.
 
-Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal distribution as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Checkpoint v3 preserves emission definitions, cumulative emitted counts, flux state, particle state, and RNG state.
+Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal distribution as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Imported checkpoint v4 preserves emission definitions, cumulative emitted counts, flux state, particle state, RNG state, and unit metadata.
 
 Imported-mesh quality reporting computes cell-area and edge-length extrema, the minimum cell-corner angle, and the maximum within-cell edge-length ratio. These inexpensive metrics complement the mandatory finite, nondegenerate, convex, consistently oriented, manifold, and exactly tagged boundary validation. The biased-probe integration mesh pins explicit angle, edge-ratio, area, topology, and physical-label envelopes.
 

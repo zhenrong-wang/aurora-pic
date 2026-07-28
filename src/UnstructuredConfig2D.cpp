@@ -67,6 +67,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
 
     static const std::set<std::string> global_keys{
         "config_version", "dimension", "mesh", "mesh_file", "dt", "steps",
+        "units", "relative_permittivity",
         "mode", "steady_tolerance", "steady_window", "max_steps",
         "max_particles_per_species", "seed",
         "magnetic_field_z", "output_interval", "output_dir", "vtk_output",
@@ -271,6 +272,21 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
     }
 
     UnstructuredSimulation2DConfig result;
+    if (global.contains("units")) {
+        const std::string units = lower(global.at("units"));
+        if (units == "normalized" || units == "normalised") {
+            result.units.system = UnitSystem::Normalized;
+        } else if (units == "si") {
+            result.units.system = UnitSystem::SI;
+        } else {
+            throw std::runtime_error(
+                "invalid unstructured units value: " + units);
+        }
+    }
+    result.units.relative_permittivity = number<double>(
+        global, "relative_permittivity",
+        result.units.relative_permittivity);
+    result.poisson.permittivity = result.units.permittivity();
     result.mesh_path =
         resolved_path(path, required(global, "mesh_file", "global"));
     result.dt = number<double>(global, "dt", result.dt);

@@ -180,6 +180,11 @@ void validate_options(const UnstructuredPoissonOptions2D& options) {
     if (options.relative_tolerance == 0.0 && options.absolute_tolerance == 0.0) {
         throw std::invalid_argument("unstructured Poisson requires a positive convergence tolerance");
     }
+    if (!std::isfinite(options.permittivity) ||
+        !(options.permittivity > 0.0)) {
+        throw std::invalid_argument(
+            "unstructured Poisson permittivity must be positive and finite");
+    }
 }
 
 std::vector<std::optional<double>> map_dirichlet_nodes(
@@ -416,7 +421,9 @@ UnstructuredPoissonSummary2D UnstructuredPoissonSolver2D::solve(
             mesh.phi()[i] = *impl_->fixed[i];
             continue;
         }
-        right_hand_side[i] += mesh.rho()[i] * mesh.node_control_areas()[i] / EPS0;
+        right_hand_side[i] +=
+            mesh.rho()[i] * mesh.node_control_areas()[i] /
+            impl_->options.permittivity;
         if (!std::isfinite(right_hand_side[i])) {
             throw std::overflow_error("unstructured Poisson right-hand side overflow");
         }

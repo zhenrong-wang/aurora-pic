@@ -2,6 +2,7 @@
 #include "pic/Convergence.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
+#include "pic/Units.hpp"
 #include "pic/VTKWriter.hpp"
 #include <cmath>
 #include <filesystem>
@@ -13,7 +14,8 @@
 
 namespace pic {
 namespace {
-constexpr const char* kCheckpointMagic = "AuroraPIC-checkpoint-v1";
+constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
+constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -135,7 +137,11 @@ void write_vtk_outputs(const Mesh3D& mesh, const std::filesystem::path& output_d
 } // namespace
 
 Simulation3D::Simulation3D(Simulation3DConfig cfg)
-    : cfg_(std::move(cfg)), mesh_(cfg_.nx, cfg_.ny, cfg_.nz, cfg_.length_x, cfg_.length_y, cfg_.length_z, cfg_.boundary), rng_(cfg_.seed) {
+    : cfg_(std::move(cfg)),
+      mesh_(cfg_.nx, cfg_.ny, cfg_.nz, cfg_.length_x,
+            cfg_.length_y, cfg_.length_z, cfg_.boundary),
+      solver_(cfg_.units.permittivity()),
+      rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     if (!std::isfinite(cfg_.dt) || cfg_.dt <= 0.0) throw std::invalid_argument("3D simulation dt must be positive and finite");
     if (cfg_.output_interval == 0) throw std::invalid_argument("3D output_interval must be positive");
@@ -250,8 +256,11 @@ void Simulation3D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 3D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagic << '\n';
+    out << kCheckpointMagicV2 << '\n';
     out << "dimension 3\n";
+    out << "units " << to_string(cfg_.units.system) << ' '
+        << cfg_.units.relative_permittivity << ' '
+        << cfg_.units.permittivity() << "\n";
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "boundary_losses " << boundary_losses_.absorbed_left << ' ' << boundary_losses_.absorbed_right << ' '
@@ -277,13 +286,37 @@ void Simulation3D::load_checkpoint(const std::filesystem::path& path) {
     if (!in) throw std::runtime_error("cannot open 3D checkpoint for reading: " + path.string());
     std::string magic;
     std::getline(in, magic);
-    if (magic != kCheckpointMagic) throw std::runtime_error("invalid checkpoint magic in: " + path.string());
+    const bool checkpoint_v1 = magic == kCheckpointMagicV1;
+    const bool checkpoint_v2 = magic == kCheckpointMagicV2;
+    if (!checkpoint_v1 && !checkpoint_v2) {
+        throw std::runtime_error("invalid checkpoint magic in: " + path.string());
+    }
 
     std::string key;
     unsigned dimension = 0;
     in >> key >> dimension;
     if (key != "dimension" || dimension != 3) throw std::runtime_error("checkpoint dimension does not match 3D simulation");
-    in >> key >> step_;
+    in >> key;
+    if (key == "units") {
+        std::string unit_system;
+        double relative_permittivity = 0.0;
+        double permittivity = 0.0;
+        in >> unit_system >> relative_permittivity >> permittivity;
+        if (!checkpoint_v2 ||
+            unit_system != to_string(cfg_.units.system) ||
+            relative_permittivity != cfg_.units.relative_permittivity ||
+            permittivity != cfg_.units.permittivity()) {
+            throw std::runtime_error(
+                "checkpoint unit system does not match 3D config");
+        }
+        in >> key;
+    } else if (checkpoint_v2 ||
+               cfg_.units.system != UnitSystem::Normalized ||
+               cfg_.units.relative_permittivity != 1.0) {
+        throw std::runtime_error(
+            "legacy checkpoint without unit metadata requires normalized units");
+    }
+    in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
     in >> key >> time_;
     if (key != "time") throw std::runtime_error("checkpoint missing time");
@@ -326,7 +359,9 @@ RunSummary3D Simulation3D::run() {
     if (!cfg_.restart_path.empty()) load_checkpoint(cfg_.restart_path);
     else initialize();
 
-    Diagnostics3D diag(cfg_.output_dir, species_);
+    write_unit_metadata(cfg_.output_dir, cfg_.units, 3);
+    Diagnostics3D diag(
+        cfg_.output_dir, species_, cfg_.units.permittivity());
     diag.write_header();
     auto s0 = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
     diag.write_sample(s0);
@@ -389,7 +424,8 @@ DiagnosticSample3D Simulation3D::sample() const {
                                 + mesh_.electric_y()[idx] * mesh_.electric_y()[idx]
                                 + mesh_.electric_z()[idx] * mesh_.electric_z()[idx];
                 const double volume = mesh_.node_volume(i, j, k);
-                s.field_energy += 0.5 * EPS0 * e2 * volume;
+                s.field_energy +=
+                    0.5 * cfg_.units.permittivity() * e2 * volume;
                 s.charge_l1 += std::abs(mesh_.rho()[idx]) * volume;
             }
         }

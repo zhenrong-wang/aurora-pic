@@ -26,6 +26,7 @@ struct ParticleBoundaryConfig3D {
 };
 
 struct Simulation3DConfig {
+    UnitSystemConfig units{};
     std::size_t nx{32};
     std::size_t ny{32};
     std::size_t nz{32};

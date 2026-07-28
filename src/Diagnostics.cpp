@@ -7,7 +7,14 @@
 #include <utility>
 
 namespace pic {
-Diagnostics::Diagnostics(std::filesystem::path output_dir) : output_dir_(std::move(output_dir)) {
+Diagnostics::Diagnostics(
+    std::filesystem::path output_dir, double permittivity)
+    : output_dir_(std::move(output_dir)),
+      permittivity_(permittivity) {
+    if (!std::isfinite(permittivity_) || !(permittivity_ > 0.0)) {
+        throw std::invalid_argument(
+            "diagnostic permittivity must be positive and finite");
+    }
     std::filesystem::create_directories(output_dir_);
     scalar_file_.open(output_dir_ / "scalars.csv");
     if (!scalar_file_) throw std::runtime_error("cannot open diagnostics output");
@@ -18,7 +25,9 @@ DiagnosticSample Diagnostics::sample(std::size_t step, double time, const Grid& 
     for (const auto& sp : species) { s.kinetic_energy += sp.kinetic_energy(); s.live_particles += sp.live_count(); }
     for (std::size_t i = 0; i < grid.nx(); ++i) {
         const double volume = grid.node_volume(i);
-        s.field_energy += 0.5 * EPS0 * grid.electric()[i] * grid.electric()[i] * volume;
+        s.field_energy +=
+            0.5 * permittivity_ *
+            grid.electric()[i] * grid.electric()[i] * volume;
         s.charge_l1 += std::abs(grid.rho()[i]) * volume;
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
@@ -35,8 +44,16 @@ void Diagnostics::write_fields(std::size_t step, const Grid& grid) const {
     for (std::size_t i = 0; i < grid.nx(); ++i) out << grid.node_x(i) << ',' << grid.rho()[i] << ',' << grid.phi()[i] << ',' << grid.electric()[i] << '\n';
 }
 
-Diagnostics2D::Diagnostics2D(std::filesystem::path output_dir, const std::vector<Species2D>& species)
-    : output_dir_(std::move(output_dir)) {
+Diagnostics2D::Diagnostics2D(
+    std::filesystem::path output_dir,
+    const std::vector<Species2D>& species,
+    double permittivity)
+    : output_dir_(std::move(output_dir)),
+      permittivity_(permittivity) {
+    if (!std::isfinite(permittivity_) || !(permittivity_ > 0.0)) {
+        throw std::invalid_argument(
+            "2D diagnostic permittivity must be positive and finite");
+    }
     std::filesystem::create_directories(output_dir_);
     scalar_file_.open(output_dir_ / "scalars.csv");
     if (!scalar_file_) throw std::runtime_error("cannot open 2D diagnostics output");
@@ -72,7 +89,7 @@ DiagnosticSample2D Diagnostics2D::sample(std::size_t step,
             const auto idx = mesh.index(i, j);
             const double e2 = mesh.electric_x()[idx] * mesh.electric_x()[idx] + mesh.electric_y()[idx] * mesh.electric_y()[idx];
             const double area = mesh.node_area(i, j);
-            s.field_energy += 0.5 * EPS0 * e2 * area;
+            s.field_energy += 0.5 * permittivity_ * e2 * area;
             s.charge_l1 += std::abs(mesh.rho()[idx]) * area;
         }
     }
@@ -115,8 +132,16 @@ void Diagnostics2D::write_particle_sample(std::size_t step,
     }
 }
 
-Diagnostics3D::Diagnostics3D(std::filesystem::path output_dir, const std::vector<Species3D>& species)
-    : output_dir_(std::move(output_dir)) {
+Diagnostics3D::Diagnostics3D(
+    std::filesystem::path output_dir,
+    const std::vector<Species3D>& species,
+    double permittivity)
+    : output_dir_(std::move(output_dir)),
+      permittivity_(permittivity) {
+    if (!std::isfinite(permittivity_) || !(permittivity_ > 0.0)) {
+        throw std::invalid_argument(
+            "3D diagnostic permittivity must be positive and finite");
+    }
     std::filesystem::create_directories(output_dir_);
     scalar_file_.open(output_dir_ / "scalars.csv");
     if (!scalar_file_) throw std::runtime_error("cannot open 3D diagnostics output");
@@ -155,7 +180,8 @@ DiagnosticSample3D Diagnostics3D::sample(std::size_t step,
                                 + mesh.electric_y()[idx] * mesh.electric_y()[idx]
                                 + mesh.electric_z()[idx] * mesh.electric_z()[idx];
                 const double volume = mesh.node_volume(i, j, k);
-                s.field_energy += 0.5 * EPS0 * e2 * volume;
+                s.field_energy +=
+                    0.5 * permittivity_ * e2 * volume;
                 s.charge_l1 += std::abs(mesh.rho()[idx]) * volume;
             }
         }

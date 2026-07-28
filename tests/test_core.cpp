@@ -235,6 +235,39 @@ int main() {
             require(max_err < 1e-12, "M1 1D periodic Poisson sine benchmark exceeded electric-field tolerance");
         }
         {
+            pic::Grid normalized(32, 1.0, pic::Boundary::Periodic);
+            pic::Grid doubled_permittivity(
+                32, 1.0, pic::Boundary::Periodic);
+            for (std::size_t i = 0; i < normalized.nx(); ++i) {
+                const double density =
+                    std::sin(
+                        2.0 * std::numbers::pi *
+                        normalized.node_x(i));
+                normalized.rho()[i] = density;
+                doubled_permittivity.rho()[i] = density;
+            }
+            pic::FieldSolver normalized_solver;
+            pic::FieldSolver scaled_solver(2.0);
+            normalized_solver.solve(normalized);
+            scaled_solver.solve(doubled_permittivity);
+            for (std::size_t i = 0; i < normalized.nx(); ++i) {
+                require_near(
+                    doubled_permittivity.electric()[i],
+                    0.5 * normalized.electric()[i], 1e-13,
+                    "Poisson field did not scale inversely with permittivity");
+            }
+            pic::UnitSystemConfig si;
+            si.system = pic::UnitSystem::SI;
+            si.relative_permittivity = 2.5;
+            require_near(
+                si.permittivity(),
+                2.5 * pic::VACUUM_PERMITTIVITY_SI, 1e-26,
+                "SI unit contract computed the wrong permittivity");
+            require_throws(
+                []() { (void)pic::FieldSolver(0.0); },
+                "field solver accepted zero permittivity");
+        }
+        {
             constexpr std::size_t nx = 16;
             constexpr std::size_t ny = 12;
             constexpr double length_x = 1.0;
@@ -1307,6 +1340,8 @@ int main() {
             {
                 std::ofstream out(config_path);
                 out << "config_version = 1\n"
+                    << "units = si\n"
+                    << "relative_permittivity = 2.5\n"
                     << "nx = 16\n"
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
@@ -1327,6 +1362,13 @@ int main() {
             require(cfg.species.size() == 1, "config did not load one species");
             require(cfg.runtime.backend == pic::RuntimeBackend::Serial && cfg.runtime.threads == 1,
                     "M4 1D runtime config aliases were not parsed");
+            require(
+                cfg.units.system == pic::UnitSystem::SI &&
+                    std::abs(
+                        cfg.units.permittivity() -
+                        2.5 * pic::VACUUM_PERMITTIVITY_SI) <
+                        1e-26,
+                "SI unit-system config was not parsed");
             require(std::abs(cfg.species[0].weight - 0.5) < 1e-15, "density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_path);
 
@@ -1341,6 +1383,16 @@ int main() {
                 }, message);
             };
 
+            require_config_rejects(
+                "test_invalid_units.ini",
+                "units = cgs\nnx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_units\ncharge = -1\nmass = 1\nweight = 1\nparticles = 10\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "invalid unit system validation did not throw");
+            require_config_rejects(
+                "test_invalid_relative_permittivity.ini",
+                "units = si\nrelative_permittivity = 0\nnx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_permittivity\ncharge = -1\nmass = 1\nweight = 1\nparticles = 10\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "invalid relative permittivity validation did not throw");
             require_config_rejects(
                 "test_missing_scale_1d.ini",
                 "nx = 16\nlength = 1\ndt = 0.01\n[species]\nname = missing_scale\ncharge = -1\nmass = 1\nparticles = 10\n",
@@ -1928,6 +1980,13 @@ int main() {
 
             require_checkpoint_samples_close(continuous.sample(), restarted.sample(), "M1 1D checkpoint restart determinism");
             require_species_close(continuous.species(), restarted.species(), "M1 1D checkpoint restart determinism");
+
+            require_throws([&] {
+                auto bad_units_cfg = cfg;
+                bad_units_cfg.units.system = pic::UnitSystem::SI;
+                pic::Simulation bad_units(bad_units_cfg);
+                bad_units.load_checkpoint(checkpoint_path);
+            }, "1D checkpoint accepted a different unit system");
 
             require_throws([&] {
                 pic::Simulation2DConfig bad_cfg;
@@ -3237,6 +3296,18 @@ int main() {
                         expected_particles[i].position.y, 1e-13,
                         "source checkpoint restart changed particle y");
                 }
+                auto mismatched_units = continued_config;
+                mismatched_units.units.system = pic::UnitSystem::SI;
+                mismatched_units.output_dir =
+                    "test_output_unstructured_source_bad_units";
+                std::filesystem::remove_all(mismatched_units.output_dir);
+                require_throws(
+                    [&]() {
+                        pic::UnstructuredSimulation2D mismatched(
+                            mismatched_units);
+                        (void)mismatched.run();
+                    },
+                    "unstructured checkpoint accepted a different unit system");
 
                 auto bounded_config = config;
                 bounded_config.max_particles_per_species = 2;
@@ -3285,6 +3356,7 @@ int main() {
 
                 std::filesystem::remove_all(output_dir);
                 std::filesystem::remove_all(continued_config.output_dir);
+                std::filesystem::remove_all(mismatched_units.output_dir);
                 std::filesystem::remove_all(bounded_config.output_dir);
                 std::filesystem::remove_all(recycling_config.output_dir);
             }

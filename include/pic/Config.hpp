@@ -29,6 +29,7 @@ struct CollisionConfig {
 };
 
 struct Config {
+    UnitSystemConfig units{};
     std::size_t nx{128};
     double length{1.0};
     double dt{0.02};
