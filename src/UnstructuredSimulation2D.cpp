@@ -211,6 +211,10 @@ void write_collision_metadata(
            << config.neutral_temperature << '\n';
     output << "gas_data_file "
            << std::quoted(config.gas_data_file.string()) << '\n';
+    output << "gas_data_version "
+           << config.gas_data_version << '\n';
+    output << "gas_data_units "
+           << std::quoted(to_string(config.gas_data_units)) << '\n';
     output << "dataset_id "
            << std::quoted(config.dataset_id) << '\n';
     output << "dataset_version "

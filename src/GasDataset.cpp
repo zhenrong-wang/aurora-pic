@@ -156,7 +156,7 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
     }
 
     static const std::set<std::string> global_keys{
-        "gas_data_version", "gas", "neutral_mass", "dataset_id",
+        "gas_data_version", "units", "gas", "neutral_mass", "dataset_id",
         "dataset_version", "data_provenance", "citation", "retrieved",
         "license",
     };
@@ -219,12 +219,28 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
     const auto format_version =
         number<std::size_t>(
             global, "gas_data_version", 0, context);
-    if (format_version != 1) {
+    if (format_version != 1 && format_version != 2) {
         throw std::runtime_error(
-            context + " requires gas_data_version = 1");
+            context + " supports gas_data_version 1 or 2");
     }
 
     GasDataset result;
+    result.format_version = format_version;
+    if (format_version == 2) {
+        const std::string units =
+            lower(required(global, "units", context));
+        if (units == "si") {
+            result.unit_system = UnitSystem::SI;
+        } else if (units == "normalized") {
+            result.unit_system = UnitSystem::Normalized;
+        } else {
+            throw std::runtime_error(
+                context + " units must be si or normalized");
+        }
+    } else if (global.contains("units")) {
+        throw std::runtime_error(
+            context + " units requires gas_data_version = 2");
+    }
     result.gas_name = required(global, "gas", context);
     (void)required(global, "neutral_mass", context);
     result.neutral_mass =

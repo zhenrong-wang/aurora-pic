@@ -2902,6 +2902,10 @@ int main() {
             require(
                 imported_ionization_config.collisions.gas_data_file
                         .filename() == "synthetic_ionization.gas" &&
+                    imported_ionization_config.collisions.gas_data_version ==
+                        2 &&
+                    imported_ionization_config.collisions.gas_data_units ==
+                        pic::UnitSystem::Normalized &&
                     imported_ionization_config.collisions.dataset_id ==
                         "aurorapic.synthetic.ionization" &&
                     imported_ionization_config.collisions.dataset_version ==
@@ -2943,7 +2947,10 @@ int main() {
                 const auto gas_dataset =
                     pic::load_gas_dataset(gas_dataset_path);
                 require(
-                    gas_dataset.gas_name ==
+                    gas_dataset.format_version == 2 &&
+                        gas_dataset.unit_system ==
+                            pic::UnitSystem::Normalized &&
+                        gas_dataset.gas_name ==
                             "synthetic_validation_gas" &&
                         gas_dataset.neutral_mass == 40.0 &&
                         gas_dataset.channels.size() == 1 &&
@@ -3026,6 +3033,74 @@ int main() {
                     },
                     "physics cannot be overridden",
                     "simulation config overrode packaged gas physics");
+
+                const auto si_manifest =
+                    std::filesystem::absolute(
+                        "test_si_gas_dataset.gas");
+                const auto unit_mismatch_config =
+                    std::filesystem::path(
+                        "test_gas_dataset_unit_mismatch.cfg");
+                std::string si_manifest_text =
+                    read_file_text(gas_dataset_path);
+                const auto units = si_manifest_text.find(
+                    "units = normalized");
+                require(
+                    units != std::string::npos,
+                    "gas dataset fixture unit contract is missing");
+                si_manifest_text.replace(
+                    units, std::string("units = normalized").size(),
+                    "units = si");
+                const auto table = si_manifest_text.find(
+                    "cross_section_file = mcc_2d3v_ionization.dat");
+                require(
+                    table != std::string::npos,
+                    "gas dataset fixture table reference is missing");
+                si_manifest_text.replace(
+                    table,
+                    std::string(
+                        "cross_section_file = "
+                        "mcc_2d3v_ionization.dat").size(),
+                    "cross_section_file = " +
+                        (gas_dataset_path.parent_path() /
+                         "mcc_2d3v_ionization.dat").string());
+                {
+                    std::ofstream manifest(si_manifest);
+                    manifest << si_manifest_text;
+                }
+                std::string mismatch_text =
+                    read_file_text(imported_ionization_example);
+                const auto mismatch_reference =
+                    mismatch_text.find(
+                        "gas_data_file = synthetic_ionization.gas");
+                require(
+                    mismatch_reference != std::string::npos,
+                    "gas dataset fixture reference is missing");
+                mismatch_text.replace(
+                    mismatch_reference,
+                    std::string(
+                        "gas_data_file = synthetic_ionization.gas").size(),
+                    "gas_data_file = " + si_manifest.string());
+                {
+                    std::ofstream mismatch(unit_mismatch_config);
+                    mismatch << mismatch_text;
+                }
+                require_throws_contains(
+                    [&] {
+                        try {
+                            (void)pic::load_unstructured_config_2d(
+                                unit_mismatch_config);
+                        } catch (...) {
+                            std::filesystem::remove(si_manifest);
+                            std::filesystem::remove(
+                                unit_mismatch_config);
+                            throw;
+                        }
+                        std::filesystem::remove(si_manifest);
+                        std::filesystem::remove(
+                            unit_mismatch_config);
+                    },
+                    "do not match simulation units",
+                    "simulation accepted mismatched gas dataset units");
             }
             {
                 const auto invalid_path =

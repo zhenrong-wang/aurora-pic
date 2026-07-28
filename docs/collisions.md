@@ -161,7 +161,8 @@ For reusable external data, replace the inline `gas`, `neutral_mass`,
 
 ```ini
 # argon.gas
-gas_data_version = 1
+gas_data_version = 2
+units = si
 gas = argon
 neutral_mass = 6.6335209e-26
 dataset_id = provider.argon.electron-neutral
@@ -199,8 +200,9 @@ ion_species = argon_ions
 ```
 
 Manifest table paths are resolved relative to the manifest, so one package can
-be reused by simulations in different directories. `gas_data_version = 1`,
-gas identity, positive neutral mass, stable dataset ID and version,
+be reused by simulations in different directories. `gas_data_version = 2`,
+an explicit `si` or `normalized` unit contract, gas identity, positive neutral
+mass, stable dataset ID and version,
 provenance, citation, a valid `YYYY-MM-DD` retrieval date, license text, and at
 least one valid channel are mandatory. Unknown or duplicate keys, malformed
 tables, invalid thresholds, and missing files fail during loading. Simulation
@@ -208,6 +210,12 @@ files cannot override packaged channel type, table, scales, or threshold; they
 only map ionization products to configured kinetic species. The public
 `pic::load_gas_dataset` API exposes the same validated manifest contract to
 embedding applications.
+
+Version 1 manifests remain readable as legacy normalized data. Version 2 is
+required for newly converted physical datasets and is rejected when its unit
+system differs from the simulation. The complete local conversion and audit
+workflow is documented in
+[`gas-data-workflow.md`](gas-data-workflow.md).
 
 The neutral background remains stationary. Neutral mass is active in elastic
 recoil and resonant charge-exchange validation; neutral temperature remains

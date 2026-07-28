@@ -213,6 +213,14 @@ NullCollisionModel::NullCollisionModel(
         hash_string(signature_, config_.retrieved);
         hash_string(signature_, config_.license);
     }
+    if (!config_.gas_data_file.empty()) {
+        hash_uint64(
+            signature_,
+            static_cast<std::uint64_t>(
+                config_.gas_data_version));
+        hash_string(
+            signature_, to_string(config_.gas_data_units));
+    }
     const std::uint64_t candidate_limit =
         config_.max_candidates_per_particle;
     hash_uint64(signature_, candidate_limit);

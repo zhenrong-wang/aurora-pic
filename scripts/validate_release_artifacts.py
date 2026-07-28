@@ -71,6 +71,7 @@ def validate_ci_matrix() -> None:
         "compiler: appleclang",
         "AURORA_ENABLE_OPENMP=${{ matrix.openmp }}",
         "python3 scripts/validate_release_artifacts.py",
+        "python3 scripts/test_import_lxcat.py",
         "ctest --test-dir build --parallel 1 --output-on-failure",
         "python3 scripts/verify_examples.py build/aurorapic_cli",
         "python3 scripts/verify_install_package.py build --jobs 2",

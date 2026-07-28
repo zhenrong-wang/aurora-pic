@@ -114,7 +114,10 @@ ionization with paired charged products. Stationary-target finite-mass elastic
 recoil and resonant mass-matched ion-neutral charge exchange are also covered.
 A strict external `.gas` manifest
 interface now separates reusable table physics and licensing metadata from
-simulation operating conditions and fingerprints both for restart. Charge
+simulation operating conditions and fingerprints both for restart. A local
+LXCat/BOLSIG+ converter now generates SI manifests and audit reports from
+user-supplied complete sets while rejecting unit, threshold, mass-ratio, and
+coverage ambiguity. Charge
 exchange beyond the resonant case, thermal neutral motion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 

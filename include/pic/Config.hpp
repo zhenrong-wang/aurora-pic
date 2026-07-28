@@ -76,6 +76,8 @@ struct CollisionConfig {
     double neutral_temperature{0.0};
     std::string data_provenance{};
     std::filesystem::path gas_data_file{};
+    std::size_t gas_data_version{0};
+    UnitSystem gas_data_units{UnitSystem::Normalized};
     std::string dataset_id{};
     std::string dataset_version{};
     std::string citation{};

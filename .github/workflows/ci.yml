@@ -48,6 +48,9 @@ jobs:
           python3 scripts/validate_milestones.py
           python3 scripts/validate_release_artifacts.py
 
+      - name: Validate LXCat importer
+        run: python3 scripts/test_import_lxcat.py
+
       - name: Run CTest
         run: ctest --test-dir build --parallel 1 --output-on-failure
 

@@ -9,6 +9,8 @@
 namespace pic {
 
 struct GasDataset {
+    std::size_t format_version{0};
+    UnitSystem unit_system{UnitSystem::Normalized};
     std::string gas_name{};
     double neutral_mass{0.0};
     std::string dataset_id{};

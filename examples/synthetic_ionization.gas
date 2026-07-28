@@ -1,5 +1,6 @@
 # Synthetic software-validation gas package. This is not material data.
-gas_data_version = 1
+gas_data_version = 2
+units = normalized
 gas = synthetic_validation_gas
 neutral_mass = 40.0
 dataset_id = aurorapic.synthetic.ionization

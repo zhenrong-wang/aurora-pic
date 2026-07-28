@@ -432,6 +432,17 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                     path, parsed.collisions.at("gas_data_file"));
                 const auto dataset = load_gas_dataset(
                     result.collisions.gas_data_file);
+                if (dataset.unit_system != result.units.system) {
+                    throw std::runtime_error(
+                        "gas dataset units '" +
+                        to_string(dataset.unit_system) +
+                        "' do not match simulation units '" +
+                        to_string(result.units.system) + "'");
+                }
+                result.collisions.gas_data_version =
+                    dataset.format_version;
+                result.collisions.gas_data_units =
+                    dataset.unit_system;
                 result.collisions.gas_name = dataset.gas_name;
                 result.collisions.neutral_mass =
                     dataset.neutral_mass;

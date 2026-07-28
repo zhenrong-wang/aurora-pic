@@ -1,0 +1,28 @@
+! Synthetic LXCat/BOLSIG+ parser fixture; not material data.
+ELASTIC
+Ar
+1.371e-05
+COMMENT: synthetic momentum-transfer validation data
+--------------------
+0.0 1.0e-20
+10.0 2.0e-20
+20.0 1.0e-20
+--------------------
+EXCITATION
+Ar -> Ar*
+2.0
+COMMENT: synthetic excitation validation data
+--------------------
+2.0 0.0
+5.0 1.0e-21
+20.0 2.0e-21
+--------------------
+IONIZATION
+Ar -> Ar+
+5.0
+COMMENT: synthetic ionization validation data
+--------------------
+5.0 0.0
+10.0 2.0e-21
+20.0 4.0e-21
+--------------------

@@ -179,7 +179,11 @@ and
 [`examples/imported_charge_exchange_2d.cfg`](examples/imported_charge_exchange_2d.cfg).
 The collision contract documents the reactive kinematic and macro-weight
 constraints. All bundled MCC datasets are synthetic validation
-inputs, not gas-property data.
+inputs, not gas-property data. The
+[local real-gas workflow](docs/gas-data-workflow.md) converts a user-supplied
+LXCat/BOLSIG+ export, records its SHA-256 and provenance, audits its collision
+envelope, and produces a unit-safe versioned manifest without downloading or
+vendoring the source dataset.
 
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
 
