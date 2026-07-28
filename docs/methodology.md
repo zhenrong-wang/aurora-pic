@@ -14,6 +14,44 @@ with the configured homogeneous permittivity. Normalized mode uses a base
 permittivity of `1`; SI mode uses `8.8541878128e-12 F/m`. See
 `docs/units.md` for reduced-dimensional weight and energy conventions.
 
+## Initial-value problem
+
+A new transient run constructs its electrostatic initial-value problem in four
+ordered operations: load each particle population, deposit its charge, solve
+Poisson's equation using the configured field boundaries, and initialize the
+leapfrog or Boris half-step velocity. The initial electric field is therefore
+consistent with the deposited charge and boundary values; AuroraPIC does not
+accept an unrelated arbitrary electric field that could silently violate
+Gauss's law. A checkpoint restart is different: it restores an already evolved
+particle state, half-step state, time, and RNG engine rather than constructing a
+new state at `t = 0`.
+
+Species initialization has a separately versioned
+`initialization_version = 1` contract. `loading = random` preserves the
+historical independent uniform-position and Gaussian-velocity sampling.
+`loading = quiet_start` places each structured-coordinate marginal at the
+center of a deterministic equal-measure stratum and generates thermal
+velocities in antithetic pairs. Every even-sized quiet-start population
+therefore has its configured mean drift exactly, up to floating-point roundoff,
+while retaining a sampled thermal spread. Imported 2D quiet-start loading
+stratifies area-weighted cell selection and triangle coordinates, so all
+particles remain in the validated geometry.
+
+`thermal_velocity` remains the backward-compatible isotropic Gaussian standard
+deviation. Optional `thermal_velocity_x`, `thermal_velocity_y`, and
+`thermal_velocity_z` values override it component by component; 1D1V accepts
+only the x override, while both 2D3V and 3D3V accept all three. Values are
+velocities in the configured unit system, not temperatures. Converting a
+physical temperature requires the species mass and the documented unit
+contract.
+
+The current imported quiet-start implementation intentionally rejects a
+rectangular `init_x_*`/`init_y_*` clip instead of silently degrading to random
+or biased rejection sampling. Random loading continues to support those
+bounds. Named imported cell-region loading, analytic density perturbations,
+physical-temperature inputs, initialization moment reports, and external
+openPMD/HDF5 particle states remain subsequent initial-condition milestones.
+
 ## Field solvers
 
 - Periodic domains use a direct spectral Poisson solve. The zero mode is removed, enforcing global quasi-neutral compatibility.

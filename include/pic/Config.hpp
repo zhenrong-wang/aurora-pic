@@ -1,4 +1,5 @@
 #pragma once
+#include "pic/Initialization.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Types.hpp"
 #include <cstddef>
@@ -21,6 +22,7 @@ struct SpeciesConfig {
     double thermal_velocity{0.1};
     double init_x_min{0.0};
     double init_x_max{-1.0}; // negative means full domain
+    ParticleInitializationConfig initialization{};
 };
 
 enum class CollisionModelKind { BGK, NullCollision };

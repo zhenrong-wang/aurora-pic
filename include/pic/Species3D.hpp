@@ -1,4 +1,5 @@
 #pragma once
+#include "pic/Initialization.hpp"
 #include "pic/Mesh3D.hpp"
 #include <random>
 #include <string>
@@ -21,6 +22,7 @@ struct Species3DConfig {
     double init_y_max{-1.0}; // negative means full y domain
     double init_z_min{0.0};
     double init_z_max{-1.0}; // negative means full z domain
+    ParticleInitializationConfig initialization{};
 };
 
 class Species3D {

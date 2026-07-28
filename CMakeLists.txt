@@ -18,6 +18,7 @@ add_library(aurorapic
   src/GasDataset.cpp
   src/Grid.cpp
   src/ImportedMesh2D.cpp
+  src/Initialization.cpp
   src/Mesh2D.cpp
   src/Mesh3D.cpp
   src/Pusher.cpp
@@ -111,4 +112,10 @@ if(AURORA_BUILD_TESTS)
   target_compile_options(aurorapic_tests PRIVATE -Wall -Wextra -Wpedantic -O2)
   target_compile_definitions(aurorapic_tests PRIVATE AURORA_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME aurorapic_core COMMAND aurorapic_tests)
+
+  add_executable(aurorapic_initialization_tests tests/test_initialization.cpp)
+  target_link_libraries(aurorapic_initialization_tests PRIVATE aurorapic)
+  target_compile_options(aurorapic_initialization_tests PRIVATE -Wall -Wextra -Wpedantic -O2)
+  target_compile_definitions(aurorapic_initialization_tests PRIVATE AURORA_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_test(NAME aurorapic_initialization COMMAND aurorapic_initialization_tests)
 endif()

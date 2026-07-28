@@ -162,6 +162,10 @@ weight = 0.01             # macro-particle weight; required to be positive
 particles = 10000
 drift_velocity = 0
 thermal_velocity = 0.1
+# Optional versioned initial-condition controls:
+# initialization_version = 1
+# loading = quiet_start    # random (default) or quiet_start
+# thermal_velocity_x = 0.1 # overrides thermal_velocity for 1D1V
 
 [collisions]
 enabled = false
@@ -270,6 +274,13 @@ drift_velocity_x = 0.1
 drift_velocity_y = 0.0
 drift_velocity_z = 0.0
 thermal_velocity = 0.02
+# Optional anisotropic/quiet-start initialization. Per-axis values override
+# thermal_velocity; omitted axes retain the scalar fallback.
+initialization_version = 1
+loading = quiet_start
+thermal_velocity_x = 0.02
+thermal_velocity_y = 0.01
+thermal_velocity_z = 0.03
 init_x_min = 0.0
 init_x_max = 1.0
 init_y_min = 0.0
@@ -318,6 +329,11 @@ drift_velocity_x = 0.1
 drift_velocity_y = 0.0
 drift_velocity_z = 0.0
 thermal_velocity = 0.02
+initialization_version = 1
+loading = quiet_start
+thermal_velocity_x = 0.02
+thermal_velocity_y = 0.01
+thermal_velocity_z = 0.03
 init_x_min = 0.0
 init_x_max = 1.0
 init_y_min = 0.0
@@ -371,10 +387,10 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 - 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
 - Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
 
-The parser is intentionally strict: unsupported `config_version` values, unknown sections/keys, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
+The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models or component thermal velocities, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area.
 
 ## Performance and validation envelope
 
 The verified smoke/performance envelope is documented in `docs/performance-envelope.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. In short, the checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. They do not prove convergence for arbitrary plasma regimes. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, initial particle loading does not yet support analytic density profiles, named imported cell regions, or external high-volume particle states, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.

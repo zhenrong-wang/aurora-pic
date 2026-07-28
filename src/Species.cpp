@@ -11,23 +11,47 @@ Species::Species(SpeciesConfig cfg) : cfg_(std::move(cfg)) {
     if (!std::isfinite(cfg_.weight) || cfg_.weight <= 0.0) throw std::invalid_argument("species weight must be positive and finite");
     if (cfg_.particles == 0) throw std::invalid_argument("species must contain particles");
     if (!std::isfinite(cfg_.drift_velocity)) throw std::invalid_argument("species drift_velocity must be finite");
-    if (!std::isfinite(cfg_.thermal_velocity) || cfg_.thermal_velocity < 0.0) throw std::invalid_argument("species thermal_velocity must be non-negative and finite");
+    validate_particle_initialization(
+        cfg_.initialization, 1, cfg_.thermal_velocity, "species");
 }
 
 void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
     particles_.assign(cfg_.particles, Particle{});
     const double xmin = cfg_.init_x_min;
     const double xmax = cfg_.init_x_max < 0.0 ? grid.length() : cfg_.init_x_max;
-    std::uniform_real_distribution<double> ux(xmin, xmax);
-    std::normal_distribution<double> nv(cfg_.drift_velocity, cfg_.thermal_velocity);
-    for (auto& p : particles_) {
-        p.x = ux(rng);
+    const double thermal_velocity = resolved_thermal_velocity(
+        cfg_.initialization, 0, cfg_.thermal_velocity);
+    if (cfg_.initialization.loading == ParticleLoading::Random) {
+        std::uniform_real_distribution<double> ux(xmin, xmax);
+        std::normal_distribution<double> nv(
+            cfg_.drift_velocity, thermal_velocity);
+        for (auto& p : particles_) {
+            p.x = ux(rng);
+            if (grid.boundary() == Boundary::Periodic) {
+                p.x = std::fmod(std::fmod(p.x, grid.length()) + grid.length(), grid.length());
+            } else {
+                p.x = std::clamp(p.x, 0.0, grid.length());
+            }
+            p.v = nv(rng);
+            p.v_half = p.v;
+            p.alive = true;
+        }
+        return;
+    }
+
+    const auto velocities = initialize_velocity_component(
+        particles_.size(), cfg_.drift_velocity, thermal_velocity,
+        cfg_.initialization.loading, rng);
+    for (std::size_t index = 0; index < particles_.size(); ++index) {
+        auto& p = particles_[index];
+        p.x = xmin + (xmax - xmin) *
+            quiet_unit_coordinate(index, particles_.size(), 0);
         if (grid.boundary() == Boundary::Periodic) {
             p.x = std::fmod(std::fmod(p.x, grid.length()) + grid.length(), grid.length());
         } else {
             p.x = std::clamp(p.x, 0.0, grid.length());
         }
-        p.v = nv(rng);
+        p.v = velocities[index];
         p.v_half = p.v;
         p.alive = true;
     }

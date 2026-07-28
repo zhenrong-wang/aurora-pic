@@ -1,4 +1,5 @@
 #pragma once
+#include "pic/Initialization.hpp"
 #include "pic/Mesh2D.hpp"
 #include <random>
 #include <string>
@@ -19,6 +20,7 @@ struct Species2DConfig {
     double init_y_min{0.0};
     double init_y_max{-1.0}; // negative means full y domain
     double drift_velocity_z{0.0};
+    ParticleInitializationConfig initialization{};
 };
 
 class Species2D {

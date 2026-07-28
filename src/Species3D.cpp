@@ -19,9 +19,8 @@ Species3D::Species3D(Species3DConfig cfg) : cfg_(std::move(cfg)) {
     if (!std::isfinite(cfg_.drift_velocity_x) || !std::isfinite(cfg_.drift_velocity_y) || !std::isfinite(cfg_.drift_velocity_z)) {
         throw std::invalid_argument("3D species drift velocities must be finite");
     }
-    if (!std::isfinite(cfg_.thermal_velocity) || cfg_.thermal_velocity < 0.0) {
-        throw std::invalid_argument("3D species thermal_velocity must be non-negative and finite");
-    }
+    validate_particle_initialization(
+        cfg_.initialization, 3, cfg_.thermal_velocity, "3D species");
 }
 
 void Species3D::initialize(const Mesh3D& mesh, std::mt19937_64& rng) {
@@ -32,17 +31,64 @@ void Species3D::initialize(const Mesh3D& mesh, std::mt19937_64& rng) {
     const double ymax = cfg_.init_y_max < 0.0 ? mesh.length_y() : cfg_.init_y_max;
     const double zmin = cfg_.init_z_min;
     const double zmax = cfg_.init_z_max < 0.0 ? mesh.length_z() : cfg_.init_z_max;
-    std::uniform_real_distribution<double> ux(xmin, xmax);
-    std::uniform_real_distribution<double> uy(ymin, ymax);
-    std::uniform_real_distribution<double> uz(zmin, zmax);
-    std::normal_distribution<double> vx(cfg_.drift_velocity_x, cfg_.thermal_velocity);
-    std::normal_distribution<double> vy(cfg_.drift_velocity_y, cfg_.thermal_velocity);
-    std::normal_distribution<double> vz(cfg_.drift_velocity_z, cfg_.thermal_velocity);
+    const double thermal_x = resolved_thermal_velocity(
+        cfg_.initialization, 0, cfg_.thermal_velocity);
+    const double thermal_y = resolved_thermal_velocity(
+        cfg_.initialization, 1, cfg_.thermal_velocity);
+    const double thermal_z = resolved_thermal_velocity(
+        cfg_.initialization, 2, cfg_.thermal_velocity);
 
-    for (auto& particle : particles_) {
-        particle.position.x = ux(rng);
-        particle.position.y = uy(rng);
-        particle.position.z = uz(rng);
+    if (cfg_.initialization.loading == ParticleLoading::Random) {
+        std::uniform_real_distribution<double> ux(xmin, xmax);
+        std::uniform_real_distribution<double> uy(ymin, ymax);
+        std::uniform_real_distribution<double> uz(zmin, zmax);
+        std::normal_distribution<double> vx(
+            cfg_.drift_velocity_x, thermal_x);
+        std::normal_distribution<double> vy(
+            cfg_.drift_velocity_y, thermal_y);
+        std::normal_distribution<double> vz(
+            cfg_.drift_velocity_z, thermal_z);
+
+        for (auto& particle : particles_) {
+            particle.position.x = ux(rng);
+            particle.position.y = uy(rng);
+            particle.position.z = uz(rng);
+            if (mesh.boundary() == Boundary::Periodic) {
+                particle.position.x = wrap_periodic(particle.position.x, mesh.length_x());
+                particle.position.y = wrap_periodic(particle.position.y, mesh.length_y());
+                particle.position.z = wrap_periodic(particle.position.z, mesh.length_z());
+            } else {
+                particle.position.x = std::clamp(particle.position.x, 0.0, mesh.length_x());
+                particle.position.y = std::clamp(particle.position.y, 0.0, mesh.length_y());
+                particle.position.z = std::clamp(particle.position.z, 0.0, mesh.length_z());
+            }
+            particle.velocity.x = vx(rng);
+            particle.velocity.y = vy(rng);
+            particle.velocity.z = vz(rng);
+            particle.velocity_half = particle.velocity;
+            particle.alive = true;
+        }
+        return;
+    }
+
+    const auto velocity_x = initialize_velocity_component(
+        particles_.size(), cfg_.drift_velocity_x, thermal_x,
+        cfg_.initialization.loading, rng);
+    const auto velocity_y = initialize_velocity_component(
+        particles_.size(), cfg_.drift_velocity_y, thermal_y,
+        cfg_.initialization.loading, rng);
+    const auto velocity_z = initialize_velocity_component(
+        particles_.size(), cfg_.drift_velocity_z, thermal_z,
+        cfg_.initialization.loading, rng);
+
+    for (std::size_t index = 0; index < particles_.size(); ++index) {
+        auto& particle = particles_[index];
+        particle.position.x = xmin + (xmax - xmin) *
+            quiet_unit_coordinate(index, particles_.size(), 0);
+        particle.position.y = ymin + (ymax - ymin) *
+            quiet_unit_coordinate(index, particles_.size(), 1);
+        particle.position.z = zmin + (zmax - zmin) *
+            quiet_unit_coordinate(index, particles_.size(), 2);
         if (mesh.boundary() == Boundary::Periodic) {
             particle.position.x = wrap_periodic(particle.position.x, mesh.length_x());
             particle.position.y = wrap_periodic(particle.position.y, mesh.length_y());
@@ -52,9 +98,9 @@ void Species3D::initialize(const Mesh3D& mesh, std::mt19937_64& rng) {
             particle.position.y = std::clamp(particle.position.y, 0.0, mesh.length_y());
             particle.position.z = std::clamp(particle.position.z, 0.0, mesh.length_z());
         }
-        particle.velocity.x = vx(rng);
-        particle.velocity.y = vy(rng);
-        particle.velocity.z = vz(rng);
+        particle.velocity.x = velocity_x[index];
+        particle.velocity.y = velocity_y[index];
+        particle.velocity.z = velocity_z[index];
         particle.velocity_half = particle.velocity;
         particle.alive = true;
     }

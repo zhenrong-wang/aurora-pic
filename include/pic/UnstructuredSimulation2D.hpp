@@ -30,6 +30,7 @@ struct UnstructuredSpecies2DConfig {
     std::optional<Vec2> initialization_minimum;
     std::optional<Vec2> initialization_maximum;
     double drift_velocity_z{0.0};
+    ParticleInitializationConfig initialization{};
 };
 
 struct UnstructuredBoundarySource2DConfig {
@@ -205,7 +206,10 @@ private:
         double incident_velocity_z{0.0};
     };
 
-    Vec2 sample_position(const UnstructuredSpecies2DConfig& config);
+    Vec2 sample_position(
+        const UnstructuredSpecies2DConfig& config,
+        std::size_t particle_index,
+        std::size_t particle_count);
     void inject_boundary_sources();
     void process_boundary_impacts(std::vector<BoundaryImpact> impacts);
     void apply_collisions();

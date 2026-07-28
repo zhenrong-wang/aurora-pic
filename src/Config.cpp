@@ -339,6 +339,9 @@ void validate_config(const Config& cfg) {
         if (s.particles == 0) throw std::runtime_error("species '" + s.name + "' particles must be positive");
         if (!std::isfinite(s.drift_velocity)) throw std::runtime_error("species '" + s.name + "' drift_velocity must be finite");
         validate_non_negative(s.thermal_velocity, "species '" + s.name + "' thermal_velocity");
+        validate_particle_initialization(
+            s.initialization, 1, s.thermal_velocity,
+            "species '" + s.name + "'");
         if (s.init_x_min < 0.0) throw std::runtime_error("species '" + s.name + "' init_x_min must be non-negative");
         const double xmax = s.init_x_max < 0.0 ? cfg.length : s.init_x_max;
         if (xmax > cfg.length) throw std::runtime_error("species '" + s.name + "' init_x_max exceeds domain length");
@@ -388,6 +391,9 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
             throw std::runtime_error("2D species '" + s.name + "' drift velocities must be finite");
         }
         validate_non_negative(s.thermal_velocity, "2D species '" + s.name + "' thermal_velocity");
+        validate_particle_initialization(
+            s.initialization, 3, s.thermal_velocity,
+            "2D species '" + s.name + "'");
         if (s.init_x_min < 0.0) throw std::runtime_error("2D species '" + s.name + "' init_x_min must be non-negative");
         if (s.init_y_min < 0.0) throw std::runtime_error("2D species '" + s.name + "' init_y_min must be non-negative");
         const double xmax = s.init_x_max < 0.0 ? cfg.length_x : s.init_x_max;
@@ -429,6 +435,9 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
             throw std::runtime_error("3D species '" + s.name + "' drift velocities must be finite");
         }
         validate_non_negative(s.thermal_velocity, "3D species '" + s.name + "' thermal_velocity");
+        validate_particle_initialization(
+            s.initialization, 3, s.thermal_velocity,
+            "3D species '" + s.name + "'");
         if (s.init_x_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_x_min must be non-negative");
         if (s.init_y_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_y_min must be non-negative");
         if (s.init_z_min < 0.0) throw std::runtime_error("3D species '" + s.name + "' init_z_min must be non-negative");
@@ -540,7 +549,8 @@ Config load_config(const std::string& path) {
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density", "drift_velocity",
-        "thermal_velocity", "init_x_min", "init_x_max"
+        "thermal_velocity", "thermal_velocity_x", "initialization_version",
+        "loading", "init_x_min", "init_x_max"
     };
 
     auto blocks = parse_config_blocks(
@@ -605,6 +615,16 @@ Config load_config(const std::string& path) {
         s.density = as<double>(block, "density", s.density);
         s.drift_velocity = as<double>(block, "drift_velocity", s.drift_velocity);
         s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
+        s.initialization.version = as<std::size_t>(
+            block, "initialization_version", s.initialization.version);
+        if (block.count("loading")) {
+            s.initialization.loading = particle_loading_from_string(
+                as<std::string>(block, "loading", "random"));
+        }
+        if (block.count("thermal_velocity_x")) {
+            s.initialization.thermal_velocity_x =
+                as<double>(block, "thermal_velocity_x", 0.0);
+        }
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         require_species_scale_source(block, s.name, "");
@@ -702,6 +722,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
         "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
+        "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
+        "initialization_version", "loading",
         "init_x_min", "init_x_max",
         "init_y_min", "init_y_max"
     };
@@ -777,6 +799,24 @@ Simulation2DConfig load_config_2d(const std::string& path) {
                 block, "drift_velocity_z",
                 s.drift_velocity_z);
         s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
+        s.initialization.version = as<std::size_t>(
+            block, "initialization_version", s.initialization.version);
+        if (block.count("loading")) {
+            s.initialization.loading = particle_loading_from_string(
+                as<std::string>(block, "loading", "random"));
+        }
+        if (block.count("thermal_velocity_x")) {
+            s.initialization.thermal_velocity_x =
+                as<double>(block, "thermal_velocity_x", 0.0);
+        }
+        if (block.count("thermal_velocity_y")) {
+            s.initialization.thermal_velocity_y =
+                as<double>(block, "thermal_velocity_y", 0.0);
+        }
+        if (block.count("thermal_velocity_z")) {
+            s.initialization.thermal_velocity_z =
+                as<double>(block, "thermal_velocity_z", 0.0);
+        }
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         s.init_y_min = as<double>(block, "init_y_min", s.init_y_min);
@@ -815,7 +855,9 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
-        "drift_velocity_y", "drift_velocity_z", "thermal_velocity", "init_x_min", "init_x_max",
+        "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
+        "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
+        "initialization_version", "loading", "init_x_min", "init_x_max",
         "init_y_min", "init_y_max", "init_z_min", "init_z_max"
     };
 
@@ -879,6 +921,24 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         s.drift_velocity_y = as<double>(block, "drift_velocity_y", s.drift_velocity_y);
         s.drift_velocity_z = as<double>(block, "drift_velocity_z", s.drift_velocity_z);
         s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
+        s.initialization.version = as<std::size_t>(
+            block, "initialization_version", s.initialization.version);
+        if (block.count("loading")) {
+            s.initialization.loading = particle_loading_from_string(
+                as<std::string>(block, "loading", "random"));
+        }
+        if (block.count("thermal_velocity_x")) {
+            s.initialization.thermal_velocity_x =
+                as<double>(block, "thermal_velocity_x", 0.0);
+        }
+        if (block.count("thermal_velocity_y")) {
+            s.initialization.thermal_velocity_y =
+                as<double>(block, "thermal_velocity_y", 0.0);
+        }
+        if (block.count("thermal_velocity_z")) {
+            s.initialization.thermal_velocity_z =
+                as<double>(block, "thermal_velocity_z", 0.0);
+        }
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
         s.init_y_min = as<double>(block, "init_y_min", s.init_y_min);

@@ -86,6 +86,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
     static const std::set<std::string> species_keys{
         "charge", "mass", "weight", "particles", "drift_velocity_x",
         "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
+        "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
+        "initialization_version", "loading",
         "init_x_min", "init_x_max",
         "init_y_min", "init_y_max",
     };
@@ -557,6 +559,28 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             value.drift_velocity_z);
         value.thermal_velocity = number<double>(
             species.values, "thermal_velocity", value.thermal_velocity);
+        value.initialization.version = number<std::size_t>(
+            species.values, "initialization_version",
+            value.initialization.version);
+        if (species.values.contains("loading")) {
+            value.initialization.loading =
+                particle_loading_from_string(
+                    required(
+                        species.values, "loading",
+                        "species '" + species.name + "'"));
+        }
+        if (species.values.contains("thermal_velocity_x")) {
+            value.initialization.thermal_velocity_x = number<double>(
+                species.values, "thermal_velocity_x", 0.0);
+        }
+        if (species.values.contains("thermal_velocity_y")) {
+            value.initialization.thermal_velocity_y = number<double>(
+                species.values, "thermal_velocity_y", 0.0);
+        }
+        if (species.values.contains("thermal_velocity_z")) {
+            value.initialization.thermal_velocity_z = number<double>(
+                species.values, "thermal_velocity_z", 0.0);
+        }
         const bool any_bounds =
             species.values.contains("init_x_min") ||
             species.values.contains("init_x_max") ||

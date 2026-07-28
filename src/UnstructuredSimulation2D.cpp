@@ -83,6 +83,7 @@ Species2DConfig particle_storage_config(const UnstructuredSpecies2DConfig& confi
     result.drift_velocity_y = config.drift_velocity_y;
     result.drift_velocity_z = config.drift_velocity_z;
     result.thermal_velocity = config.thermal_velocity;
+    result.initialization = config.initialization;
     return result;
 }
 
@@ -412,7 +413,16 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
                 !(minimum.x < maximum.x) || !(minimum.y < maximum.y)) {
                 throw std::invalid_argument("unstructured species initialization bounds are invalid");
             }
+            if (species_config.initialization.loading ==
+                ParticleLoading::QuietStart) {
+                throw std::invalid_argument(
+                    "unstructured quiet_start loading does not yet support rectangular initialization bounds");
+            }
         }
+        validate_particle_initialization(
+            species_config.initialization, 3,
+            species_config.thermal_velocity,
+            "unstructured species '" + species_config.name + "'");
         species_configs_.push_back(species_config);
         species_.emplace_back(particle_storage_config(species_config));
         particle_locations_.emplace_back();
@@ -666,12 +676,22 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         config_.neumann_normal_derivatives, config_.poisson);
 }
 
-Vec2 UnstructuredSimulation2D::sample_position(const UnstructuredSpecies2DConfig& config) {
+Vec2 UnstructuredSimulation2D::sample_position(
+    const UnstructuredSpecies2DConfig& config,
+    std::size_t particle_index,
+    std::size_t particle_count) {
     if (sampling_triangles_.empty()) throw std::runtime_error("unstructured domain has no sampling area");
     std::uniform_real_distribution<double> unit(0.0, 1.0);
     const double total_area = sampling_triangles_.back().cumulative_area;
     for (std::size_t attempt = 0; attempt < 100000; ++attempt) {
-        const double target = unit(rng_) * total_area;
+        const bool quiet =
+            config.initialization.loading == ParticleLoading::QuietStart;
+        const double target =
+            (quiet
+                 ? quiet_unit_coordinate(
+                       particle_index, particle_count, 0)
+                 : unit(rng_)) *
+            total_area;
         const auto triangle = std::lower_bound(
             sampling_triangles_.begin(), sampling_triangles_.end(), target,
             [](const SamplingTriangle& candidate, double value) {
@@ -679,8 +699,16 @@ Vec2 UnstructuredSimulation2D::sample_position(const UnstructuredSpecies2DConfig
             });
         const auto selected =
             triangle == sampling_triangles_.end() ? std::prev(sampling_triangles_.end()) : triangle;
-        const double root = std::sqrt(unit(rng_));
-        const double second = unit(rng_);
+        const double root = std::sqrt(
+            quiet
+                ? quiet_unit_coordinate(
+                      particle_index, particle_count, 1)
+                : unit(rng_));
+        const double second =
+            quiet
+                ? quiet_unit_coordinate(
+                      particle_index, particle_count, 2)
+                : unit(rng_);
         const std::array<double, 3> weights{
             1.0 - root,
             root * (1.0 - second),
@@ -842,17 +870,56 @@ void UnstructuredSimulation2D::initialize() {
         const auto& species_config = species_configs_[species_id];
         particles.assign(species_config.particles, Particle2D{});
         locations.assign(species_config.particles, UnstructuredParticleLocation2D{});
-        std::normal_distribution<double> velocity_x(
-            species_config.drift_velocity_x, species_config.thermal_velocity);
-        std::normal_distribution<double> velocity_y(
-            species_config.drift_velocity_y, species_config.thermal_velocity);
-        std::normal_distribution<double> velocity_z(
-            species_config.drift_velocity_z,
+        const double thermal_x = resolved_thermal_velocity(
+            species_config.initialization, 0,
             species_config.thermal_velocity);
-        for (auto& particle : particles) {
-            particle.position = sample_position(species_config);
-            particle.velocity = {velocity_x(rng_), velocity_y(rng_)};
-            particle.velocity_z = velocity_z(rng_);
+        const double thermal_y = resolved_thermal_velocity(
+            species_config.initialization, 1,
+            species_config.thermal_velocity);
+        const double thermal_z = resolved_thermal_velocity(
+            species_config.initialization, 2,
+            species_config.thermal_velocity);
+        if (species_config.initialization.loading ==
+            ParticleLoading::Random) {
+            std::normal_distribution<double> velocity_x(
+                species_config.drift_velocity_x, thermal_x);
+            std::normal_distribution<double> velocity_y(
+                species_config.drift_velocity_y, thermal_y);
+            std::normal_distribution<double> velocity_z(
+                species_config.drift_velocity_z, thermal_z);
+            for (std::size_t particle_index = 0;
+                 particle_index < particles.size(); ++particle_index) {
+                auto& particle = particles[particle_index];
+                particle.position = sample_position(
+                    species_config, particle_index, particles.size());
+                particle.velocity = {
+                    velocity_x(rng_), velocity_y(rng_)};
+                particle.velocity_z = velocity_z(rng_);
+                particle.velocity_half = particle.velocity;
+                particle.velocity_half_z = particle.velocity_z;
+                particle.alive = true;
+            }
+            continue;
+        }
+
+        const auto velocity_x = initialize_velocity_component(
+            particles.size(), species_config.drift_velocity_x,
+            thermal_x, species_config.initialization.loading, rng_);
+        const auto velocity_y = initialize_velocity_component(
+            particles.size(), species_config.drift_velocity_y,
+            thermal_y, species_config.initialization.loading, rng_);
+        const auto velocity_z = initialize_velocity_component(
+            particles.size(), species_config.drift_velocity_z,
+            thermal_z, species_config.initialization.loading, rng_);
+        for (std::size_t particle_index = 0;
+             particle_index < particles.size(); ++particle_index) {
+            auto& particle = particles[particle_index];
+            particle.position = sample_position(
+                species_config, particle_index, particles.size());
+            particle.velocity = {
+                velocity_x[particle_index],
+                velocity_y[particle_index]};
+            particle.velocity_z = velocity_z[particle_index];
             particle.velocity_half = particle.velocity;
             particle.velocity_half_z = particle.velocity_z;
             particle.alive = true;
