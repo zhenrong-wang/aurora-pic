@@ -198,6 +198,10 @@ E/N using the production collision kernel and emits traceable transport and
 channel-rate diagnostics. Its local comparison tool maps user-supplied
 measured or evaluated coefficients to those outputs and produces a hashed,
 uncertainty-aware acceptance report without bundling the reference data.
+The runner also offers an explicit bounded branching mode: ionization
+secondaries increase represented electron weight while systematic resampling
+holds computational population fixed, enabling temporal avalanche-growth and
+growth-over-flux-drift Townsend diagnostics without unbounded host load.
 Elastic 3V channels may additionally provide a validated energy-dependent
 mean-cosine table for Henyey-Greenstein anisotropic scattering; isotropic
 behavior remains the explicit default.

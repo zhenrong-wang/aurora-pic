@@ -117,10 +117,14 @@ interface now separates reusable table physics and licensing metadata from
 simulation operating conditions and fingerprints both for restart. A local
 LXCat/BOLSIG+ converter now generates SI manifests and audit reports from
 user-supplied complete sets while rejecting unit, threshold, mass-ratio, and
-coverage ambiguity. A homogeneous fixed-population electron-swarm runner now
+coverage ambiguity. A homogeneous electron-swarm runner now
 uses the production 3V MCC kernel for reproducible E/N scans with enforced
 energy coverage, block uncertainty estimates, diffusion diagnostics, and
-per-channel rates. A strict local reference-comparison contract now maps
+per-channel rates. Its optional branching/resampled contract tracks
+ionization multiplication through conserved statistical weight at a fixed
+computational-particle count and reports temporal growth plus a clearly
+labeled growth-over-flux-drift Townsend approximation. A strict local
+reference-comparison contract now maps
 user-supplied measured or evaluated swarm coefficients to simulation columns,
 combines declared numerical/reference uncertainty with explicit tolerances,
 and emits a hashed per-value acceptance report without redistributing the
@@ -128,8 +132,8 @@ reference data. Energy-dependent anisotropic elastic scattering is now
 available through a strict mean-cosine table and Henyey-Greenstein phase
 function, with total-cross-section semantics, 3V-only enforcement,
 energy-coverage checks, and restart fingerprinting. Actual gas-specific
-validation campaigns, avalanche multiplication, and full differential
-cross-section models remain subsequent work. Charge
+validation campaigns, spatial steady-state Townsend validation, and full
+differential cross-section models remain subsequent work. Charge
 exchange beyond the resonant case, thermal neutral motion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 

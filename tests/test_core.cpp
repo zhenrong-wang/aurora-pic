@@ -3220,9 +3220,21 @@ int main() {
                 const auto swarm_output =
                     std::filesystem::absolute(
                         "test_swarm_zero_elastic.csv");
+                const auto swarm_ionization_table =
+                    std::filesystem::absolute(
+                        "test_swarm_ionization.dat");
+                const auto swarm_branch_manifest =
+                    std::filesystem::absolute(
+                        "test_swarm_branching.gas");
+                const auto swarm_branch_config_path =
+                    std::filesystem::absolute(
+                        "test_swarm_branching.cfg");
+                const auto swarm_branch_output =
+                    std::filesystem::absolute(
+                        "test_swarm_branching.csv");
                 {
                     std::ofstream table_output(swarm_table);
-                    table_output << "0 0\n10 0\n";
+                    table_output << "0 0\n50 0\n";
                     std::ofstream manifest_output(swarm_manifest);
                     manifest_output
                         << "gas_data_version = 2\n"
@@ -3258,6 +3270,55 @@ int main() {
                         << "seed = 17\n"
                         << "output_file = "
                         << swarm_output.string() << '\n';
+                    std::ofstream ionization_output(
+                        swarm_ionization_table);
+                    ionization_output
+                        << "0 0\n0.01 1e-18\n50 1e-18\n";
+                    std::ofstream branch_manifest_output(
+                        swarm_branch_manifest);
+                    branch_manifest_output
+                        << "gas_data_version = 2\n"
+                        << "units = si\n"
+                        << "gas = synthetic_branching_swarm\n"
+                        << "neutral_mass = 6.6335209e-26\n"
+                        << "dataset_id = aurorapic.synthetic.branching\n"
+                        << "dataset_version = 1\n"
+                        << "data_provenance = AuroraPIC test\n"
+                        << "citation = Synthetic fixture\n"
+                        << "retrieved = 2026-07-28\n"
+                        << "license = Synthetic test data\n\n"
+                        << "[collision.elastic]\n"
+                        << "type = elastic\n"
+                        << "cross_section_file = "
+                        << swarm_table.string() << '\n'
+                        << "energy_scale = 1.602176634e-19\n\n"
+                        << "[collision.ionization]\n"
+                        << "type = ionization\n"
+                        << "cross_section_file = "
+                        << swarm_ionization_table.string() << '\n'
+                        << "energy_scale = 1.602176634e-19\n"
+                        << "threshold_energy = 1.602176634e-21\n";
+                    std::ofstream branch_config_output(
+                        swarm_branch_config_path);
+                    branch_config_output
+                        << "swarm_config_version = 1\n"
+                        << "gas_data_file = "
+                        << swarm_branch_manifest.string() << '\n'
+                        << "neutral_density = 1e20\n"
+                        << "reduced_fields_td = 1000\n"
+                        << "max_frequency = 5e8\n"
+                        << "timestep = 2e-10\n"
+                        << "steps = 300\n"
+                        << "burn_in_steps = 60\n"
+                        << "particles = 64\n"
+                        << "population_model = branching_resampled\n"
+                        << "population_limit = 256\n"
+                        << "uncertainty_blocks = 8\n"
+                        << "initial_mean_energy_ev = 1\n"
+                        << "max_energy_ev = 50\n"
+                        << "seed = 29\n"
+                        << "output_file = "
+                        << swarm_branch_output.string() << '\n';
                 }
                 try {
                     const auto swarm_config =
@@ -3307,17 +3368,36 @@ int main() {
                         swarm_dataset, swarm_results);
                     const std::string csv =
                         read_file_text(swarm_output);
+                    const auto csv_header_end = csv.find('\n');
+                    const auto csv_row_end =
+                        csv.find('\n', csv_header_end + 1);
                     require(
                         csv.find(
                             "fixed_population_no_avalanche") !=
                                 std::string::npos &&
                             csv.find(
                                 "electron_drift_velocity_m_s") !=
-                                std::string::npos,
+                                std::string::npos &&
+                            csv_header_end != std::string::npos &&
+                            csv_row_end != std::string::npos &&
+                            std::count(
+                                csv.begin(),
+                                csv.begin() +
+                                    static_cast<std::ptrdiff_t>(
+                                        csv_header_end),
+                                ',') ==
+                                std::count(
+                                    csv.begin() +
+                                        static_cast<std::ptrdiff_t>(
+                                            csv_header_end + 1),
+                                    csv.begin() +
+                                        static_cast<std::ptrdiff_t>(
+                                            csv_row_end),
+                                    ','),
                         "swarm CSV omitted method metadata");
 
                     auto invalid_swarm = swarm_config;
-                    invalid_swarm.max_energy_ev = 11.0;
+                    invalid_swarm.max_energy_ev = 51.0;
                     require_throws_contains(
                         [&] {
                             (void)pic::run_swarm_benchmark(
@@ -3334,17 +3414,104 @@ int main() {
                         },
                         "work_item_limit",
                         "swarm ignored its conservative work limit");
+
+                    const auto branch_config =
+                        pic::load_swarm_benchmark_config(
+                            swarm_branch_config_path);
+                    require(
+                        branch_config.population_model ==
+                                pic::SwarmPopulationModel::
+                                    BranchingResampled &&
+                            branch_config.population_limit == 256,
+                        "branching swarm controls were not parsed");
+                    const auto branch_results =
+                        pic::run_swarm_benchmark(branch_config);
+                    require(
+                        branch_results.size() == 1,
+                        "branching swarm returned the wrong field count");
+                    const auto& branch = branch_results.front();
+                    require(
+                        !branch.diffusion_available &&
+                            branch.final_computational_particles == 64 &&
+                            branch.final_total_electron_weight >
+                                branch.initial_total_electron_weight &&
+                            branch.temporal_growth_rate_s > 0.0,
+                        "branching swarm did not preserve its bounded "
+                        "ensemble while multiplying electron weight");
+                    require(
+                        branch.townsend_available ==
+                            (branch.electron_drift_velocity_m_s > 0.0),
+                        "branching swarm Townsend availability is "
+                        "inconsistent with its drift direction");
+                    const auto branch_dataset =
+                        pic::load_gas_dataset(swarm_branch_manifest);
+                    pic::write_swarm_benchmark_csv(
+                        swarm_branch_output, branch_config,
+                        branch_dataset, branch_results);
+                    const std::string branch_csv =
+                        read_file_text(swarm_branch_output);
+                    const auto branch_header_end =
+                        branch_csv.find('\n');
+                    const auto branch_row_end =
+                        branch_csv.find(
+                            '\n', branch_header_end + 1);
+                    require(
+                        branch_csv.find("branching_resampled") !=
+                                std::string::npos &&
+                            branch_csv.find(
+                                "temporal_growth_rate_s") !=
+                                std::string::npos &&
+                            branch_csv.find(
+                                "diffusion_available") !=
+                                std::string::npos &&
+                            branch_header_end != std::string::npos &&
+                            branch_row_end != std::string::npos &&
+                            std::count(
+                                branch_csv.begin(),
+                                branch_csv.begin() +
+                                    static_cast<std::ptrdiff_t>(
+                                        branch_header_end),
+                                ',') ==
+                                std::count(
+                                    branch_csv.begin() +
+                                        static_cast<std::ptrdiff_t>(
+                                            branch_header_end + 1),
+                                    branch_csv.begin() +
+                                        static_cast<std::ptrdiff_t>(
+                                            branch_row_end),
+                                    ','),
+                        "branching swarm CSV omitted population "
+                        "diagnostics");
+                    auto invalid_branch = branch_config;
+                    invalid_branch.population_limit =
+                        invalid_branch.particles;
+                    require_throws_contains(
+                        [&] {
+                            (void)pic::run_swarm_benchmark(
+                                invalid_branch);
+                        },
+                        "population_limit must exceed particles",
+                        "branching swarm accepted an unsafe population "
+                        "limit");
                 } catch (...) {
                     std::filesystem::remove(swarm_table);
                     std::filesystem::remove(swarm_manifest);
                     std::filesystem::remove(swarm_config_path);
                     std::filesystem::remove(swarm_output);
+                    std::filesystem::remove(swarm_ionization_table);
+                    std::filesystem::remove(swarm_branch_manifest);
+                    std::filesystem::remove(swarm_branch_config_path);
+                    std::filesystem::remove(swarm_branch_output);
                     throw;
                 }
                 std::filesystem::remove(swarm_table);
                 std::filesystem::remove(swarm_manifest);
                 std::filesystem::remove(swarm_config_path);
                 std::filesystem::remove(swarm_output);
+                std::filesystem::remove(swarm_ionization_table);
+                std::filesystem::remove(swarm_branch_manifest);
+                std::filesystem::remove(swarm_branch_config_path);
+                std::filesystem::remove(swarm_branch_output);
             }
             {
                 const auto invalid_path =

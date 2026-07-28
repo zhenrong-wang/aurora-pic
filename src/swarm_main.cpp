@@ -24,7 +24,23 @@ int main(int argc, char** argv) {
                 << result.electron_drift_velocity_m_s
                 << " m/s mean_energy=" << result.mean_energy_ev
                 << " eV max_energy="
-                << result.maximum_observed_energy_ev << " eV\n";
+                << result.maximum_observed_energy_ev << " eV";
+            if (config.population_model ==
+                pic::SwarmPopulationModel::BranchingResampled) {
+                std::cout
+                    << " growth_rate="
+                    << result.temporal_growth_rate_s << " 1/s"
+                    << " electron_weight="
+                    << result.final_total_electron_weight;
+                if (result.townsend_available) {
+                    std::cout
+                        << " growth_over_flux_drift_townsend="
+                        << result
+                               .growth_over_flux_drift_townsend_1_m
+                        << " 1/m";
+                }
+            }
+            std::cout << '\n';
         }
         std::cout << "wrote " << config.output_file.string() << '\n';
         return 0;

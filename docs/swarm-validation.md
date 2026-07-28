@@ -26,6 +26,7 @@ timestep = 2.5e-10
 steps = 20000
 burn_in_steps = 10000
 particles = 10000
+population_model = fixed_population_no_avalanche
 uncertainty_blocks = 10
 work_item_limit = 1500000000
 initial_mean_energy_ev = 0.1
@@ -44,6 +45,24 @@ particles and, by default, 100 million particle-step-field work items. Raising
 `work_item_limit` is an explicit acknowledgement that a larger run belongs on
 an appropriately monitored compute host.
 
+`population_model` selects one of two explicit contracts:
+
+- `fixed_population_no_avalanche` is the default transport mode. Ionization
+  events are counted and change the primary electron energy, but their
+  secondaries do not join the ensemble.
+- `branching_resampled` adds each ionization secondary with its parent's
+  statistical weight, then systematically resamples back to `particles`
+  computational electrons after every step while preserving total represented
+  electron weight. This keeps computational cost fixed while the physical
+  population grows.
+
+Branching runs may set `population_limit` to a value greater than `particles`.
+It caps the temporary pre-resampling population; if omitted, a conservative
+bounded value is selected. The temporary population plus the resampling
+target may not exceed 10 million allocations. This is a memory fail-safe, not
+a convergence control: production studies still need particle-count and
+timestep refinement.
+
 The CSV embeds the dataset identity, version, citation, provenance, retrieval
 date, license text, gas-manifest path, numerical controls, per-field seed, and
 collision-model signature. The signature fingerprints cross-section and
@@ -54,11 +73,20 @@ For each E/N it reports:
   electron drift velocity opposite the field;
 - reduced mobility `N * drift_velocity / electric_field`;
 - mean electron energy;
-- longitudinal and transverse endpoint diffusion estimates;
+- longitudinal and transverse endpoint diffusion estimates in fixed mode;
 - maximum observed energy;
 - null-collision candidate counts and per-channel rates;
 - block standard errors for drift and mean energy, plus Poisson counting
   errors for channel rates.
+
+Branching mode additionally reports initial/final represented electron
+weight, the fixed final computational-particle count, and a temporal growth
+rate fitted to `log(total electron weight)`. When the conventional electron
+drift is positive it also reports `growth rate / flux drift velocity` as a
+clearly named Townsend approximation. `diffusion_available` and
+`townsend_available` distinguish unavailable quantities from numerical zero;
+diffusion columns are empty in branching mode because resampling breaks the
+independent endpoint-lineage estimator.
 
 The reduced-mobility unit is `1 / (V m s)`. One Townsend is
 `1e-21 V m^2`.
@@ -141,22 +169,23 @@ an invalid or ambiguous input. Existing reports require `--overwrite`.
 
 ## Model boundary
 
-This first swarm implementation intentionally uses a fixed electron
-population. Ionization divides the available excess energy using the engine's
-current equal-sharing model and increments the ionization rate, but the
-secondary electron is not added to the ensemble. The reported rate is
-therefore not a Townsend avalanche coefficient. The model also assumes
-stationary zero-temperature neutrals. Elastic scattering is isotropic unless
-the gas package explicitly supplies a validated energy-dependent
+The fixed mode intentionally excludes multiplication. The
+`branching_resampled` mode provides bounded electron-impact avalanche
+multiplication, but its growth-over-flux-drift result is not a spatial
+steady-state bulk Townsend coefficient. It does not yet include attachment,
+photoionization, space charge, or a dedicated steady Townsend experiment.
+Ionization uses the engine's current equal-sharing energy model. Both modes
+assume stationary zero-temperature neutrals. Elastic scattering is isotropic
+unless the gas package explicitly supplies a validated energy-dependent
 Henyey-Greenstein mean-cosine table; configured neutral mass remains active
 in either elastic recoil path.
 
 Consequently, this benchmark can validate the current MCC implementation's
-drift, mean energy, diffusion trend, and collision rates. It cannot yet claim
-high-accuracy transport for datasets requiring a full differential angular
-cross section beyond the mean-cosine phase-function approximation, thermal
-neutral motion, non-equal ionization energy sharing, or electron
-multiplication.
+drift, mean energy, fixed-mode diffusion trend, collision rates, and bounded
+transient avalanche growth. It cannot yet claim high-accuracy transport for
+datasets requiring a full differential angular cross section beyond the
+mean-cosine phase-function approximation, thermal neutral motion, non-equal
+ionization energy sharing, or spatial steady-state Townsend coefficients.
 
 ## Production study checklist
 
@@ -170,3 +199,5 @@ multiplication.
 6. Record the imported package and `audit.json` alongside the CSV.
 7. Do not tune cross sections against device results before the homogeneous
    swarm comparison is understood.
+8. For branching runs, repeat with larger computational populations and verify
+   both the temporal growth rate and its block uncertainty stabilize.

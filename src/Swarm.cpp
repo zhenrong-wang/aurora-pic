@@ -24,6 +24,7 @@ constexpr double electron_mass_kg = 9.1093837139e-31;
 constexpr double elementary_charge_c = 1.602176634e-19;
 constexpr double ev_to_j = elementary_charge_c;
 constexpr double townsend_v_m2 = 1.0e-21;
+constexpr std::size_t swarm_allocation_limit = 10000000;
 
 std::string trim(std::string value) {
     const auto first = value.find_first_not_of(" \t\r\n");
@@ -132,6 +133,96 @@ std::pair<double, double> block_mean_and_error(
     return {mean, standard_error};
 }
 
+double linear_slope(
+    const std::vector<double>& values,
+    std::size_t begin,
+    std::size_t end,
+    double timestep) {
+    const std::size_t count = end - begin;
+    if (count < 2) {
+        throw std::invalid_argument(
+            "swarm slope estimate requires two samples per block");
+    }
+    const double mean_index =
+        0.5 * static_cast<double>(count - 1);
+    double covariance = 0.0;
+    double index_variance = 0.0;
+    double mean_value = 0.0;
+    for (std::size_t index = begin; index < end; ++index) {
+        mean_value += values[index];
+    }
+    mean_value /= static_cast<double>(count);
+    for (std::size_t local = 0; local < count; ++local) {
+        const double centered_index =
+            static_cast<double>(local) - mean_index;
+        covariance += centered_index *
+                      (values[begin + local] - mean_value);
+        index_variance += centered_index * centered_index;
+    }
+    return covariance / (index_variance * timestep);
+}
+
+std::pair<double, double> block_slope_and_error(
+    const std::vector<double>& values,
+    double timestep,
+    std::size_t blocks) {
+    if (values.size() % blocks != 0 ||
+        values.size() / blocks < 2) {
+        throw std::invalid_argument(
+            "swarm growth statistics require at least two samples "
+            "per equal block");
+    }
+    const std::size_t block_size = values.size() / blocks;
+    std::vector<double> slopes;
+    slopes.reserve(blocks);
+    for (std::size_t block = 0; block < blocks; ++block) {
+        slopes.push_back(linear_slope(
+            values,
+            block * block_size,
+            (block + 1) * block_size,
+            timestep));
+    }
+    const double mean = std::accumulate(
+        slopes.begin(), slopes.end(), 0.0) /
+        static_cast<double>(slopes.size());
+    if (slopes.size() == 1) return {mean, 0.0};
+    double squared_deviation = 0.0;
+    for (const double slope : slopes) {
+        const double delta = slope - mean;
+        squared_deviation += delta * delta;
+    }
+    return {
+        mean,
+        std::sqrt(
+            squared_deviation /
+            (static_cast<double>(slopes.size()) *
+             static_cast<double>(slopes.size() - 1)))};
+}
+
+std::size_t effective_population_limit(
+    const SwarmBenchmarkConfig& config) {
+    if (config.population_limit != 0) {
+        return config.population_limit;
+    }
+    if (config.particles >= swarm_allocation_limit) {
+        return config.particles;
+    }
+    const std::size_t source_capacity =
+        swarm_allocation_limit - config.particles;
+    const std::size_t doubled =
+        config.particles > source_capacity / 2
+            ? source_capacity
+            : 2 * config.particles;
+    const std::size_t buffer =
+        std::min(source_capacity, std::size_t{1024});
+    const std::size_t buffered =
+        config.particles > source_capacity - buffer
+            ? source_capacity
+            : config.particles + 1024;
+    return std::min(
+        source_capacity, std::max(doubled, buffered));
+}
+
 std::string csv_cell(const std::string& value) {
     if (value.find_first_of(",\"\r\n") == std::string::npos) {
         return value;
@@ -181,10 +272,28 @@ void validate_config(
         throw std::runtime_error(
             "swarm particles must be positive");
     }
-    constexpr std::size_t particle_limit = 10000000;
-    if (config.particles > particle_limit) {
+    if (config.particles > swarm_allocation_limit) {
         throw std::runtime_error(
             "swarm particles exceeds the safety limit of 10000000");
+    }
+    const std::size_t population_limit =
+        effective_population_limit(config);
+    if (config.population_model ==
+        SwarmPopulationModel::FixedPopulationNoAvalanche) {
+        if (config.population_limit != 0) {
+            throw std::runtime_error(
+                "swarm population_limit is valid only for "
+                "population_model = branching_resampled");
+        }
+    } else {
+        if (population_limit <= config.particles ||
+            population_limit >
+                swarm_allocation_limit - config.particles) {
+            throw std::runtime_error(
+                "branching swarm population_limit must exceed particles "
+                "and population_limit + particles must not exceed "
+                "the allocation safety limit of 10000000");
+        }
     }
     if (config.work_item_limit == 0) {
         throw std::runtime_error(
@@ -222,6 +331,13 @@ void validate_config(
         throw std::runtime_error(
             "swarm sampling steps must be divisible by "
             "uncertainty_blocks");
+    }
+    if (config.population_model ==
+            SwarmPopulationModel::BranchingResampled &&
+        sampling_steps / config.uncertainty_blocks < 2) {
+        throw std::runtime_error(
+            "branching swarm requires at least two sampling steps "
+            "per uncertainty block");
     }
     if (!std::isfinite(config.initial_mean_energy_ev) ||
         config.initial_mean_energy_ev < 0.0) {
@@ -265,10 +381,14 @@ void validate_config(
             "swarm gas dataset has no collision channels");
     }
     bool has_elastic = false;
+    bool has_ionization = false;
     for (const auto& channel : dataset.channels) {
         has_elastic =
             has_elastic ||
             channel.process == CollisionProcessKind::Elastic;
+        has_ionization =
+            has_ionization ||
+            channel.process == CollisionProcessKind::Ionization;
         if (channel.process == CollisionProcessKind::ChargeExchange) {
             throw std::runtime_error(
                 "electron swarm benchmark does not support "
@@ -303,6 +423,12 @@ void validate_config(
         throw std::runtime_error(
             "electron swarm benchmark requires an elastic channel");
     }
+    if (config.population_model ==
+            SwarmPopulationModel::BranchingResampled &&
+        !has_ionization) {
+        throw std::runtime_error(
+            "branching swarm requires an ionization channel");
+    }
 }
 
 CollisionConfig collision_config(
@@ -335,6 +461,54 @@ CollisionConfig collision_config(
     return result;
 }
 
+struct SwarmParticle {
+    Vec3 velocity{};
+    Vec3 position{};
+    Vec3 sampling_start_position{};
+    double weight{1.0};
+};
+
+double total_weight(const std::vector<SwarmParticle>& particles) {
+    double result = 0.0;
+    for (const auto& particle : particles) {
+        result += particle.weight;
+    }
+    if (!std::isfinite(result) || !(result > 0.0)) {
+        throw std::overflow_error(
+            "swarm total electron weight overflow");
+    }
+    return result;
+}
+
+void systematic_resample(
+    std::vector<SwarmParticle>& particles,
+    std::size_t target,
+    std::mt19937_64& rng) {
+    if (particles.size() == target) return;
+    const double weight_sum = total_weight(particles);
+    const double output_weight =
+        weight_sum / static_cast<double>(target);
+    std::uniform_real_distribution<double> unit(0.0, 1.0);
+    const double offset = unit(rng) * output_weight;
+    std::vector<SwarmParticle> resampled;
+    resampled.reserve(target);
+    std::size_t source = 0;
+    double cumulative = particles.front().weight;
+    for (std::size_t sample = 0; sample < target; ++sample) {
+        const double threshold =
+            offset + static_cast<double>(sample) * output_weight;
+        while (source + 1 < particles.size() &&
+               cumulative < threshold) {
+            ++source;
+            cumulative += particles[source].weight;
+        }
+        auto selected = particles[source];
+        selected.weight = output_weight;
+        resampled.push_back(selected);
+    }
+    particles = std::move(resampled);
+}
+
 SwarmBenchmarkResult run_field(
     const SwarmBenchmarkConfig& config,
     const GasDataset& dataset,
@@ -348,12 +522,11 @@ SwarmBenchmarkResult run_field(
         2.0 * config.initial_mean_energy_ev * ev_to_j /
         (3.0 * electron_mass_kg));
     std::normal_distribution<double> normal(0.0, component_stddev);
-    std::vector<Vec3> velocities(config.particles);
-    for (auto& velocity : velocities) {
-        velocity = {normal(rng), normal(rng), normal(rng)};
+    std::vector<SwarmParticle> particles(config.particles);
+    for (auto& particle : particles) {
+        particle.velocity = {
+            normal(rng), normal(rng), normal(rng)};
     }
-    std::vector<Vec3> positions(config.particles);
-    std::vector<Vec3> sampling_start_positions(config.particles);
 
     const double electric_field =
         reduced_field_td * townsend_v_m2 * config.neutral_density;
@@ -364,25 +537,49 @@ SwarmBenchmarkResult run_field(
         config.steps - config.burn_in_steps;
     std::vector<double> velocity_samples;
     std::vector<double> energy_samples;
+    std::vector<double> log_weight_samples;
     velocity_samples.reserve(sampling_steps);
     energy_samples.reserve(sampling_steps);
+    log_weight_samples.reserve(sampling_steps);
 
     SwarmBenchmarkResult result;
     result.collision_model_signature = model.signature();
+    result.initial_total_electron_weight =
+        static_cast<double>(config.particles);
+    result.diffusion_available =
+        config.population_model ==
+        SwarmPopulationModel::FixedPopulationNoAvalanche;
     result.reduced_field_td = reduced_field_td;
     result.electric_field_v_m = electric_field;
     result.channels.reserve(model.channel_names().size());
     for (const auto& name : model.channel_names()) {
         result.channels.push_back({name});
     }
+    std::vector<double> weighted_channel_collisions(
+        result.channels.size(), 0.0);
+    std::vector<double> squared_weighted_channel_collisions(
+        result.channels.size(), 0.0);
+    double weighted_exposure = 0.0;
+    const std::size_t population_limit =
+        effective_population_limit(config);
 
     for (std::size_t step = 0; step < config.steps; ++step) {
         if (step == config.burn_in_steps) {
-            sampling_start_positions = positions;
+            for (auto& particle : particles) {
+                particle.sampling_start_position =
+                    particle.position;
+            }
         }
-        for (std::size_t particle = 0;
-             particle < velocities.size(); ++particle) {
-            auto& velocity = velocities[particle];
+        const std::size_t active_particles = particles.size();
+        const double step_start_weight = total_weight(particles);
+        if (step >= config.burn_in_steps) {
+            weighted_exposure +=
+                step_start_weight * config.timestep;
+        }
+        for (std::size_t particle_index = 0;
+             particle_index < active_particles; ++particle_index) {
+            auto& particle = particles[particle_index];
+            auto& velocity = particle.velocity;
             velocity.x += half_kick;
             const double pre_collision_energy_ev =
                 kinetic_energy_ev(velocity);
@@ -395,11 +592,11 @@ SwarmBenchmarkResult run_field(
                     "collision lookup at E/N=" +
                     std::to_string(reduced_field_td) + " Td");
             }
-            positions[particle].x +=
+            particle.position.x +=
                 velocity.x * config.timestep;
-            positions[particle].y +=
+            particle.position.y +=
                 velocity.y * config.timestep;
-            positions[particle].z +=
+            particle.position.z +=
                 velocity.z * config.timestep;
             const auto statistics =
                 model.collide(velocity, config.timestep, rng);
@@ -413,26 +610,66 @@ SwarmBenchmarkResult run_field(
                     "swarm particle energy exceeded max_energy_ev at "
                     "E/N=" + std::to_string(reduced_field_td) + " Td");
             }
-            if (step < config.burn_in_steps) continue;
-            result.collision_candidates += statistics.candidates;
-            result.null_collisions += statistics.null_collisions;
-            for (std::size_t channel = 0;
-                 channel < result.channels.size(); ++channel) {
-                result.channels[channel].collisions +=
-                    statistics.channel_collisions[channel];
+            if (step >= config.burn_in_steps) {
+                result.collision_candidates += statistics.candidates;
+                result.null_collisions += statistics.null_collisions;
+                for (std::size_t channel = 0;
+                     channel < result.channels.size(); ++channel) {
+                    result.channels[channel].collisions +=
+                        statistics.channel_collisions[channel];
+                    const double weighted =
+                        particle.weight *
+                        static_cast<double>(
+                            statistics.channel_collisions[channel]);
+                    weighted_channel_collisions[channel] += weighted;
+                    squared_weighted_channel_collisions[channel] +=
+                        particle.weight * particle.weight *
+                        static_cast<double>(
+                            statistics.channel_collisions[channel]);
+                }
             }
+            if (config.population_model ==
+                SwarmPopulationModel::BranchingResampled) {
+                const Vec3 parent_position = particle.position;
+                const Vec3 parent_sampling_start =
+                    particle.sampling_start_position;
+                const double parent_weight = particle.weight;
+                for (const auto& secondary : statistics.secondaries) {
+                    if (particles.size() >= population_limit) {
+                        throw std::runtime_error(
+                            "branching swarm exceeded population_limit "
+                            "before resampling; reduce timestep or raise "
+                            "the limit on an appropriate compute host");
+                    }
+                    SwarmParticle created;
+                    created.velocity = secondary.velocity;
+                    created.position = parent_position;
+                    created.sampling_start_position =
+                        parent_sampling_start;
+                    created.weight = parent_weight;
+                    particles.push_back(created);
+                }
+            }
+        }
+        if (config.population_model ==
+            SwarmPopulationModel::BranchingResampled) {
+            systematic_resample(
+                particles, config.particles, rng);
         }
         if (step < config.burn_in_steps) continue;
         double velocity_sum = 0.0;
         double energy_sum = 0.0;
-        for (const auto& velocity : velocities) {
-            velocity_sum += velocity.x;
-            energy_sum += kinetic_energy_ev(velocity);
+        const double weight_sum = total_weight(particles);
+        for (const auto& particle : particles) {
+            velocity_sum +=
+                particle.weight * particle.velocity.x;
+            energy_sum +=
+                particle.weight *
+                kinetic_energy_ev(particle.velocity);
         }
-        velocity_samples.push_back(
-            velocity_sum / static_cast<double>(velocities.size()));
-        energy_samples.push_back(
-            energy_sum / static_cast<double>(velocities.size()));
+        velocity_samples.push_back(velocity_sum / weight_sum);
+        energy_samples.push_back(energy_sum / weight_sum);
+        log_weight_samples.push_back(std::log(weight_sum));
     }
 
     const auto velocity_statistics = block_mean_and_error(
@@ -452,56 +689,86 @@ SwarmBenchmarkResult run_field(
     result.mean_energy_ev = energy_statistics.first;
     result.mean_energy_standard_error_ev = energy_statistics.second;
 
-    double mean_dx = 0.0;
-    double mean_dy = 0.0;
-    double mean_dz = 0.0;
-    for (std::size_t particle = 0;
-         particle < positions.size(); ++particle) {
-        mean_dx += positions[particle].x -
-                   sampling_start_positions[particle].x;
-        mean_dy += positions[particle].y -
-                   sampling_start_positions[particle].y;
-        mean_dz += positions[particle].z -
-                   sampling_start_positions[particle].z;
-    }
-    const double particle_count =
-        static_cast<double>(positions.size());
-    mean_dx /= particle_count;
-    mean_dy /= particle_count;
-    mean_dz /= particle_count;
-    double variance_x = 0.0;
-    double variance_yz = 0.0;
-    for (std::size_t particle = 0;
-         particle < positions.size(); ++particle) {
-        const double dx =
-            positions[particle].x -
-            sampling_start_positions[particle].x - mean_dx;
-        const double dy =
-            positions[particle].y -
-            sampling_start_positions[particle].y - mean_dy;
-        const double dz =
-            positions[particle].z -
-            sampling_start_positions[particle].z - mean_dz;
-        variance_x += dx * dx;
-        variance_yz += dy * dy + dz * dz;
-    }
-    variance_x /= particle_count;
-    variance_yz /= particle_count;
     const double sampling_time =
         static_cast<double>(sampling_steps) * config.timestep;
-    result.longitudinal_diffusion_m2_s =
-        variance_x / (2.0 * sampling_time);
-    result.transverse_diffusion_m2_s =
-        variance_yz / (4.0 * sampling_time);
+    if (result.diffusion_available) {
+        double mean_dx = 0.0;
+        double mean_dy = 0.0;
+        double mean_dz = 0.0;
+        const double particle_count =
+            static_cast<double>(particles.size());
+        for (const auto& particle : particles) {
+            mean_dx += particle.position.x -
+                       particle.sampling_start_position.x;
+            mean_dy += particle.position.y -
+                       particle.sampling_start_position.y;
+            mean_dz += particle.position.z -
+                       particle.sampling_start_position.z;
+        }
+        mean_dx /= particle_count;
+        mean_dy /= particle_count;
+        mean_dz /= particle_count;
+        double variance_x = 0.0;
+        double variance_yz = 0.0;
+        for (const auto& particle : particles) {
+            const double dx =
+                particle.position.x -
+                particle.sampling_start_position.x - mean_dx;
+            const double dy =
+                particle.position.y -
+                particle.sampling_start_position.y - mean_dy;
+            const double dz =
+                particle.position.z -
+                particle.sampling_start_position.z - mean_dz;
+            variance_x += dx * dx;
+            variance_yz += dy * dy + dz * dz;
+        }
+        variance_x /= particle_count;
+        variance_yz /= particle_count;
+        result.longitudinal_diffusion_m2_s =
+            variance_x / (2.0 * sampling_time);
+        result.transverse_diffusion_m2_s =
+            variance_yz / (4.0 * sampling_time);
+    }
 
-    const double exposure =
-        particle_count * sampling_time;
-    for (auto& channel : result.channels) {
+    for (std::size_t channel_index = 0;
+         channel_index < result.channels.size(); ++channel_index) {
+        auto& channel = result.channels[channel_index];
         channel.rate_per_electron_s =
-            static_cast<double>(channel.collisions) / exposure;
+            weighted_channel_collisions[channel_index] /
+            weighted_exposure;
         channel.poisson_standard_error_s =
-            std::sqrt(static_cast<double>(channel.collisions)) /
-            exposure;
+            std::sqrt(
+                squared_weighted_channel_collisions[channel_index]) /
+            weighted_exposure;
+    }
+    result.final_total_electron_weight = total_weight(particles);
+    result.final_computational_particles = particles.size();
+    if (config.population_model ==
+        SwarmPopulationModel::BranchingResampled) {
+        const auto growth = block_slope_and_error(
+            log_weight_samples,
+            config.timestep,
+            config.uncertainty_blocks);
+        result.temporal_growth_rate_s = growth.first;
+        result.temporal_growth_rate_standard_error_s =
+            growth.second;
+        if (result.electron_drift_velocity_m_s > 0.0) {
+            result.townsend_available = true;
+            const double drift =
+                result.electron_drift_velocity_m_s;
+            const double drift_error =
+                result.mean_velocity_x_standard_error_m_s;
+            result.growth_over_flux_drift_townsend_1_m =
+                result.temporal_growth_rate_s / drift;
+            result
+                .growth_over_flux_drift_townsend_standard_error_1_m =
+                std::hypot(
+                    result.temporal_growth_rate_standard_error_s /
+                        drift,
+                    result.temporal_growth_rate_s * drift_error /
+                        (drift * drift));
+        }
     }
     return result;
 }
@@ -525,6 +792,8 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
         "steps",
         "burn_in_steps",
         "particles",
+        "population_model",
+        "population_limit",
         "uncertainty_blocks",
         "work_item_limit",
         "initial_mean_energy_ev",
@@ -601,6 +870,29 @@ SwarmBenchmarkConfig load_swarm_benchmark_config(
     result.particles =
         required_number<std::size_t>(
             values, "particles", context);
+    if (values.contains("population_model")) {
+        const std::string model = values.at("population_model");
+        if (model == "fixed_population_no_avalanche" ||
+            model == "fixed") {
+            result.population_model =
+                SwarmPopulationModel::FixedPopulationNoAvalanche;
+        } else if (model == "branching_resampled" ||
+                   model == "branching") {
+            result.population_model =
+                SwarmPopulationModel::BranchingResampled;
+        } else {
+            throw std::runtime_error(
+                context + " key 'population_model' must be "
+                "fixed_population_no_avalanche or "
+                "branching_resampled");
+        }
+    }
+    if (values.contains("population_limit")) {
+        result.population_limit =
+            parse_number<std::size_t>(
+                values.at("population_limit"),
+                context + " key 'population_limit'");
+    }
     if (values.contains("uncertainty_blocks")) {
         result.uncertainty_blocks =
             parse_number<std::size_t>(
@@ -686,15 +978,26 @@ void write_swarm_benchmark_csv(
         << "dataset_id,dataset_version,gas,retrieved,provenance,"
         << "citation,license,gas_data_file,population_model,"
         << "neutral_density_m3,timestep_s,steps,burn_in_steps,"
-        << "particles,work_item_limit,seed,reduced_field_td,"
+        << "particles,population_limit,work_item_limit,seed,"
+        << "reduced_field_td,"
         << "collision_model_signature,"
         << "electric_field_v_m,mean_velocity_x_m_s,"
         << "mean_velocity_x_standard_error_m_s,"
         << "electron_drift_velocity_m_s,"
         << "reduced_mobility_1_v_m_s,mean_energy_ev,"
         << "mean_energy_standard_error_ev,"
+        << "diffusion_available,"
         << "longitudinal_diffusion_m2_s,"
-        << "transverse_diffusion_m2_s,maximum_observed_energy_ev,"
+        << "transverse_diffusion_m2_s,"
+        << "initial_total_electron_weight,"
+        << "final_total_electron_weight,"
+        << "final_computational_particles,"
+        << "temporal_growth_rate_s,"
+        << "temporal_growth_rate_standard_error_s,"
+        << "townsend_available,"
+        << "growth_over_flux_drift_townsend_1_m,"
+        << "growth_over_flux_drift_townsend_standard_error_1_m,"
+        << "maximum_observed_energy_ev,"
         << "collision_candidates,null_collisions";
     for (const auto& channel : results.front().channels) {
         output << ',' << channel.name << "_collisions"
@@ -717,12 +1020,17 @@ void write_swarm_benchmark_csv(
             << csv_cell(dataset.citation) << ','
             << csv_cell(dataset.license) << ','
             << csv_cell(config.gas_data_file.string()) << ','
-            << "fixed_population_no_avalanche,"
+            << csv_cell(to_string(config.population_model)) << ','
             << config.neutral_density << ','
             << config.timestep << ','
             << config.steps << ','
             << config.burn_in_steps << ','
             << config.particles << ','
+            << (config.population_model ==
+                        SwarmPopulationModel::BranchingResampled
+                    ? effective_population_limit(config)
+                    : 0)
+            << ','
             << config.work_item_limit << ','
             << config.seed + static_cast<std::uint64_t>(row) << ','
             << result.reduced_field_td << ','
@@ -734,8 +1042,31 @@ void write_swarm_benchmark_csv(
             << result.reduced_mobility_1_v_m_s << ','
             << result.mean_energy_ev << ','
             << result.mean_energy_standard_error_ev << ','
-            << result.longitudinal_diffusion_m2_s << ','
-            << result.transverse_diffusion_m2_s << ','
+            << (result.diffusion_available ? "yes" : "no") << ',';
+        if (result.diffusion_available) {
+            output
+                << result.longitudinal_diffusion_m2_s << ','
+                << result.transverse_diffusion_m2_s << ',';
+        } else {
+            output << ",,";
+        }
+        output
+            << result.initial_total_electron_weight << ','
+            << result.final_total_electron_weight << ','
+            << result.final_computational_particles << ','
+            << result.temporal_growth_rate_s << ','
+            << result.temporal_growth_rate_standard_error_s << ','
+            << (result.townsend_available ? "yes" : "no") << ',';
+        if (result.townsend_available) {
+            output
+                << result.growth_over_flux_drift_townsend_1_m << ','
+                << result
+                       .growth_over_flux_drift_townsend_standard_error_1_m
+                << ',';
+        } else {
+            output << ",,";
+        }
+        output
             << result.maximum_observed_energy_ev << ','
             << result.collision_candidates << ','
             << result.null_collisions;

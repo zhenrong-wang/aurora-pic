@@ -10,6 +10,21 @@
 
 namespace pic {
 
+enum class SwarmPopulationModel {
+    FixedPopulationNoAvalanche,
+    BranchingResampled
+};
+
+inline std::string to_string(SwarmPopulationModel model) {
+    switch (model) {
+        case SwarmPopulationModel::FixedPopulationNoAvalanche:
+            return "fixed_population_no_avalanche";
+        case SwarmPopulationModel::BranchingResampled:
+            return "branching_resampled";
+    }
+    return "unknown";
+}
+
 struct SwarmBenchmarkConfig {
     std::filesystem::path gas_data_file{};
     double neutral_density{0.0};
@@ -19,6 +34,9 @@ struct SwarmBenchmarkConfig {
     std::size_t steps{0};
     std::size_t burn_in_steps{0};
     std::size_t particles{0};
+    SwarmPopulationModel population_model{
+        SwarmPopulationModel::FixedPopulationNoAvalanche};
+    std::size_t population_limit{0};
     std::size_t uncertainty_blocks{10};
     std::uint64_t work_item_limit{100000000};
     double initial_mean_energy_ev{0.0};
@@ -46,7 +64,16 @@ struct SwarmBenchmarkResult {
     double mean_energy_standard_error_ev{0.0};
     double longitudinal_diffusion_m2_s{0.0};
     double transverse_diffusion_m2_s{0.0};
+    bool diffusion_available{true};
     double maximum_observed_energy_ev{0.0};
+    double initial_total_electron_weight{0.0};
+    double final_total_electron_weight{0.0};
+    std::size_t final_computational_particles{0};
+    double temporal_growth_rate_s{0.0};
+    double temporal_growth_rate_standard_error_s{0.0};
+    bool townsend_available{false};
+    double growth_over_flux_drift_townsend_1_m{0.0};
+    double growth_over_flux_drift_townsend_standard_error_1_m{0.0};
     std::uint64_t collision_candidates{0};
     std::uint64_t null_collisions{0};
     std::vector<SwarmChannelResult> channels{};
