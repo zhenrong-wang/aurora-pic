@@ -29,6 +29,8 @@ Imported runs are reachable from the CLI with `mesh = imported`. Their checkpoin
 
 Imported boundary sources inject a configured integer number of macro-particles at the beginning of each active timestep. Boundary faces sharing a physical label are selected by length, then sampled uniformly along the selected face and inset into the adjacent domain. The configured normal velocity is inward; thermal normal speed uses an inward half-range Gaussian magnitude, while tangential thermal velocity remains signed Gaussian. New particles are initialized into the same leapfrog/Boris time staggering as initial particles before joining the push. Dead storage slots are reused deterministically. Checkpoint v2 records source identity, schedule, velocity parameters, cumulative counts, dynamic particle state, and RNG state so continuation reproduces uninterrupted injection.
 
+Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal distribution as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Checkpoint v3 preserves emission definitions, cumulative emitted counts, flux state, particle state, and RNG state.
+
 ## Collisions
 
 Optional Monte-Carlo BGK-like velocity reset collisions model scattering against a prescribed neutral bath. The collision probability is `1 - exp(-nu dt)`.
@@ -46,7 +48,7 @@ The bounded smoke/performance envelope for the checked-in examples is documented
 
 ## Verification included
 
-The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential, symmetric-source, and exact mixed-boundary linear solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, checks particle-location cache population, reuse, and cross-cell fallback, rejects singular or incomplete imported boundary specifications, exercises imported-domain multi-bounce reflection and label-attributed absorption, verifies bounded boundary injection and deterministic source restart, and runs a short neutral two-species structured PIC simulation.
+The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential, symmetric-source, and exact mixed-boundary linear solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, checks particle-location cache population, reuse, and cross-cell fallback, rejects singular or incomplete imported boundary specifications, exercises imported-domain multi-bounce reflection and label-attributed absorption, verifies bounded boundary injection, weight-aware secondary emission, species-resolved physical fluxes, deterministic serial/OpenMP behavior, source/emission restart, and runs a short neutral two-species structured PIC simulation.
 
 ## Extension path
 

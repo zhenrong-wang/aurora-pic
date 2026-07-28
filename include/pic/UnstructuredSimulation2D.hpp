@@ -42,6 +42,29 @@ struct UnstructuredBoundarySource2DConfig {
     double thermal_velocity{0.0};
 };
 
+struct UnstructuredSecondaryEmission2DConfig {
+    std::string name;
+    std::string boundary;
+    std::string incident_species;
+    std::string emitted_species;
+    double yield{0.0};
+    std::size_t max_particles_per_impact{1000};
+    double normal_velocity{0.0};
+    double tangential_velocity{0.0};
+    double thermal_velocity{0.0};
+};
+
+struct UnstructuredBoundaryFlux2D {
+    std::size_t macroparticles{0};
+    double physical_particles{0.0};
+    double charge{0.0};
+    double kinetic_energy{0.0};
+    std::size_t last_step_macroparticles{0};
+    double last_step_physical_particles{0.0};
+    double physical_particle_rate{0.0};
+    double physical_particle_flux{0.0};
+};
+
 struct UnstructuredSimulation2DConfig {
     std::filesystem::path mesh_path;
     double dt{0.02};
@@ -71,6 +94,7 @@ struct UnstructuredSimulation2DConfig {
     std::map<std::string, ParticleBoundary> particle_boundaries;
     std::vector<UnstructuredSpecies2DConfig> species;
     std::vector<UnstructuredBoundarySource2DConfig> sources;
+    std::vector<UnstructuredSecondaryEmission2DConfig> emissions;
 };
 
 struct UnstructuredDiagnosticSample2D {
@@ -83,6 +107,9 @@ struct UnstructuredDiagnosticSample2D {
     std::size_t live_particles{0};
     std::map<std::string, std::size_t> absorbed_by_label;
     std::map<std::string, std::size_t> injected_by_source;
+    std::map<std::string, std::size_t> emitted_by_rule;
+    std::map<std::string,
+             std::map<std::string, UnstructuredBoundaryFlux2D>> impact_flux;
     UnstructuredPoissonSummary2D poisson{};
 };
 
@@ -145,13 +172,26 @@ private:
         std::vector<double> cumulative_lengths;
         std::size_t injected_particles{0};
     };
+    struct SecondaryEmissionRuntime {
+        UnstructuredSecondaryEmission2DConfig config;
+        std::size_t incident_species_id{0};
+        std::size_t emitted_species_id{0};
+        std::size_t emitted_particles{0};
+    };
+    struct BoundaryImpact {
+        std::size_t species_id{0};
+        std::size_t particle_id{0};
+        std::size_t segment_id{0};
+        Vec2 position{};
+        Vec2 incident_velocity{};
+    };
 
     Vec2 sample_position(const UnstructuredSpecies2DConfig& config);
     void inject_boundary_sources();
+    void process_boundary_impacts(std::vector<BoundaryImpact> impacts);
     void deposit_and_solve();
-    void advance_with_boundaries(
-        Particle2D& particle, Vec2 previous_position,
-        std::map<std::string, std::size_t>& absorbed_by_label);
+    std::optional<BoundaryImpact> advance_with_boundaries(
+        Particle2D& particle, Vec2 previous_position);
     void write_diagnostics_header(std::ofstream& output) const;
     void write_diagnostics_sample(std::ofstream& output,
                                   const UnstructuredDiagnosticSample2D& sample) const;
@@ -168,7 +208,11 @@ private:
     std::vector<BoundarySegment> boundary_segments_;
     std::vector<SamplingTriangle> sampling_triangles_;
     std::vector<BoundarySourceRuntime> sources_;
+    std::vector<SecondaryEmissionRuntime> emissions_;
     std::map<std::string, std::size_t> absorbed_by_label_;
+    std::map<std::string, double> boundary_lengths_;
+    std::map<std::string,
+             std::map<std::string, UnstructuredBoundaryFlux2D>> impact_flux_;
     std::mt19937_64 rng_;
     UnstructuredPoissonSummary2D last_poisson_{};
     UnstructuredTiming2D timing_{};

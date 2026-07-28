@@ -2362,6 +2362,9 @@ int main() {
                         imported_config.neumann_normal_derivatives.contains("outlet") &&
                         imported_config.sources.size() == 2 &&
                         imported_config.sources.front().species == "electrons" &&
+                        imported_config.emissions.size() == 1 &&
+                        imported_config.emissions.front().incident_species ==
+                            "ions" &&
                         imported_config.particle_boundaries.at("electrode") ==
                             pic::ParticleBoundary::Reflecting,
                     "imported 2D example config did not load expected runtime settings");
@@ -3237,6 +3240,170 @@ int main() {
                 std::filesystem::remove_all(continued_config.output_dir);
                 std::filesystem::remove_all(bounded_config.output_dir);
                 std::filesystem::remove_all(recycling_config.output_dir);
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path("test_output_unstructured_emission");
+                std::filesystem::remove_all(output_dir);
+                pic::UnstructuredSimulation2DConfig config;
+                config.mesh_path = fixture;
+                config.dt = 1.0;
+                config.steps = 2;
+                config.output_interval = 1;
+                config.output_dir = output_dir;
+                config.checkpoint_output = true;
+                config.checkpoint_interval = 1;
+                config.max_particles_per_species = 64;
+                config.dirichlet_potentials = {
+                    {"electrode", 0.0}, {"inlet", 0.0},
+                    {"outlet", 0.0}, {"wall", 0.0},
+                };
+                config.particle_boundaries = {
+                    {"electrode", pic::ParticleBoundary::Absorbing},
+                    {"inlet", pic::ParticleBoundary::Absorbing},
+                    {"outlet", pic::ParticleBoundary::Absorbing},
+                    {"wall", pic::ParticleBoundary::Absorbing},
+                };
+                pic::UnstructuredSpecies2DConfig beam;
+                beam.name = "beam";
+                beam.charge = 1.0;
+                beam.mass = 2.0;
+                beam.weight = 2.0;
+                beam.particles = 8;
+                beam.drift_velocity_x = 2.0;
+                beam.thermal_velocity = 0.0;
+                pic::UnstructuredSpecies2DConfig secondary;
+                secondary.name = "secondary";
+                secondary.charge = -1.0;
+                secondary.mass = 1.0;
+                secondary.weight = 1.0;
+                secondary.particles = 0;
+                secondary.thermal_velocity = 0.0;
+                config.species = {beam, secondary};
+                pic::UnstructuredSecondaryEmission2DConfig emission;
+                emission.name = "wall_secondaries";
+                emission.boundary = "outlet";
+                emission.incident_species = "beam";
+                emission.emitted_species = "secondary";
+                emission.yield = 1.0;
+                emission.max_particles_per_impact = 2;
+                emission.normal_velocity = 0.25;
+                config.emissions = {emission};
+
+                pic::UnstructuredSimulation2D simulation(config);
+                const auto summary = simulation.run();
+                require(
+                    summary.final_sample.absorbed_by_label.at("outlet") == 8 &&
+                        summary.final_sample.emitted_by_rule.at(
+                            "wall_secondaries") == 16 &&
+                        simulation.species()[1].live_count() == 16,
+                    "secondary emission count or weight conversion is wrong");
+                const auto& flux =
+                    summary.final_sample.impact_flux.at("beam").at("outlet");
+                require(
+                    flux.macroparticles == 8 &&
+                        flux.physical_particles == 16.0 &&
+                        flux.charge == 16.0 &&
+                        flux.kinetic_energy == 64.0,
+                    "species-resolved boundary flux accumulation is wrong");
+                require(
+                    flux.last_step_macroparticles == 0 &&
+                        flux.physical_particle_rate == 0.0 &&
+                        flux.physical_particle_flux == 0.0,
+                    "boundary flux last-step rate did not reset");
+                const std::string scalars =
+                    read_file_text(output_dir / "scalars.csv");
+                require(
+                    scalars.find("emitted_wall_secondaries") !=
+                            std::string::npos &&
+                        scalars.find("impact_flux_beam@outlet") !=
+                            std::string::npos,
+                    "secondary emission or boundary flux diagnostics are missing");
+
+                auto continued_config = config;
+                continued_config.restart_path =
+                    output_dir / "checkpoint_1.apc";
+                continued_config.output_dir =
+                    "test_output_unstructured_emission_continued";
+                continued_config.checkpoint_output = false;
+                std::filesystem::remove_all(continued_config.output_dir);
+                pic::UnstructuredSimulation2D continued(continued_config);
+                const auto continued_summary = continued.run();
+                require(
+                    continued_summary.final_sample.emitted_by_rule ==
+                            summary.final_sample.emitted_by_rule &&
+                        continued_summary.final_sample.impact_flux.at(
+                            "beam").at("outlet").physical_particles ==
+                            flux.physical_particles,
+                    "emission checkpoint restart changed accumulated diagnostics");
+                const auto& expected_secondaries =
+                    simulation.species()[1].particles();
+                const auto& continued_secondaries =
+                    continued.species()[1].particles();
+                require(
+                    continued_secondaries.size() ==
+                        expected_secondaries.size(),
+                    "emission checkpoint restart changed particle storage");
+                for (std::size_t i = 0;
+                     i < expected_secondaries.size(); ++i) {
+                    require_near(
+                        continued_secondaries[i].position.x,
+                        expected_secondaries[i].position.x, 1e-13,
+                        "emission checkpoint restart changed particle x");
+                    require_near(
+                        continued_secondaries[i].position.y,
+                        expected_secondaries[i].position.y, 1e-13,
+                        "emission checkpoint restart changed particle y");
+                }
+
+#ifdef AURORA_HAS_OPENMP
+                auto parallel_config = config;
+                parallel_config.runtime.backend =
+                    pic::RuntimeBackend::OpenMP;
+                parallel_config.runtime.threads = 2;
+                parallel_config.output_dir =
+                    "test_output_unstructured_emission_parallel";
+                parallel_config.checkpoint_output = false;
+                std::filesystem::remove_all(parallel_config.output_dir);
+                pic::UnstructuredSimulation2D parallel(parallel_config);
+                const auto parallel_summary = parallel.run();
+                require(
+                    parallel_summary.final_sample.emitted_by_rule ==
+                            summary.final_sample.emitted_by_rule &&
+                        parallel_summary.final_sample.impact_flux.at(
+                            "beam").at("outlet").physical_particles ==
+                            flux.physical_particles,
+                    "parallel emission changed deterministic accounting");
+                const auto& parallel_secondaries =
+                    parallel.species()[1].particles();
+                require(
+                    parallel_secondaries.size() ==
+                        expected_secondaries.size(),
+                    "parallel emission changed particle storage");
+                for (std::size_t i = 0;
+                     i < expected_secondaries.size(); ++i) {
+                    require_near(
+                        parallel_secondaries[i].position.x,
+                        expected_secondaries[i].position.x, 1e-13,
+                        "parallel emission changed particle x");
+                    require_near(
+                        parallel_secondaries[i].position.y,
+                        expected_secondaries[i].position.y, 1e-13,
+                        "parallel emission changed particle y");
+                }
+                std::filesystem::remove_all(parallel_config.output_dir);
+#endif
+
+                auto invalid_config = config;
+                invalid_config.emissions.front().max_particles_per_impact = 1;
+                require_throws(
+                    [&]() {
+                        pic::UnstructuredSimulation2D invalid(invalid_config);
+                    },
+                    "emission accepted an unsafe macro-particle yield");
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_config.output_dir);
             }
 
             pic::Gmsh2ImportLimits small_limits;

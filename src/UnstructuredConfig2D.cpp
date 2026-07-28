@@ -28,6 +28,7 @@ struct ParsedConfig {
     std::vector<NamedBlock> boundaries;
     std::vector<NamedBlock> species;
     std::vector<NamedBlock> sources;
+    std::vector<NamedBlock> emissions;
 };
 
 std::string trim(std::string value) {
@@ -86,6 +87,11 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "species", "boundary", "particles_per_step", "start_step", "end_step",
         "normal_velocity", "tangential_velocity", "thermal_velocity",
     };
+    static const std::set<std::string> emission_keys{
+        "boundary", "incident_species", "emitted_species", "yield",
+        "max_particles_per_impact", "normal_velocity", "tangential_velocity",
+        "thermal_velocity",
+    };
 
     ParsedConfig result;
     Values* current = &result.global;
@@ -93,6 +99,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
     std::set<std::string> boundary_names;
     std::set<std::string> species_names;
     std::set<std::string> source_names;
+    std::set<std::string> emission_names;
     std::string line;
     std::size_t line_number = 0;
     while (std::getline(input, line)) {
@@ -107,6 +114,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
             constexpr const char* boundary_prefix = "boundary.";
             constexpr const char* species_prefix = "species.";
             constexpr const char* source_prefix = "source.";
+            constexpr const char* emission_prefix = "emission.";
             if (lowered.rfind(boundary_prefix, 0) == 0) {
                 const std::string name =
                     trim(section.substr(std::char_traits<char>::length(boundary_prefix)));
@@ -134,6 +142,17 @@ ParsedConfig parse(const std::filesystem::path& path) {
                 result.sources.push_back({name, {}});
                 current = &result.sources.back().values;
                 allowed = &source_keys;
+            } else if (lowered.rfind(emission_prefix, 0) == 0) {
+                const std::string name =
+                    trim(section.substr(
+                        std::char_traits<char>::length(emission_prefix)));
+                if (name.empty() || !emission_names.insert(name).second) {
+                    config_error(
+                        line_number, "empty or duplicate emission section");
+                }
+                result.emissions.push_back({name, {}});
+                current = &result.emissions.back().values;
+                allowed = &emission_keys;
             } else {
                 config_error(line_number, "unknown section '" + section + "'");
             }
@@ -442,6 +461,38 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 "' references unknown species '" + value.species + "'");
         }
         result.sources.push_back(std::move(value));
+    }
+    for (const auto& emission : parsed.emissions) {
+        UnstructuredSecondaryEmission2DConfig value;
+        value.name = emission.name;
+        value.boundary = required(
+            emission.values, "boundary", "emission '" + emission.name + "'");
+        value.incident_species = required(
+            emission.values, "incident_species",
+            "emission '" + emission.name + "'");
+        value.emitted_species = required(
+            emission.values, "emitted_species",
+            "emission '" + emission.name + "'");
+        (void)required(
+            emission.values, "yield", "emission '" + emission.name + "'");
+        value.yield = number<double>(emission.values, "yield", 0.0);
+        value.max_particles_per_impact = number<std::size_t>(
+            emission.values, "max_particles_per_impact",
+            value.max_particles_per_impact);
+        value.normal_velocity = number<double>(
+            emission.values, "normal_velocity", value.normal_velocity);
+        value.tangential_velocity = number<double>(
+            emission.values, "tangential_velocity",
+            value.tangential_velocity);
+        value.thermal_velocity = number<double>(
+            emission.values, "thermal_velocity", value.thermal_velocity);
+        if (!configured_species.contains(value.incident_species) ||
+            !configured_species.contains(value.emitted_species)) {
+            throw std::runtime_error(
+                "emission '" + emission.name +
+                "' references an unknown species");
+        }
+        result.emissions.push_back(std::move(value));
     }
     return result;
 }
