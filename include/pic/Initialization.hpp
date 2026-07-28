@@ -6,6 +6,7 @@
 #include <optional>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace pic {
@@ -70,6 +71,34 @@ struct InitializationSpeciesMoments {
     double thermal_velocity_z{0.0};
 };
 
+struct InitializationChargePair {
+    std::string first_species;
+    std::string second_species;
+};
+
+struct InitializationAcceptanceConfig {
+    std::optional<double> max_relative_charge_imbalance{};
+    std::optional<double> max_relative_current_imbalance{};
+    std::optional<double> max_relative_pair_imbalance{};
+    std::vector<InitializationChargePair> charge_pairs{};
+};
+
+struct InitializationAcceptanceMetric {
+    std::string metric;
+    double value{0.0};
+    double scale{0.0};
+    double relative_residual{0.0};
+    double tolerance{0.0};
+    bool passed{true};
+    std::string details;
+};
+
+struct InitializationAcceptanceSummary {
+    bool enabled{false};
+    bool passed{true};
+    std::vector<InitializationAcceptanceMetric> metrics;
+};
+
 std::string to_string(ParticleLoading loading);
 ParticleLoading particle_loading_from_string(const std::string& value);
 std::string to_string(DensityProfileKind profile);
@@ -127,5 +156,21 @@ void write_initialization_report(
     std::size_t spatial_dimension,
     const std::string& state_source,
     const std::vector<InitializationSpeciesMoments>& moments);
+
+void validate_initialization_acceptance(
+    const InitializationAcceptanceConfig& config,
+    const std::string& context);
+
+InitializationAcceptanceSummary assess_initialization_acceptance(
+    const InitializationAcceptanceConfig& config,
+    const std::vector<InitializationSpeciesMoments>& moments,
+    std::size_t velocity_dimensions);
+
+void write_initialization_acceptance_report(
+    const std::filesystem::path& path,
+    const InitializationAcceptanceSummary& summary);
+
+void enforce_initialization_acceptance(
+    const InitializationAcceptanceSummary& summary);
 
 } // namespace pic

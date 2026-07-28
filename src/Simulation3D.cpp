@@ -143,6 +143,9 @@ Simulation3D::Simulation3D(Simulation3DConfig cfg)
       solver_(cfg_.units.permittivity()),
       rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
+    validate_initialization_acceptance(
+        cfg_.initialization_acceptance,
+        "3D initialization acceptance config");
     if (!std::isfinite(cfg_.dt) || cfg_.dt <= 0.0) throw std::invalid_argument("3D simulation dt must be positive and finite");
     if (cfg_.output_interval == 0) throw std::invalid_argument("3D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("3D particle_output_stride must be positive");
@@ -370,6 +373,15 @@ RunSummary3D Simulation3D::run() {
         cfg_.output_dir / "initialization.csv", 3,
         cfg_.restart_path.empty() ? "generated" : "restart",
         initialization_moments);
+    const auto initialization_acceptance =
+        assess_initialization_acceptance(
+            cfg_.initialization_acceptance,
+            initialization_moments, 3);
+    write_initialization_acceptance_report(
+        cfg_.output_dir / "initialization_acceptance.csv",
+        initialization_acceptance);
+    enforce_initialization_acceptance(
+        initialization_acceptance);
     Diagnostics3D diag(
         cfg_.output_dir, species_, cfg_.units.permittivity());
     diag.write_header();

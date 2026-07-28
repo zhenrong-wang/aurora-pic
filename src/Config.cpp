@@ -216,6 +216,55 @@ void parse_density_profile(
             initialization.max_profile_sampling_attempts);
 }
 
+InitializationAcceptanceConfig parse_initialization_acceptance(
+    const KeyValue& values) {
+    InitializationAcceptanceConfig result;
+    const auto optional_tolerance =
+        [&](const std::string& key,
+            std::optional<double>& destination) {
+            if (values.count(key)) {
+                destination = as<double>(values, key, 0.0);
+            }
+        };
+    optional_tolerance(
+        "initialization_max_relative_charge_imbalance",
+        result.max_relative_charge_imbalance);
+    optional_tolerance(
+        "initialization_max_relative_current_imbalance",
+        result.max_relative_current_imbalance);
+    optional_tolerance(
+        "initialization_max_relative_pair_imbalance",
+        result.max_relative_pair_imbalance);
+    if (values.count("initialization_charge_pairs")) {
+        const std::string pair_list = trim(
+            as<std::string>(
+                values, "initialization_charge_pairs", ""));
+        if (pair_list.empty() || pair_list.back() == ',') {
+            throw std::runtime_error(
+                "initialization_charge_pairs cannot be empty or end with a comma");
+        }
+        std::stringstream pairs(pair_list);
+        std::string entry;
+        while (std::getline(pairs, entry, ',')) {
+            entry = trim(entry);
+            const auto separator = entry.find(':');
+            if (entry.empty() ||
+                separator == std::string::npos ||
+                entry.find(':', separator + 1) !=
+                    std::string::npos) {
+                throw std::runtime_error(
+                    "initialization_charge_pairs must be a comma-separated list of first:second species names");
+            }
+            result.charge_pairs.push_back({
+                trim(entry.substr(0, separator)),
+                trim(entry.substr(separator + 1))});
+        }
+    }
+    validate_initialization_acceptance(
+        result, "initialization acceptance config");
+    return result;
+}
+
 CollisionModelKind parse_collision_model(
     const KeyValue& kv, CollisionModelKind def) {
     const auto value = lower(trim(as<std::string>(
@@ -389,6 +438,9 @@ void validate_config(const Config& cfg) {
         }
     }
     validate_runtime_policy(cfg.runtime);
+    validate_initialization_acceptance(
+        cfg.initialization_acceptance,
+        "1D initialization acceptance config");
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("species name must not be empty");
         validate_positive(s.mass, "species '" + s.name + "' mass");
@@ -437,6 +489,9 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
             "2D magnetic_field components must be finite");
     }
     validate_runtime_policy(cfg.runtime);
+    validate_initialization_acceptance(
+        cfg.initialization_acceptance,
+        "2D initialization acceptance config");
     validate_boundary_side(cfg.boundary_config.left, "left");
     validate_boundary_side(cfg.boundary_config.right, "right");
     validate_boundary_side(cfg.boundary_config.bottom, "bottom");
@@ -490,6 +545,9 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
         throw std::runtime_error("magnetic_field components must be finite");
     }
     validate_runtime_policy(cfg.runtime);
+    validate_initialization_acceptance(
+        cfg.initialization_acceptance,
+        "3D initialization acceptance config");
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("3D species name must not be empty");
         validate_positive(s.mass, "3D species '" + s.name + "' mass");
@@ -604,7 +662,11 @@ Config load_config(const std::string& path) {
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "boundary", "mode", "dimension", "config_version", "checkpoint_output", "checkpoint_interval",
         "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads",
-        "units", "relative_permittivity"
+        "units", "relative_permittivity",
+        "initialization_max_relative_charge_imbalance",
+        "initialization_max_relative_current_imbalance",
+        "initialization_max_relative_pair_imbalance",
+        "initialization_charge_pairs"
     };
     static const std::unordered_set<std::string> collision_keys{
         "enabled", "model", "frequency", "neutral_temperature_velocity",
@@ -675,6 +737,8 @@ Config load_config(const std::string& path) {
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path);
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path);
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
+    cfg.initialization_acceptance =
+        parse_initialization_acceptance(global);
 
     cfg.species.clear();
     for (const auto& block : blocks.species_blocks) {
@@ -789,7 +853,11 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
         "boundary_left_tag", "boundary_right_tag", "boundary_bottom_tag",
-        "boundary_top_tag", "units", "relative_permittivity"
+        "boundary_top_tag", "units", "relative_permittivity",
+        "initialization_max_relative_charge_imbalance",
+        "initialization_max_relative_current_imbalance",
+        "initialization_max_relative_pair_imbalance",
+        "initialization_charge_pairs"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
@@ -840,6 +908,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
+    cfg.initialization_acceptance =
+        parse_initialization_acceptance(global);
     cfg.magnetic_field_x =
         as<double>(
             global, "magnetic_field_x", cfg.magnetic_field_x);
@@ -928,7 +998,11 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "particle_boundary_back", "particle_boundary_front", "units",
-        "relative_permittivity"
+        "relative_permittivity",
+        "initialization_max_relative_charge_imbalance",
+        "initialization_max_relative_current_imbalance",
+        "initialization_max_relative_pair_imbalance",
+        "initialization_charge_pairs"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
@@ -981,6 +1055,8 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
+    cfg.initialization_acceptance =
+        parse_initialization_acceptance(global);
     cfg.magnetic_field.x = as<double>(global, "magnetic_field_x", cfg.magnetic_field.x);
     cfg.magnetic_field.y = as<double>(global, "magnetic_field_y", cfg.magnetic_field.y);
     cfg.magnetic_field.z = as<double>(global, "magnetic_field_z", cfg.magnetic_field.z);

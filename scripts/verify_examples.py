@@ -97,6 +97,38 @@ def require_step(rows: Sequence[Sequence[str]], expected_step: int, path: Path) 
     require(any(int(float(row[0])) == expected_step for row in rows), f"expected step {expected_step} in {path}")
 
 
+def require_initialization_audits(output_dir: Path) -> None:
+    require_file(output_dir / "initialization.csv")
+    path = output_dir / "initialization_acceptance.csv"
+    header, rows = read_csv(path)
+    require(
+        header == [
+            "enabled", "overall_passed", "metric", "value", "scale",
+            "relative_residual", "tolerance", "passed", "details",
+        ],
+        f"unexpected header in {path}: {header!r}",
+    )
+    require(len(rows) >= 1, f"expected an acceptance row in {path}")
+    for row in rows:
+        values = dict(zip(header, row))
+        require_numeric_rows(
+            ["enabled", "overall_passed", "value", "scale",
+             "relative_residual", "tolerance", "passed"],
+            [[
+                values["enabled"], values["overall_passed"],
+                values["value"], values["scale"],
+                values["relative_residual"], values["tolerance"],
+                values["passed"],
+            ]],
+            path,
+        )
+        require(
+            values["overall_passed"] == "1" and
+            values["passed"] == "1",
+            "example initialization acceptance audit did not pass",
+        )
+
+
 def require_vtk(path: Path, dimensions: tuple[int, int, int]) -> None:
     require_file(path)
     text = path.read_text(encoding="utf-8")
@@ -546,6 +578,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
     ]
     for config_name, output_name, check in checks:
         output_dir = run_example(cli, config_name, output_name, temp_root)
+        require_initialization_audits(output_dir)
         check(output_dir)
 
 

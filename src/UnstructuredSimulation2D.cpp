@@ -296,6 +296,9 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
     : config_(std::move(config)),
       mesh_(load_configured_mesh(config_.mesh_path)),
       rng_(config_.seed) {
+    validate_initialization_acceptance(
+        config_.initialization_acceptance,
+        "unstructured initialization acceptance config");
     if (!std::isfinite(config_.dt) || config_.dt <= 0.0) {
         throw std::invalid_argument("unstructured simulation dt must be positive and finite");
     }
@@ -2323,6 +2326,16 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
         config_.output_dir / "initialization.csv", 2,
         config_.restart_path.empty() ? "generated" : "restart",
         initialization_moments);
+    const auto initialization_acceptance =
+        assess_initialization_acceptance(
+            config_.initialization_acceptance,
+            initialization_moments, 3);
+    write_initialization_acceptance_report(
+        config_.output_dir /
+            "initialization_acceptance.csv",
+        initialization_acceptance);
+    enforce_initialization_acceptance(
+        initialization_acceptance);
     std::ofstream diagnostics(config_.output_dir / "scalars.csv");
     if (!diagnostics) throw std::runtime_error("cannot open unstructured diagnostics output");
     write_diagnostics_header(diagnostics);

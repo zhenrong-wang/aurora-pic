@@ -147,6 +147,9 @@ Simulation::Simulation(Config cfg)
       rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     validate_runtime_config(cfg_);
+    validate_initialization_acceptance(
+        cfg_.initialization_acceptance,
+        "1D initialization acceptance config");
     for (const auto& sc : cfg_.species) species_.emplace_back(sc);
     if (cfg_.collisions.enabled) {
         if (cfg_.collisions.model ==
@@ -453,6 +456,16 @@ RunSummary Simulation::run() {
             "initialization.csv",
         1, cfg_.restart_path.empty() ? "generated" : "restart",
         initialization_moments);
+    const auto initialization_acceptance =
+        assess_initialization_acceptance(
+            cfg_.initialization_acceptance,
+            initialization_moments, 1);
+    write_initialization_acceptance_report(
+        std::filesystem::path(cfg_.output_dir) /
+            "initialization_acceptance.csv",
+        initialization_acceptance);
+    enforce_initialization_acceptance(
+        initialization_acceptance);
     Diagnostics diag(cfg_.output_dir, cfg_.units.permittivity());
     diag.write_header();
     auto s0 = diag.sample(step_, time_, grid_, species_);

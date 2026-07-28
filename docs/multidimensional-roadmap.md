@@ -120,7 +120,10 @@ relative-density loading is shared by structured 1D/2D/3D and imported 2D,
 with random or deterministic low-discrepancy candidates, strict
 dimension-specific parameters, explicit work exhaustion, realized-profile
 audit metadata, and distribution-moment regressions. Explicit charge/current
-acceptance gates are the next IC target; portable external particle state
+acceptance gates now form the fourth slice: generated and restarted states can
+enforce normalized global charge and charge-weighted drift-current residuals,
+plus explicit opposite-charge species-pair balance, with a machine-readable
+audit written before any time integration. Portable external particle state
 follows with the planned openPMD/HDF5 data layer.
 The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound

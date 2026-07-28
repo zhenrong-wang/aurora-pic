@@ -55,6 +55,7 @@ struct Simulation2DConfig {
     std::filesystem::path checkpoint_path{}; // empty writes output_dir/checkpoint_<step>.apc
     std::filesystem::path restart_path{};
     RuntimePolicy runtime{};
+    InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<Species2DConfig> species{};
 };
 

@@ -418,8 +418,26 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 
 The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, or component thermal velocities, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 
+Optional global initialization gates reject inconsistent generated or restarted
+particle states before time integration:
+
+```ini
+initialization_max_relative_charge_imbalance = 1e-10
+initialization_max_relative_current_imbalance = 1e-8
+initialization_max_relative_pair_imbalance = 1e-10
+initialization_charge_pairs = electrons:ions
+```
+
+Charge imbalance is normalized by total absolute represented charge. Current
+imbalance uses the norm of charge-weighted species mean velocities, normalized
+by the corresponding absolute contributions. Named pairs must have opposite
+represented-charge signs and matching charge magnitudes within the pair
+tolerance. Tolerances are dimensionless values in `[0, 1]`; omitted gates are
+disabled. Every run writes `initialization_acceptance.csv`, and a failed gate
+leaves both initialization audit files before aborting.
+
 ## Performance and validation envelope
 
 The verified smoke/performance envelope is documented in `docs/performance-envelope.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. In short, the checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. They do not prove convergence for arbitrary plasma regimes. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, initial particle loading does not yet support external high-volume particle states or charge/current acceptance gates, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, initial particle loading does not yet support external high-volume particle states, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.

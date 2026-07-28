@@ -97,6 +97,7 @@ struct UnstructuredSimulation2DConfig {
     std::filesystem::path checkpoint_path;
     std::filesystem::path restart_path;
     RuntimePolicy runtime{};
+    InitializationAcceptanceConfig initialization_acceptance{};
     UnstructuredPoissonOptions2D poisson{};
     std::map<std::string, double> dirichlet_potentials;
     std::map<std::string, double> neumann_normal_derivatives;

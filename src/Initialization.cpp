@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <numbers>
 #include <stdexcept>
@@ -637,6 +638,276 @@ void write_initialization_report(
             "failed while writing initialization report: " +
             path.string());
     }
+}
+
+void validate_initialization_acceptance(
+    const InitializationAcceptanceConfig& config,
+    const std::string& context) {
+    const auto validate_tolerance =
+        [&](const std::optional<double>& value,
+            const std::string& name) {
+            if (value &&
+                (!std::isfinite(*value) || *value < 0.0 ||
+                 *value > 1.0)) {
+                throw std::invalid_argument(
+                    context + " " + name +
+                    " must be finite and in [0, 1]");
+            }
+        };
+    validate_tolerance(
+        config.max_relative_charge_imbalance,
+        "max_relative_charge_imbalance");
+    validate_tolerance(
+        config.max_relative_current_imbalance,
+        "max_relative_current_imbalance");
+    validate_tolerance(
+        config.max_relative_pair_imbalance,
+        "max_relative_pair_imbalance");
+    if (config.charge_pairs.empty() &&
+        config.max_relative_pair_imbalance) {
+        throw std::invalid_argument(
+            context +
+            " max_relative_pair_imbalance requires charge_pairs");
+    }
+    if (!config.charge_pairs.empty() &&
+        !config.max_relative_pair_imbalance) {
+        throw std::invalid_argument(
+            context +
+            " charge_pairs require max_relative_pair_imbalance");
+    }
+    std::map<std::string, std::string> paired_species;
+    for (const auto& pair : config.charge_pairs) {
+        if (pair.first_species.empty() ||
+            pair.second_species.empty()) {
+            throw std::invalid_argument(
+                context + " charge-pair species names cannot be empty");
+        }
+        if (pair.first_species == pair.second_species) {
+            throw std::invalid_argument(
+                context +
+                " charge-pair species names must differ");
+        }
+        for (const auto& [first, second] :
+             {std::pair{pair.first_species, pair.second_species},
+              std::pair{pair.second_species, pair.first_species}}) {
+            if (!paired_species.emplace(first, second).second) {
+                throw std::invalid_argument(
+                    context + " species '" + first +
+                    "' occurs in more than one charge pair");
+            }
+        }
+    }
+}
+
+InitializationAcceptanceSummary assess_initialization_acceptance(
+    const InitializationAcceptanceConfig& config,
+    const std::vector<InitializationSpeciesMoments>& moments,
+    std::size_t velocity_dimensions) {
+    validate_initialization_acceptance(
+        config, "initialization acceptance");
+    if (velocity_dimensions == 0 || velocity_dimensions > 3) {
+        throw std::invalid_argument(
+            "initialization acceptance velocity dimension must be 1, 2, or 3");
+    }
+    InitializationAcceptanceSummary summary;
+    summary.enabled =
+        config.max_relative_charge_imbalance.has_value() ||
+        config.max_relative_current_imbalance.has_value() ||
+        !config.charge_pairs.empty();
+    if (summary.enabled && moments.empty()) {
+        throw std::invalid_argument(
+            "enabled initialization acceptance gates require at least one species");
+    }
+    std::map<std::string, const InitializationSpeciesMoments*>
+        species_by_name;
+    for (const auto& species : moments) {
+        if (species.species.empty() ||
+            !species_by_name.emplace(
+                species.species, &species).second) {
+            throw std::invalid_argument(
+                "initialization acceptance requires unique non-empty species names");
+        }
+        if (!std::isfinite(species.represented_charge) ||
+            !std::isfinite(species.mean_velocity_x) ||
+            !std::isfinite(species.mean_velocity_y) ||
+            !std::isfinite(species.mean_velocity_z)) {
+            throw std::invalid_argument(
+                "initialization acceptance received non-finite moments for species '" +
+                species.species + "'");
+        }
+    }
+    const auto residual = [](double value, double scale) {
+        return scale > 0.0 ? value / scale
+                           : (value == 0.0 ? 0.0 : 1.0);
+    };
+    if (config.max_relative_charge_imbalance) {
+        double net_charge = 0.0;
+        double charge_scale = 0.0;
+        for (const auto& species : moments) {
+            net_charge += species.represented_charge;
+            charge_scale += std::abs(species.represented_charge);
+        }
+        if (!std::isfinite(net_charge) ||
+            !std::isfinite(charge_scale)) {
+            throw std::overflow_error(
+                "initialization net-charge acceptance accumulation overflowed");
+        }
+        const double value = std::abs(net_charge);
+        const double relative = residual(value, charge_scale);
+        const bool passed =
+            relative <= *config.max_relative_charge_imbalance;
+        summary.metrics.push_back({
+            "net_charge", net_charge, charge_scale, relative,
+            *config.max_relative_charge_imbalance, passed,
+            "value is signed represented charge; residual uses its magnitude"});
+        summary.passed = summary.passed && passed;
+    }
+    if (config.max_relative_current_imbalance) {
+        std::array<double, 3> net_current{};
+        double current_scale = 0.0;
+        for (const auto& species : moments) {
+            const std::array<double, 3> velocity{
+                species.mean_velocity_x,
+                species.mean_velocity_y,
+                species.mean_velocity_z};
+            double speed = 0.0;
+            for (std::size_t component = 0;
+                 component < velocity_dimensions; ++component) {
+                net_current[component] +=
+                    species.represented_charge *
+                    velocity[component];
+                speed = std::hypot(
+                    speed, velocity[component]);
+            }
+            current_scale +=
+                std::abs(species.represented_charge) *
+                speed;
+        }
+        if (!std::isfinite(current_scale) ||
+            !std::all_of(
+                net_current.begin(), net_current.end(),
+                [](double value) {
+                    return std::isfinite(value);
+                })) {
+            throw std::overflow_error(
+                "initialization net-current acceptance accumulation overflowed");
+        }
+        double value = 0.0;
+        for (std::size_t component = 0;
+             component < velocity_dimensions; ++component) {
+            value = std::hypot(
+                value, net_current[component]);
+        }
+        const double relative = residual(value, current_scale);
+        const bool passed =
+            relative <= *config.max_relative_current_imbalance;
+        summary.metrics.push_back({
+            "net_current", value, current_scale, relative,
+            *config.max_relative_current_imbalance, passed,
+            "charge-weighted mean-velocity norm"});
+        summary.passed = summary.passed && passed;
+    }
+    for (const auto& pair : config.charge_pairs) {
+        const auto first = species_by_name.find(pair.first_species);
+        const auto second = species_by_name.find(pair.second_species);
+        if (first == species_by_name.end() ||
+            second == species_by_name.end()) {
+            throw std::invalid_argument(
+                "initialization charge pair references unknown species '" +
+                (first == species_by_name.end()
+                     ? pair.first_species
+                     : pair.second_species) +
+                "'");
+        }
+        const double first_charge =
+            first->second->represented_charge;
+        const double second_charge =
+            second->second->represented_charge;
+        const double value =
+            std::abs(std::abs(first_charge) -
+                     std::abs(second_charge));
+        const double scale =
+            std::max(std::abs(first_charge),
+                     std::abs(second_charge));
+        const double relative = residual(value, scale);
+        const bool opposite =
+            first_charge != 0.0 && second_charge != 0.0 &&
+            std::signbit(first_charge) !=
+                std::signbit(second_charge);
+        const bool passed =
+            opposite &&
+            relative <=
+                *config.max_relative_pair_imbalance;
+        summary.metrics.push_back({
+            "charge_pair:" + pair.first_species + ":" +
+                pair.second_species,
+            value, scale, relative,
+            *config.max_relative_pair_imbalance, passed,
+            opposite
+                ? "opposite-sign represented-charge magnitude balance"
+                : "species do not have opposite represented-charge signs"});
+        summary.passed = summary.passed && passed;
+    }
+    return summary;
+}
+
+void write_initialization_acceptance_report(
+    const std::filesystem::path& path,
+    const InitializationAcceptanceSummary& summary) {
+    const auto parent = path.parent_path();
+    if (!parent.empty()) {
+        std::filesystem::create_directories(parent);
+    }
+    std::ofstream output(path);
+    if (!output) {
+        throw std::runtime_error(
+            "cannot write initialization acceptance report: " +
+            path.string());
+    }
+    output
+        << "enabled,overall_passed,metric,value,scale,"
+        << "relative_residual,tolerance,passed,details\n"
+        << std::setprecision(17);
+    if (summary.metrics.empty()) {
+        output << (summary.enabled ? 1 : 0) << ','
+               << (summary.passed ? 1 : 0)
+               << ",\"none\",0,0,0,0,1,"
+               << csv_quote(summary.enabled
+                                ? "no acceptance metrics"
+                                : "acceptance gates disabled")
+               << '\n';
+    } else {
+        for (const auto& metric : summary.metrics) {
+            output << (summary.enabled ? 1 : 0) << ','
+                   << (summary.passed ? 1 : 0) << ','
+                   << csv_quote(metric.metric) << ','
+                   << metric.value << ','
+                   << metric.scale << ','
+                   << metric.relative_residual << ','
+                   << metric.tolerance << ','
+                   << (metric.passed ? 1 : 0) << ','
+                   << csv_quote(metric.details) << '\n';
+        }
+    }
+    if (!output) {
+        throw std::runtime_error(
+            "failed while writing initialization acceptance report: " +
+            path.string());
+    }
+}
+
+void enforce_initialization_acceptance(
+    const InitializationAcceptanceSummary& summary) {
+    if (summary.passed) return;
+    std::string failed_metrics;
+    for (const auto& metric : summary.metrics) {
+        if (metric.passed) continue;
+        if (!failed_metrics.empty()) failed_metrics += ", ";
+        failed_metrics += metric.metric;
+    }
+    throw std::runtime_error(
+        "initialization acceptance gates failed: " +
+        failed_metrics);
 }
 
 } // namespace pic

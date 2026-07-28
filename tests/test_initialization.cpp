@@ -333,6 +333,10 @@ int main() {
                     << "nx = 5\nny = 5\n"
                     << "length_x = 1\nlength_y = 1\n"
                     << "dt = 0.01\n"
+                    << "initialization_max_relative_charge_imbalance = 0.01\n"
+                    << "initialization_max_relative_current_imbalance = 0.02\n"
+                    << "initialization_max_relative_pair_imbalance = 0.03\n"
+                    << "initialization_charge_pairs = electrons:ions\n"
                     << "[species.electrons]\n"
                     << "charge = -1\nmass = 1\nweight = 1\n"
                     << "particles = 8\n"
@@ -346,7 +350,10 @@ int main() {
                     << "density_profile = sinusoidal\n"
                     << "profile_amplitude = 0.5\n"
                     << "profile_mode_x = 2\n"
-                    << "max_profile_sampling_attempts = 1000\n";
+                    << "max_profile_sampling_attempts = 1000\n"
+                    << "[species.ions]\n"
+                    << "charge = 1\nmass = 10\nweight = 1\n"
+                    << "particles = 8\nthermal_velocity = 0\n";
             }
             const auto config =
                 pic::load_config_2d(config_path.string());
@@ -365,6 +372,15 @@ int main() {
                     config.species.front().initialization
                             .profile_mode_x.value_or(0) == 2,
                 "2D config did not parse analytic density profile");
+            require(
+                config.initialization_acceptance
+                        .max_relative_charge_imbalance.value_or(-1.0) ==
+                    0.01 &&
+                    config.initialization_acceptance.charge_pairs.size() ==
+                        1 &&
+                    config.initialization_acceptance.charge_pairs.front()
+                            .second_species == "ions",
+                "2D config did not parse initialization acceptance gates");
         }
 
         {
@@ -382,6 +398,8 @@ int main() {
                     << "mesh = imported\n"
                     << "mesh_file = " << mesh_path.string() << '\n'
                     << "dt = 0.01\nsteps = 0\n"
+                    << "initialization_max_relative_pair_imbalance = 0.05\n"
+                    << "initialization_charge_pairs = quiet:ions\n"
                     << "[boundary.inlet]\n"
                     << "field = dirichlet\npotential = 0\n"
                     << "particle = reflecting\n"
@@ -401,18 +419,25 @@ int main() {
                     << "loading = quiet_start\n"
                     << "density_profile = sinusoidal\n"
                     << "profile_amplitude = 0.5\n"
-                    << "profile_mode_x = 1\n";
+                    << "profile_mode_x = 1\n"
+                    << "[species.ions]\n"
+                    << "charge = 1\nmass = 10\nweight = 1\n"
+                    << "particles = 8\n"
+                    << "initialization_region = region_a\n"
+                    << "loading = quiet_start\n";
             }
             const auto parsed =
                 pic::load_unstructured_config_2d(config_path);
             std::filesystem::remove(config_path);
             require(
-                parsed.species.size() == 1 &&
+                parsed.species.size() == 2 &&
                     parsed.species.front().initialization_region ==
                         "region_a" &&
                     parsed.species.front().initialization
                             .density_profile ==
-                        pic::DensityProfileKind::Sinusoidal,
+                        pic::DensityProfileKind::Sinusoidal &&
+                    parsed.initialization_acceptance.charge_pairs.size() ==
+                        1,
                 "imported config did not parse initialization_region");
         }
 
@@ -571,6 +596,108 @@ int main() {
         }
 
         {
+            pic::InitializationSpeciesMoments electrons;
+            electrons.species = "electrons";
+            electrons.represented_charge = -10.0;
+            electrons.mean_velocity_x = 2.0;
+            pic::InitializationSpeciesMoments ions;
+            ions.species = "ions";
+            ions.represented_charge = 10.0;
+            ions.mean_velocity_x = 2.0;
+
+            pic::InitializationAcceptanceConfig acceptance;
+            acceptance.max_relative_charge_imbalance = 0.0;
+            acceptance.max_relative_current_imbalance = 0.0;
+            acceptance.max_relative_pair_imbalance = 0.0;
+            acceptance.charge_pairs.push_back(
+                {"electrons", "ions"});
+            const auto passed =
+                pic::assess_initialization_acceptance(
+                    acceptance, {electrons, ions}, 1);
+            require(
+                passed.enabled && passed.passed &&
+                    passed.metrics.size() == 3,
+                "balanced charge/current initialization did not pass");
+
+            ions.mean_velocity_x = 0.0;
+            const auto current_failure =
+                pic::assess_initialization_acceptance(
+                    acceptance, {electrons, ions}, 1);
+            require(
+                !current_failure.passed &&
+                    current_failure.metrics[1]
+                            .relative_residual == 1.0,
+                "net-current imbalance was not detected");
+            require_throws(
+                [&] {
+                    pic::enforce_initialization_acceptance(
+                        current_failure);
+                },
+                "failed initialization acceptance was not enforced");
+
+            ions.mean_velocity_x = 2.0;
+            ions.represented_charge = 8.0;
+            const auto charge_failure =
+                pic::assess_initialization_acceptance(
+                    acceptance, {electrons, ions}, 1);
+            require(
+                !charge_failure.passed &&
+                    !charge_failure.metrics.front().passed &&
+                    !charge_failure.metrics.back().passed,
+                "charge and pair imbalance were not detected");
+            ions.represented_charge = -10.0;
+            const auto same_sign_failure =
+                pic::assess_initialization_acceptance(
+                    acceptance, {electrons, ions}, 1);
+            require(
+                !same_sign_failure.metrics.back().passed,
+                "same-sign charge pair was accepted");
+            acceptance.charge_pairs.front().second_species =
+                "missing";
+            require_throws(
+                [&] {
+                    (void)pic::assess_initialization_acceptance(
+                        acceptance, {electrons, ions}, 1);
+                },
+                "unknown charge-pair species was accepted");
+            acceptance.charge_pairs.front().second_species =
+                "ions";
+
+            pic::InitializationAcceptanceConfig invalid;
+            invalid.max_relative_pair_imbalance = 0.1;
+            require_throws(
+                [&] {
+                    pic::validate_initialization_acceptance(
+                        invalid, "test");
+                },
+                "pair tolerance without named pairs was accepted");
+            invalid = {};
+            invalid.max_relative_charge_imbalance = 1.1;
+            require_throws(
+                [&] {
+                    pic::validate_initialization_acceptance(
+                        invalid, "test");
+                },
+                "out-of-range initialization tolerance was accepted");
+
+            const auto acceptance_path =
+                std::filesystem::path(
+                    "test_initialization_acceptance.csv");
+            pic::write_initialization_acceptance_report(
+                acceptance_path, charge_failure);
+            const std::string acceptance_contents =
+                read_text(acceptance_path);
+            std::filesystem::remove(acceptance_path);
+            require(
+                acceptance_contents.find(
+                    "\"net_charge\"") != std::string::npos &&
+                    acceptance_contents.find(
+                        "\"charge_pair:electrons:ions\"") !=
+                        std::string::npos,
+                "initialization acceptance report lost gate metrics");
+        }
+
+        {
             pic::SpeciesConfig config;
             config.particles = 2;
             config.drift_velocity = 1.0e12;
@@ -614,6 +741,13 @@ int main() {
             require(
                 std::filesystem::exists(report),
                 "simulation run did not write initialization.csv");
+            require(
+                read_text(
+                    output_directory /
+                    "initialization_acceptance.csv")
+                        .find("\"acceptance gates disabled\"") !=
+                    std::string::npos,
+                "simulation run did not audit disabled acceptance gates");
             const std::string contents = read_text(report);
             require(
                 contents.find(
@@ -644,6 +778,35 @@ int main() {
                 "restart initialization report did not identify restored state");
             std::filesystem::remove_all(output_directory);
             std::filesystem::remove_all(restart_output);
+        }
+
+        {
+            const auto output_directory =
+                std::filesystem::path(
+                    "test_output_initialization_gate_failure");
+            std::filesystem::remove_all(output_directory);
+            pic::Config config;
+            config.steps = 0;
+            config.output_dir = output_directory.string();
+            config.species = {pic::SpeciesConfig{}};
+            config.species.front().particles = 4;
+            config.species.front().thermal_velocity = 0.0;
+            config.initialization_acceptance
+                .max_relative_charge_imbalance = 0.01;
+            pic::Simulation simulation(config);
+            require_throws(
+                [&] { (void)simulation.run(); },
+                "non-neutral simulation passed its initialization gate");
+            const auto report =
+                output_directory /
+                "initialization_acceptance.csv";
+            require(
+                std::filesystem::exists(report) &&
+                    read_text(report).find(
+                        "1,0,\"net_charge\"") !=
+                        std::string::npos,
+                "failed initialization gate did not leave an audit report");
+            std::filesystem::remove_all(output_directory);
         }
 
         std::cout << "Initialization tests passed\n";

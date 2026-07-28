@@ -130,6 +130,7 @@ struct Config {
     std::string checkpoint_path{};      // empty writes output_dir/checkpoint_<step>.apc
     std::string restart_path{};
     RuntimePolicy runtime{};
+    InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<SpeciesConfig> species{};
 };
 

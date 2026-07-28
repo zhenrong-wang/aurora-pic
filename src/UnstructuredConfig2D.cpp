@@ -8,6 +8,7 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -80,6 +81,10 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads",
         "poisson_relative_tolerance", "poisson_absolute_tolerance",
         "poisson_max_iterations",
+        "initialization_max_relative_charge_imbalance",
+        "initialization_max_relative_current_imbalance",
+        "initialization_max_relative_pair_imbalance",
+        "initialization_charge_pairs",
     };
     static const std::set<std::string> boundary_keys{
         "field", "potential", "normal_derivative", "particle"};
@@ -270,6 +275,54 @@ bool boolean(const Values& values, const std::string& key, bool fallback) {
                              key + "': " + it->second);
 }
 
+InitializationAcceptanceConfig parse_initialization_acceptance(
+    const Values& values) {
+    InitializationAcceptanceConfig result;
+    const auto optional_tolerance =
+        [&](const std::string& key,
+            std::optional<double>& destination) {
+            if (values.contains(key)) {
+                destination = number<double>(values, key, 0.0);
+            }
+        };
+    optional_tolerance(
+        "initialization_max_relative_charge_imbalance",
+        result.max_relative_charge_imbalance);
+    optional_tolerance(
+        "initialization_max_relative_current_imbalance",
+        result.max_relative_current_imbalance);
+    optional_tolerance(
+        "initialization_max_relative_pair_imbalance",
+        result.max_relative_pair_imbalance);
+    if (values.contains("initialization_charge_pairs")) {
+        const std::string pair_list = trim(
+            values.at("initialization_charge_pairs"));
+        if (pair_list.empty() || pair_list.back() == ',') {
+            throw std::runtime_error(
+                "initialization_charge_pairs cannot be empty or end with a comma");
+        }
+        std::stringstream pairs(pair_list);
+        std::string entry;
+        while (std::getline(pairs, entry, ',')) {
+            entry = trim(entry);
+            const auto separator = entry.find(':');
+            if (entry.empty() ||
+                separator == std::string::npos ||
+                entry.find(':', separator + 1) !=
+                    std::string::npos) {
+                throw std::runtime_error(
+                    "initialization_charge_pairs must be a comma-separated list of first:second species names");
+            }
+            result.charge_pairs.push_back({
+                trim(entry.substr(0, separator)),
+                trim(entry.substr(separator + 1))});
+        }
+    }
+    validate_initialization_acceptance(
+        result, "unstructured initialization acceptance config");
+    return result;
+}
+
 std::filesystem::path resolved_path(const std::filesystem::path& config_path,
                                     const std::string& value) {
     std::filesystem::path path(value);
@@ -406,6 +459,8 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
     }
     result.runtime.threads =
         number<std::size_t>(global, "runtime_threads", result.runtime.threads);
+    result.initialization_acceptance =
+        parse_initialization_acceptance(global);
 
     if (!parsed.collisions.empty()) {
         result.collisions.enabled =

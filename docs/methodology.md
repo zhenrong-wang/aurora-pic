@@ -65,6 +65,20 @@ within disconnected or non-rectangular physical regions. A named region cannot
 be combined with rectangular initialization bounds; unknown labels and
 zero-area selections fail before the run starts.
 
+Initialization acceptance gates are opt-in and run after generated-state or
+checkpoint moments are collected but before scalar diagnostics or time
+integration. `initialization_max_relative_charge_imbalance` bounds
+`|sum(Q_i)| / sum(|Q_i|)`. The current gate bounds
+`|sum(Q_i * mean(v_i))| / sum(|Q_i| * |mean(v_i)|)` over the active velocity
+components. A zero numerator and denominator has zero residual. Explicit
+`initialization_charge_pairs = first:second,...` require opposite represented
+charge signs and bound the relative mismatch between their represented-charge
+magnitudes with `initialization_max_relative_pair_imbalance`. All tolerances
+are finite dimensionless values in `[0, 1]`; gates are disabled when their
+keys are omitted. Every run writes `initialization_acceptance.csv`, including
+disabled, passing, and failing states. A failed enabled gate leaves that audit
+and `initialization.csv` in the output directory, then aborts before stepping.
+
 `thermal_velocity` remains the backward-compatible isotropic Gaussian standard
 deviation. Optional `thermal_velocity_x`, `thermal_velocity_y`, and
 `thermal_velocity_z` values override it component by component; 1D1V accepts
