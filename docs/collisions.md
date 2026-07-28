@@ -21,9 +21,10 @@ collision model.
 
 ## Tabulated null-collision MCC
 
-The MCC slice supports stationary-heavy-neutral elastic and excitation
-channels for one named kinetic species. Imported 2D3V additionally supports
-bounded electron-impact ionization product creation:
+The MCC slice supports stationary-neutral elastic and excitation channels for
+one named kinetic species. Imported 2D3V additionally supports bounded
+electron-impact ionization product creation and resonant ion-neutral charge
+exchange:
 
 ```ini
 [collisions]
@@ -49,6 +50,10 @@ cross_section_file = ionization.dat
 threshold_energy = 1.0
 secondary_species = electrons
 ion_species = ions
+
+[collision.charge_exchange]
+type = charge_exchange
+cross_section_file = charge_exchange.dat
 ```
 
 Cross-section paths are resolved relative to the configuration file. Each
@@ -92,11 +97,15 @@ frequencies. The run fails when an evaluated total exceeds it.
 `max_frequency * dt`; exceeding it also fails instead of truncating collision
 history.
 
-Elastic events preserve kinetic energy and randomize the sign of the 1D
-velocity. Excitation events remove exactly `threshold_energy`, then randomize
-the sign. Imported 2D3V events instead sample an isotropic direction over the
-unit sphere while preserving the post-collision speed. A channel below its
-threshold has zero rate regardless of its table.
+Without gas mass metadata, legacy elastic events preserve projectile kinetic
+energy and randomize the sign of the 1D velocity. With positive
+`neutral_mass`, elastic events use stationary-target two-body center-of-mass
+kinematics. Imported 2D3V samples the post-collision relative direction
+isotropically; projectile plus implicit neutral recoil conserve momentum and
+total kinetic energy, while the tracked projectile can gain or lose energy.
+Excitation removes exactly `threshold_energy` and retains the heavy-neutral
+approximation. A channel below its threshold has zero rate regardless of its
+table.
 
 Ionization is available only through the imported 2D3V interface. Each
 accepted event removes `threshold_energy`, divides the remaining incident
@@ -115,6 +124,14 @@ scattering data, neutral depletion, metastables, and multi-ionization are not
 yet represented. The bundled `examples/imported_ionization_2d.cfg` and
 `mcc_2d3v_ionization.dat` are deterministic software-validation inputs, not
 material data.
+
+Resonant charge exchange represents the identity swap
+`A+_fast + A_slow -> A_fast + A+_slow`. It requires projectile mass equal to
+`neutral_mass`, a charged target species, zero threshold, and imported 2D3V
+configuration. Because the present neutral background is stationary, an
+accepted event resets the kinetic ion velocity to zero without changing
+particle count or charge. The outgoing fast neutral is absorbed into the
+untracked neutral reservoir.
 
 ## Imported 2D3V gas metadata
 
@@ -192,10 +209,10 @@ only map ionization products to configured kinetic species. The public
 `pic::load_gas_dataset` API exposes the same validated manifest contract to
 embedding applications.
 
-The present kinematics use the stationary-heavy-neutral approximation.
-Therefore neutral mass and temperature are required provenance and
-forward-compatibility metadata but do not yet add thermal neutral velocity,
-finite-mass recoil, gas heating, or depletion.
+The neutral background remains stationary. Neutral mass is active in elastic
+recoil and resonant charge-exchange validation; neutral temperature remains
+provenance and forward-compatibility metadata and does not yet add thermal
+neutral velocity. Gas heating and depletion are not modeled.
 
 `examples/imported_mcc_2d.cfg` exercises the complete imported parser,
 isotropic scatter, diagnostics, and v6 restart path using deliberately
@@ -219,17 +236,20 @@ data, external dataset metadata, or model parameters. Historical 1D v1/v2 and
 imported v1-v5 checkpoints
 cannot restart null-collision MCC because they contain no compatible MCC
 provenance. Historical 1D v3 MCC signatures remain compatible when the new
-optional gas metadata is absent.
+optional gas metadata is absent. Checkpoints made with the earlier
+infinite-neutral-mass imported MCC signature are intentionally rejected after
+enabling finite-mass recoil.
 
 ## Current limitations
 
 - Collision sampling is currently serial to preserve deterministic RNG order.
-- Neutrals are stationary and infinitely heavy in the kinematics; thermal
-  motion, recoil, depletion, and gas heating are absent.
+- Neutrals are stationary. Elastic recoil is finite-mass, but thermal motion,
+  excitation/ionization recoil, depletion, and gas heating are absent.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
 - Ionization is limited to the equal-sharing imported 2D3V model above.
-  Attachment, charge exchange, Coulomb collisions, and general reaction
-  networks are not implemented.
+  Charge exchange is limited to the resonant mass-matched model above.
+  Attachment, Coulomb collisions, and general reaction networks are not
+  implemented.
 - Cross-section licensing and provenance are the user's responsibility. The
   checked-in MCC tables are synthetic software-validation data, not He, Ar,
   Kr, Xe, or other material data.

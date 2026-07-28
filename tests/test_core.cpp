@@ -370,6 +370,47 @@ int main() {
                         0.1 * static_cast<double>(vector_accepted),
                 "2D3V elastic MCC scattering is not statistically isotropic");
 
+            auto finite_mass_config = elastic_config;
+            finite_mass_config.neutral_mass = 3.0;
+            pic::NullCollisionModel finite_mass_elastic(
+                finite_mass_config, 1.0);
+            std::mt19937_64 recoil_rng(57721);
+            bool observed_recoil = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !observed_recoil; ++attempt) {
+                const pic::Vec3 initial{std::sqrt(2.0), 0.0, 0.0};
+                pic::Vec3 projectile = initial;
+                const auto recoil_stats =
+                    finite_mass_elastic.collide(
+                        projectile, 0.01, recoil_rng);
+                if (recoil_stats.channel_collisions[0] != 1) continue;
+                const pic::Vec3 neutral{
+                    (initial.x - projectile.x) / 3.0,
+                    (initial.y - projectile.y) / 3.0,
+                    (initial.z - projectile.z) / 3.0};
+                require_near(
+                    projectile.x + 3.0 * neutral.x,
+                    initial.x, 1e-14,
+                    "finite-mass elastic collision lost x momentum");
+                require_near(
+                    projectile.y + 3.0 * neutral.y,
+                    initial.y, 1e-14,
+                    "finite-mass elastic collision lost y momentum");
+                require_near(
+                    projectile.z + 3.0 * neutral.z,
+                    initial.z, 1e-14,
+                    "finite-mass elastic collision lost z momentum");
+                require_near(
+                    0.5 * norm(projectile) * norm(projectile) +
+                        1.5 * norm(neutral) * norm(neutral),
+                    1.0, 1e-13,
+                    "finite-mass elastic collision lost total kinetic energy");
+                observed_recoil = true;
+            }
+            require(
+                observed_recoil,
+                "finite-mass elastic collision was not sampled");
+
             auto excitation_config = elastic_config;
             excitation_config.max_frequency = 4.0;
             excitation_config.channels = {
@@ -459,6 +500,43 @@ int main() {
                         velocity, 0.1, ionization_rng);
                 },
                 "scalar MCC accepted an ionization channel");
+
+            auto charge_exchange_config = elastic_config;
+            charge_exchange_config.neutral_mass = 40.0;
+            charge_exchange_config.channels = {
+                pic::CollisionChannelConfig{
+                    "charge_exchange",
+                    pic::CollisionProcessKind::ChargeExchange,
+                    table_path, 0.0, 1.0, 1.0}};
+            pic::NullCollisionModel charge_exchange(
+                charge_exchange_config, 40.0);
+            std::mt19937_64 charge_exchange_rng(141421);
+            bool exchanged = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !exchanged; ++attempt) {
+                pic::Vec3 ion{1.0, 0.0, 0.0};
+                const auto stats = charge_exchange.collide(
+                    ion, 0.01, charge_exchange_rng);
+                if (stats.channel_collisions[0] == 0) continue;
+                require(
+                    stats.channel_collisions[0] == 1 &&
+                        norm(ion) == 0.0 &&
+                        stats.secondaries.empty(),
+                    "resonant charge exchange did not create a slow ion");
+                exchanged = true;
+            }
+            require(
+                exchanged,
+                "resonant charge exchange was not sampled");
+            auto mismatched_exchange_config =
+                charge_exchange_config;
+            require_throws_contains(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        mismatched_exchange_config, 39.0);
+                },
+                "projectile mass equal to neutral_mass",
+                "resonant charge exchange accepted mismatched masses");
 
             auto unsafe_config = elastic_config;
             unsafe_config.max_frequency = 0.1;
@@ -2841,6 +2919,23 @@ int main() {
                     imported_ionization_config.collisions.channels.front()
                         .ion_species == "ions",
                 "imported ionization config did not preserve product species");
+            const auto imported_charge_exchange_example =
+                std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                "examples" / "imported_charge_exchange_2d.cfg";
+            const auto imported_charge_exchange_config =
+                pic::load_unstructured_config_2d(
+                    imported_charge_exchange_example);
+            require(
+                imported_charge_exchange_config.collisions.dataset_id ==
+                        "aurorapic.synthetic.charge_exchange" &&
+                    imported_charge_exchange_config.collisions
+                            .neutral_mass == 40.0 &&
+                    imported_charge_exchange_config.collisions.channels
+                            .size() == 1 &&
+                    imported_charge_exchange_config.collisions.channels
+                            .front().process ==
+                        pic::CollisionProcessKind::ChargeExchange,
+                "imported charge-exchange gas dataset did not load");
             {
                 const auto gas_dataset_path =
                     std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
@@ -2992,8 +3087,8 @@ int main() {
                     "imported 2D3V MCC deterministic collision envelope changed");
                 require_near(
                     continuous_summary.final_sample.kinetic_energy,
-                    32.0, 1e-12,
-                    "imported elastic MCC did not conserve kinetic energy");
+                    31.560389541145053, 1e-12,
+                    "imported finite-mass elastic energy envelope changed");
                 const auto collision_csv =
                     read_file_text(output_dir / "collisions.csv");
                 require(
@@ -3158,6 +3253,73 @@ int main() {
                     continued_output_dir);
                 std::filesystem::remove_all(
                     bounded_config.output_dir);
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_charge_exchange");
+                const auto continued_output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_charge_exchange_continued");
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_output_dir);
+
+                auto config = imported_charge_exchange_config;
+                config.output_dir = output_dir;
+                pic::UnstructuredSimulation2D continuous(config);
+                const auto summary = continuous.run();
+                const auto& collisions =
+                    continuous.collision_diagnostics();
+                require(
+                    collisions.candidates == 15 &&
+                        collisions.null_collisions == 8 &&
+                        collisions.channel_collisions ==
+                            std::vector<std::uint64_t>{7},
+                    "imported charge-exchange deterministic envelope changed");
+                require(
+                    summary.final_sample.live_particles == 64,
+                    "charge exchange changed particle count");
+                require_near(
+                    summary.final_sample.total_energy, 500.0, 1e-10,
+                    "charge exchange removed the wrong ion energy");
+                const auto metadata =
+                    read_file_text(output_dir / "collision_data.txt");
+                require(
+                    metadata.find(
+                        "dataset_id "
+                        "\"aurorapic.synthetic.charge_exchange\"") !=
+                            std::string::npos &&
+                        metadata.find(
+                            "\"charge_exchange\"") !=
+                            std::string::npos,
+                    "charge-exchange metadata output is incomplete");
+
+                auto continued_config = config;
+                continued_config.restart_path =
+                    output_dir / "checkpoint_3.apc";
+                continued_config.output_dir =
+                    continued_output_dir;
+                continued_config.checkpoint_output = false;
+                pic::UnstructuredSimulation2D continued(
+                    continued_config);
+                (void)continued.run();
+                require_species_close(
+                    continuous.species(), continued.species(),
+                    "charge-exchange checkpoint restart determinism");
+                require(
+                    continued.collision_diagnostics().candidates ==
+                            collisions.candidates &&
+                        continued.collision_diagnostics().null_collisions ==
+                            collisions.null_collisions &&
+                        continued.collision_diagnostics()
+                                .channel_collisions ==
+                            collisions.channel_collisions,
+                    "charge-exchange checkpoint lost collision state");
+
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(
+                    continued_output_dir);
             }
 
             {

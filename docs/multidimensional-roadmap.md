@@ -110,11 +110,13 @@ elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining
 1D BGK compatibility. Imported 2D3V adds isotropic stationary-heavy-neutral
 scattering, required gas/provenance metadata, and bounded electron-impact
-ionization with paired charged products. A strict external `.gas` manifest
+ionization with paired charged products. Stationary-target finite-mass elastic
+recoil and resonant mass-matched ion-neutral charge exchange are also covered.
+A strict external `.gas` manifest
 interface now separates reusable table physics and licensing metadata from
 simulation operating conditions and fingerprints both for restart. Charge
-exchange, thermal neutral motion, richer ionization kinematics, and curated
-measured material datasets remain future work.
+exchange beyond the resonant case, thermal neutral motion, richer ionization
+kinematics, and curated measured material datasets remain future work.
 
 ## Historical implementation phases
 

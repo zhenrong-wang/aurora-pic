@@ -24,7 +24,12 @@ struct SpeciesConfig {
 };
 
 enum class CollisionModelKind { BGK, NullCollision };
-enum class CollisionProcessKind { Elastic, Excitation, Ionization };
+enum class CollisionProcessKind {
+    Elastic,
+    Excitation,
+    Ionization,
+    ChargeExchange
+};
 
 inline std::string to_string(CollisionModelKind model) {
     switch (model) {
@@ -39,6 +44,8 @@ inline std::string to_string(CollisionProcessKind process) {
         case CollisionProcessKind::Elastic: return "elastic";
         case CollisionProcessKind::Excitation: return "excitation";
         case CollisionProcessKind::Ionization: return "ionization";
+        case CollisionProcessKind::ChargeExchange:
+            return "charge_exchange";
     }
     return "unknown";
 }

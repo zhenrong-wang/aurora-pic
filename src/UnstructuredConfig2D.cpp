@@ -685,10 +685,15 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             value.process = CollisionProcessKind::Excitation;
         } else if (type == "ionization") {
             value.process = CollisionProcessKind::Ionization;
+        } else if (type == "charge_exchange" ||
+                   type == "charge-exchange") {
+            value.process =
+                CollisionProcessKind::ChargeExchange;
         } else {
             throw std::runtime_error(
                 "collision channel '" + channel.name +
-                "' type must be elastic, excitation, or ionization");
+                "' type must be elastic, excitation, ionization, or "
+                "charge_exchange");
         }
         value.cross_section_file = resolved_path(
             path, required(

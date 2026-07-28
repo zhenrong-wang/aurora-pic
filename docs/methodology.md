@@ -41,9 +41,11 @@ The historical optional BGK velocity-reset model remains available for
 compatibility. The tabulated 1D and imported 2D3V MCC paths evaluate
 `nu_i(E) = neutral_density * sigma_i(E) * speed` and use exponential
 null-collision candidate times with a strictly enforced user-supplied maximum
-frequency. Elastic events conserve particle kinetic energy; excitation events
-remove a configured threshold energy. The 1D path randomizes velocity sign;
-the imported path samples an isotropic three-dimensional direction. Named
+frequency. Elastic events with gas mass metadata use stationary-target
+two-body kinematics that conserve projectile-plus-neutral momentum and energy;
+excitation events remove a configured threshold energy. The legacy 1D path
+without gas mass metadata randomizes velocity sign at fixed speed; the
+imported path samples an isotropic three-dimensional relative direction. Named
 interval/cumulative counts are written to `collisions.csv`. Checkpoint v3 in
 1D and v6 for imported geometry fingerprint effective tables and preserve
 counters. Imported 2D3V ionization removes its threshold, equally partitions
@@ -56,6 +58,11 @@ mappings. Effective dataset metadata and channel settings are emitted to
 `collision_data.txt` and included in restart compatibility. See
 `docs/collisions.md` for the gas metadata, scaling, reactive-species
 constraints, and limitation contract.
+
+Imported resonant charge exchange requires ion and neutral masses to match and
+maps the tracked fast ion onto the stationary neutral velocity. This preserves
+ion count and charge while transferring the fast neutral product to the
+implicit reservoir.
 
 ## Stability guidance
 

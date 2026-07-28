@@ -437,6 +437,17 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         }
         mcc_species_id_ = static_cast<std::size_t>(
             target - species_configs_.begin());
+        if (target->charge == 0.0 &&
+            std::any_of(
+                config_.collisions.channels.begin(),
+                config_.collisions.channels.end(),
+                [](const auto& channel) {
+                    return channel.process ==
+                           CollisionProcessKind::ChargeExchange;
+                })) {
+            throw std::invalid_argument(
+                "charge exchange requires a charged target species");
+        }
         mcc_model_ = std::make_unique<NullCollisionModel>(
             config_.collisions, target->mass);
         collision_totals_.channel_names =
