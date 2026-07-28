@@ -267,7 +267,7 @@ def check_plasma_2d(output_dir: Path) -> None:
     require_vtk(output_dir / "fields_20.vtk", (32, 32, 1))
     require_particle_csv(
         output_dir / "particles_20.csv",
-        expected_header=["species_id", "species", "x", "y", "vx", "vy", "alive"],
+        expected_header=["species_id", "species", "x", "y", "vx", "vy", "vz", "alive"],
         min_rows=1,
     )
 
@@ -341,7 +341,7 @@ def check_imported_plasma_2d(output_dir: Path) -> None:
     require_vtu(output_dir / "fields_3.vtu", 6, 3)
     require_particle_csv(
         output_dir / "particles_3.csv",
-        expected_header=["species_id", "species", "x", "y", "vx", "vy", "alive"],
+        expected_header=["species_id", "species", "x", "y", "vx", "vy", "vz", "alive"],
         min_rows=1,
     )
     require_file(output_dir / "checkpoint_3.apc")
@@ -387,7 +387,7 @@ def check_biased_probe_2d(output_dir: Path) -> None:
     require_vtu(output_dir / "fields_20.vtu", 725, 1342)
     require_particle_csv(
         output_dir / "particles_20.csv",
-        expected_header=["species_id", "species", "x", "y", "vx", "vy", "alive"],
+        expected_header=["species_id", "species", "x", "y", "vx", "vy", "vz", "alive"],
         min_rows=1,
     )
     require_file(output_dir / "checkpoint_20.apc")

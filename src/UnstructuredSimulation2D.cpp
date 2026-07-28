@@ -32,6 +32,8 @@ constexpr const char* CHECKPOINT_MAGIC_V3 =
     "AuroraPIC-unstructured-2D-checkpoint-v3";
 constexpr const char* CHECKPOINT_MAGIC_V4 =
     "AuroraPIC-unstructured-2D-checkpoint-v4";
+constexpr const char* CHECKPOINT_MAGIC_V5 =
+    "AuroraPIC-unstructured-2D-checkpoint-v5";
 
 double cross(Vec2 first, Vec2 second) {
     return first.x * second.y - first.y * second.x;
@@ -77,34 +79,44 @@ Species2DConfig particle_storage_config(const UnstructuredSpecies2DConfig& confi
     result.particles = std::max<std::size_t>(1, config.particles);
     result.drift_velocity_x = config.drift_velocity_x;
     result.drift_velocity_y = config.drift_velocity_y;
+    result.drift_velocity_z = config.drift_velocity_z;
     result.thermal_velocity = config.thermal_velocity;
     return result;
 }
 
+bool has_magnetic_field(Vec3 magnetic_field) {
+    return magnetic_field.x != 0.0 ||
+           magnetic_field.y != 0.0 ||
+           magnetic_field.z != 0.0;
+}
+
 void initialize_particle_pusher(Particle2D& particle, Vec2 electric, double charge_to_mass,
-                                double magnetic_field_z, double dt) {
-    if (magnetic_field_z == 0.0) {
+                                Vec3 magnetic_field, double dt) {
+    if (!has_magnetic_field(magnetic_field)) {
         initialize_leapfrog_half_step(particle, electric, charge_to_mass, dt);
     } else {
-        initialize_boris_half_step(particle, electric, magnetic_field_z, charge_to_mass, dt);
+        initialize_boris_half_step(
+            particle, electric, magnetic_field, charge_to_mass, dt);
     }
 }
 
 void kick_particle(Particle2D& particle, Vec2 electric, double charge_to_mass,
-                   double magnetic_field_z, double dt) {
-    if (magnetic_field_z == 0.0) {
+                   Vec3 magnetic_field, double dt) {
+    if (!has_magnetic_field(magnetic_field)) {
         kick_leapfrog(particle, electric, charge_to_mass, dt);
     } else {
-        kick_boris(particle, electric, magnetic_field_z, charge_to_mass, dt);
+        kick_boris(
+            particle, electric, magnetic_field, charge_to_mass, dt);
     }
 }
 
 void synchronize_particle(Particle2D& particle, Vec2 electric, double charge_to_mass,
-                          double magnetic_field_z, double dt) {
-    if (magnetic_field_z == 0.0) {
+                          Vec3 magnetic_field, double dt) {
+    if (!has_magnetic_field(magnetic_field)) {
         synchronize_leapfrog(particle, electric, charge_to_mass, dt);
     } else {
-        synchronize_boris(particle, electric, magnetic_field_z, charge_to_mass, dt);
+        synchronize_boris(
+            particle, electric, magnetic_field, charge_to_mass, dt);
     }
 }
 
@@ -178,8 +190,11 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
     if (config_.checkpoint_output && config_.checkpoint_interval == 0) {
         config_.checkpoint_interval = config_.output_interval;
     }
-    if (!std::isfinite(config_.magnetic_field_z)) {
-        throw std::invalid_argument("unstructured magnetic_field_z must be finite");
+    if (!std::isfinite(config_.magnetic_field_x) ||
+        !std::isfinite(config_.magnetic_field_y) ||
+        !std::isfinite(config_.magnetic_field_z)) {
+        throw std::invalid_argument(
+            "unstructured magnetic_field components must be finite");
     }
     if (config_.mode == RunMode::SteadyState) {
         if (config_.max_steps == 0 || config_.steady_window == 0 ||
@@ -319,6 +334,7 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
             source_config.normal_velocity < 0.0 ||
             !std::isfinite(source_config.tangential_velocity) ||
             !std::isfinite(source_config.thermal_velocity) ||
+            !std::isfinite(source_config.out_of_plane_velocity) ||
             source_config.thermal_velocity < 0.0) {
             throw std::invalid_argument(
                 "unstructured boundary source velocities are invalid");
@@ -374,6 +390,7 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
             emission_config.normal_velocity < 0.0 ||
             !std::isfinite(emission_config.tangential_velocity) ||
             !std::isfinite(emission_config.thermal_velocity) ||
+            !std::isfinite(emission_config.out_of_plane_velocity) ||
             emission_config.thermal_velocity < 0.0) {
             throw std::invalid_argument(
                 "unstructured emission parameters are invalid");
@@ -533,7 +550,11 @@ void UnstructuredSimulation2D::inject_boundary_sources() {
             particle.velocity = add(
                 scale(segment.inward_normal, normal_speed),
                 scale(tangent, tangent_speed));
+            particle.velocity_z =
+                source.config.out_of_plane_velocity +
+                source.config.thermal_velocity * thermal(rng_);
             particle.velocity_half = particle.velocity;
+            particle.velocity_half_z = particle.velocity_z;
             particle.alive = true;
 
             bool cache_hit = false;
@@ -547,7 +568,11 @@ void UnstructuredSimulation2D::inject_boundary_sources() {
             }
             initialize_particle_pusher(
                 particle, *electric, species.charge() / species.mass(),
-                config_.magnetic_field_z, config_.dt);
+                Vec3{
+                    config_.magnetic_field_x,
+                    config_.magnetic_field_y,
+                    config_.magnetic_field_z},
+                config_.dt);
             if (source.injected_particles ==
                 std::numeric_limits<std::size_t>::max()) {
                 throw std::overflow_error(
@@ -582,10 +607,15 @@ void UnstructuredSimulation2D::initialize() {
             species_config.drift_velocity_x, species_config.thermal_velocity);
         std::normal_distribution<double> velocity_y(
             species_config.drift_velocity_y, species_config.thermal_velocity);
+        std::normal_distribution<double> velocity_z(
+            species_config.drift_velocity_z,
+            species_config.thermal_velocity);
         for (auto& particle : particles) {
             particle.position = sample_position(species_config);
             particle.velocity = {velocity_x(rng_), velocity_y(rng_)};
+            particle.velocity_z = velocity_z(rng_);
             particle.velocity_half = particle.velocity;
+            particle.velocity_half_z = particle.velocity_z;
             particle.alive = true;
         }
     }
@@ -615,7 +645,11 @@ void UnstructuredSimulation2D::initialize() {
                 }
                 initialize_particle_pusher(
                     particle, *electric, charge_to_mass,
-                    config_.magnetic_field_z, config_.dt);
+                    Vec3{
+                        config_.magnetic_field_x,
+                        config_.magnetic_field_y,
+                        config_.magnetic_field_z},
+                    config_.dt);
             });
         for (std::size_t worker = 0; worker < workers; ++worker) {
             timing_.location_cache_hits += local_hits[worker];
@@ -712,6 +746,7 @@ UnstructuredSimulation2D::advance_with_boundaries(
                     hit_segment - boundary_segments_.data()),
                 particle.position,
                 particle.velocity_half,
+                particle.velocity_half_z,
             };
         }
 
@@ -790,7 +825,8 @@ void UnstructuredSimulation2D::process_boundary_impacts(
                          .at(segment.label);
         const double physical_particles = incident.weight();
         const double speed_squared =
-            dot(impact.incident_velocity, impact.incident_velocity);
+            dot(impact.incident_velocity, impact.incident_velocity) +
+            impact.incident_velocity_z * impact.incident_velocity_z;
         ++flux.macroparticles;
         flux.physical_particles += physical_particles;
         flux.charge += incident.charge() * physical_particles;
@@ -883,7 +919,11 @@ void UnstructuredSimulation2D::process_boundary_impacts(
                 particle.velocity = add(
                     scale(segment.inward_normal, normal_speed),
                     scale(tangent, tangential_speed));
+                particle.velocity_z =
+                    emission.config.out_of_plane_velocity +
+                    emission.config.thermal_velocity * thermal(rng_);
                 particle.velocity_half = particle.velocity;
+                particle.velocity_half_z = particle.velocity_z;
                 particle.alive = true;
                 bool cache_hit = false;
                 const auto electric = interpolate_electric(
@@ -898,7 +938,11 @@ void UnstructuredSimulation2D::process_boundary_impacts(
                 initialize_particle_pusher(
                     particle, *electric,
                     emitted_species.charge() / emitted_species.mass(),
-                    config_.magnetic_field_z, config_.dt);
+                    Vec3{
+                        config_.magnetic_field_x,
+                        config_.magnetic_field_y,
+                        config_.magnetic_field_z},
+                    config_.dt);
                 if (emission.emitted_particles ==
                     std::numeric_limits<std::size_t>::max()) {
                     throw std::overflow_error(
@@ -941,7 +985,11 @@ void UnstructuredSimulation2D::step() {
                 }
                 kick_particle(
                     particle, *electric, charge_to_mass,
-                    config_.magnetic_field_z, config_.dt);
+                    Vec3{
+                        config_.magnetic_field_x,
+                        config_.magnetic_field_y,
+                        config_.magnetic_field_z},
+                    config_.dt);
                 const Vec2 previous = particle.position;
                 drift_leapfrog(particle, config_.dt);
                 auto impact = advance_with_boundaries(particle, previous);
@@ -993,7 +1041,11 @@ void UnstructuredSimulation2D::step() {
                 }
                 synchronize_particle(
                     particle, *electric, charge_to_mass,
-                    config_.magnetic_field_z, config_.dt);
+                    Vec3{
+                        config_.magnetic_field_x,
+                        config_.magnetic_field_y,
+                        config_.magnetic_field_z},
+                    config_.dt);
             });
         for (std::size_t worker = 0; worker < workers; ++worker) {
             timing_.location_cache_hits += local_hits[worker];
@@ -1119,7 +1171,7 @@ void UnstructuredSimulation2D::write_diagnostics_sample(
 void UnstructuredSimulation2D::write_particle_sample(std::size_t step) const {
     std::ofstream output(config_.output_dir / ("particles_" + std::to_string(step) + ".csv"));
     if (!output) throw std::runtime_error("cannot open unstructured particle output");
-    output << "species_id,species,x,y,vx,vy,alive\n";
+    output << "species_id,species,x,y,vx,vy,vz,alive\n";
     std::size_t written = 0;
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         const auto& species = species_[species_id];
@@ -1131,6 +1183,7 @@ void UnstructuredSimulation2D::write_particle_sample(std::size_t step) const {
                    << std::setprecision(17)
                    << particle.position.x << ',' << particle.position.y << ','
                    << particle.velocity.x << ',' << particle.velocity.y << ','
+                   << particle.velocity_z << ','
                    << (particle.alive ? 1 : 0) << '\n';
             ++written;
             if (config_.particle_sample_count != 0 &&
@@ -1196,7 +1249,7 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
                                  path.string());
     }
     output << std::setprecision(17);
-    output << CHECKPOINT_MAGIC_V4 << '\n';
+    output << CHECKPOINT_MAGIC_V5 << '\n';
     output << "mesh_signature " << mesh_signature() << '\n';
     output << "units " << to_string(config_.units.system) << ' '
            << config_.units.relative_permittivity << ' '
@@ -1218,6 +1271,7 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
                << source.config.normal_velocity << ' '
                << source.config.tangential_velocity << ' '
                << source.config.thermal_velocity << ' '
+               << source.config.out_of_plane_velocity << ' '
                << source.injected_particles << '\n';
     }
     output << "emission_count " << emissions_.size() << '\n';
@@ -1231,6 +1285,7 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
                << emission.config.normal_velocity << ' '
                << emission.config.tangential_velocity << ' '
                << emission.config.thermal_velocity << ' '
+               << emission.config.out_of_plane_velocity << ' '
                << emission.emitted_particles << '\n';
     }
     std::size_t impact_flux_count = 0;
@@ -1262,7 +1317,9 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
         for (const auto& particle : species.particles()) {
             output << particle.position.x << ' ' << particle.position.y << ' '
                    << particle.velocity.x << ' ' << particle.velocity.y << ' '
+                   << particle.velocity_z << ' '
                    << particle.velocity_half.x << ' ' << particle.velocity_half.y << ' '
+                   << particle.velocity_half_z << ' '
                    << (particle.alive ? 1 : 0) << '\n';
         }
     }
@@ -1285,8 +1342,9 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
     const bool checkpoint_v2 = magic == CHECKPOINT_MAGIC_V2;
     const bool checkpoint_v3 = magic == CHECKPOINT_MAGIC_V3;
     const bool checkpoint_v4 = magic == CHECKPOINT_MAGIC_V4;
+    const bool checkpoint_v5 = magic == CHECKPOINT_MAGIC_V5;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
-        !checkpoint_v4) {
+        !checkpoint_v4 && !checkpoint_v5) {
         throw std::runtime_error("invalid unstructured checkpoint magic");
     }
     std::string key;
@@ -1301,7 +1359,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         input >> unit_system >> relative_permittivity >> permittivity;
-        if (!checkpoint_v4 ||
+        if ((!checkpoint_v4 && !checkpoint_v5) ||
             unit_system != to_string(config_.units.system) ||
             relative_permittivity !=
                 config_.units.relative_permittivity ||
@@ -1310,7 +1368,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
                 "unstructured checkpoint unit system mismatch");
         }
         input >> key;
-    } else if (checkpoint_v4 ||
+    } else if (checkpoint_v4 || checkpoint_v5 ||
                config_.units.system != UnitSystem::Normalized ||
                config_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1363,12 +1421,16 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
             double normal_velocity = 0.0;
             double tangential_velocity = 0.0;
             double thermal_velocity = 0.0;
+            double out_of_plane_velocity = 0.0;
             std::size_t injected_particles = 0;
             input >> key >> std::quoted(name) >> std::quoted(species)
                   >> std::quoted(boundary) >> particles_per_step
                   >> start_step >> end_step >> normal_velocity
-                  >> tangential_velocity >> thermal_velocity
-                  >> injected_particles;
+                  >> tangential_velocity >> thermal_velocity;
+            if (checkpoint_v5) {
+                input >> out_of_plane_velocity;
+            }
+            input >> injected_particles;
             const auto source = std::find_if(
                 sources_.begin(), sources_.end(),
                 [&](const BoundarySourceRuntime& candidate) {
@@ -1383,14 +1445,16 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
                 source->config.end_step != end_step ||
                 source->config.normal_velocity != normal_velocity ||
                 source->config.tangential_velocity != tangential_velocity ||
-                source->config.thermal_velocity != thermal_velocity) {
+                source->config.thermal_velocity != thermal_velocity ||
+                source->config.out_of_plane_velocity !=
+                    out_of_plane_velocity) {
                 throw std::runtime_error(
                     "unstructured checkpoint source configuration mismatch");
             }
             source->injected_particles = injected_particles;
         }
     }
-    if (!checkpoint_v3 && !checkpoint_v4) {
+    if (!checkpoint_v3 && !checkpoint_v4 && !checkpoint_v5) {
         if (!emissions_.empty()) {
             throw std::runtime_error(
                 "legacy unstructured checkpoint cannot restart configured "
@@ -1422,13 +1486,17 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
             double normal_velocity = 0.0;
             double tangential_velocity = 0.0;
             double thermal_velocity = 0.0;
+            double out_of_plane_velocity = 0.0;
             std::size_t emitted_particles = 0;
             input >> key >> std::quoted(name) >> std::quoted(boundary)
                   >> std::quoted(incident_species)
                   >> std::quoted(emitted_species) >> yield
                   >> max_particles_per_impact >> normal_velocity
-                  >> tangential_velocity >> thermal_velocity
-                  >> emitted_particles;
+                  >> tangential_velocity >> thermal_velocity;
+            if (checkpoint_v5) {
+                input >> out_of_plane_velocity;
+            }
+            input >> emitted_particles;
             const auto emission = std::find_if(
                 emissions_.begin(), emissions_.end(),
                 [&](const SecondaryEmissionRuntime& candidate) {
@@ -1445,7 +1513,9 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
                 emission->config.normal_velocity != normal_velocity ||
                 emission->config.tangential_velocity !=
                     tangential_velocity ||
-                emission->config.thermal_velocity != thermal_velocity) {
+                emission->config.thermal_velocity != thermal_velocity ||
+                emission->config.out_of_plane_velocity !=
+                    out_of_plane_velocity) {
                 throw std::runtime_error(
                     "unstructured checkpoint emission configuration mismatch");
             }
@@ -1527,15 +1597,28 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
         for (auto& particle : particles) {
             int alive = 0;
             input >> particle.position.x >> particle.position.y
-                  >> particle.velocity.x >> particle.velocity.y
-                  >> particle.velocity_half.x >> particle.velocity_half.y >> alive;
+                  >> particle.velocity.x >> particle.velocity.y;
+            if (checkpoint_v5) {
+                input >> particle.velocity_z;
+            } else {
+                particle.velocity_z = 0.0;
+            }
+            input >> particle.velocity_half.x >> particle.velocity_half.y;
+            if (checkpoint_v5) {
+                input >> particle.velocity_half_z;
+            } else {
+                particle.velocity_half_z = 0.0;
+            }
+            input >> alive;
             particle.alive = alive != 0;
             if (!std::isfinite(particle.position.x) ||
                 !std::isfinite(particle.position.y) ||
                 !std::isfinite(particle.velocity.x) ||
                 !std::isfinite(particle.velocity.y) ||
+                !std::isfinite(particle.velocity_z) ||
                 !std::isfinite(particle.velocity_half.x) ||
                 !std::isfinite(particle.velocity_half.y) ||
+                !std::isfinite(particle.velocity_half_z) ||
                 (particle.alive && !mesh_.locate_point(particle.position))) {
                 throw std::runtime_error("unstructured checkpoint contains invalid particle state");
             }

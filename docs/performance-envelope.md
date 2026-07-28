@@ -11,10 +11,10 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | `examples/two_stream.cfg` | 1D1V | 128 cells | 12,000 | 300 | Periodic electrostatic transient with multiple species. |
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
 | `examples/mcc_relaxation.cfg` | 1D1V | 32 cells | 1,000 | 50 | Synthetic tabulated elastic/excitation null-collision MCC with channel diagnostics. |
-| `examples/plasma_2d.cfg` | 2D2V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
-| `examples/electrode_2d.cfg` | 2D2V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
-| `examples/imported_plasma_2d.cfg` | 2D2V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
-| `examples/biased_probe_2d.cfg` | 2D2V | 725 nodes / 1,342 triangles / internal probe hole | 800 initial / 404 final in the pinned run | 20 | Gmsh-authored real geometry, local refinement, mixed probe fields, injection, collection, secondary emission, flux diagnostics, VTU, checkpoint. |
+| `examples/plasma_2d.cfg` | 2D3V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
+| `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
+| `examples/imported_plasma_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
+| `examples/biased_probe_2d.cfg` | 2D3V | 725 nodes / 1,342 triangles / internal probe hole | 800 initial / 404 final in the pinned run | 20 | Gmsh-authored real geometry, local refinement, mixed probe fields, injection, collection, secondary emission, flux diagnostics, VTU, checkpoint. |
 | `examples/plasma_3d.cfg` | 3D3V | 8 x 8 x 8 nodes | 128 | 3 | Structured 3D CLI path, VTK legacy/XML output, particle samples. |
 
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.

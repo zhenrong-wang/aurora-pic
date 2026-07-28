@@ -18,6 +18,7 @@ struct Species2DConfig {
     double init_x_max{-1.0}; // negative means full x domain
     double init_y_min{0.0};
     double init_y_max{-1.0}; // negative means full y domain
+    double drift_velocity_z{0.0};
 };
 
 class Species2D {

@@ -156,8 +156,10 @@ void require_species_close(const std::vector<pic::Species2D>& a,
             require_near(pa[i].position.y, pb[i].position.y, 1e-12, label + ": particle y mismatch");
             require_near(pa[i].velocity.x, pb[i].velocity.x, 1e-12, label + ": particle vx mismatch");
             require_near(pa[i].velocity.y, pb[i].velocity.y, 1e-12, label + ": particle vy mismatch");
+            require_near(pa[i].velocity_z, pb[i].velocity_z, 1e-12, label + ": particle vz mismatch");
             require_near(pa[i].velocity_half.x, pb[i].velocity_half.x, 1e-12, label + ": particle vx_half mismatch");
             require_near(pa[i].velocity_half.y, pb[i].velocity_half.y, 1e-12, label + ": particle vy_half mismatch");
+            require_near(pa[i].velocity_half_z, pb[i].velocity_half_z, 1e-12, label + ": particle vz_half mismatch");
             require(pa[i].alive == pb[i].alive, label + ": particle alive mismatch");
         }
     }
@@ -663,13 +665,23 @@ int main() {
             constexpr double charge_to_mass = -0.75;
             const pic::Vec3 magnetic{0.4, -0.8, 1.1};
             const pic::Vec3 initial_velocity{0.6, -0.25, 0.9};
+            pic::Particle2D particle_2d{};
+            particle_2d.velocity = pic::Vec2{initial_velocity.x, initial_velocity.y};
+            particle_2d.velocity_z = initial_velocity.z;
             pic::Particle3D particle{};
             particle.velocity = initial_velocity;
+            const pic::Vec2 electric_2d{0.0, 0.0};
             const pic::Vec3 electric{0.0, 0.0, 0.0};
+            pic::initialize_boris_half_step(
+                particle_2d, electric_2d, magnetic, charge_to_mass, dt);
             pic::initialize_boris_half_step(particle, electric, magnetic, charge_to_mass, dt);
             for (std::size_t n = 0; n < steps; ++n) {
+                pic::kick_boris(
+                    particle_2d, electric_2d, magnetic, charge_to_mass, dt);
                 pic::kick_boris(particle, electric, magnetic, charge_to_mass, dt);
             }
+            pic::synchronize_boris(
+                particle_2d, electric_2d, magnetic, charge_to_mass, dt);
             pic::synchronize_boris(particle, electric, magnetic, charge_to_mass, dt);
 
             const double magnetic_magnitude = norm(magnetic);
@@ -686,6 +698,17 @@ int main() {
                          "3D Boris pusher did not conserve speed");
             require_near(dot(particle.velocity, axis), dot(initial_velocity, axis), 1e-13,
                          "3D Boris pusher did not conserve parallel velocity");
+            require_near(particle_2d.velocity.x, particle.velocity.x, 1e-13,
+                         "2D3V Boris pusher disagrees with 3D arbitrary-axis x velocity");
+            require_near(particle_2d.velocity.y, particle.velocity.y, 1e-13,
+                         "2D3V Boris pusher disagrees with 3D arbitrary-axis y velocity");
+            require_near(particle_2d.velocity_z, particle.velocity.z, 1e-13,
+                         "2D3V Boris pusher disagrees with 3D arbitrary-axis z velocity");
+            require_near(
+                norm(pic::Vec3{particle_2d.velocity.x, particle_2d.velocity.y,
+                               particle_2d.velocity_z}),
+                norm(initial_velocity), 1e-13,
+                "2D3V Boris pusher did not conserve speed");
         }
         {
             constexpr double dt = 0.02;
@@ -1240,6 +1263,51 @@ int main() {
             require(std::abs(mesh.rho()[mesh.index(0, 0, 0)] - 512.0) < 1e-12, "3D Dirichlet corner density did not use eighth control volume");
         }
         {
+            pic::Mesh2D mesh(5, 5, 1.0, 1.0, pic::Boundary::Dirichlet);
+            pic::Species2DConfig cfg;
+            cfg.mass = 2.0;
+            cfg.weight = 0.25;
+            cfg.particles = 3;
+            cfg.drift_velocity_x = 1.0;
+            cfg.drift_velocity_y = -2.0;
+            cfg.drift_velocity_z = 0.5;
+            cfg.thermal_velocity = 0.0;
+            cfg.init_x_min = 0.1;
+            cfg.init_x_max = 0.2;
+            cfg.init_y_min = 0.3;
+            cfg.init_y_max = 0.4;
+            pic::Species2D species(cfg);
+            std::mt19937_64 rng(1234);
+            species.initialize(mesh, rng);
+            require(species.live_count() == 3,
+                    "2D3V species did not initialize all particles as live");
+            for (const auto& particle : species.particles()) {
+                require(particle.position.x >= 0.1 && particle.position.x <= 0.2,
+                        "2D3V species x initialization interval was not honored");
+                require(particle.position.y >= 0.3 && particle.position.y <= 0.4,
+                        "2D3V species y initialization interval was not honored");
+                require_near(particle.velocity.x, 1.0, 1e-15,
+                             "2D3V species vx drift initialization is wrong");
+                require_near(particle.velocity.y, -2.0, 1e-15,
+                             "2D3V species vy drift initialization is wrong");
+                require_near(particle.velocity_z, 0.5, 1e-15,
+                             "2D3V species vz drift initialization is wrong");
+                require_near(particle.velocity_half.x, particle.velocity.x,
+                             1e-15,
+                             "2D3V species half-step vx initialization is wrong");
+                require_near(particle.velocity_half.y, particle.velocity.y,
+                             1e-15,
+                             "2D3V species half-step vy initialization is wrong");
+                require_near(particle.velocity_half_z, particle.velocity_z,
+                             1e-15,
+                             "2D3V species half-step vz initialization is wrong");
+            }
+            require_near(
+                species.kinetic_energy(),
+                3.0 * 0.5 * cfg.mass * cfg.weight * (1.0 + 4.0 + 0.25),
+                1e-15, "2D3V species kinetic energy is wrong");
+        }
+        {
             pic::Mesh3D mesh(5, 5, 5, 1.0, 1.0, 1.0, pic::Boundary::Dirichlet);
             pic::Species3DConfig cfg;
             cfg.mass = 2.0;
@@ -1365,9 +1433,9 @@ int main() {
             pic::Diagnostics2D diagnostics2d(output_dir / "particles2d", {species2d});
             diagnostics2d.write_particle_sample(7, {species2d}, 1, 2);
             const auto particles2d = read_file_text(output_dir / "particles2d" / "particles_7.csv");
-            require(particles2d.find("species_id,species,x,y,vx,vy,alive\n") == 0, "2D particle CSV header is wrong");
-            require(particles2d.find("0,ions,0.25,0.5,1.5,-0.25,1\n") != std::string::npos, "2D particle CSV live row is wrong");
-            require(particles2d.find("0,ions,0.75,1.5,-0.5,0.25,0\n") != std::string::npos, "2D particle CSV dead row is wrong");
+            require(particles2d.find("species_id,species,x,y,vx,vy,vz,alive\n") == 0, "2D particle CSV header is wrong");
+            require(particles2d.find("0,ions,0.25,0.5,1.5,-0.25,0,1\n") != std::string::npos, "2D particle CSV live row is wrong");
+            require(particles2d.find("0,ions,0.75,1.5,-0.5,0.25,0,0\n") != std::string::npos, "2D particle CSV dead row is wrong");
             require(count_lines(particles2d) == 3, "2D particle CSV sample count is wrong");
 
             pic::Species3DConfig cfg3d;
@@ -1671,12 +1739,15 @@ int main() {
                     << "boundary_right_tag = anode\n"
                     << "boundary_bottom_tag = lower_wall\n"
                     << "boundary_top_tag = upper_wall\n"
+                    << "magnetic_field_x = 0.25\n"
+                    << "magnetic_field_y = -0.5\n"
                     << "magnetic_field_z = 1.75\n"
                     << "[species.electrons]\n"
                     << "charge = -1\n"
                     << "mass = 1\n"
                     << "density = 4\n"
                     << "particles = 12\n"
+                    << "drift_velocity_z = 0.75\n"
                     << "thermal_velocity = 0\n"
                     << "init_x_min = 0.5\n"
                     << "init_x_max = 1.5\n"
@@ -1711,9 +1782,16 @@ int main() {
             require(cfg2.boundary_config.right.tag == "anode", "2D config did not load right boundary tag");
             require(cfg2.boundary_config.bottom.tag == "lower_wall", "2D config did not load bottom boundary tag");
             require(cfg2.boundary_config.top.tag == "upper_wall", "2D config did not load top boundary tag");
-            require(std::abs(cfg2.magnetic_field_z - 1.75) < 1e-15, "2D config did not load magnetic_field_z");
+            require_near(cfg2.magnetic_field_x, 0.25, 1e-15,
+                         "2D3V config did not load magnetic_field_x");
+            require_near(cfg2.magnetic_field_y, -0.5, 1e-15,
+                         "2D3V config did not load magnetic_field_y");
+            require_near(cfg2.magnetic_field_z, 1.75, 1e-15,
+                         "2D3V config did not load magnetic_field_z");
             require(cfg2.species.size() == 1, "2D config did not load one species");
             require(std::abs(cfg2.species[0].weight - (4.0 / 12.0)) < 1e-15, "2D density-derived macro-particle weight is wrong");
+            require_near(cfg2.species[0].drift_velocity_z, 0.75, 1e-15,
+                         "2D3V config did not load drift_velocity_z");
             std::filesystem::remove(config_2d_path);
             require_throws([] {
                 const auto path = std::filesystem::path("test_invalid_2d_electrode.ini");
@@ -1741,7 +1819,7 @@ int main() {
             }, "invalid 2D particle boundary validation did not throw");
             require_throws([] {
                 const auto path = std::filesystem::path("test_invalid_2d_magnetic_field.ini");
-                { std::ofstream out(path); out << "dimension = 2\nmagnetic_field_z = nan\n"; }
+                { std::ofstream out(path); out << "dimension = 2\nmagnetic_field_x = nan\n"; }
                 try { (void)pic::load_config_2d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
                 std::filesystem::remove(path);
             }, "invalid 2D magnetic field validation did not throw");
@@ -1975,7 +2053,7 @@ int main() {
             require(std::filesystem::exists(cfg.output_dir / "particles_3.csv"), "2D simulation did not write final particle sample");
             require(!std::filesystem::exists(cfg.output_dir / "particles_1.csv"), "2D simulation wrote an unexpected particle sample interval");
             const auto particles = read_file_text(cfg.output_dir / "particles_0.csv");
-            require(particles.find("species_id,species,x,y,vx,vy,alive\n") == 0, "2D particle diagnostics header is wrong");
+            require(particles.find("species_id,species,x,y,vx,vy,vz,alive\n") == 0, "2D particle diagnostics header is wrong");
             require(count_lines(particles) == 6, "2D particle diagnostics did not honor sample_count");
             const auto vtk = read_file_text(cfg.output_dir / "fields_3.vtk");
             require(vtk.find("DIMENSIONS 16 12 1") != std::string::npos, "2D simulation VTK dimensions are wrong");
@@ -2203,6 +2281,11 @@ int main() {
             cfg.boundary = pic::Boundary::Periodic;
             cfg.species = {pic::Species2DConfig{"e2", -1.0, 1.0, 0.02, 48, 0.03, -0.02, 0.01, 0.0, -1.0, 0.0, -1.0},
                            pic::Species2DConfig{"i2", 1.0, 1836.0, 0.02, 48, -0.01, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0}};
+            cfg.magnetic_field_x = 0.07;
+            cfg.magnetic_field_y = -0.03;
+            cfg.magnetic_field_z = 0.11;
+            cfg.species[0].drift_velocity_z = 0.04;
+            cfg.species[1].drift_velocity_z = -0.02;
 
             pic::Simulation2D continuous(cfg);
             continuous.initialize();
@@ -3221,6 +3304,7 @@ int main() {
                 neutral.weight = 1.0;
                 neutral.particles = 16;
                 neutral.drift_velocity_x = 2.0;
+                neutral.drift_velocity_z = 0.7;
                 neutral.thermal_velocity = 0.0;
                 config.species = {neutral};
 
@@ -3243,6 +3327,9 @@ int main() {
                 for (const auto& particle : simulation.species().front().particles()) {
                     require(particle.alive && simulation.mesh().locate_point(particle.position).has_value(),
                             "reflected particle did not remain inside imported geometry");
+                    require_near(particle.velocity_z, neutral.drift_velocity_z,
+                                 1e-14,
+                                 "imported reflection changed out-of-plane velocity");
                 }
                 require(std::filesystem::exists(output_dir / "scalars.csv"),
                         "unstructured runtime did not write scalar diagnostics");
@@ -3434,6 +3521,7 @@ int main() {
                 source.end_step = 2;
                 source.normal_velocity = 0.0;
                 source.thermal_velocity = 0.0;
+                source.out_of_plane_velocity = 0.6;
                 config.sources = {source};
 
                 pic::UnstructuredSimulation2D simulation(config);
@@ -3449,6 +3537,10 @@ int main() {
                                 simulation.mesh().locate_point(
                                     particle.position).has_value(),
                             "imported boundary source generated an exterior particle");
+                    require_near(
+                        particle.velocity_z, source.out_of_plane_velocity,
+                        1e-14,
+                        "imported boundary source did not initialize out-of-plane velocity");
                 }
                 const std::string scalars =
                     read_file_text(output_dir / "scalars.csv");
@@ -3484,6 +3576,14 @@ int main() {
                         continued_particles[i].position.y,
                         expected_particles[i].position.y, 1e-13,
                         "source checkpoint restart changed particle y");
+                    require_near(
+                        continued_particles[i].velocity_z,
+                        expected_particles[i].velocity_z, 1e-13,
+                        "source checkpoint restart changed particle vz");
+                    require_near(
+                        continued_particles[i].velocity_half_z,
+                        expected_particles[i].velocity_half_z, 1e-13,
+                        "source checkpoint restart changed half-step particle vz");
                 }
                 auto mismatched_units = continued_config;
                 mismatched_units.units.system = pic::UnitSystem::SI;
@@ -3597,6 +3697,7 @@ int main() {
                 emission.yield = 1.0;
                 emission.max_particles_per_impact = 2;
                 emission.normal_velocity = 0.25;
+                emission.out_of_plane_velocity = 0.4;
                 config.emissions = {emission};
 
                 pic::UnstructuredSimulation2D simulation(config);
@@ -3620,6 +3721,13 @@ int main() {
                         flux.physical_particle_rate == 0.0 &&
                         flux.physical_particle_flux == 0.0,
                     "boundary flux last-step rate did not reset");
+                for (const auto& particle :
+                     simulation.species()[1].particles()) {
+                    require_near(
+                        particle.velocity_z,
+                        emission.out_of_plane_velocity, 1e-14,
+                        "secondary emission did not initialize out-of-plane velocity");
+                }
                 const std::string scalars =
                     read_file_text(output_dir / "scalars.csv");
                 require(
@@ -3663,6 +3771,14 @@ int main() {
                         continued_secondaries[i].position.y,
                         expected_secondaries[i].position.y, 1e-13,
                         "emission checkpoint restart changed particle y");
+                    require_near(
+                        continued_secondaries[i].velocity_z,
+                        expected_secondaries[i].velocity_z, 1e-13,
+                        "emission checkpoint restart changed particle vz");
+                    require_near(
+                        continued_secondaries[i].velocity_half_z,
+                        expected_secondaries[i].velocity_half_z, 1e-13,
+                        "emission checkpoint restart changed half-step particle vz");
                 }
 
 #ifdef AURORA_HAS_OPENMP

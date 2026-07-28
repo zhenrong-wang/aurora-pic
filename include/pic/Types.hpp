@@ -98,6 +98,8 @@ struct Particle2D {
     Vec2 velocity{};        // time-centered velocity used for diagnostics/output
     bool alive{true};
     Vec2 velocity_half{};   // leapfrog velocity at the adjacent half time step
+    double velocity_z{0.0};
+    double velocity_half_z{0.0};
 };
 
 struct Particle3D {

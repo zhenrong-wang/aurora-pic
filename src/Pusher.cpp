@@ -36,6 +36,31 @@ Vec2 to_vec2(Vec3 v) {
     return Vec2{v.x, v.y};
 }
 
+Vec3 particle_velocity(const Particle2D& particle) {
+    return {
+        particle.velocity.x,
+        particle.velocity.y,
+        particle.velocity_z};
+}
+
+Vec3 particle_velocity_half(const Particle2D& particle) {
+    return {
+        particle.velocity_half.x,
+        particle.velocity_half.y,
+        particle.velocity_half_z};
+}
+
+void set_particle_velocity(Particle2D& particle, Vec3 velocity) {
+    particle.velocity = to_vec2(velocity);
+    particle.velocity_z = velocity.z;
+}
+
+void set_particle_velocity_half(
+    Particle2D& particle, Vec3 velocity) {
+    particle.velocity_half = to_vec2(velocity);
+    particle.velocity_half_z = velocity.z;
+}
+
 } // namespace
 
 void initialize_leapfrog_half_step(Particle& particle, double electric, double charge_to_mass, double dt) {
@@ -57,10 +82,23 @@ void synchronize_leapfrog(Particle& particle, double electric, double charge_to_
 void initialize_leapfrog_half_step(Particle2D& particle, Vec2 electric, double charge_to_mass, double dt) {
     particle.velocity_half.x = particle.velocity.x - 0.5 * charge_to_mass * electric.x * dt;
     particle.velocity_half.y = particle.velocity.y - 0.5 * charge_to_mass * electric.y * dt;
+    particle.velocity_half_z = particle.velocity_z;
+}
+
+void initialize_boris_half_step(
+    Particle2D& particle, Vec2 electric, Vec3 magnetic,
+    double charge_to_mass, double dt) {
+    set_particle_velocity_half(
+        particle,
+        boris_advance(
+            particle_velocity(particle), to_vec3(electric),
+            magnetic, charge_to_mass, -0.5 * dt));
 }
 
 void initialize_boris_half_step(Particle2D& particle, Vec2 electric, double magnetic_z, double charge_to_mass, double dt) {
-    particle.velocity_half = to_vec2(boris_advance(to_vec3(particle.velocity), to_vec3(electric), Vec3{0.0, 0.0, magnetic_z}, charge_to_mass, -0.5 * dt));
+    initialize_boris_half_step(
+        particle, electric, Vec3{0.0, 0.0, magnetic_z},
+        charge_to_mass, dt);
 }
 
 void kick_leapfrog(Particle2D& particle, Vec2 electric, double charge_to_mass, double dt) {
@@ -68,8 +106,20 @@ void kick_leapfrog(Particle2D& particle, Vec2 electric, double charge_to_mass, d
     particle.velocity_half.y += charge_to_mass * electric.y * dt;
 }
 
+void kick_boris(
+    Particle2D& particle, Vec2 electric, Vec3 magnetic,
+    double charge_to_mass, double dt) {
+    set_particle_velocity_half(
+        particle,
+        boris_advance(
+            particle_velocity_half(particle), to_vec3(electric),
+            magnetic, charge_to_mass, dt));
+}
+
 void kick_boris(Particle2D& particle, Vec2 electric, double magnetic_z, double charge_to_mass, double dt) {
-    particle.velocity_half = to_vec2(boris_advance(to_vec3(particle.velocity_half), to_vec3(electric), Vec3{0.0, 0.0, magnetic_z}, charge_to_mass, dt));
+    kick_boris(
+        particle, electric, Vec3{0.0, 0.0, magnetic_z},
+        charge_to_mass, dt);
 }
 
 void drift_leapfrog(Particle2D& particle, double dt) {
@@ -80,10 +130,23 @@ void drift_leapfrog(Particle2D& particle, double dt) {
 void synchronize_leapfrog(Particle2D& particle, Vec2 electric, double charge_to_mass, double dt) {
     particle.velocity.x = particle.velocity_half.x + 0.5 * charge_to_mass * electric.x * dt;
     particle.velocity.y = particle.velocity_half.y + 0.5 * charge_to_mass * electric.y * dt;
+    particle.velocity_z = particle.velocity_half_z;
+}
+
+void synchronize_boris(
+    Particle2D& particle, Vec2 electric, Vec3 magnetic,
+    double charge_to_mass, double dt) {
+    set_particle_velocity(
+        particle,
+        boris_advance(
+            particle_velocity_half(particle), to_vec3(electric),
+            magnetic, charge_to_mass, 0.5 * dt));
 }
 
 void synchronize_boris(Particle2D& particle, Vec2 electric, double magnetic_z, double charge_to_mass, double dt) {
-    particle.velocity = to_vec2(boris_advance(to_vec3(particle.velocity_half), to_vec3(electric), Vec3{0.0, 0.0, magnetic_z}, charge_to_mass, 0.5 * dt));
+    synchronize_boris(
+        particle, electric, Vec3{0.0, 0.0, magnetic_z},
+        charge_to_mass, dt);
 }
 
 void initialize_leapfrog_half_step(Particle3D& particle, Vec3 electric, double charge_to_mass, double dt) {

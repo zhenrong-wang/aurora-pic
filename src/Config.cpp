@@ -352,7 +352,12 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         throw std::runtime_error("max_steps must be positive for steady-state mode");
     }
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
-    if (!std::isfinite(cfg.magnetic_field_z)) throw std::runtime_error("magnetic_field_z must be finite");
+    if (!std::isfinite(cfg.magnetic_field_x) ||
+        !std::isfinite(cfg.magnetic_field_y) ||
+        !std::isfinite(cfg.magnetic_field_z)) {
+        throw std::runtime_error(
+            "2D magnetic_field components must be finite");
+    }
     validate_runtime_policy(cfg.runtime);
     validate_boundary_side(cfg.boundary_config.left, "left");
     validate_boundary_side(cfg.boundary_config.right, "right");
@@ -364,7 +369,9 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         validate_positive(s.weight, "2D species '" + s.name + "' weight");
         if (!std::isfinite(s.charge)) throw std::runtime_error("2D species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("2D species '" + s.name + "' particles must be positive");
-        if (!std::isfinite(s.drift_velocity_x) || !std::isfinite(s.drift_velocity_y)) {
+        if (!std::isfinite(s.drift_velocity_x) ||
+            !std::isfinite(s.drift_velocity_y) ||
+            !std::isfinite(s.drift_velocity_z)) {
             throw std::runtime_error("2D species '" + s.name + "' drift velocities must be finite");
         }
         validate_non_negative(s.thermal_velocity, "2D species '" + s.name + "' thermal_velocity");
@@ -671,7 +678,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
-        "runtime_backend", "runtime_threads", "magnetic_field_z",
+        "runtime_backend", "runtime_threads", "magnetic_field_x",
+        "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
@@ -680,7 +688,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
-        "drift_velocity_y", "thermal_velocity", "init_x_min", "init_x_max",
+        "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
+        "init_x_min", "init_x_max",
         "init_y_min", "init_y_max"
     };
 
@@ -720,6 +729,12 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
+    cfg.magnetic_field_x =
+        as<double>(
+            global, "magnetic_field_x", cfg.magnetic_field_x);
+    cfg.magnetic_field_y =
+        as<double>(
+            global, "magnetic_field_y", cfg.magnetic_field_y);
     cfg.magnetic_field_z = as<double>(global, "magnetic_field_z", cfg.magnetic_field_z);
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
@@ -744,6 +759,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         s.particles = as<std::size_t>(block, "particles", s.particles);
         s.drift_velocity_x = as<double>(block, "drift_velocity_x", s.drift_velocity_x);
         s.drift_velocity_y = as<double>(block, "drift_velocity_y", s.drift_velocity_y);
+        s.drift_velocity_z =
+            as<double>(
+                block, "drift_velocity_z",
+                s.drift_velocity_z);
         s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);

@@ -115,7 +115,7 @@ void Diagnostics2D::write_particle_sample(std::size_t step,
     if (stride == 0) throw std::invalid_argument("2D particle output stride must be positive");
     std::ofstream out(output_dir_ / ("particles_" + std::to_string(step) + ".csv"));
     if (!out) throw std::runtime_error("cannot open 2D particle output");
-    out << "species_id,species,x,y,vx,vy,alive\n";
+    out << "species_id,species,x,y,vx,vy,vz,alive\n";
     std::size_t written = 0;
     for (std::size_t species_id = 0; species_id < species.size(); ++species_id) {
         const auto& sp = species[species_id];
@@ -124,7 +124,9 @@ void Diagnostics2D::write_particle_sample(std::size_t step,
             if (particle_id % stride != 0) continue;
             const auto& p = particles[particle_id];
             out << species_id << ',' << sp.name() << ',' << std::setprecision(17)
-                << p.position.x << ',' << p.position.y << ',' << p.velocity.x << ',' << p.velocity.y << ','
+                << p.position.x << ',' << p.position.y << ','
+                << p.velocity.x << ',' << p.velocity.y << ','
+                << p.velocity_z << ','
                 << (p.alive ? 1 : 0) << '\n';
             ++written;
             if (sample_count != 0 && written >= sample_count) return;

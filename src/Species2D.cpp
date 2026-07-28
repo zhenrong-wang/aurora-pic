@@ -15,7 +15,9 @@ Species2D::Species2D(Species2DConfig cfg) : cfg_(std::move(cfg)) {
     if (!std::isfinite(cfg_.mass) || cfg_.mass <= 0.0) throw std::invalid_argument("2D species mass must be positive and finite");
     if (!std::isfinite(cfg_.weight) || cfg_.weight <= 0.0) throw std::invalid_argument("2D species weight must be positive and finite");
     if (cfg_.particles == 0) throw std::invalid_argument("2D species must contain particles");
-    if (!std::isfinite(cfg_.drift_velocity_x) || !std::isfinite(cfg_.drift_velocity_y)) {
+    if (!std::isfinite(cfg_.drift_velocity_x) ||
+        !std::isfinite(cfg_.drift_velocity_y) ||
+        !std::isfinite(cfg_.drift_velocity_z)) {
         throw std::invalid_argument("2D species drift velocities must be finite");
     }
     if (!std::isfinite(cfg_.thermal_velocity) || cfg_.thermal_velocity < 0.0) {
@@ -33,6 +35,8 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
     std::uniform_real_distribution<double> uy(ymin, ymax);
     std::normal_distribution<double> vx(cfg_.drift_velocity_x, cfg_.thermal_velocity);
     std::normal_distribution<double> vy(cfg_.drift_velocity_y, cfg_.thermal_velocity);
+    std::normal_distribution<double> vz(
+        cfg_.drift_velocity_z, cfg_.thermal_velocity);
 
     for (auto& particle : particles_) {
         particle.position.x = ux(rng);
@@ -46,7 +50,9 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
         }
         particle.velocity.x = vx(rng);
         particle.velocity.y = vy(rng);
+        particle.velocity_z = vz(rng);
         particle.velocity_half = particle.velocity;
+        particle.velocity_half_z = particle.velocity_z;
         particle.alive = true;
     }
 }
@@ -59,7 +65,10 @@ double Species2D::kinetic_energy() const {
     double energy = 0.0;
     for (const auto& particle : particles_) {
         if (!particle.alive) continue;
-        const double v2 = particle.velocity.x * particle.velocity.x + particle.velocity.y * particle.velocity.y;
+        const double v2 =
+            particle.velocity.x * particle.velocity.x +
+            particle.velocity.y * particle.velocity.y +
+            particle.velocity_z * particle.velocity_z;
         energy += 0.5 * cfg_.mass * cfg_.weight * v2;
     }
     return energy;

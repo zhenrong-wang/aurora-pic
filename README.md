@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, structured `2D2V`, and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
 
 ## Why this methodology
 
@@ -63,8 +63,8 @@ python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 - `UnstructuredMesh2D`: computational state over validated imported topology, with lumped nodal control areas, spatially accelerated triangle/quad point location, checkpoint-independent per-particle cell-location caches, conservative element-shape charge deposition, and nodal electric-field interpolation.
 - `UnstructuredPoissonSolver2D` / `solve_unstructured_poisson`: triangle/quad finite-element stiffness assembly, strict physical-label Dirichlet/Neumann mapping, CSR storage, Jacobi-preconditioned conjugate gradients, convergence reporting, and nodal electric-field recovery. The reusable solver binds to one topology and caches quadrature, boundary contributions, the constrained sparse operator, and its Jacobi diagonal; the free functions remain as one-shot convenience APIs.
 - `UnstructuredSimulation2D`: imported-geometry runtime with area-uniform domain seeding, optional bounded initialization regions, deterministic tagged-boundary particle injection, weight-aware secondary emission, cached electrostatic field solves, electrostatic/Boris particle advance, earliest-crossing geometry-aware absorbing or reflecting boundary policies, species-resolved impact flux diagnostics, transient/steady execution, topology-checked restart, particle samples, and unstructured `.vtu` field output.
-- `Species2D`: explicit `Particle2D` storage with 2D position/velocity initialization, CIC deposition, kinetic-energy accounting, and live-particle accounting.
-- `Simulation2D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; nonzero `magnetic_field_z` switches particles to the Boris rotation/kick.
+- `Species2D`: explicit `Particle2D` storage with planar position and three-component velocity initialization, CIC deposition, full-velocity kinetic-energy accounting, and live-particle accounting.
+- `Simulation2D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; any nonzero `magnetic_field_x/y/z` component switches particles to the 2D3V Boris rotation/kick.
 - `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
 - `write_legacy_vtk` / `write_vtk_xml`: structured-grid VTK writers for `rho`, `phi`, and electric-field vectors on `Mesh2D`.
 
@@ -72,9 +72,9 @@ When `vtk_output = true`, 2D runs write field snapshots under `output_dir` for P
 
 Imported 2D runs use `mesh = imported` and `mesh_file = <planar-v2-ascii.msh>`. Each physical boundary must have a matching `[boundary.<physical-name>]` section and an independent `absorbing` or `reflecting` particle policy. Field conditions are either `field = dirichlet` with a constant `potential`, or `field = neumann` with a constant outward `normal_derivative = dphi/dn`; omitting `field` preserves the legacy Dirichlet interpretation. At least one Dirichlet boundary is required to fix the electrostatic gauge. Since `E = -grad(phi)`, the specified Neumann value corresponds to `E dot n = -normal_derivative`. Species use `[species.<name>]` sections.
 
-Optional `[source.<name>]` sections inject a fixed number of macro-particles per step from a tagged boundary. They require `species`, `boundary`, and positive `particles_per_step`; optional controls are `start_step`, exclusive `end_step` (`0` means unlimited), non-negative inward `normal_velocity`, signed `tangential_velocity`, and non-negative `thermal_velocity`. Boundary segments are sampled in proportion to length. The normal thermal component is half-range inward, and positive tangent is defined as a clockwise rotation of the inward normal. The represented source rate is `particles_per_step * species_weight / dt`. Dead slots are reused before particle storage grows, and `max_particles_per_species` bounds both growth and checkpoint loading. See [`examples/imported_plasma_2d.cfg`](examples/imported_plasma_2d.cfg) and its companion mesh for the complete strict syntax. The CLI automatically dispatches these configs to the imported runtime.
+Optional `[source.<name>]` sections inject a fixed number of macro-particles per step from a tagged boundary. They require `species`, `boundary`, and positive `particles_per_step`; optional controls are `start_step`, exclusive `end_step` (`0` means unlimited), non-negative inward `normal_velocity`, signed `tangential_velocity`, signed `out_of_plane_velocity`, and non-negative `thermal_velocity`. Boundary segments are sampled in proportion to length. The normal thermal component is half-range inward, while the tangent and out-of-plane thermal components are signed Gaussians; positive tangent is defined as a clockwise rotation of the inward normal. The represented source rate is `particles_per_step * species_weight / dt`. Dead slots are reused before particle storage grows, and `max_particles_per_species` bounds both growth and checkpoint loading. See [`examples/imported_plasma_2d.cfg`](examples/imported_plasma_2d.cfg) and its companion mesh for the complete strict syntax. The CLI automatically dispatches these configs to the imported runtime.
 
-Optional `[emission.<name>]` sections attach secondary emission to an absorbing tagged boundary. They require `boundary`, `incident_species`, `emitted_species`, and a positive physical `yield`. The expected emitted macro-particle count per impact is `yield * incident_weight / emitted_weight`; deterministic integer production and stochastic rounding preserve that expectation. `max_particles_per_impact` bounds weight-ratio expansion, while `normal_velocity`, `tangential_velocity`, and `thermal_velocity` use the same inward/tangent convention as boundary sources. Impacts are sorted by species and particle ID before emission, making RNG use reproducible across serial and OpenMP execution. Diagnostics report cumulative emitted counts and, for every species/absorbing-boundary pair, cumulative macro-particles, represented physical particles, charge, incident kinetic energy, last-step physical-particle rate, and rate per boundary length.
+Optional `[emission.<name>]` sections attach secondary emission to an absorbing tagged boundary. They require `boundary`, `incident_species`, `emitted_species`, and a positive physical `yield`. The expected emitted macro-particle count per impact is `yield * incident_weight / emitted_weight`; deterministic integer production and stochastic rounding preserve that expectation. `max_particles_per_impact` bounds weight-ratio expansion, while `normal_velocity`, `tangential_velocity`, `out_of_plane_velocity`, and `thermal_velocity` use the same convention as boundary sources. Impacts are sorted by species and particle ID before emission, making RNG use reproducible across serial and OpenMP execution. Diagnostics report cumulative emitted counts and, for every species/absorbing-boundary pair, cumulative macro-particles, represented physical particles, charge, full 3V incident kinetic energy, last-step physical-particle rate, and rate per boundary length.
 
 For a larger imported example, run `examples/biased_probe_2d.cfg`. Its source geometry is `examples/biased_probe_2d.geo`; `scripts/generate_real_case_mesh.py` regenerates the checked-in v2 ASCII mesh with Gmsh 4.x. Imported-run startup reports node/cell/boundary counts plus minimum corner angle and maximum cell edge ratio so mesh provenance and basic quality are visible in logs.
 
@@ -88,7 +88,7 @@ The absorbed-particle columns are cumulative counts of particles removed by abso
 If `particle_output = true`, the run also writes sampled particle inspection files named `particles_<step>.csv` with:
 
 ```text
-species_id,species,x,y,vx,vy,alive
+species_id,species,x,y,vx,vy,vz,alive
 ```
 
 Particle-output controls:
@@ -189,7 +189,9 @@ boundary_top_tag = grounded_wall
 # auto maps to periodic when boundary = periodic, and absorbing when boundary = dirichlet.
 particle_boundary = absorbing
 particle_boundary_right = reflecting
-# Optional uniform out-of-plane B field. Nonzero values use the Boris pusher.
+# Optional uniform B field. Any nonzero component uses the 2D3V Boris pusher.
+magnetic_field_x = 0.0
+magnetic_field_y = 0.0
 magnetic_field_z = 0.0
 output_interval = 10
 output_dir = output/electrode_2d
@@ -211,6 +213,7 @@ density = 100
 particles = 10000
 drift_velocity_x = 0.1
 drift_velocity_y = 0.0
+drift_velocity_z = 0.0
 thermal_velocity = 0.02
 init_x_min = 0.0
 init_x_max = 1.0
@@ -270,7 +273,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v3 format also fingerprints collision inputs and preserves collision counters; 2D/3D structured v2 and imported v4 record unit metadata. Imported v4 records source and emission configuration, cumulative injection/emission counts, and boundary-flux accumulators. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2. Loading validates unit/collision/source/emission/species metadata and bounded dynamic particle counts before recomputing fields.
+All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v3 format also fingerprints collision inputs and preserves collision counters; structured 2D v3, structured 3D v2, and imported v5 record unit metadata. The current 2D formats preserve all three velocity components; legacy 2D checkpoints load with zero out-of-plane velocity. Imported v5 records source and emission configuration including out-of-plane velocities, cumulative injection/emission counts, and boundary-flux accumulators. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2. Loading validates unit/collision/source/emission/species metadata and bounded dynamic particle counts before recomputing fields.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.
@@ -309,7 +312,7 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 
 2D/3D magnetic-field controls:
 
-- 2D supports `magnetic_field_z`, a uniform out-of-plane magnetic field. It defaults to `0.0`; nonzero values activate the Boris pusher for 2D particles.
+- Planar 2D3V supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the full three-velocity Boris pusher while position and electrostatic fields remain planar.
 - 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
 - Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
 

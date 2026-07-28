@@ -16,6 +16,7 @@ namespace pic {
 namespace {
 constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
 constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
+constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -98,12 +99,23 @@ void require_stream(T& stream, const std::string& message) {
 }
 
 bool has_magnetic_field(const Simulation2DConfig& cfg) {
-    return cfg.magnetic_field_z != 0.0;
+    return cfg.magnetic_field_x != 0.0 ||
+           cfg.magnetic_field_y != 0.0 ||
+           cfg.magnetic_field_z != 0.0;
+}
+
+Vec3 magnetic_field(const Simulation2DConfig& cfg) {
+    return {
+        cfg.magnetic_field_x,
+        cfg.magnetic_field_y,
+        cfg.magnetic_field_z};
 }
 
 void initialize_particle_pusher(Particle2D& particle, Vec2 electric, double charge_to_mass, const Simulation2DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
-        initialize_boris_half_step(particle, electric, cfg.magnetic_field_z, charge_to_mass, cfg.dt);
+        initialize_boris_half_step(
+            particle, electric, magnetic_field(cfg),
+            charge_to_mass, cfg.dt);
     } else {
         initialize_leapfrog_half_step(particle, electric, charge_to_mass, cfg.dt);
     }
@@ -111,7 +123,9 @@ void initialize_particle_pusher(Particle2D& particle, Vec2 electric, double char
 
 void kick_particle(Particle2D& particle, Vec2 electric, double charge_to_mass, const Simulation2DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
-        kick_boris(particle, electric, cfg.magnetic_field_z, charge_to_mass, cfg.dt);
+        kick_boris(
+            particle, electric, magnetic_field(cfg),
+            charge_to_mass, cfg.dt);
     } else {
         kick_leapfrog(particle, electric, charge_to_mass, cfg.dt);
     }
@@ -119,7 +133,9 @@ void kick_particle(Particle2D& particle, Vec2 electric, double charge_to_mass, c
 
 void synchronize_particle(Particle2D& particle, Vec2 electric, double charge_to_mass, const Simulation2DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
-        synchronize_boris(particle, electric, cfg.magnetic_field_z, charge_to_mass, cfg.dt);
+        synchronize_boris(
+            particle, electric, magnetic_field(cfg),
+            charge_to_mass, cfg.dt);
     } else {
         synchronize_leapfrog(particle, electric, charge_to_mass, cfg.dt);
     }
@@ -146,7 +162,12 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
     if (!std::isfinite(cfg_.dt) || cfg_.dt <= 0.0) throw std::invalid_argument("2D simulation dt must be positive and finite");
     if (cfg_.output_interval == 0) throw std::invalid_argument("2D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("2D particle_output_stride must be positive");
-    if (!std::isfinite(cfg_.magnetic_field_z)) throw std::invalid_argument("2D magnetic_field_z must be finite");
+    if (!std::isfinite(cfg_.magnetic_field_x) ||
+        !std::isfinite(cfg_.magnetic_field_y) ||
+        !std::isfinite(cfg_.magnetic_field_z)) {
+        throw std::invalid_argument(
+            "2D magnetic_field components must be finite");
+    }
     if (cfg_.mode == RunMode::SteadyState) {
         if (cfg_.max_steps == 0) throw std::invalid_argument("2D max_steps must be positive for steady-state mode");
         if (cfg_.steady_window == 0) throw std::invalid_argument("2D steady_window must be positive");
@@ -242,7 +263,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV2 << '\n';
+    out << kCheckpointMagicV3 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -259,7 +280,9 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
         for (const auto& p : sp.particles()) {
             out << p.position.x << ' ' << p.position.y << ' '
                 << p.velocity.x << ' ' << p.velocity.y << ' '
+                << p.velocity_z << ' '
                 << p.velocity_half.x << ' ' << p.velocity_half.y << ' '
+                << p.velocity_half_z << ' '
                 << (p.alive ? 1 : 0) << "\n";
         }
     }
@@ -273,7 +296,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     std::getline(in, magic);
     const bool checkpoint_v1 = magic == kCheckpointMagicV1;
     const bool checkpoint_v2 = magic == kCheckpointMagicV2;
-    if (!checkpoint_v1 && !checkpoint_v2) {
+    const bool checkpoint_v3 = magic == kCheckpointMagicV3;
+    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -287,7 +311,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
-        if (!checkpoint_v2 ||
+        if ((!checkpoint_v2 && !checkpoint_v3) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -295,7 +319,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 "checkpoint unit system does not match 2D config");
         }
         in >> key;
-    } else if (checkpoint_v2 ||
+    } else if (checkpoint_v2 || checkpoint_v3 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -328,9 +352,19 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         for (auto& p : particles) {
             int alive = 0;
             in >> p.position.x >> p.position.y
-               >> p.velocity.x >> p.velocity.y
-               >> p.velocity_half.x >> p.velocity_half.y
-               >> alive;
+               >> p.velocity.x >> p.velocity.y;
+            if (checkpoint_v3) {
+                in >> p.velocity_z;
+            } else {
+                p.velocity_z = 0.0;
+            }
+            in >> p.velocity_half.x >> p.velocity_half.y;
+            if (checkpoint_v3) {
+                in >> p.velocity_half_z;
+            } else {
+                p.velocity_half_z = 0.0;
+            }
+            in >> alive;
             p.alive = alive != 0;
         }
     }

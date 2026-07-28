@@ -70,7 +70,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "units", "relative_permittivity",
         "mode", "steady_tolerance", "steady_window", "max_steps",
         "max_particles_per_species", "seed",
-        "magnetic_field_z", "output_interval", "output_dir", "vtk_output",
+        "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
+        "output_interval", "output_dir", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride",
         "particle_sample_count", "checkpoint_output", "checkpoint_interval",
         "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads",
@@ -81,17 +82,19 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "field", "potential", "normal_derivative", "particle"};
     static const std::set<std::string> species_keys{
         "charge", "mass", "weight", "particles", "drift_velocity_x",
-        "drift_velocity_y", "thermal_velocity", "init_x_min", "init_x_max",
+        "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
+        "init_x_min", "init_x_max",
         "init_y_min", "init_y_max",
     };
     static const std::set<std::string> source_keys{
         "species", "boundary", "particles_per_step", "start_step", "end_step",
         "normal_velocity", "tangential_velocity", "thermal_velocity",
+        "out_of_plane_velocity",
     };
     static const std::set<std::string> emission_keys{
         "boundary", "incident_species", "emitted_species", "yield",
         "max_particles_per_impact", "normal_velocity", "tangential_velocity",
-        "thermal_velocity",
+        "thermal_velocity", "out_of_plane_velocity",
     };
 
     ParsedConfig result;
@@ -301,6 +304,14 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         global, "max_particles_per_species",
         result.max_particles_per_species);
     result.seed = number<unsigned>(global, "seed", result.seed);
+    result.magnetic_field_x =
+        number<double>(
+            global, "magnetic_field_x",
+            result.magnetic_field_x);
+    result.magnetic_field_y =
+        number<double>(
+            global, "magnetic_field_y",
+            result.magnetic_field_y);
     result.magnetic_field_z =
         number<double>(global, "magnetic_field_z", result.magnetic_field_z);
     result.output_interval =
@@ -418,6 +429,9 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             species.values, "drift_velocity_x", value.drift_velocity_x);
         value.drift_velocity_y = number<double>(
             species.values, "drift_velocity_y", value.drift_velocity_y);
+        value.drift_velocity_z = number<double>(
+            species.values, "drift_velocity_z",
+            value.drift_velocity_z);
         value.thermal_velocity = number<double>(
             species.values, "thermal_velocity", value.thermal_velocity);
         const bool any_bounds =
@@ -471,6 +485,9 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             source.values, "tangential_velocity", value.tangential_velocity);
         value.thermal_velocity = number<double>(
             source.values, "thermal_velocity", value.thermal_velocity);
+        value.out_of_plane_velocity = number<double>(
+            source.values, "out_of_plane_velocity",
+            value.out_of_plane_velocity);
         if (!configured_species.contains(value.species)) {
             throw std::runtime_error(
                 "source '" + source.name +
@@ -502,6 +519,9 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             value.tangential_velocity);
         value.thermal_velocity = number<double>(
             emission.values, "thermal_velocity", value.thermal_velocity);
+        value.out_of_plane_velocity = number<double>(
+            emission.values, "out_of_plane_velocity",
+            value.out_of_plane_velocity);
         if (!configured_species.contains(value.incident_species) ||
             !configured_species.contains(value.emitted_species)) {
             throw std::runtime_error(

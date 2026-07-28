@@ -28,6 +28,7 @@ struct UnstructuredSpecies2DConfig {
     double thermal_velocity{0.1};
     std::optional<Vec2> initialization_minimum;
     std::optional<Vec2> initialization_maximum;
+    double drift_velocity_z{0.0};
 };
 
 struct UnstructuredBoundarySource2DConfig {
@@ -40,6 +41,7 @@ struct UnstructuredBoundarySource2DConfig {
     double normal_velocity{0.0};
     double tangential_velocity{0.0};
     double thermal_velocity{0.0};
+    double out_of_plane_velocity{0.0};
 };
 
 struct UnstructuredSecondaryEmission2DConfig {
@@ -52,6 +54,7 @@ struct UnstructuredSecondaryEmission2DConfig {
     double normal_velocity{0.0};
     double tangential_velocity{0.0};
     double thermal_velocity{0.0};
+    double out_of_plane_velocity{0.0};
 };
 
 struct UnstructuredBoundaryFlux2D {
@@ -77,6 +80,8 @@ struct UnstructuredSimulation2DConfig {
     std::size_t max_particles_per_species{10000000};
     unsigned seed{12345};
     double magnetic_field_z{0.0};
+    double magnetic_field_x{0.0};
+    double magnetic_field_y{0.0};
     std::size_t output_interval{10};
     std::filesystem::path output_dir{"output_unstructured_2d"};
     bool vtk_output{false};
@@ -185,6 +190,7 @@ private:
         std::size_t segment_id{0};
         Vec2 position{};
         Vec2 incident_velocity{};
+        double incident_velocity_z{0.0};
     };
 
     Vec2 sample_position(const UnstructuredSpecies2DConfig& config);
