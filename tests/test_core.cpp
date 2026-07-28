@@ -410,6 +410,55 @@ int main() {
                 1e-13,
                 "2D3V excitation MCC removed the wrong threshold energy");
 
+            auto ionization_config = elastic_config;
+            ionization_config.max_frequency = 10.0;
+            ionization_config.max_candidates_per_particle = 256;
+            ionization_config.channels = {
+                pic::CollisionChannelConfig{
+                    "ionization",
+                    pic::CollisionProcessKind::Ionization,
+                    table_path, 0.5, 1.0, 1.0,
+                    "electrons", "ions"}};
+            pic::NullCollisionModel ionization(
+                ionization_config, 1.0);
+            pic::Vec3 ionizing_velocity{4.0, 0.0, 0.0};
+            const double ionizing_initial_energy =
+                0.5 * norm(ionizing_velocity) *
+                norm(ionizing_velocity);
+            std::mt19937_64 ionization_rng(314159);
+            const auto ionization_stats =
+                ionization.collide(
+                    ionizing_velocity, 10.0, ionization_rng);
+            require(
+                ionization_stats.channel_collisions[0] == 4 &&
+                    ionization_stats.secondaries.size() == 4,
+                "2D3V ionization did not create one secondary per event");
+            double product_energy =
+                0.5 * norm(ionizing_velocity) *
+                norm(ionizing_velocity);
+            for (const auto& secondary :
+                 ionization_stats.secondaries) {
+                require(
+                    secondary.channel == 0,
+                    "ionization secondary channel mapping changed");
+                product_energy +=
+                    0.5 * norm(secondary.velocity) *
+                    norm(secondary.velocity);
+            }
+            require_near(
+                product_energy +
+                    0.5 * static_cast<double>(
+                              ionization_stats.secondaries.size()),
+                ionizing_initial_energy, 1e-12,
+                "ionization energy partition is not conservative");
+            require_throws(
+                [&] {
+                    double velocity = 4.0;
+                    (void)ionization.collide(
+                        velocity, 0.1, ionization_rng);
+                },
+                "scalar MCC accepted an ionization channel");
+
             auto unsafe_config = elastic_config;
             unsafe_config.max_frequency = 0.1;
             pic::NullCollisionModel unsafe(unsafe_config, 1.0);
@@ -2765,6 +2814,22 @@ int main() {
                             .cross_section_file.filename() ==
                         "mcc_2d3v_elastic.dat",
                 "imported 2D MCC config did not preserve gas and channel metadata");
+            const auto imported_ionization_example =
+                std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                "examples" / "imported_ionization_2d.cfg";
+            const auto imported_ionization_config =
+                pic::load_unstructured_config_2d(
+                    imported_ionization_example);
+            require(
+                imported_ionization_config.collisions.channels.size() == 1 &&
+                    imported_ionization_config.collisions.channels.front()
+                            .process ==
+                        pic::CollisionProcessKind::Ionization &&
+                    imported_ionization_config.collisions.channels.front()
+                            .secondary_species == "electrons" &&
+                    imported_ionization_config.collisions.channels.front()
+                            .ion_species == "ions",
+                "imported ionization config did not preserve product species");
             {
                 const auto invalid_path =
                     std::filesystem::path(
@@ -2879,6 +2944,94 @@ int main() {
                 std::filesystem::remove_all(output_dir);
                 std::filesystem::remove_all(continued_output_dir);
                 std::filesystem::remove(changed_table);
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_ionization");
+                const auto continued_output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_ionization_continued");
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_output_dir);
+
+                auto config = imported_ionization_config;
+                config.output_dir = output_dir;
+                pic::UnstructuredSimulation2D continuous(config);
+                const auto summary = continuous.run();
+                const auto& collisions =
+                    continuous.collision_diagnostics();
+                require(
+                    collisions.candidates == 5 &&
+                        collisions.null_collisions == 2 &&
+                        collisions.channel_collisions ==
+                            std::vector<std::uint64_t>{3},
+                    "imported ionization deterministic collision envelope changed");
+                require(
+                    continuous.species()[0].live_count() == 19 &&
+                        continuous.species()[1].live_count() == 19 &&
+                        summary.final_sample.live_particles == 38,
+                    "imported ionization did not create paired products");
+                const double created_charge =
+                    static_cast<double>(
+                        continuous.species()[0].live_count() - 16) *
+                        continuous.species()[0].charge() *
+                        continuous.species()[0].weight() +
+                    static_cast<double>(
+                        continuous.species()[1].live_count() - 16) *
+                        continuous.species()[1].charge() *
+                        continuous.species()[1].weight();
+                require_near(
+                    created_charge, 0.0, 0.0,
+                    "imported ionization products do not conserve charge");
+                require_near(
+                    summary.final_sample.total_energy, 125.0, 1e-11,
+                    "imported ionization removed the wrong threshold energy");
+
+                auto continued_config = config;
+                continued_config.restart_path =
+                    output_dir / "checkpoint_2.apc";
+                continued_config.output_dir =
+                    continued_output_dir;
+                continued_config.checkpoint_output = false;
+                pic::UnstructuredSimulation2D continued(
+                    continued_config);
+                (void)continued.run();
+                require_species_close(
+                    continuous.species(), continued.species(),
+                    "imported ionization checkpoint restart determinism");
+                require(
+                    continued.collision_diagnostics().candidates ==
+                            collisions.candidates &&
+                        continued.collision_diagnostics().null_collisions ==
+                            collisions.null_collisions &&
+                        continued.collision_diagnostics()
+                                .channel_collisions ==
+                            collisions.channel_collisions,
+                    "imported ionization checkpoint lost collision state");
+
+                auto bounded_config = config;
+                bounded_config.output_dir =
+                    "test_output_unstructured_ionization_bounded";
+                bounded_config.checkpoint_output = false;
+                bounded_config.max_particles_per_species = 16;
+                pic::UnstructuredSimulation2D bounded(
+                    bounded_config);
+                require_throws_contains(
+                    [&] { (void)bounded.run(); },
+                    "max_particles_per_species",
+                    "ionization ignored the product species capacity");
+                require(
+                    bounded.species()[0].live_count() == 16 &&
+                        bounded.species()[1].live_count() == 16,
+                    "ionization capacity failure created partial products");
+
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(
+                    continued_output_dir);
+                std::filesystem::remove_all(
+                    bounded_config.output_dir);
             }
 
             {

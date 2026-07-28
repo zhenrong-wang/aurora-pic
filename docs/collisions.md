@@ -22,7 +22,8 @@ collision model.
 ## Tabulated null-collision MCC
 
 The MCC slice supports stationary-heavy-neutral elastic and excitation
-channels for one named kinetic species:
+channels for one named kinetic species. Imported 2D3V additionally supports
+bounded electron-impact ionization product creation:
 
 ```ini
 [collisions]
@@ -41,6 +42,13 @@ cross_section_file = elastic.dat
 type = excitation
 cross_section_file = excitation.dat
 threshold_energy = 0.5
+
+[collision.ionization]
+type = ionization
+cross_section_file = ionization.dat
+threshold_energy = 1.0
+secondary_species = electrons
+ion_species = ions
 ```
 
 Cross-section paths are resolved relative to the configuration file. Each
@@ -90,6 +98,24 @@ the sign. Imported 2D3V events instead sample an isotropic direction over the
 unit sphere while preserving the post-collision speed. A channel below its
 threshold has zero rate regardless of its table.
 
+Ionization is available only through the imported 2D3V interface. Each
+accepted event removes `threshold_energy`, divides the remaining incident
+electron energy equally between the scattered primary and one secondary
+electron, samples both directions independently and isotropically, and creates
+one stationary ion at the event position. The target and secondary species
+must have identical nonzero charge, mass, and macro weight; the ion must have
+the opposite charge and the same macro weight. These constraints make each
+macro-event charge conservative and make the implemented electron energy
+partition well-defined. Product storage is preflighted against
+`max_particles_per_species`, and new particles do not collide again during
+their birth timestep.
+
+This is a deliberately bounded ionization model: ion recoil, differential
+scattering data, neutral depletion, metastables, and multi-ionization are not
+yet represented. The bundled `examples/imported_ionization_2d.cfg` and
+`mcc_2d3v_ionization.dat` are deterministic software-validation inputs, not
+material data.
+
 ## Imported 2D3V gas metadata
 
 Imported runs use the same channel sections and additionally require:
@@ -121,6 +147,9 @@ finite-mass recoil, gas heating, or depletion.
 `examples/imported_mcc_2d.cfg` exercises the complete imported parser,
 isotropic scatter, diagnostics, and v6 restart path using deliberately
 synthetic constant cross sections. It is not an Argon or other material model.
+`examples/imported_ionization_2d.cfg` similarly exercises paired reactive
+product creation, capacity enforcement, energy accounting, and deterministic
+restart.
 
 ## Diagnostics and restart
 
@@ -142,8 +171,19 @@ optional gas metadata is absent.
 - Neutrals are stationary and infinitely heavy in the kinematics; thermal
   motion, recoil, depletion, and gas heating are absent.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
-- Ionization, attachment, charge exchange, Coulomb collisions, and secondary
-  particle creation are not implemented.
+- Ionization is limited to the equal-sharing imported 2D3V model above.
+  Attachment, charge exchange, Coulomb collisions, and general reaction
+  networks are not implemented.
 - Cross-section licensing and provenance are the user's responsibility. The
   checked-in MCC tables are synthetic software-validation data, not He, Ar,
   Kr, Xe, or other material data.
+
+For a real gas, use an authoritative threshold and a separately licensed,
+cited cross-section dataset. As one reference point, the
+[NIST Atomic Spectra Database](https://physics.nist.gov/cgi-bin/ASD/ie.pl?at_num_out=1&biblio=1&e_out=0&el_name_out=1&ion_charge_out=1&spectra=argon&unc_out=1&units=1)
+reports the first Argon ionization energy; this does not provide the required
+energy-dependent cross section. Dataset redistribution and use rights must be
+checked at the source—for example, the
+[LXCat terms](https://nl.lxcat.net/data/preselect.php?a=181&b=8&d=26&t=swrm)
+place citation, retrieval-date, redistribution, and commercial-use conditions
+on contributed data. AuroraPIC therefore does not vendor those tables.

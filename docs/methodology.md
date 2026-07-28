@@ -46,8 +46,11 @@ remove a configured threshold energy. The 1D path randomizes velocity sign;
 the imported path samples an isotropic three-dimensional direction. Named
 interval/cumulative counts are written to `collisions.csv`. Checkpoint v3 in
 1D and v6 for imported geometry fingerprint effective tables and preserve
-counters. See `docs/collisions.md` for the gas metadata, scaling, and
-limitation contract.
+counters. Imported 2D3V ionization removes its threshold, equally partitions
+the remaining primary/secondary electron energy, samples independent isotropic
+directions, and creates a stationary opposite-charge ion with bounded,
+preflighted storage. See `docs/collisions.md` for the gas metadata, scaling,
+reactive-species constraints, and limitation contract.
 
 ## Stability guidance
 

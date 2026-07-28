@@ -214,10 +214,17 @@ NullCollisionModel::NullCollisionModel(
             throw std::invalid_argument(
                 "elastic MCC channel threshold_energy must be zero");
         }
-        if (channel_config.process == CollisionProcessKind::Excitation &&
+        if ((channel_config.process == CollisionProcessKind::Excitation ||
+             channel_config.process == CollisionProcessKind::Ionization) &&
             !(channel_config.threshold_energy > 0.0)) {
             throw std::invalid_argument(
-                "excitation MCC channel threshold_energy must be positive");
+                "inelastic MCC channel threshold_energy must be positive");
+        }
+        if (channel_config.process == CollisionProcessKind::Ionization &&
+            (channel_config.secondary_species.empty() ||
+             channel_config.ion_species.empty())) {
+            throw std::invalid_argument(
+                "ionization MCC channel requires secondary and ion species");
         }
         if (std::find(channel_names_.begin(), channel_names_.end(),
                       channel_config.name) != channel_names_.end()) {
@@ -230,6 +237,11 @@ NullCollisionModel::NullCollisionModel(
         hash_string(signature_, channel_config.name);
         hash_string(signature_, to_string(channel_config.process));
         hash_double(signature_, channel_config.threshold_energy);
+        if (channel_config.process ==
+            CollisionProcessKind::Ionization) {
+            hash_string(signature_, channel_config.secondary_species);
+            hash_string(signature_, channel_config.ion_species);
+        }
         for (std::size_t i = 0;
              i < channels_.back().table.energies().size(); ++i) {
             hash_double(signature_, channels_.back().table.energies()[i]);
@@ -286,9 +298,13 @@ void NullCollisionModel::apply_channel(
     std::mt19937_64& rng) const {
     const auto& channel = channels_.at(channel_index);
     double energy = 0.5 * particle_mass_ * velocity * velocity;
-    if (channel.config.process == CollisionProcessKind::Excitation) {
+    if (channel.config.process == CollisionProcessKind::Excitation ||
+        channel.config.process == CollisionProcessKind::Ionization) {
         energy = std::max(
             0.0, energy - channel.config.threshold_energy);
+    }
+    if (channel.config.process == CollisionProcessKind::Ionization) {
+        energy *= 0.5;
     }
     const double speed = std::sqrt(2.0 * energy / particle_mass_);
     std::uniform_int_distribution<int> direction(0, 1);
@@ -306,9 +322,13 @@ void NullCollisionModel::apply_channel(
         velocity.z * velocity.z);
     double energy =
         0.5 * particle_mass_ * initial_speed * initial_speed;
-    if (channel.config.process == CollisionProcessKind::Excitation) {
+    if (channel.config.process == CollisionProcessKind::Excitation ||
+        channel.config.process == CollisionProcessKind::Ionization) {
         energy = std::max(
             0.0, energy - channel.config.threshold_energy);
+    }
+    if (channel.config.process == CollisionProcessKind::Ionization) {
+        energy *= 0.5;
     }
     const double speed = std::sqrt(2.0 * energy / particle_mass_);
     std::uniform_real_distribution<double> unit(0.0, 1.0);
@@ -325,6 +345,15 @@ CollisionStepStatistics NullCollisionModel::collide(
     double& velocity,
     double timestep,
     std::mt19937_64& rng) const {
+    if (std::any_of(
+            channels_.begin(), channels_.end(),
+            [](const Channel& channel) {
+                return channel.config.process ==
+                       CollisionProcessKind::Ionization;
+            })) {
+        throw std::logic_error(
+            "ionization MCC requires the 3V collision interface");
+    }
     if (!std::isfinite(timestep) || !(timestep > 0.0)) {
         throw std::invalid_argument(
             "MCC timestep must be positive and finite");
@@ -419,6 +448,21 @@ CollisionStepStatistics NullCollisionModel::collide(
             cumulative += channel_rates[channel];
             if (selection < cumulative) {
                 apply_channel(channel, velocity, rng);
+                if (channels_[channel].config.process ==
+                    CollisionProcessKind::Ionization) {
+                    const double secondary_speed = speed();
+                    std::uniform_real_distribution<double> unit(0.0, 1.0);
+                    const double cosine = 2.0 * unit(rng) - 1.0;
+                    const double sine =
+                        std::sqrt(std::max(0.0, 1.0 - cosine * cosine));
+                    const double azimuth =
+                        2.0 * std::acos(-1.0) * unit(rng);
+                    statistics.secondaries.push_back({
+                        channel,
+                        {secondary_speed * sine * std::cos(azimuth),
+                         secondary_speed * sine * std::sin(azimuth),
+                         secondary_speed * cosine}});
+                }
                 ++statistics.channel_collisions[channel];
                 accepted = true;
                 break;

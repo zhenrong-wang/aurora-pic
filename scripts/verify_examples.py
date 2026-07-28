@@ -370,6 +370,38 @@ def check_imported_mcc_2d(output_dir: Path) -> None:
     require_file(output_dir / "checkpoint_6.apc")
 
 
+def check_imported_ionization_2d(output_dir: Path) -> None:
+    scalar_header, scalar_rows = require_csv(
+        output_dir / "scalars.csv", min_rows=5
+    )
+    require_step(scalar_rows, 4, output_dir / "scalars.csv")
+    final_scalar = {
+        name: float(value)
+        for name, value in zip(scalar_header, scalar_rows[-1])
+    }
+    collision_header, collision_rows = require_csv(
+        output_dir / "collisions.csv", min_rows=5
+    )
+    require_step(collision_rows, 4, output_dir / "collisions.csv")
+    final_collision = {
+        name: float(value)
+        for name, value in zip(collision_header, collision_rows[-1])
+    }
+    require(
+        final_collision["cumulative_candidates"] == 5 and
+        final_collision["cumulative_null_collisions"] == 2 and
+        final_collision["cumulative_synthetic_ionization"] == 3,
+        "imported ionization deterministic collision envelope changed",
+    )
+    require(
+        final_scalar["live_particles"] == 38 and
+        abs(final_scalar["total_energy"] - 125.0) < 1e-11,
+        "imported ionization product or energy envelope changed",
+    )
+    require_file(output_dir / "checkpoint_2.apc")
+    require_file(output_dir / "checkpoint_4.apc")
+
+
 def check_biased_probe_2d(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
@@ -425,6 +457,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),
         ("imported_mcc_2d.cfg", "imported_mcc_2d", check_imported_mcc_2d),
+        ("imported_ionization_2d.cfg", "imported_ionization_2d", check_imported_ionization_2d),
         ("biased_probe_2d.cfg", "biased_probe_2d", check_biased_probe_2d),
         ("plasma_3d.cfg", "plasma_3d", check_plasma_3d),
     ]

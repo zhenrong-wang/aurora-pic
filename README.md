@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support the same tabulated stationary-neutral MCC with isotropic three-velocity scattering. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support tabulated stationary-neutral elastic, excitation, and bounded electron-impact ionization channels with isotropic three-velocity scattering and paired charged-product creation. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs.
 
 ## Why this methodology
 
@@ -166,10 +166,13 @@ For tabulated MCC, select `model = null_collision`, name the target `species`,
 set `neutral_density` and a conservative `max_frequency`, then add one or more
 `[collision.<name>]` elastic/excitation sections. Imported 2D3V MCC also
 requires `gas`, positive `neutral_mass`, non-negative `neutral_temperature`,
-and `data_provenance`. See
+and `data_provenance`, and can use ionization sections naming secondary and
+ion product species. See
 [`examples/mcc_relaxation.cfg`](examples/mcc_relaxation.cfg),
 [`examples/imported_mcc_2d.cfg`](examples/imported_mcc_2d.cfg), and the
-collision contract. Both bundled MCC datasets are synthetic validation
+[`examples/imported_ionization_2d.cfg`](examples/imported_ionization_2d.cfg).
+The collision contract documents the reactive kinematic and macro-weight
+constraints. All bundled MCC datasets are synthetic validation
 inputs, not gas-property data.
 
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
@@ -331,4 +334,4 @@ The parser is intentionally strict: unsupported `config_version` values, unknown
 
 The verified smoke/performance envelope is documented in `docs/performance-envelope.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. In short, the checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. They do not prove convergence for arbitrary plasma regimes. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
 
-This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, MCC remains a stationary-heavy-neutral elastic/excitation model without thermal neutral motion, recoil, ionization, charge exchange, or reactive product creation, prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.
+This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, MCC still assumes stationary heavy neutrals and its imported-2D ionization model uses equal electron-energy sharing with stationary newborn ions (no thermal neutral motion, recoil, depletion, charge exchange, or general reaction network), prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current text checkpoint and particle CSV output are for restart, inspection, and regression/debug workflows.

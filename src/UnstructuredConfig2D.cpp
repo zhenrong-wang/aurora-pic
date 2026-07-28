@@ -106,6 +106,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
     static const std::set<std::string> collision_channel_keys{
         "type", "cross_section_file", "threshold_energy",
         "energy_scale", "cross_section_scale",
+        "secondary_species", "ion_species",
     };
 
     ParsedConfig result;
@@ -618,10 +619,12 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             value.process = CollisionProcessKind::Elastic;
         } else if (type == "excitation") {
             value.process = CollisionProcessKind::Excitation;
+        } else if (type == "ionization") {
+            value.process = CollisionProcessKind::Ionization;
         } else {
             throw std::runtime_error(
                 "collision channel '" + channel.name +
-                "' type must be elastic or excitation");
+                "' type must be elastic, excitation, or ionization");
         }
         value.cross_section_file = resolved_path(
             path, required(
@@ -635,6 +638,19 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         value.cross_section_scale = number<double>(
             channel.values, "cross_section_scale",
             value.cross_section_scale);
+        if (value.process == CollisionProcessKind::Ionization) {
+            value.secondary_species = required(
+                channel.values, "secondary_species",
+                "ionization channel '" + channel.name + "'");
+            value.ion_species = required(
+                channel.values, "ion_species",
+                "ionization channel '" + channel.name + "'");
+        } else if (channel.values.contains("secondary_species") ||
+                   channel.values.contains("ion_species")) {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' product species are valid only for ionization");
+        }
         result.collisions.channels.push_back(std::move(value));
     }
     if (result.collisions.enabled) {
@@ -655,6 +671,15 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         if (result.collisions.channels.empty()) {
             throw std::runtime_error(
                 "imported MCC requires collision channel sections");
+        }
+        for (const auto& channel : result.collisions.channels) {
+            if (channel.process != CollisionProcessKind::Ionization) continue;
+            if (!configured_species.contains(channel.secondary_species) ||
+                !configured_species.contains(channel.ion_species)) {
+                throw std::runtime_error(
+                    "ionization channel '" + channel.name +
+                    "' references unknown product species");
+            }
         }
     } else if (!parsed.collision_channels.empty()) {
         throw std::runtime_error(

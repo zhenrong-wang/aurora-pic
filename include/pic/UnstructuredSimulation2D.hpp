@@ -189,6 +189,10 @@ private:
         std::size_t emitted_species_id{0};
         std::size_t emitted_particles{0};
     };
+    struct IonizationChannelRuntime {
+        std::size_t secondary_species_id{0};
+        std::size_t ion_species_id{0};
+    };
     struct BoundaryImpact {
         std::size_t species_id{0};
         std::size_t particle_id{0};
@@ -222,6 +226,8 @@ private:
     std::vector<SamplingTriangle> sampling_triangles_;
     std::vector<BoundarySourceRuntime> sources_;
     std::vector<SecondaryEmissionRuntime> emissions_;
+    std::vector<std::optional<IonizationChannelRuntime>>
+        ionization_channels_;
     std::unique_ptr<NullCollisionModel> mcc_model_;
     std::size_t mcc_species_id_{0};
     CollisionDiagnostics collision_totals_{};

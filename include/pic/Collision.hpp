@@ -33,6 +33,11 @@ struct CollisionStepStatistics {
     std::uint64_t candidates{0};
     std::uint64_t null_collisions{0};
     std::vector<std::uint64_t> channel_collisions{};
+    struct Secondary {
+        std::size_t channel{0};
+        Vec3 velocity{};
+    };
+    std::vector<Secondary> secondaries{};
 };
 
 struct CollisionDiagnostics {

@@ -97,7 +97,7 @@ The historical multidimensional phases below remain useful context, but AuroraPI
 | M2 | Complete | Geometry and mesh import workflow | Added bounded tagged 2D Gmsh v2 ASCII import, geometric/topological validation, cell and boundary metrics, and internal boundary labels without exposing solver code to file-format details; documented CAD/surface-to-mesh preprocessing. |
 | M3 | Complete | Scalable data and restart formats | Added VTK XML structured-grid field output with legacy/XML/both format selection and compatibility tests as the first scalable data-format step; later openPMD/HDF5 work remains planned. |
 | M4 | Complete | Runtime scaling backend | Added OpenMP/MPI/GPU-ready runtime policy interfaces with optional OpenMP static-schedule execution, serial default behavior, deterministic single-rank comparisons, and scaling smoke tests. |
-| M5 | Complete | Higher-fidelity physics | Added prescribed uniform-B Boris integration for 2D/3D electrostatic runs and tabulated elastic/excitation MCC for 1D plus imported 2D3V isotropic scattering, with CTest and CLI examples; self-consistent electromagnetic fields and reactive collision models remain later M5 extensions. |
+| M5 | Complete | Higher-fidelity physics | Added prescribed uniform-B Boris integration for 2D/3D electrostatic runs and tabulated collision models for 1D plus imported 2D3V isotropic elastic/excitation scattering and bounded ionization product creation, with CTest and CLI examples; self-consistent electromagnetic fields and broader reaction models remain later M5 extensions. |
 | M6 | Current baseline | Release engineering and operability | Added config_version=1 configuration compatibility checks, clearer failure diagnostics for unsupported config versions, CI matrix coverage, CPack TGZ packaging rules, installable CMake package metadata, an install/package smoke test, and documented performance envelopes guarded by CTest, release-artifact validation, and explicit example configs. |
 
 ### Immediate coding target
@@ -109,9 +109,10 @@ The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining
 1D BGK compatibility. Imported 2D3V adds isotropic stationary-heavy-neutral
-scattering plus required gas/provenance metadata. Ionization, charge exchange,
-thermal neutral motion, and curated measured material datasets remain future
-work.
+scattering, required gas/provenance metadata, and bounded electron-impact
+ionization with paired charged products. Charge exchange, thermal neutral
+motion, richer ionization kinematics, and curated measured material datasets
+remain future work.
 
 ## Historical implementation phases
 

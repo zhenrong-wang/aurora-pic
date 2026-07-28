@@ -24,7 +24,7 @@ struct SpeciesConfig {
 };
 
 enum class CollisionModelKind { BGK, NullCollision };
-enum class CollisionProcessKind { Elastic, Excitation };
+enum class CollisionProcessKind { Elastic, Excitation, Ionization };
 
 inline std::string to_string(CollisionModelKind model) {
     switch (model) {
@@ -38,6 +38,7 @@ inline std::string to_string(CollisionProcessKind process) {
     switch (process) {
         case CollisionProcessKind::Elastic: return "elastic";
         case CollisionProcessKind::Excitation: return "excitation";
+        case CollisionProcessKind::Ionization: return "ionization";
     }
     return "unknown";
 }
@@ -49,6 +50,8 @@ struct CollisionChannelConfig {
     double threshold_energy{0.0};
     double energy_scale{1.0};
     double cross_section_scale{1.0};
+    std::string secondary_species{};
+    std::string ion_species{};
 };
 
 struct CollisionConfig {
