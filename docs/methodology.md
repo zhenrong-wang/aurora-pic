@@ -37,6 +37,14 @@ while retaining a sampled thermal spread. Imported 2D quiet-start loading
 stratifies area-weighted cell selection and triangle coordinates, so all
 particles remain in the validated geometry.
 
+For imported meshes, `initialization_region` selects a named Gmsh
+dimension-two physical group. AuroraPIC builds a separate cumulative area
+distribution for every cell label and samples only triangles belonging to the
+requested label. This preserves area-uniform random and quiet-start loading
+within disconnected or non-rectangular physical regions. A named region cannot
+be combined with rectangular initialization bounds; unknown labels and
+zero-area selections fail before the run starts.
+
 `thermal_velocity` remains the backward-compatible isotropic Gaussian standard
 deviation. Optional `thermal_velocity_x`, `thermal_velocity_y`, and
 `thermal_velocity_z` values override it component by component; 1D1V accepts
@@ -45,12 +53,20 @@ velocities in the configured unit system, not temperatures. Converting a
 physical temperature requires the species mass and the documented unit
 contract.
 
+Every run emits `initialization.csv` after generated initialization or
+checkpoint restoration. Its versioned rows report the state source, species,
+loading model or `restart`, selected region where meaningful, live
+macro-particle count and weight, represented physical-particle number and
+charge, mean velocity, and realized component velocity standard deviations.
+This is an audit of the actually loaded numerical state rather than a copy of
+requested configuration values.
+
 The current imported quiet-start implementation intentionally rejects a
 rectangular `init_x_*`/`init_y_*` clip instead of silently degrading to random
 or biased rejection sampling. Random loading continues to support those
-bounds. Named imported cell-region loading, analytic density perturbations,
-physical-temperature inputs, initialization moment reports, and external
-openPMD/HDF5 particle states remain subsequent initial-condition milestones.
+bounds. Analytic density perturbations, physical-temperature inputs,
+charge/current acceptance gates, and external openPMD/HDF5 particle states
+remain subsequent initial-condition milestones.
 
 ## Field solvers
 

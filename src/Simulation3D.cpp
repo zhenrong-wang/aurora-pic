@@ -360,6 +360,16 @@ RunSummary3D Simulation3D::run() {
     else initialize();
 
     write_unit_metadata(cfg_.output_dir, cfg_.units, 3);
+    std::vector<InitializationSpeciesMoments> initialization_moments;
+    initialization_moments.reserve(species_.size());
+    for (const auto& species : species_) {
+        initialization_moments.push_back(
+            summarize_initialization(species));
+    }
+    write_initialization_report(
+        cfg_.output_dir / "initialization.csv", 3,
+        cfg_.restart_path.empty() ? "generated" : "restart",
+        initialization_moments);
     Diagnostics3D diag(
         cfg_.output_dir, species_, cfg_.units.permittivity());
     diag.write_header();

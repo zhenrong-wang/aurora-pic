@@ -111,10 +111,13 @@ It preserves historical random loading, adds deterministic stratified
 quiet-start positions and antithetic velocity pairs, and supports per-component
 thermal-velocity overrides for anisotropic 2D3V/3D3V distributions. A focused
 low-cost regression covers every runtime path, strict parsing, geometry
-containment, exact mean drift, and unsupported-combination rejection. The next
-slice is named imported cell-region selection plus analytic density profiles
-and initialization moment/charge/current reporting; portable external particle
-state follows with the planned openPMD/HDF5 data layer.
+containment, exact mean drift, and unsupported-combination rejection. The
+second slice adds area-uniform selection by named imported cell physical group
+and writes a versioned `initialization.csv` audit for generated and restarted
+states, including represented charge and realized velocity moments. Analytic
+density profiles and explicit charge/current acceptance gates are the next IC
+target; portable external particle state follows with the planned openPMD/HDF5
+data layer.
 The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining

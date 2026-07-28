@@ -29,6 +29,7 @@ struct UnstructuredSpecies2DConfig {
     double thermal_velocity{0.1};
     std::optional<Vec2> initialization_minimum;
     std::optional<Vec2> initialization_maximum;
+    std::string initialization_region;
     double drift_velocity_z{0.0};
     ParticleInitializationConfig initialization{};
 };
@@ -177,6 +178,10 @@ private:
         std::array<Vec2, 3> vertices{};
         double cumulative_area{0.0};
     };
+    struct RegionSamplingTriangle {
+        std::size_t sampling_triangle_index{0};
+        double cumulative_area{0.0};
+    };
     struct BoundarySourceRuntime {
         UnstructuredBoundarySource2DConfig config;
         std::size_t species_id{0};
@@ -231,6 +236,8 @@ private:
     std::vector<std::vector<UnstructuredParticleLocation2D>> particle_locations_;
     std::vector<BoundarySegment> boundary_segments_;
     std::vector<SamplingTriangle> sampling_triangles_;
+    std::map<std::string, std::vector<RegionSamplingTriangle>>
+        region_sampling_triangles_;
     std::vector<BoundarySourceRuntime> sources_;
     std::vector<SecondaryEmissionRuntime> emissions_;
     std::vector<std::optional<IonizationChannelRuntime>>

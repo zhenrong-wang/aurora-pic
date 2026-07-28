@@ -6,6 +6,7 @@
 #include "pic/Species.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/Species3D.hpp"
+#include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/UnstructuredSimulation2D.hpp"
 
@@ -57,6 +58,13 @@ double variance(const std::vector<double>& values, double center) {
         sum += delta * delta;
     }
     return sum / static_cast<double>(values.size());
+}
+
+std::string read_text(const std::filesystem::path& path) {
+    std::ifstream input(path);
+    return std::string(
+        std::istreambuf_iterator<char>(input),
+        std::istreambuf_iterator<char>());
 }
 
 } // namespace
@@ -154,6 +162,18 @@ int main() {
             require_near(
                 variance(z, config.drift_velocity_z), 0.0, 1e-30,
                 "2D per-axis zero thermal spread was not honored");
+            const auto moments =
+                pic::summarize_initialization(species);
+            require(
+                moments.macroparticles == config.particles,
+                "2D initialization report particle count is wrong");
+            require_near(
+                moments.mean_velocity_x, config.drift_velocity_x,
+                1e-15,
+                "2D initialization report mean velocity is wrong");
+            require_near(
+                moments.thermal_velocity_z, 0.0, 1e-15,
+                "2D initialization report thermal velocity is wrong");
         }
 
         {
@@ -226,10 +246,53 @@ int main() {
         }
 
         {
+            const auto mesh_path =
+                std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                "tests" / "fixtures" / "tagged_regions_v2.msh";
+            const auto config_path =
+                std::filesystem::path(
+                    "test_imported_region_config.cfg");
+            {
+                std::ofstream output(config_path);
+                output
+                    << "config_version = 1\n"
+                    << "dimension = 2\n"
+                    << "mesh = imported\n"
+                    << "mesh_file = " << mesh_path.string() << '\n'
+                    << "dt = 0.01\nsteps = 0\n"
+                    << "[boundary.inlet]\n"
+                    << "field = dirichlet\npotential = 0\n"
+                    << "particle = reflecting\n"
+                    << "[boundary.outlet]\n"
+                    << "field = neumann\nnormal_derivative = 0\n"
+                    << "particle = reflecting\n"
+                    << "[boundary.wall]\n"
+                    << "field = neumann\nnormal_derivative = 0\n"
+                    << "particle = reflecting\n"
+                    << "[boundary.electrode]\n"
+                    << "field = neumann\nnormal_derivative = 0\n"
+                    << "particle = reflecting\n"
+                    << "[species.quiet]\n"
+                    << "charge = 0\nmass = 1\nweight = 1\n"
+                    << "particles = 8\n"
+                    << "initialization_region = region_a\n"
+                    << "loading = quiet_start\n";
+            }
+            const auto parsed =
+                pic::load_unstructured_config_2d(config_path);
+            std::filesystem::remove(config_path);
+            require(
+                parsed.species.size() == 1 &&
+                    parsed.species.front().initialization_region ==
+                        "region_a",
+                "imported config did not parse initialization_region");
+        }
+
+        {
             pic::UnstructuredSimulation2DConfig config;
             config.mesh_path =
                 std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
-                "tests" / "fixtures" / "tagged_square_v2.msh";
+                "tests" / "fixtures" / "tagged_regions_v2.msh";
             config.dirichlet_potentials = {
                 {"electrode", 0.0},
                 {"inlet", 0.0},
@@ -250,6 +313,7 @@ int main() {
             species.drift_velocity_y = -0.25;
             species.initialization.loading =
                 pic::ParticleLoading::QuietStart;
+            species.initialization_region = "region_a";
             species.initialization.thermal_velocity_x = 0.2;
             species.initialization.thermal_velocity_y = 0.1;
             species.initialization.thermal_velocity_z = 0.0;
@@ -262,10 +326,17 @@ int main() {
             for (const auto& particle :
                  simulation.species().front().particles()) {
                 require(
-                    simulation.mesh()
-                        .locate_point(particle.position)
-                        .has_value(),
+                    simulation.mesh().locate_point(
+                        particle.position).has_value(),
                     "imported quiet-start particle lies outside geometry");
+                const auto location =
+                    simulation.mesh().locate_point(
+                        particle.position);
+                require(
+                    simulation.mesh().topology()
+                            .cell_by_id(location->cell_id).label ==
+                        species.initialization_region,
+                    "imported particle was loaded outside its named physical region");
                 x.push_back(particle.velocity.x);
                 y.push_back(particle.velocity.y);
             }
@@ -275,6 +346,13 @@ int main() {
             require_near(
                 mean(y), species.drift_velocity_y, 1e-15,
                 "imported quiet-start y drift is wrong");
+            const auto moments = pic::summarize_initialization(
+                simulation.species().front(),
+                species.initialization_region);
+            require(
+                moments.region == "region_a" &&
+                    moments.macroparticles == species.particles,
+                "imported initialization summary lost its physical region");
 
             species.initialization_minimum = pic::Vec2{0.1, 0.1};
             species.initialization_maximum = pic::Vec2{0.9, 0.9};
@@ -284,6 +362,16 @@ int main() {
                     pic::UnstructuredSimulation2D invalid(config);
                 },
                 "bounded imported quiet-start loading was silently accepted");
+
+            species.initialization_minimum.reset();
+            species.initialization_maximum.reset();
+            species.initialization_region = "missing_region";
+            config.species = {species};
+            require_throws(
+                [&] {
+                    pic::UnstructuredSimulation2D invalid(config);
+                },
+                "unknown imported initialization region was accepted");
         }
 
         {
@@ -295,6 +383,81 @@ int main() {
                         invalid, 3, 0.1, "test species");
                 },
                 "unsupported initialization version was accepted");
+        }
+
+        {
+            pic::SpeciesConfig config;
+            config.particles = 2;
+            config.drift_velocity = 1.0e12;
+            config.thermal_velocity = 0.0;
+            pic::Species species(config);
+            species.particles() = {
+                pic::Particle{0.25, 1.0e12 - 1.0, true},
+                pic::Particle{0.75, 1.0e12 + 1.0, true},
+            };
+            const auto moments =
+                pic::summarize_initialization(species);
+            require_near(
+                moments.mean_velocity_x, 1.0e12, 1e-3,
+                "stable initialization mean is wrong");
+            require_near(
+                moments.thermal_velocity_x, 1.0, 1e-12,
+                "initialization report lost a small thermal spread on a large drift");
+        }
+
+        {
+            const auto output_directory =
+                std::filesystem::path(
+                    "test_output_initialization_report");
+            std::filesystem::remove_all(output_directory);
+            pic::Config config;
+            config.steps = 0;
+            config.output_interval = 1;
+            config.output_dir = output_directory.string();
+            config.checkpoint_output = true;
+            config.checkpoint_interval = 1;
+            config.species = {pic::SpeciesConfig{}};
+            config.species.front().particles = 4;
+            config.species.front().weight = 2.0;
+            config.species.front().charge = -3.0;
+            config.species.front().thermal_velocity = 0.0;
+            config.species.front().drift_velocity = 0.5;
+            pic::Simulation simulation(config);
+            (void)simulation.run();
+            const auto report =
+                output_directory / "initialization.csv";
+            require(
+                std::filesystem::exists(report),
+                "simulation run did not write initialization.csv");
+            const std::string contents = read_text(report);
+            require(
+                contents.find(
+                    "initialization_version,state_source,dimension") !=
+                    std::string::npos &&
+                    contents.find("\"generated\",1,\"electrons\"") !=
+                    std::string::npos &&
+                    contents.find(",-24,") != std::string::npos,
+                "initialization.csv is missing schema or represented charge");
+
+            pic::Config restart_config = config;
+            const auto restart_output =
+                std::filesystem::path(
+                    "test_output_initialization_restart_report");
+            std::filesystem::remove_all(restart_output);
+            restart_config.output_dir = restart_output.string();
+            restart_config.restart_path =
+                (output_directory / "checkpoint_0.apc").string();
+            pic::Simulation restarted(restart_config);
+            (void)restarted.run();
+            const std::string restart_contents = read_text(
+                restart_output / "initialization.csv");
+            require(
+                restart_contents.find(
+                    "\"restart\",1,\"electrons\",\"restart\",\"\"") !=
+                    std::string::npos,
+                "restart initialization report did not identify restored state");
+            std::filesystem::remove_all(output_directory);
+            std::filesystem::remove_all(restart_output);
         }
 
         std::cout << "Initialization tests passed\n";

@@ -381,6 +381,19 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
                 throw std::overflow_error("unstructured sampling area overflow");
             }
             sampling_triangles_.push_back({{first, second, third}, cumulative_area});
+            auto& region_triangles =
+                region_sampling_triangles_[cell.label];
+            const double region_area =
+                (region_triangles.empty()
+                     ? 0.0
+                     : region_triangles.back().cumulative_area) +
+                area;
+            if (!std::isfinite(region_area)) {
+                throw std::overflow_error(
+                    "unstructured region sampling area overflow");
+            }
+            region_triangles.push_back(
+                {sampling_triangles_.size() - 1, region_area});
         };
         append_triangle(position(0), position(1), position(2));
         if (cell.shape == ImportedCellShape2D::Quadrilateral) {
@@ -404,6 +417,18 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
             species_config.initialization_maximum.has_value()) {
             throw std::invalid_argument(
                 "unstructured species initialization bounds require both minimum and maximum");
+        }
+        if (!species_config.initialization_region.empty()) {
+            if (species_config.initialization_minimum) {
+                throw std::invalid_argument(
+                    "unstructured species initialization_region cannot be combined with rectangular initialization bounds");
+            }
+            if (!region_sampling_triangles_.contains(
+                    species_config.initialization_region)) {
+                throw std::invalid_argument(
+                    "unstructured species initialization region not found in imported mesh: " +
+                    species_config.initialization_region);
+            }
         }
         if (species_config.initialization_minimum) {
             const Vec2 minimum = *species_config.initialization_minimum;
@@ -680,9 +705,23 @@ Vec2 UnstructuredSimulation2D::sample_position(
     const UnstructuredSpecies2DConfig& config,
     std::size_t particle_index,
     std::size_t particle_count) {
-    if (sampling_triangles_.empty()) throw std::runtime_error("unstructured domain has no sampling area");
+    const bool uses_region =
+        !config.initialization_region.empty();
+    const std::vector<RegionSamplingTriangle>* region_triangles =
+        uses_region
+            ? &region_sampling_triangles_.at(
+                  config.initialization_region)
+            : nullptr;
+    if (sampling_triangles_.empty() ||
+        (region_triangles && region_triangles->empty())) {
+        throw std::runtime_error(
+            "unstructured initialization region has no sampling area");
+    }
     std::uniform_real_distribution<double> unit(0.0, 1.0);
-    const double total_area = sampling_triangles_.back().cumulative_area;
+    const double total_area =
+        region_triangles
+            ? region_triangles->back().cumulative_area
+            : sampling_triangles_.back().cumulative_area;
     for (std::size_t attempt = 0; attempt < 100000; ++attempt) {
         const bool quiet =
             config.initialization.loading == ParticleLoading::QuietStart;
@@ -692,13 +731,34 @@ Vec2 UnstructuredSimulation2D::sample_position(
                        particle_index, particle_count, 0)
                  : unit(rng_)) *
             total_area;
-        const auto triangle = std::lower_bound(
-            sampling_triangles_.begin(), sampling_triangles_.end(), target,
-            [](const SamplingTriangle& candidate, double value) {
-                return candidate.cumulative_area < value;
-            });
-        const auto selected =
-            triangle == sampling_triangles_.end() ? std::prev(sampling_triangles_.end()) : triangle;
+        const SamplingTriangle* selected = nullptr;
+        if (region_triangles) {
+            const auto triangle = std::lower_bound(
+                region_triangles->begin(),
+                region_triangles->end(), target,
+                [](const RegionSamplingTriangle& candidate,
+                   double value) {
+                    return candidate.cumulative_area < value;
+                });
+            const auto entry =
+                triangle == region_triangles->end()
+                    ? std::prev(region_triangles->end())
+                    : triangle;
+            selected = &sampling_triangles_[
+                entry->sampling_triangle_index];
+        } else {
+            const auto triangle = std::lower_bound(
+                sampling_triangles_.begin(),
+                sampling_triangles_.end(), target,
+                [](const SamplingTriangle& candidate,
+                   double value) {
+                    return candidate.cumulative_area < value;
+                });
+            selected =
+                triangle == sampling_triangles_.end()
+                    ? &sampling_triangles_.back()
+                    : &*triangle;
+        }
         const double root = std::sqrt(
             quiet
                 ? quiet_unit_coordinate(
@@ -2171,6 +2231,22 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     }
     std::filesystem::create_directories(config_.output_dir);
     write_unit_metadata(config_.output_dir, config_.units, 2);
+    std::vector<InitializationSpeciesMoments> initialization_moments;
+    initialization_moments.reserve(species_.size());
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        initialization_moments.push_back(
+            summarize_initialization(
+                species_[species_id],
+                config_.restart_path.empty()
+                    ? species_configs_[species_id]
+                          .initialization_region
+                    : std::string{}));
+    }
+    write_initialization_report(
+        config_.output_dir / "initialization.csv", 2,
+        config_.restart_path.empty() ? "generated" : "restart",
+        initialization_moments);
     std::ofstream diagnostics(config_.output_dir / "scalars.csv");
     if (!diagnostics) throw std::runtime_error("cannot open unstructured diagnostics output");
     write_diagnostics_header(diagnostics);

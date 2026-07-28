@@ -1,12 +1,17 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <optional>
 #include <random>
 #include <string>
 #include <vector>
 
 namespace pic {
+
+class Species;
+class Species2D;
+class Species3D;
 
 enum class ParticleLoading {
     Random,
@@ -19,6 +24,23 @@ struct ParticleInitializationConfig {
     std::optional<double> thermal_velocity_x{};
     std::optional<double> thermal_velocity_y{};
     std::optional<double> thermal_velocity_z{};
+};
+
+struct InitializationSpeciesMoments {
+    std::size_t initialization_version{1};
+    std::string species;
+    std::string loading;
+    std::string region;
+    std::size_t macroparticles{0};
+    double macro_weight{0.0};
+    double physical_particles{0.0};
+    double represented_charge{0.0};
+    double mean_velocity_x{0.0};
+    double mean_velocity_y{0.0};
+    double mean_velocity_z{0.0};
+    double thermal_velocity_x{0.0};
+    double thermal_velocity_y{0.0};
+    double thermal_velocity_z{0.0};
 };
 
 std::string to_string(ParticleLoading loading);
@@ -46,5 +68,18 @@ std::vector<double> initialize_velocity_component(
     double thermal_velocity,
     ParticleLoading loading,
     std::mt19937_64& rng);
+
+InitializationSpeciesMoments summarize_initialization(
+    const Species& species, const std::string& region = {});
+InitializationSpeciesMoments summarize_initialization(
+    const Species2D& species, const std::string& region = {});
+InitializationSpeciesMoments summarize_initialization(
+    const Species3D& species, const std::string& region = {});
+
+void write_initialization_report(
+    const std::filesystem::path& path,
+    std::size_t spatial_dimension,
+    const std::string& state_source,
+    const std::vector<InitializationSpeciesMoments>& moments);
 
 } // namespace pic
