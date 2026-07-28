@@ -1,5 +1,6 @@
 #include "pic/Simulation.hpp"
 #include "pic/Convergence.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Units.hpp"
@@ -147,6 +148,11 @@ Simulation::Simulation(Config cfg)
       rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     validate_runtime_config(cfg_);
+    if (!cfg_.restart_path.empty() &&
+        !cfg_.initial_state_path.empty()) {
+        throw std::invalid_argument(
+            "restart_path and initial_state_path are mutually exclusive");
+    }
     validate_initialization_acceptance(
         cfg_.initialization_acceptance,
         "1D initialization acceptance config");
@@ -191,7 +197,51 @@ void Simulation::deposit_and_solve() {
 void Simulation::initialize() {
     time_ = 0.0;
     step_ = 0;
-    for (auto& sp : species_) sp.initialize(grid_, rng_);
+    if (cfg_.initial_state_path.empty()) {
+        for (auto& sp : species_) sp.initialize(grid_, rng_);
+    } else {
+        std::vector<ExternalSpeciesExpectation> expected;
+        expected.reserve(species_.size());
+        for (const auto& species : species_) {
+            expected.push_back({
+                species.name(),
+                species.config().particles});
+        }
+        const auto state =
+            load_validated_external_particle_state(
+                cfg_.initial_state_path, 1,
+                cfg_.units.system, expected,
+                "1D simulation");
+        for (auto& species : species_) {
+            const auto& records =
+                state.species.at(species.name());
+            auto& particles = species.particles();
+            particles.resize(records.size());
+            for (std::size_t index = 0;
+                 index < records.size(); ++index) {
+                const auto& record = records[index];
+                const double minimum =
+                    species.config().init_x_min;
+                const double maximum =
+                    species.config().init_x_max < 0.0
+                        ? grid_.length()
+                        : species.config().init_x_max;
+                if (record.position.x < minimum ||
+                    record.position.x > maximum ||
+                    (grid_.boundary() == Boundary::Periodic &&
+                     record.position.x == grid_.length())) {
+                    throw std::runtime_error(
+                        "external particle for species '" +
+                        species.name() +
+                        "' lies outside its 1D initialization interval");
+                }
+                particles[index].x = record.position.x;
+                particles[index].v = record.velocity.x;
+                particles[index].v_half = record.velocity.x;
+                particles[index].alive = true;
+            }
+        }
+    }
     deposit_and_solve();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
@@ -454,7 +504,12 @@ RunSummary Simulation::run() {
     write_initialization_report(
         std::filesystem::path(cfg_.output_dir) /
             "initialization.csv",
-        1, cfg_.restart_path.empty() ? "generated" : "restart",
+        1,
+        !cfg_.restart_path.empty()
+            ? "restart"
+            : (!cfg_.initial_state_path.empty()
+                   ? "external"
+                   : "generated"),
         initialization_moments);
     const auto initialization_acceptance =
         assess_initialization_acceptance(

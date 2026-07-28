@@ -3,11 +3,13 @@
 #include "pic/Initialization.hpp"
 #include "pic/Mesh2D.hpp"
 #include "pic/Mesh3D.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Species.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/Species3D.hpp"
 #include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
+#include "pic/Simulation3D.hpp"
 #include "pic/UnstructuredSimulation2D.hpp"
 
 #include <algorithm>
@@ -66,6 +68,25 @@ std::string read_text(const std::filesystem::path& path) {
     return std::string(
         std::istreambuf_iterator<char>(input),
         std::istreambuf_iterator<char>());
+}
+
+void write_particle_state(
+    const std::filesystem::path& path,
+    std::size_t dimension,
+    std::size_t particle_count,
+    const std::string& records,
+    const std::string& units = "normalized") {
+    std::ofstream output(path);
+    output
+        << "AuroraPIC-particle-state-v1\n"
+        << "dimension " << dimension << '\n'
+        << "units " << units << '\n'
+        << "weighting species_constant\n"
+        << "velocity_staggering time_centered\n"
+        << "particle_count " << particle_count << '\n'
+        << "records\n"
+        << records
+        << "end\n";
 }
 
 } // namespace
@@ -333,6 +354,7 @@ int main() {
                     << "nx = 5\nny = 5\n"
                     << "length_x = 1\nlength_y = 1\n"
                     << "dt = 0.01\n"
+                    << "initial_state_path = initial_particles.aps\n"
                     << "initialization_max_relative_charge_imbalance = 0.01\n"
                     << "initialization_max_relative_current_imbalance = 0.02\n"
                     << "initialization_max_relative_pair_imbalance = 0.03\n"
@@ -379,7 +401,9 @@ int main() {
                     config.initialization_acceptance.charge_pairs.size() ==
                         1 &&
                     config.initialization_acceptance.charge_pairs.front()
-                            .second_species == "ions",
+                            .second_species == "ions" &&
+                    config.initial_state_path.filename() ==
+                        "initial_particles.aps",
                 "2D config did not parse initialization acceptance gates");
         }
 
@@ -398,6 +422,7 @@ int main() {
                     << "mesh = imported\n"
                     << "mesh_file = " << mesh_path.string() << '\n'
                     << "dt = 0.01\nsteps = 0\n"
+                    << "initial_state_path = imported_particles.aps\n"
                     << "initialization_max_relative_pair_imbalance = 0.05\n"
                     << "initialization_charge_pairs = quiet:ions\n"
                     << "[boundary.inlet]\n"
@@ -437,7 +462,9 @@ int main() {
                             .density_profile ==
                         pic::DensityProfileKind::Sinusoidal &&
                     parsed.initialization_acceptance.charge_pairs.size() ==
-                        1,
+                        1 &&
+                    parsed.initial_state_path.filename() ==
+                        "imported_particles.aps",
                 "imported config did not parse initialization_region");
         }
 
@@ -593,6 +620,211 @@ int main() {
             require_throws(
                 [&] { species.initialize(grid, rng); },
                 "exhausted density-profile work budget did not fail");
+        }
+
+        {
+            const auto state_path =
+                std::filesystem::path(
+                    "test_external_particle_state.aps");
+            write_particle_state(
+                state_path, 1, 2,
+                "particle electrons 0.25 0 0 1.5 0 0\n"
+                "particle electrons 0.75 0 0 -0.5 0 0\n");
+            const auto state =
+                pic::load_external_particle_state(
+                    state_path, 2);
+            require(
+                state.spatial_dimension == 1 &&
+                    state.particle_count == 2 &&
+                    state.species.at("electrons").size() == 2,
+                "external particle-state loader lost metadata or records");
+            pic::validate_external_particle_state(
+                state, 1, pic::UnitSystem::Normalized,
+                {{"electrons", 2}}, "test");
+            require_throws(
+                [&] {
+                    (void)pic::load_external_particle_state(
+                        state_path, 1);
+                },
+                "external particle-state count limit was ignored");
+            require_throws(
+                [&] {
+                    pic::validate_external_particle_state(
+                        state, 2,
+                        pic::UnitSystem::Normalized,
+                        {{"electrons", 2}}, "test");
+                },
+                "external particle-state dimension mismatch was accepted");
+            require_throws(
+                [&] {
+                    pic::validate_external_particle_state(
+                        state, 1, pic::UnitSystem::SI,
+                        {{"electrons", 2}}, "test");
+                },
+                "external particle-state unit mismatch was accepted");
+            require_throws(
+                [&] {
+                    pic::validate_external_particle_state(
+                        state, 1,
+                        pic::UnitSystem::Normalized,
+                        {{"ions", 2}}, "test");
+                },
+                "external particle-state species mismatch was accepted");
+
+            const auto output_directory =
+                std::filesystem::path(
+                    "test_output_external_state_1d");
+            std::filesystem::remove_all(output_directory);
+            pic::Config config;
+            config.steps = 0;
+            config.output_dir = output_directory.string();
+            config.initial_state_path = state_path;
+            config.species = {pic::SpeciesConfig{}};
+            config.species.front().particles = 2;
+            config.species.front().thermal_velocity = 0.0;
+            pic::Simulation simulation(config);
+            (void)simulation.run();
+            const auto& particles =
+                simulation.species().front().particles();
+            require_near(
+                particles[0].x, 0.25, 1e-15,
+                "1D external position changed");
+            require_near(
+                particles[0].v, 1.5, 1e-15,
+                "1D external velocity changed");
+            require(
+                read_text(
+                    output_directory /
+                    "initialization.csv")
+                        .find(
+                            "\"external\",1,\"electrons\",\"external\",\"external\"") !=
+                    std::string::npos,
+                "1D external state was not identified in its audit");
+            std::filesystem::remove_all(output_directory);
+            pic::Config bounded_config = config;
+            bounded_config.output_dir =
+                "test_output_external_state_bounds";
+            bounded_config.species.front().init_x_min =
+                0.3;
+            std::filesystem::remove_all(
+                bounded_config.output_dir);
+            pic::Simulation bounded_simulation(
+                bounded_config);
+            require_throws(
+                [&] {
+                    (void)bounded_simulation.run();
+                },
+                "external state escaped its structured initialization interval");
+            std::filesystem::remove_all(
+                bounded_config.output_dir);
+
+            write_particle_state(
+                state_path, 2, 2,
+                "particle electrons 0.2 0.3 0 1 2 3\n"
+                "particle electrons 0.8 0.7 0 -1 -2 -3\n");
+            pic::Simulation2DConfig config_2d;
+            pic::Species2DConfig species_2d;
+            species_2d.particles = 2;
+            species_2d.thermal_velocity = 0.0;
+            config_2d.species = {species_2d};
+            config_2d.initial_state_path = state_path;
+            pic::Simulation2D simulation_2d(config_2d);
+            simulation_2d.initialize();
+            require_near(
+                simulation_2d.species().front()
+                    .particles()[0].position.y,
+                0.3, 1e-15,
+                "2D external position changed");
+            require_near(
+                simulation_2d.species().front()
+                    .particles()[0].velocity_z,
+                3.0, 1e-15,
+                "2D3V external velocity changed");
+
+            write_particle_state(
+                state_path, 3, 1,
+                "particle electrons 0.2 0.3 0.4 1 2 3\n");
+            pic::Simulation3DConfig config_3d;
+            pic::Species3DConfig species_3d;
+            species_3d.particles = 1;
+            species_3d.thermal_velocity = 0.0;
+            config_3d.species = {species_3d};
+            config_3d.initial_state_path = state_path;
+            pic::Simulation3D simulation_3d(config_3d);
+            simulation_3d.initialize();
+            require_near(
+                simulation_3d.species().front()
+                    .particles()[0].position.z,
+                0.4, 1e-15,
+                "3D external position changed");
+            require_near(
+                simulation_3d.species().front()
+                    .particles()[0].velocity.z,
+                3.0, 1e-15,
+                "3D external velocity changed");
+
+            write_particle_state(
+                state_path, 2, 1,
+                "particle imported 0.1 0.1 0 0.4 -0.2 0.3\n");
+            pic::UnstructuredSimulation2DConfig imported_config;
+            imported_config.mesh_path =
+                std::filesystem::path(
+                    AURORA_TEST_SOURCE_DIR) /
+                "tests" / "fixtures" /
+                "tagged_regions_v2.msh";
+            imported_config.dirichlet_potentials = {
+                {"electrode", 0.0},
+                {"inlet", 0.0},
+                {"outlet", 0.0},
+                {"wall", 0.0},
+            };
+            imported_config.particle_boundaries = {
+                {"electrode",
+                 pic::ParticleBoundary::Reflecting},
+                {"inlet",
+                 pic::ParticleBoundary::Reflecting},
+                {"outlet",
+                 pic::ParticleBoundary::Reflecting},
+                {"wall",
+                 pic::ParticleBoundary::Reflecting},
+            };
+            pic::UnstructuredSpecies2DConfig imported_species;
+            imported_species.name = "imported";
+            imported_species.charge = 0.0;
+            imported_species.particles = 1;
+            imported_species.initialization_region =
+                "region_a";
+            imported_config.species = {imported_species};
+            imported_config.initial_state_path =
+                state_path;
+            pic::UnstructuredSimulation2D imported(
+                imported_config);
+            imported.initialize();
+            require_near(
+                imported.species().front()
+                    .particles()[0].velocity_z,
+                0.3, 1e-15,
+                "imported-geometry external velocity changed");
+
+            write_particle_state(
+                state_path, 1, 1,
+                "particle electrons 0.5 0.1 0 0 0 0\n");
+            require_throws(
+                [&] {
+                    (void)pic::load_external_particle_state(
+                        state_path, 1);
+                },
+                "1D external state accepted an inactive component");
+            std::filesystem::remove(state_path);
+
+            pic::Config conflicting;
+            conflicting.restart_path = "restart.apc";
+            conflicting.initial_state_path = "initial.aps";
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(conflicting);
+                },
+                "restart and external initial state were accepted together");
         }
 
         {

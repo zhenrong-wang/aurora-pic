@@ -1,0 +1,12 @@
+AuroraPIC-particle-state-v1
+dimension 1
+units normalized
+weighting species_constant
+velocity_staggering time_centered
+particle_count 4
+records
+particle electrons 0.15 0 0 1 0 0
+particle electrons 0.65 0 0 0 0 0
+particle ions 0.35 0 0 0.5 0 0
+particle ions 0.85 0 0 0.5 0 0
+end

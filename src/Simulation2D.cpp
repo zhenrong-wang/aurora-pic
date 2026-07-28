@@ -1,5 +1,6 @@
 #include "pic/Simulation2D.hpp"
 #include "pic/Convergence.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Units.hpp"
@@ -159,6 +160,11 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
       solver_(cfg_.units.permittivity()),
       rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
+    if (!cfg_.restart_path.empty() &&
+        !cfg_.initial_state_path.empty()) {
+        throw std::invalid_argument(
+            "2D restart_path and initial_state_path are mutually exclusive");
+    }
     validate_initialization_acceptance(
         cfg_.initialization_acceptance,
         "2D initialization acceptance config");
@@ -194,7 +200,72 @@ void Simulation2D::initialize() {
     time_ = 0.0;
     step_ = 0;
     boundary_losses_ = {};
-    for (auto& sp : species_) sp.initialize(mesh_, rng_);
+    if (cfg_.initial_state_path.empty()) {
+        for (auto& sp : species_) sp.initialize(mesh_, rng_);
+    } else {
+        std::vector<ExternalSpeciesExpectation> expected;
+        expected.reserve(species_.size());
+        for (const auto& species : species_) {
+            expected.push_back({
+                species.name(),
+                species.config().particles});
+        }
+        const auto state =
+            load_validated_external_particle_state(
+                cfg_.initial_state_path, 2,
+                cfg_.units.system, expected,
+                "2D simulation");
+        for (auto& species : species_) {
+            const auto& records =
+                state.species.at(species.name());
+            auto& particles = species.particles();
+            particles.resize(records.size());
+            for (std::size_t index = 0;
+                 index < records.size(); ++index) {
+                const auto& record = records[index];
+                const auto& species_config =
+                    species.config();
+                const double maximum_x =
+                    species_config.init_x_max < 0.0
+                        ? mesh_.length_x()
+                        : species_config.init_x_max;
+                const double maximum_y =
+                    species_config.init_y_max < 0.0
+                        ? mesh_.length_y()
+                        : species_config.init_y_max;
+                const bool outside =
+                    record.position.x <
+                        species_config.init_x_min ||
+                    record.position.x > maximum_x ||
+                    record.position.y <
+                        species_config.init_y_min ||
+                    record.position.y > maximum_y ||
+                    (mesh_.boundary() == Boundary::Periodic &&
+                     (record.position.x == mesh_.length_x() ||
+                      record.position.y == mesh_.length_y()));
+                if (outside) {
+                    throw std::runtime_error(
+                        "external particle for species '" +
+                        species.name() +
+                        "' lies outside the 2D domain");
+                }
+                auto& particle = particles[index];
+                particle.position = {
+                    record.position.x,
+                    record.position.y};
+                particle.velocity = {
+                    record.velocity.x,
+                    record.velocity.y};
+                particle.velocity_z =
+                    record.velocity.z;
+                particle.velocity_half =
+                    particle.velocity;
+                particle.velocity_half_z =
+                    particle.velocity_z;
+                particle.alive = true;
+            }
+        }
+    }
     deposit_and_solve();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
@@ -389,7 +460,11 @@ RunSummary2D Simulation2D::run() {
     }
     write_initialization_report(
         cfg_.output_dir / "initialization.csv", 2,
-        cfg_.restart_path.empty() ? "generated" : "restart",
+        !cfg_.restart_path.empty()
+            ? "restart"
+            : (!cfg_.initial_state_path.empty()
+                   ? "external"
+                   : "generated"),
         initialization_moments);
     const auto initialization_acceptance =
         assess_initialization_acceptance(

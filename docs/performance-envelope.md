@@ -8,6 +8,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 
 | Example | Dimension | Mesh | Particles | Steps | Main coverage |
 | --- | ---: | ---: | ---: | ---: | --- |
+| `examples/external_state_1d.cfg` | 1D1V | 32 cells | 4 | 2 | Versioned external `.aps` state, relative-path resolution, rebuilt half step, and charge/current/pair acceptance gates. |
 | `examples/two_stream.cfg` | 1D1V | 128 cells | 12,000 | 300 | Periodic electrostatic transient with multiple species. |
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
 | `examples/mcc_relaxation.cfg` | 1D1V | 32 cells | 1,000 | 50 | Synthetic tabulated elastic/excitation null-collision MCC with channel diagnostics. |

@@ -78,7 +78,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "output_interval", "output_dir", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride",
         "particle_sample_count", "checkpoint_output", "checkpoint_interval",
-        "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads",
+        "checkpoint_path", "restart_path", "initial_state_path",
+        "runtime_backend", "runtime_threads",
         "poisson_relative_tolerance", "poisson_absolute_tolerance",
         "poisson_max_iterations",
         "initialization_max_relative_charge_imbalance",
@@ -434,6 +435,20 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
     }
     if (global.contains("restart_path")) {
         result.restart_path = global.at("restart_path");
+    }
+    if (global.contains("initial_state_path")) {
+        result.initial_state_path =
+            global.at("initial_state_path");
+        if (result.initial_state_path.is_relative()) {
+            result.initial_state_path =
+                path.parent_path() /
+                result.initial_state_path;
+        }
+    }
+    if (!result.restart_path.empty() &&
+        !result.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "unstructured restart_path and initial_state_path are mutually exclusive");
     }
     result.poisson.relative_tolerance = number<double>(
         global, "poisson_relative_tolerance", result.poisson.relative_tolerance);

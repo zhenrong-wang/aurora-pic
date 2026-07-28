@@ -1,6 +1,7 @@
 #include "pic/UnstructuredSimulation2D.hpp"
 
 #include "pic/Convergence.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Pusher.hpp"
 #include "pic/Units.hpp"
 #include "pic/VTKWriter.hpp"
@@ -296,6 +297,11 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
     : config_(std::move(config)),
       mesh_(load_configured_mesh(config_.mesh_path)),
       rng_(config_.seed) {
+    if (!config_.restart_path.empty() &&
+        !config_.initial_state_path.empty()) {
+        throw std::invalid_argument(
+            "unstructured restart_path and initial_state_path are mutually exclusive");
+    }
     validate_initialization_acceptance(
         config_.initialization_acceptance,
         "unstructured initialization acceptance config");
@@ -1000,12 +1006,86 @@ void UnstructuredSimulation2D::initialize() {
             flux = {};
         }
     }
+    std::optional<ExternalParticleState> external_state;
+    if (!config_.initial_state_path.empty()) {
+        std::vector<ExternalSpeciesExpectation> expected;
+        expected.reserve(species_.size());
+        for (const auto& species : species_) {
+            expected.push_back({
+                species.name(),
+                species.config().particles});
+        }
+        external_state =
+            load_validated_external_particle_state(
+                config_.initial_state_path, 2,
+                config_.units.system, expected,
+                "unstructured 2D simulation");
+    }
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         auto& particles = species_[species_id].particles();
         auto& locations = particle_locations_[species_id];
         const auto& species_config = species_configs_[species_id];
         particles.assign(species_config.particles, Particle2D{});
         locations.assign(species_config.particles, UnstructuredParticleLocation2D{});
+        if (external_state) {
+            const auto& records =
+                external_state->species.at(
+                    species_config.name);
+            for (std::size_t particle_index = 0;
+                 particle_index < records.size();
+                 ++particle_index) {
+                const auto& record = records[particle_index];
+                const Vec2 position{
+                    record.position.x,
+                    record.position.y};
+                const auto location =
+                    mesh_.locate_point(position);
+                if (!location) {
+                    throw std::runtime_error(
+                        "external particle for species '" +
+                        species_config.name +
+                        "' lies outside the imported mesh");
+                }
+                if (species_config.initialization_minimum) {
+                    const Vec2 minimum =
+                        *species_config.initialization_minimum;
+                    const Vec2 maximum =
+                        *species_config.initialization_maximum;
+                    if (position.x < minimum.x ||
+                        position.x > maximum.x ||
+                        position.y < minimum.y ||
+                        position.y > maximum.y) {
+                        throw std::runtime_error(
+                            "external particle for species '" +
+                            species_config.name +
+                            "' lies outside its configured initialization bounds");
+                    }
+                }
+                if (!species_config.initialization_region.empty() &&
+                    mesh_.topology()
+                            .cell_by_id(location->cell_id)
+                            .label !=
+                        species_config.initialization_region) {
+                    throw std::runtime_error(
+                        "external particle for species '" +
+                        species_config.name +
+                        "' lies outside its configured initialization region");
+                }
+                auto& particle = particles[particle_index];
+                particle.position = position;
+                particle.velocity = {
+                    record.velocity.x,
+                    record.velocity.y};
+                particle.velocity_z =
+                    record.velocity.z;
+                particle.velocity_half =
+                    particle.velocity;
+                particle.velocity_half_z =
+                    particle.velocity_z;
+                particle.alive = true;
+            }
+            continue;
+        }
         std::size_t profile_attempts = 0;
         const double thermal_x = resolved_thermal_velocity(
             species_config.initialization, 0,
@@ -2324,7 +2404,11 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     }
     write_initialization_report(
         config_.output_dir / "initialization.csv", 2,
-        config_.restart_path.empty() ? "generated" : "restart",
+        !config_.restart_path.empty()
+            ? "restart"
+            : (!config_.initial_state_path.empty()
+                   ? "external"
+                   : "generated"),
         initialization_moments);
     const auto initialization_acceptance =
         assess_initialization_acceptance(

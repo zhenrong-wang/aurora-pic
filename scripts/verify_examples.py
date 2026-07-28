@@ -46,7 +46,7 @@ def rewrite_output_dir(config_path: Path, temp_root: Path, output_name: str) -> 
     if not replaced:
         rewritten.append(f"output_dir = {output_dir.as_posix()}")
     copied_config.write_text("\n".join(rewritten) + "\n", encoding="utf-8")
-    for pattern in ("*.msh", "*.dat", "*.gas"):
+    for pattern in ("*.msh", "*.dat", "*.gas", "*.aps"):
         for support_path in EXAMPLES.glob(pattern):
             shutil.copy2(support_path, temp_root / support_path.name)
     return copied_config, output_dir
@@ -232,6 +232,27 @@ def check_two_stream(output_dir: Path) -> None:
     require_step(rows, 300, output_dir / "scalars.csv")
     require_csv(output_dir / "fields_0.csv", expected_header=["x", "rho", "phi", "E"], min_rows=128)
     require_csv(output_dir / "fields_300.csv", expected_header=["x", "rho", "phi", "E"], min_rows=128)
+
+
+def check_external_state_1d(output_dir: Path) -> None:
+    _, rows = require_csv(
+        output_dir / "scalars.csv",
+        expected_header=[
+            "step", "time", "kinetic_energy", "field_energy",
+            "total_energy", "charge_l1", "live_particles",
+        ],
+        min_rows=3,
+    )
+    require_step(rows, 2, output_dir / "scalars.csv")
+    header, initialization_rows = read_csv(
+        output_dir / "initialization.csv")
+    source_index = header.index("state_source")
+    require(
+        initialization_rows and
+        all(row[source_index] == "external"
+            for row in initialization_rows),
+        "external-state example initialization source is not external",
+    )
 
 
 def check_sheath_steady(output_dir: Path) -> None:
@@ -563,6 +584,7 @@ def check_biased_probe_2d(output_dir: Path) -> None:
 
 def run_smokes(cli: Path, temp_root: Path) -> None:
     checks = [
+        ("external_state_1d.cfg", "external_state_1d", check_external_state_1d),
         ("two_stream.cfg", "two_stream", check_two_stream),
         ("sheath_steady.cfg", "sheath_steady", check_sheath_steady),
         ("mcc_relaxation.cfg", "mcc_relaxation", check_mcc_relaxation),

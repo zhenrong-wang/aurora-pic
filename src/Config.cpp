@@ -39,6 +39,14 @@ bool starts_with(const std::string& s, const std::string& prefix) {
     return s.rfind(prefix, 0) == 0;
 }
 
+std::filesystem::path resolved_input_path(
+    const std::filesystem::path& config_path,
+    const std::string& value) {
+    std::filesystem::path result(value);
+    if (result.is_absolute()) return result;
+    return config_path.parent_path() / result;
+}
+
 void ensure_key_allowed(const std::unordered_set<std::string>& allowed,
                         const std::string& key,
                         const std::string& section,
@@ -337,6 +345,11 @@ void require_species_scale_source(const KeyValue& block, const std::string& spec
 
 void validate_config(const Config& cfg) {
     (void)cfg.units.permittivity();
+    if (!cfg.restart_path.empty() &&
+        !cfg.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "restart_path and initial_state_path are mutually exclusive");
+    }
     if (cfg.nx < 3) throw std::runtime_error("nx must be at least 3");
     validate_positive(cfg.length, "length");
     validate_positive(cfg.dt, "dt");
@@ -470,6 +483,11 @@ void validate_boundary_side(const BoundarySide2D& side, const std::string& name)
 
 void validate_config_2d(const Simulation2DConfig& cfg) {
     (void)cfg.units.permittivity();
+    if (!cfg.restart_path.empty() &&
+        !cfg.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "2D restart_path and initial_state_path are mutually exclusive");
+    }
     if (cfg.nx < 3) throw std::runtime_error("2D nx must be at least 3");
     if (cfg.ny < 3) throw std::runtime_error("2D ny must be at least 3");
     validate_positive(cfg.length_x, "length_x");
@@ -527,6 +545,11 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
 
 void validate_config_3d(const Simulation3DConfig& cfg) {
     (void)cfg.units.permittivity();
+    if (!cfg.restart_path.empty() &&
+        !cfg.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "3D restart_path and initial_state_path are mutually exclusive");
+    }
     if (cfg.nx < 3) throw std::runtime_error("3D nx must be at least 3");
     if (cfg.ny < 3) throw std::runtime_error("3D ny must be at least 3");
     if (cfg.nz < 3) throw std::runtime_error("3D nz must be at least 3");
@@ -661,7 +684,8 @@ Config load_config(const std::string& path) {
         "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "boundary", "mode", "dimension", "config_version", "checkpoint_output", "checkpoint_interval",
-        "checkpoint_path", "restart_path", "runtime_backend", "runtime_threads",
+        "checkpoint_path", "restart_path", "initial_state_path",
+        "runtime_backend", "runtime_threads",
         "units", "relative_permittivity",
         "initialization_max_relative_charge_imbalance",
         "initialization_max_relative_current_imbalance",
@@ -736,6 +760,11 @@ Config load_config(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path);
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path);
+    if (global.count("initial_state_path")) {
+        cfg.initial_state_path = resolved_input_path(
+            path, as<std::string>(
+                      global, "initial_state_path", ""));
+    }
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);
@@ -846,7 +875,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "mode", "steady_tolerance", "steady_window", "max_steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
-        "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
+        "checkpoint_output", "checkpoint_interval", "checkpoint_path",
+        "restart_path", "initial_state_path",
         "runtime_backend", "runtime_threads", "magnetic_field_x",
         "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
@@ -907,6 +937,11 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
+    if (global.count("initial_state_path")) {
+        cfg.initial_state_path = resolved_input_path(
+            path, as<std::string>(
+                      global, "initial_state_path", ""));
+    }
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);
@@ -993,7 +1028,8 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "mode", "steady_tolerance", "steady_window", "max_steps",
         "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
-        "checkpoint_output", "checkpoint_interval", "checkpoint_path", "restart_path",
+        "checkpoint_output", "checkpoint_interval", "checkpoint_path",
+        "restart_path", "initial_state_path",
         "runtime_backend", "runtime_threads", "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
@@ -1054,6 +1090,11 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
     cfg.restart_path = as<std::string>(global, "restart_path", cfg.restart_path.string());
+    if (global.count("initial_state_path")) {
+        cfg.initial_state_path = resolved_input_path(
+            path, as<std::string>(
+                      global, "initial_state_path", ""));
+    }
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);

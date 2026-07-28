@@ -584,9 +584,11 @@ void write_initialization_report(
         throw std::invalid_argument(
             "initialization report dimension must be 1, 2, or 3");
     }
-    if (state_source != "generated" && state_source != "restart") {
+    if (state_source != "generated" &&
+        state_source != "restart" &&
+        state_source != "external") {
         throw std::invalid_argument(
-            "initialization report state_source must be generated or restart");
+            "initialization report state_source must be generated, external, or restart");
     }
     const auto parent = path.parent_path();
     if (!parent.empty()) std::filesystem::create_directories(parent);
@@ -610,11 +612,13 @@ void write_initialization_report(
             << spatial_dimension << ','
             << csv_quote(value.species) << ','
             << csv_quote(
-                   state_source == "restart" ? "restart" : value.loading)
+                   state_source == "generated"
+                       ? value.loading
+                       : state_source)
             << ',' << csv_quote(
-                   state_source == "restart"
-                       ? "restart"
-                       : value.density_profile)
+                   state_source == "generated"
+                       ? value.density_profile
+                       : state_source)
             << ',' << csv_quote(value.region) << ','
             << value.macroparticles << ','
             << value.macro_weight << ','

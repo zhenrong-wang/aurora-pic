@@ -87,9 +87,10 @@ velocities in the configured unit system, not temperatures. Converting a
 physical temperature requires the species mass and the documented unit
 contract.
 
-Every run emits `initialization.csv` after generated initialization or
-checkpoint restoration. Its versioned rows report the state source, species,
-loading and density-profile models or `restart`, selected region where meaningful, live
+Every run emits `initialization.csv` after generated initialization, external
+particle-state loading, or checkpoint restoration. Its versioned rows report
+the state source, species, loading and density-profile models or
+`external`/`restart`, selected region where meaningful, live
 macro-particle count and weight, represented physical-particle number and
 charge, mean position and velocity, and realized component position and
 velocity standard deviations.
@@ -99,9 +100,10 @@ requested configuration values.
 The current imported quiet-start implementation intentionally rejects a
 rectangular `init_x_*`/`init_y_*` clip instead of silently degrading to random
 or biased rejection sampling. Random loading continues to support those
-bounds. Physical-temperature inputs, charge/current acceptance gates, general
-tabulated profiles, and external openPMD/HDF5 particle states remain subsequent
-initial-condition milestones.
+bounds. The versioned external `.aps` path validates time-centered particle
+records and then rebuilds the field-consistent half step. Physical-temperature
+inputs, general tabulated profiles, and a chunked openPMD/HDF5 particle-state
+backend remain subsequent initial-condition milestones.
 
 ## Field solvers
 

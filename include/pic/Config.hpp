@@ -129,6 +129,7 @@ struct Config {
     std::size_t checkpoint_interval{0}; // zero inherits output_interval
     std::string checkpoint_path{};      // empty writes output_dir/checkpoint_<step>.apc
     std::string restart_path{};
+    std::filesystem::path initial_state_path{};
     RuntimePolicy runtime{};
     InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<SpeciesConfig> species{};

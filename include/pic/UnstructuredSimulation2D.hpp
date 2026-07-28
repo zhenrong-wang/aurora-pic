@@ -96,6 +96,7 @@ struct UnstructuredSimulation2DConfig {
     std::size_t checkpoint_interval{0};
     std::filesystem::path checkpoint_path;
     std::filesystem::path restart_path;
+    std::filesystem::path initial_state_path;
     RuntimePolicy runtime{};
     InitializationAcceptanceConfig initialization_acceptance{};
     UnstructuredPoissonOptions2D poisson{};
