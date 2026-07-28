@@ -297,6 +297,88 @@ double ImportedMesh2D::total_area() const {
     return result;
 }
 
+ImportedMeshQuality2D ImportedMesh2D::quality() const {
+    if (cells_.empty()) {
+        throw std::runtime_error(
+            "cannot evaluate quality of an imported mesh without cells");
+    }
+    ImportedMeshQuality2D result;
+    result.minimum_cell_area = std::numeric_limits<double>::infinity();
+    result.minimum_edge_length = std::numeric_limits<double>::infinity();
+    result.minimum_corner_angle_degrees =
+        std::numeric_limits<double>::infinity();
+    constexpr double radians_to_degrees =
+        180.0 / 3.141592653589793238462643383279502884;
+    for (const auto& cell : cells_) {
+        const double area = cell_area(cell.id);
+        result.minimum_cell_area =
+            std::min(result.minimum_cell_area, area);
+        result.maximum_cell_area =
+            std::max(result.maximum_cell_area, area);
+        double cell_minimum_edge = std::numeric_limits<double>::infinity();
+        double cell_maximum_edge = 0.0;
+        for (std::size_t i = 0; i < cell.node_ids.size(); ++i) {
+            const Vec2 previous =
+                node_by_id(
+                    cell.node_ids[
+                        (i + cell.node_ids.size() - 1) %
+                        cell.node_ids.size()])
+                    .position;
+            const Vec2 current =
+                node_by_id(cell.node_ids[i]).position;
+            const Vec2 next =
+                node_by_id(
+                    cell.node_ids[(i + 1) % cell.node_ids.size()])
+                    .position;
+            const Vec2 incoming{
+                previous.x - current.x, previous.y - current.y};
+            const Vec2 outgoing{
+                next.x - current.x, next.y - current.y};
+            const double incoming_length =
+                std::hypot(incoming.x, incoming.y);
+            const double outgoing_length =
+                std::hypot(outgoing.x, outgoing.y);
+            if (!(incoming_length > 0.0) ||
+                !(outgoing_length > 0.0) ||
+                !std::isfinite(incoming_length) ||
+                !std::isfinite(outgoing_length)) {
+                throw std::runtime_error(
+                    "cannot evaluate quality of a degenerate imported cell");
+            }
+            const double cosine = std::clamp(
+                (incoming.x * outgoing.x +
+                 incoming.y * outgoing.y) /
+                    (incoming_length * outgoing_length),
+                -1.0, 1.0);
+            const double angle = std::acos(cosine) * radians_to_degrees;
+            result.minimum_corner_angle_degrees =
+                std::min(result.minimum_corner_angle_degrees, angle);
+            cell_minimum_edge =
+                std::min(cell_minimum_edge, outgoing_length);
+            cell_maximum_edge =
+                std::max(cell_maximum_edge, outgoing_length);
+            result.minimum_edge_length =
+                std::min(result.minimum_edge_length, outgoing_length);
+            result.maximum_edge_length =
+                std::max(result.maximum_edge_length, outgoing_length);
+        }
+        result.maximum_cell_edge_ratio =
+            std::max(
+                result.maximum_cell_edge_ratio,
+                cell_maximum_edge / cell_minimum_edge);
+    }
+    if (!std::isfinite(result.minimum_cell_area) ||
+        !std::isfinite(result.maximum_cell_area) ||
+        !std::isfinite(result.minimum_edge_length) ||
+        !std::isfinite(result.maximum_edge_length) ||
+        !std::isfinite(result.minimum_corner_angle_degrees) ||
+        !std::isfinite(result.maximum_cell_edge_ratio)) {
+        throw std::runtime_error(
+            "imported mesh quality metrics are non-finite");
+    }
+    return result;
+}
+
 std::optional<ImportedPointLocation2D> ImportedMesh2D::cell_coordinates(
     std::size_t cell_id, Vec2 point, double relative_tolerance) const {
     if (!std::isfinite(point.x) || !std::isfinite(point.y)) {

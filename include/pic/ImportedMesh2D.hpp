@@ -47,6 +47,15 @@ struct ImportedPointLocation2D {
     std::vector<double> shape_weights;
 };
 
+struct ImportedMeshQuality2D {
+    double minimum_cell_area{0.0};
+    double maximum_cell_area{0.0};
+    double minimum_edge_length{0.0};
+    double maximum_edge_length{0.0};
+    double minimum_corner_angle_degrees{0.0};
+    double maximum_cell_edge_ratio{0.0};
+};
+
 class ImportedMesh2D {
 public:
     void add_node(ImportedMeshNode2D node);
@@ -70,6 +79,7 @@ public:
     Vec2 cell_centroid(std::size_t id) const;
     double boundary_face_length(std::size_t id) const;
     double total_area() const;
+    ImportedMeshQuality2D quality() const;
     std::optional<ImportedPointLocation2D> cell_coordinates(std::size_t cell_id, Vec2 point,
                                                             double relative_tolerance = 1e-12) const;
     std::optional<ImportedPointLocation2D> locate_point(Vec2 point,

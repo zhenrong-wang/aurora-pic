@@ -60,8 +60,10 @@ install(TARGETS aurorapic aurorapic_cli
 )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples
-  FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh")
-install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+  FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh" PATTERN "*.geo")
+install(PROGRAMS scripts/generate_real_case_mesh.py
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
+install(FILES README.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 install(EXPORT AuroraPICTargets
   FILE AuroraPICTargets.cmake
   NAMESPACE AuroraPIC::

@@ -13,6 +13,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | `examples/plasma_2d.cfg` | 2D2V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D2V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D2V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
+| `examples/biased_probe_2d.cfg` | 2D2V | 725 nodes / 1,342 triangles / internal probe hole | 800 initial / 404 final in the pinned run | 20 | Gmsh-authored real geometry, local refinement, mixed probe fields, injection, collection, secondary emission, flux diagnostics, VTU, checkpoint. |
 | `examples/plasma_3d.cfg` | 3D3V | 8 x 8 x 8 nodes | 128 | 3 | Structured 3D CLI path, VTK legacy/XML output, particle samples. |
 
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.
@@ -54,6 +55,7 @@ For credible physical studies, document these checks with the run configuration 
 4. **Convergence:** repeat with smaller `dt`, finer mesh, and/or more particles; compare scalar histories and field snapshots.
 5. **Output cadence:** output intervals are short enough to detect transients but not so frequent that I/O dominates.
 6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses cached element-local shapes with spatial fallback, their electrostatic solve supports strict mixed Dirichlet/Neumann labels, and the runtime applies segment-based absorbing/reflecting and length-weighted injection policies by physical label.
+7. **Mesh convergence:** use the reported minimum angle and maximum edge ratio as quality guards, then repeat the physical study on at least three systematically refined meshes. The biased-probe smoke case verifies one mesh artifact; it does not establish mesh-independent physics.
 7. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform magnetic rotation. There is no self-consistent electromagnetic field update yet.
 
 ## Release-engineering envelope

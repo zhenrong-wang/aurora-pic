@@ -23,6 +23,15 @@ int main(int argc, char** argv) {
                           << " vtk_output=" << (cfg.vtk_output ? "yes" : "no")
                           << "\n";
                 pic::UnstructuredSimulation2D sim(std::move(cfg));
+                const auto quality = sim.mesh().topology().quality();
+                std::cout << "mesh nodes=" << sim.mesh().topology().nodes().size()
+                          << " cells=" << sim.mesh().topology().cells().size()
+                          << " boundary_faces="
+                          << sim.mesh().topology().boundary_faces().size()
+                          << " min_angle_degrees="
+                          << quality.minimum_corner_angle_degrees
+                          << " max_edge_ratio="
+                          << quality.maximum_cell_edge_ratio << "\n";
                 const auto summary = sim.run();
                 std::cout << "completed steps=" << summary.steps_completed
                           << " time=" << summary.final_time

@@ -27,6 +27,7 @@
 #include <iterator>
 #include <limits>
 #include <numbers>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -2368,6 +2369,52 @@ int main() {
                         imported_config.particle_boundaries.at("electrode") ==
                             pic::ParticleBoundary::Reflecting,
                     "imported 2D example config did not load expected runtime settings");
+
+            {
+                const auto real_case_mesh =
+                    std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                    "examples" / "biased_probe_2d.msh";
+                const auto chamber =
+                    pic::load_gmsh2_ascii_mesh2d(real_case_mesh);
+                const auto quality = chamber.quality();
+                const std::set<std::string> expected_labels{
+                    "inlet", "outlet", "probe", "wall"};
+                const auto labels = chamber.boundary_labels();
+                require(
+                    chamber.nodes().size() == 725 &&
+                        chamber.cells().size() == 1342 &&
+                        chamber.boundary_faces().size() == 108,
+                    "real-case Gmsh mesh artifact changed unexpectedly");
+                require(
+                    std::set<std::string>(labels.begin(), labels.end()) ==
+                        expected_labels,
+                    "real-case Gmsh physical groups were not preserved");
+                require(
+                    chamber.total_area() > 0.0090 &&
+                        chamber.total_area() < 0.0093,
+                    "real-case chamber area is outside its geometry envelope");
+                require(
+                    quality.minimum_corner_angle_degrees > 30.0 &&
+                        quality.maximum_cell_edge_ratio < 2.0 &&
+                        quality.minimum_cell_area > 0.0,
+                    "real-case mesh quality is below its acceptance envelope");
+                require(
+                    !chamber.locate_point({0.075, 0.0}).has_value() &&
+                        chamber.locate_point({0.02, 0.0}).has_value(),
+                    "real-case internal probe hole topology is wrong");
+                const auto real_case_config =
+                    pic::load_unstructured_config_2d(
+                        std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                        "examples" / "biased_probe_2d.cfg");
+                require(
+                    real_case_config.emissions.size() == 1 &&
+                        real_case_config.sources.size() == 2 &&
+                        real_case_config.dirichlet_potentials.at("probe") ==
+                            10.0 &&
+                        real_case_config.particle_boundaries.at("probe") ==
+                            pic::ParticleBoundary::Absorbing,
+                    "real-case simulation config lost its probe physics");
+            }
 
             const auto bad_imported_config =
                 std::filesystem::path("test_output_bad_imported_config.cfg");

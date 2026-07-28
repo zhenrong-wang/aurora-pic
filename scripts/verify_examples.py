@@ -300,6 +300,52 @@ def check_imported_plasma_2d(output_dir: Path) -> None:
     require_file(output_dir / "checkpoint_3.apc")
 
 
+def check_biased_probe_2d(output_dir: Path) -> None:
+    header, rows = require_csv(
+        output_dir / "scalars.csv",
+        min_rows=5,
+    )
+    required_columns = {
+        "absorbed_outlet",
+        "absorbed_probe",
+        "absorbed_wall",
+        "injected_electron_inlet",
+        "injected_ion_inlet",
+        "emitted_probe_secondary_electrons",
+        "impact_flux_electrons@probe",
+        "impact_flux_ions@probe",
+    }
+    require(
+        required_columns.issubset(header),
+        f"biased-probe diagnostics are missing columns: {sorted(required_columns - set(header))}",
+    )
+    require_step(rows, 20, output_dir / "scalars.csv")
+    final = {name: float(value) for name, value in zip(header, rows[-1])}
+    require(350 <= final["live_particles"] <= 450,
+            f"biased-probe live-particle envelope changed: {final['live_particles']}")
+    require(final["absorbed_outlet"] >= 250,
+            "biased-probe case did not produce an outlet flux")
+    require(final["absorbed_probe"] >= 80,
+            "biased-probe case did not collect particles on the internal probe")
+    require(final["absorbed_wall"] > 0,
+            "biased-probe case did not exercise chamber-wall absorption")
+    require(final["injected_electron_inlet"] == 40 and
+            final["injected_ion_inlet"] == 40,
+            "biased-probe inlet source schedule changed")
+    require(final["emitted_probe_secondary_electrons"] > 0,
+            "biased-probe case did not exercise secondary emission")
+    require(final["poisson_final_residual"] < 1e-6,
+            "biased-probe field solve exceeded its residual envelope")
+    require_vtu(output_dir / "fields_0.vtu", 725, 1342)
+    require_vtu(output_dir / "fields_20.vtu", 725, 1342)
+    require_particle_csv(
+        output_dir / "particles_20.csv",
+        expected_header=["species_id", "species", "x", "y", "vx", "vy", "alive"],
+        min_rows=1,
+    )
+    require_file(output_dir / "checkpoint_20.apc")
+
+
 def run_smokes(cli: Path, temp_root: Path) -> None:
     checks = [
         ("two_stream.cfg", "two_stream", check_two_stream),
@@ -307,6 +353,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),
+        ("biased_probe_2d.cfg", "biased_probe_2d", check_biased_probe_2d),
         ("plasma_3d.cfg", "plasma_3d", check_plasma_3d),
     ]
     for config_name, output_name, check in checks:

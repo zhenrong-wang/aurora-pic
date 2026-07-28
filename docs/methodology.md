@@ -31,6 +31,8 @@ Imported boundary sources inject a configured integer number of macro-particles 
 
 Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal distribution as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Checkpoint v3 preserves emission definitions, cumulative emitted counts, flux state, particle state, and RNG state.
 
+Imported-mesh quality reporting computes cell-area and edge-length extrema, the minimum cell-corner angle, and the maximum within-cell edge-length ratio. These inexpensive metrics complement the mandatory finite, nondegenerate, convex, consistently oriented, manifold, and exactly tagged boundary validation. The biased-probe integration mesh pins explicit angle, edge-ratio, area, topology, and physical-label envelopes.
+
 ## Collisions
 
 Optional Monte-Carlo BGK-like velocity reset collisions model scattering against a prescribed neutral bath. The collision probability is `1 - exp(-nu dt)`.
