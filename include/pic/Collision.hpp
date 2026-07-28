@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -27,6 +28,23 @@ public:
 private:
     std::vector<double> energies_{};
     std::vector<double> cross_sections_{};
+};
+
+class MeanCosineTable {
+public:
+    MeanCosineTable(
+        const std::filesystem::path& path,
+        double energy_scale = 1.0);
+
+    double evaluate(double energy) const;
+    const std::vector<double>& energies() const { return energies_; }
+    const std::vector<double>& mean_cosines() const {
+        return mean_cosines_;
+    }
+
+private:
+    std::vector<double> energies_{};
+    std::vector<double> mean_cosines_{};
 };
 
 struct CollisionStepStatistics {
@@ -75,7 +93,16 @@ private:
             : config(channel),
               table(channel.cross_section_file,
                     channel.energy_scale,
-                    channel.cross_section_scale) {}
+                    channel.cross_section_scale) {
+            if (channel.angular_scattering ==
+                AngularScatteringKind::HenyeyGreenstein) {
+                mean_cosine.emplace(
+                    channel.mean_cosine_file,
+                    channel.mean_cosine_energy_scale);
+            }
+        }
+
+        std::optional<MeanCosineTable> mean_cosine{};
     };
 
     std::vector<double> rates(double velocity) const;

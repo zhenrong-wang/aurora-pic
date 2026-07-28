@@ -45,7 +45,9 @@ particles and, by default, 100 million particle-step-field work items. Raising
 an appropriately monitored compute host.
 
 The CSV embeds the dataset identity, version, citation, provenance, retrieval
-date, license text, gas-manifest path, numerical controls, and per-field seed.
+date, license text, gas-manifest path, numerical controls, per-field seed, and
+collision-model signature. The signature fingerprints cross-section and
+angular tables as loaded by the kernel.
 For each E/N it reports:
 
 - signed mean electron velocity along the electric field and the conventional
@@ -144,14 +146,17 @@ population. Ionization divides the available excess energy using the engine's
 current equal-sharing model and increments the ionization rate, but the
 secondary electron is not added to the ensemble. The reported rate is
 therefore not a Townsend avalanche coefficient. The model also assumes
-stationary zero-temperature neutrals and isotropic scattering; the configured
-neutral mass is active in elastic recoil.
+stationary zero-temperature neutrals. Elastic scattering is isotropic unless
+the gas package explicitly supplies a validated energy-dependent
+Henyey-Greenstein mean-cosine table; configured neutral mass remains active
+in either elastic recoil path.
 
 Consequently, this benchmark can validate the current MCC implementation's
 drift, mean energy, diffusion trend, and collision rates. It cannot yet claim
-high-accuracy transport for datasets requiring differential angular
-scattering, thermal neutral motion, non-equal ionization energy sharing, or
-electron multiplication.
+high-accuracy transport for datasets requiring a full differential angular
+cross section beyond the mean-cosine phase-function approximation, thermal
+neutral motion, non-equal ionization energy sharing, or electron
+multiplication.
 
 ## Production study checklist
 

@@ -14,6 +14,9 @@ license = Synthetic test data
 type = elastic
 cross_section_file = synthetic_swarm_elastic.dat
 energy_scale = 1.602176634e-19
+angular_model = henyey_greenstein
+mean_cosine_file = synthetic_swarm_mean_cosine.dat
+mean_cosine_energy_scale = 1.602176634e-19
 
 [collision.excitation]
 type = excitation

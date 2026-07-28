@@ -107,6 +107,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
     static const std::set<std::string> collision_channel_keys{
         "type", "cross_section_file", "threshold_energy",
         "energy_scale", "cross_section_scale",
+        "angular_model", "mean_cosine_file",
+        "mean_cosine_energy_scale",
         "secondary_species", "ion_species",
     };
 
@@ -718,6 +720,54 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         value.cross_section_scale = number<double>(
             channel.values, "cross_section_scale",
             value.cross_section_scale);
+        const std::string angular_model = lower(
+            channel.values.contains("angular_model")
+                ? channel.values.at("angular_model")
+                : "isotropic");
+        if (angular_model == "isotropic") {
+            value.angular_scattering =
+                AngularScatteringKind::Isotropic;
+        } else if (
+            angular_model == "henyey_greenstein" ||
+            angular_model == "henyey-greenstein") {
+            value.angular_scattering =
+                AngularScatteringKind::HenyeyGreenstein;
+        } else {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' angular_model must be isotropic or "
+                "henyey_greenstein");
+        }
+        if (channel.values.contains("mean_cosine_file")) {
+            value.mean_cosine_file = resolved_path(
+                path, channel.values.at("mean_cosine_file"));
+        }
+        value.mean_cosine_energy_scale = number<double>(
+            channel.values, "mean_cosine_energy_scale",
+            value.mean_cosine_energy_scale);
+        if (value.angular_scattering !=
+                AngularScatteringKind::Isotropic &&
+            value.process != CollisionProcessKind::Elastic) {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' anisotropic scattering is valid only for elastic "
+                "channels");
+        }
+        if (value.angular_scattering ==
+            AngularScatteringKind::HenyeyGreenstein) {
+            if (value.mean_cosine_file.empty()) {
+                throw std::runtime_error(
+                    "collision channel '" + channel.name +
+                    "' Henyey-Greenstein scattering requires "
+                    "mean_cosine_file");
+            }
+        } else if (!value.mean_cosine_file.empty() ||
+                   value.mean_cosine_energy_scale != 1.0) {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' mean-cosine data requires angular_model = "
+                "henyey_greenstein");
+        }
         if (value.process == CollisionProcessKind::Ionization) {
             value.secondary_species = required(
                 channel.values, "secondary_species",

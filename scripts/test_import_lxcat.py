@@ -61,6 +61,7 @@ def main() -> int:
             "gas_data_version = 2\n" in manifest
             and "units = si\n" in manifest
             and manifest.count("[collision.") == 3
+            and manifest.count("angular_model = isotropic") == 1
             and "energy_scale = 1.6021766339999999e-19" in manifest,
             "generated gas manifest is incomplete",
         )
@@ -71,6 +72,7 @@ def main() -> int:
             audit["process_count"] == 3
             and audit["units"]["source_energy"] == "eV"
             and audit["units"]["manifest"] == "si"
+            and audit["processes"][0]["angular_model"] == "isotropic"
             and audit["rate_envelope"][
                 "recommended_max_frequency_s"
             ]

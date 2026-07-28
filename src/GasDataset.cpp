@@ -163,6 +163,8 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
     static const std::set<std::string> channel_keys{
         "type", "cross_section_file", "threshold_energy",
         "energy_scale", "cross_section_scale",
+        "angular_model", "mean_cosine_file",
+        "mean_cosine_energy_scale",
     };
 
     Values global;
@@ -311,6 +313,40 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         value.cross_section_scale = number<double>(
             channel.values, "cross_section_scale",
             value.cross_section_scale, channel_context);
+        const bool has_angular_data =
+            channel.values.contains("angular_model") ||
+            channel.values.contains("mean_cosine_file") ||
+            channel.values.contains("mean_cosine_energy_scale");
+        if (has_angular_data && format_version != 2) {
+            throw std::runtime_error(
+                channel_context +
+                " angular scattering requires gas_data_version = 2");
+        }
+        const std::string angular_model = lower(
+            channel.values.contains("angular_model")
+                ? channel.values.at("angular_model")
+                : "isotropic");
+        if (angular_model == "isotropic") {
+            value.angular_scattering =
+                AngularScatteringKind::Isotropic;
+        } else if (
+            angular_model == "henyey_greenstein" ||
+            angular_model == "henyey-greenstein") {
+            value.angular_scattering =
+                AngularScatteringKind::HenyeyGreenstein;
+        } else {
+            throw std::runtime_error(
+                channel_context +
+                " angular_model must be isotropic or "
+                "henyey_greenstein");
+        }
+        if (channel.values.contains("mean_cosine_file")) {
+            value.mean_cosine_file = resolved_path(
+                path, channel.values.at("mean_cosine_file"));
+        }
+        value.mean_cosine_energy_scale = number<double>(
+            channel.values, "mean_cosine_energy_scale",
+            value.mean_cosine_energy_scale, channel_context);
         if ((value.process == CollisionProcessKind::Elastic ||
              value.process ==
                  CollisionProcessKind::ChargeExchange) &&
@@ -326,10 +362,47 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
                 channel_context +
                 " inelastic threshold_energy must be positive");
         }
-        (void)CrossSectionTable(
+        if (value.angular_scattering !=
+                AngularScatteringKind::Isotropic &&
+            value.process != CollisionProcessKind::Elastic) {
+            throw std::runtime_error(
+                channel_context +
+                " anisotropic scattering is valid only for elastic channels");
+        }
+        if (value.angular_scattering ==
+            AngularScatteringKind::HenyeyGreenstein) {
+            if (value.mean_cosine_file.empty()) {
+                throw std::runtime_error(
+                    channel_context +
+                    " Henyey-Greenstein scattering requires "
+                    "mean_cosine_file");
+            }
+        } else if (!value.mean_cosine_file.empty() ||
+                   value.mean_cosine_energy_scale != 1.0) {
+            throw std::runtime_error(
+                channel_context +
+                " mean-cosine data requires angular_model = "
+                "henyey_greenstein");
+        }
+        const CrossSectionTable cross_section(
             value.cross_section_file,
             value.energy_scale,
             value.cross_section_scale);
+        if (value.angular_scattering ==
+            AngularScatteringKind::HenyeyGreenstein) {
+            const MeanCosineTable mean_cosine(
+                value.mean_cosine_file,
+                value.mean_cosine_energy_scale);
+            if (mean_cosine.energies().front() >
+                    cross_section.energies().front() ||
+                mean_cosine.energies().back() <
+                    cross_section.energies().back()) {
+                throw std::runtime_error(
+                    channel_context +
+                    " mean-cosine energy range must cover the "
+                    "cross-section table");
+            }
+        }
         result.channels.push_back(std::move(value));
     }
     return result;

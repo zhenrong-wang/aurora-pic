@@ -331,6 +331,8 @@ def write_package(
                 handle.write(
                     f"energy_scale = {EV_TO_J:.17g}\n"
                 )
+                if process.source_type == "ELASTIC":
+                    handle.write("angular_model = isotropic\n")
                 if process.threshold_ev > 0.0:
                     handle.write(
                         f"threshold_energy = {process.threshold_ev:.17g}\n"
@@ -363,6 +365,7 @@ def write_package(
                 {
                     "channel": name,
                     "type": process.source_type.lower(),
+                    "angular_model": "isotropic",
                     "target": process.target,
                     "threshold_ev": process.threshold_ev,
                     "points": len(process.points),

@@ -176,6 +176,11 @@ license = applicable dataset terms
 type = elastic
 cross_section_file = argon_elastic.dat
 
+# Optional energy-dependent anisotropic elastic scattering:
+# angular_model = henyey_greenstein
+# mean_cosine_file = argon_elastic_mean_cosine.dat
+# mean_cosine_energy_scale = 1.602176634e-19
+
 [collision.ionization]
 type = ionization
 cross_section_file = argon_ionization.dat
@@ -211,6 +216,26 @@ only map ionization products to configured kinetic species. The public
 `pic::load_gas_dataset` API exposes the same validated manifest contract to
 embedding applications.
 
+Elastic channels are isotropic by default. A version-2 manifest or inline
+imported-2D channel may instead set
+`angular_model = henyey_greenstein` and provide a strict two-column
+`mean_cosine_file` containing energy and `g(E) = <cos(theta)>`, with
+`-1 < g < 1`. `mean_cosine_energy_scale` converts its energy column into the
+manifest unit system. The 3V kernel samples the Henyey-Greenstein phase
+function about the incoming relative-velocity direction and uses the
+configured neutral mass for recoil exactly as in isotropic elastic events.
+Angular tables must cover the full cross-section energy range; they are
+validated, included in restart fingerprints and collision metadata, and
+rejected by the 1V interface.
+
+For an anisotropic channel, `cross_section_file` must represent the total
+elastic collision cross section used to set event frequency. A
+momentum-transfer cross section is not generally interchangeable with that
+total cross section once `g` is nonzero: for a phase function with mean cosine
+`g`, `sigma_m = sigma_total * (1 - g)`. AuroraPIC does not infer total or
+angular data from an LXCat `ELASTIC` block because the precise cross-section
+semantics must come from the selected dataset and its documentation.
+
 Version 1 manifests remain readable as legacy normalized data. Version 2 is
 required for newly converted physical datasets and is rejected when its unit
 system differs from the simulation. The complete local conversion and audit
@@ -225,6 +250,8 @@ neutral velocity. Gas heating and depletion are not modeled.
 `examples/imported_mcc_2d.cfg` exercises the complete imported parser,
 isotropic scatter, diagnostics, and v6 restart path using deliberately
 synthetic constant cross sections. It is not an Argon or other material model.
+`examples/synthetic_swarm.gas` exercises the optional energy-dependent
+Henyey-Greenstein path with synthetic mean-cosine values.
 `examples/imported_ionization_2d.cfg` similarly exercises paired reactive
 product creation, capacity enforcement, energy accounting, and deterministic
 restart.

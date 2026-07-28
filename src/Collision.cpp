@@ -61,6 +61,76 @@ Vec3 isotropic_velocity(double speed, std::mt19937_64& rng) {
         speed * cosine};
 }
 
+Vec3 angular_velocity(
+    const Vec3& incoming,
+    double speed,
+    double mean_cosine,
+    std::mt19937_64& rng) {
+    const double incoming_speed = std::sqrt(
+        incoming.x * incoming.x +
+        incoming.y * incoming.y +
+        incoming.z * incoming.z);
+    if (!(incoming_speed > 0.0)) {
+        return isotropic_velocity(speed, rng);
+    }
+    std::uniform_real_distribution<double> unit(0.0, 1.0);
+    const double sample = unit(rng);
+    double cosine = 2.0 * sample - 1.0;
+    if (mean_cosine != 0.0) {
+        const double numerator =
+            1.0 - mean_cosine * mean_cosine;
+        const double denominator =
+            1.0 - mean_cosine + 2.0 * mean_cosine * sample;
+        const double ratio = numerator / denominator;
+        cosine =
+            (1.0 + mean_cosine * mean_cosine - ratio * ratio) /
+            (2.0 * mean_cosine);
+        cosine = std::clamp(cosine, -1.0, 1.0);
+    }
+    const double sine =
+        std::sqrt(std::max(0.0, 1.0 - cosine * cosine));
+    const double azimuth =
+        2.0 * std::acos(-1.0) * unit(rng);
+    const Vec3 direction{
+        incoming.x / incoming_speed,
+        incoming.y / incoming_speed,
+        incoming.z / incoming_speed};
+    const Vec3 helper =
+        std::abs(direction.z) < 0.9
+            ? Vec3{0.0, 0.0, 1.0}
+            : Vec3{0.0, 1.0, 0.0};
+    Vec3 tangent{
+        helper.y * direction.z - helper.z * direction.y,
+        helper.z * direction.x - helper.x * direction.z,
+        helper.x * direction.y - helper.y * direction.x};
+    const double tangent_norm = std::sqrt(
+        tangent.x * tangent.x +
+        tangent.y * tangent.y +
+        tangent.z * tangent.z);
+    tangent.x /= tangent_norm;
+    tangent.y /= tangent_norm;
+    tangent.z /= tangent_norm;
+    const Vec3 bitangent{
+        direction.y * tangent.z - direction.z * tangent.y,
+        direction.z * tangent.x - direction.x * tangent.z,
+        direction.x * tangent.y - direction.y * tangent.x};
+    const double tangent_factor = sine * std::cos(azimuth);
+    const double bitangent_factor = sine * std::sin(azimuth);
+    return {
+        speed * (
+            cosine * direction.x +
+            tangent_factor * tangent.x +
+            bitangent_factor * bitangent.x),
+        speed * (
+            cosine * direction.y +
+            tangent_factor * tangent.y +
+            bitangent_factor * bitangent.y),
+        speed * (
+            cosine * direction.z +
+            tangent_factor * tangent.z +
+            bitangent_factor * bitangent.z)};
+}
+
 } // namespace
 
 CrossSectionTable::CrossSectionTable(
@@ -141,6 +211,82 @@ double CrossSectionTable::evaluate(double energy) const {
         (energy - energies_[low]) / (energies_[high] - energies_[low]);
     return cross_sections_[low] +
            fraction * (cross_sections_[high] - cross_sections_[low]);
+}
+
+MeanCosineTable::MeanCosineTable(
+    const std::filesystem::path& path,
+    double energy_scale) {
+    if (!std::isfinite(energy_scale) || !(energy_scale > 0.0)) {
+        throw std::invalid_argument(
+            "mean-cosine energy_scale must be positive and finite");
+    }
+    std::ifstream input(path);
+    if (!input) {
+        throw std::runtime_error(
+            "cannot open mean-cosine table: " + path.string());
+    }
+    std::string line;
+    std::size_t line_number = 0;
+    while (std::getline(input, line)) {
+        ++line_number;
+        const auto comment = line.find_first_of("#;");
+        if (comment != std::string::npos) line.resize(comment);
+        std::istringstream row(line);
+        double energy = 0.0;
+        double mean_cosine = 0.0;
+        if (!(row >> energy)) continue;
+        if (!(row >> mean_cosine)) {
+            throw std::runtime_error(
+                "mean-cosine table " + path.string() + ":" +
+                std::to_string(line_number) +
+                " must contain energy and mean cosine");
+        }
+        std::string trailing;
+        if (row >> trailing) {
+            throw std::runtime_error(
+                "mean-cosine table " + path.string() + ":" +
+                std::to_string(line_number) +
+                " has trailing columns");
+        }
+        energy *= energy_scale;
+        if (!std::isfinite(energy) || energy < 0.0 ||
+            !std::isfinite(mean_cosine) ||
+            !(std::abs(mean_cosine) < 1.0)) {
+            throw std::runtime_error(
+                "mean-cosine table requires finite non-negative energies "
+                "and mean cosines strictly between -1 and 1");
+        }
+        if (!energies_.empty() && !(energy > energies_.back())) {
+            throw std::runtime_error(
+                "mean-cosine table energies must be strictly increasing");
+        }
+        energies_.push_back(energy);
+        mean_cosines_.push_back(mean_cosine);
+    }
+    if (energies_.size() < 2) {
+        throw std::runtime_error(
+            "mean-cosine table requires at least two rows: " +
+            path.string());
+    }
+}
+
+double MeanCosineTable::evaluate(double energy) const {
+    if (!std::isfinite(energy) || energy < 0.0) {
+        throw std::invalid_argument(
+            "mean-cosine lookup energy must be finite and non-negative");
+    }
+    if (energy <= energies_.front()) return mean_cosines_.front();
+    if (energy >= energies_.back()) return mean_cosines_.back();
+    const auto upper =
+        std::upper_bound(energies_.begin(), energies_.end(), energy);
+    const std::size_t high =
+        static_cast<std::size_t>(upper - energies_.begin());
+    const std::size_t low = high - 1;
+    const double fraction =
+        (energy - energies_[low]) /
+        (energies_[high] - energies_[low]);
+    return mean_cosines_[low] +
+           fraction * (mean_cosines_[high] - mean_cosines_[low]);
 }
 
 NullCollisionModel::NullCollisionModel(
@@ -260,6 +406,32 @@ NullCollisionModel::NullCollisionModel(
             throw std::invalid_argument(
                 "inelastic MCC channel threshold_energy must be positive");
         }
+        if (channel_config.angular_scattering !=
+                AngularScatteringKind::Isotropic &&
+            channel_config.process != CollisionProcessKind::Elastic) {
+            throw std::invalid_argument(
+                "anisotropic MCC scattering is supported only for "
+                "elastic channels");
+        }
+        if (channel_config.angular_scattering ==
+            AngularScatteringKind::HenyeyGreenstein) {
+            if (channel_config.mean_cosine_file.empty()) {
+                throw std::invalid_argument(
+                    "Henyey-Greenstein scattering requires "
+                    "mean_cosine_file");
+            }
+            if (!std::isfinite(
+                    channel_config.mean_cosine_energy_scale) ||
+                !(channel_config.mean_cosine_energy_scale > 0.0)) {
+                throw std::invalid_argument(
+                    "mean_cosine_energy_scale must be positive and finite");
+            }
+        } else if (!channel_config.mean_cosine_file.empty() ||
+                   channel_config.mean_cosine_energy_scale != 1.0) {
+            throw std::invalid_argument(
+                "mean-cosine data requires angular_model = "
+                "henyey_greenstein");
+        }
         if (channel_config.process == CollisionProcessKind::Ionization &&
             (channel_config.secondary_species.empty() ||
              channel_config.ion_species.empty())) {
@@ -286,9 +458,22 @@ NullCollisionModel::NullCollisionModel(
                 channel_config.name);
         }
         channels_.emplace_back(channel_config);
+        if (channels_.back().mean_cosine.has_value() &&
+            (channels_.back().mean_cosine->energies().front() >
+                 channels_.back().table.energies().front() ||
+             channels_.back().mean_cosine->energies().back() <
+                 channels_.back().table.energies().back())) {
+            throw std::invalid_argument(
+                "mean-cosine energy range must cover the "
+                "cross-section table for channel " +
+                channel_config.name);
+        }
         channel_names_.push_back(channel_config.name);
         hash_string(signature_, channel_config.name);
         hash_string(signature_, to_string(channel_config.process));
+        hash_string(
+            signature_,
+            to_string(channel_config.angular_scattering));
         hash_double(signature_, channel_config.threshold_energy);
         if (channel_config.process ==
             CollisionProcessKind::Ionization) {
@@ -300,6 +485,18 @@ NullCollisionModel::NullCollisionModel(
             hash_double(signature_, channels_.back().table.energies()[i]);
             hash_double(
                 signature_, channels_.back().table.cross_sections()[i]);
+        }
+        if (channels_.back().mean_cosine.has_value()) {
+            for (std::size_t i = 0;
+                 i < channels_.back().mean_cosine->energies().size();
+                 ++i) {
+                hash_double(
+                    signature_,
+                    channels_.back().mean_cosine->energies()[i]);
+                hash_double(
+                    signature_,
+                    channels_.back().mean_cosine->mean_cosines()[i]);
+            }
         }
     }
 }
@@ -405,7 +602,17 @@ void NullCollisionModel::apply_channel(
         energy *= 0.5;
     }
     const double speed = std::sqrt(2.0 * energy / particle_mass_);
-    const Vec3 scattered = isotropic_velocity(speed, rng);
+    const double mean_cosine =
+        channel.mean_cosine.has_value()
+            ? channel.mean_cosine->evaluate(
+                  0.5 * particle_mass_ *
+                  initial_speed * initial_speed)
+            : 0.0;
+    const Vec3 scattered =
+        channel.mean_cosine.has_value()
+            ? angular_velocity(
+                  velocity, speed, mean_cosine, rng)
+            : isotropic_velocity(speed, rng);
     if (channel.config.process == CollisionProcessKind::Elastic &&
         config_.neutral_mass > 0.0) {
         const double total_mass =
@@ -433,10 +640,13 @@ CollisionStepStatistics NullCollisionModel::collide(
             channels_.begin(), channels_.end(),
             [](const Channel& channel) {
                 return channel.config.process ==
-                       CollisionProcessKind::Ionization;
+                           CollisionProcessKind::Ionization ||
+                       channel.config.angular_scattering !=
+                           AngularScatteringKind::Isotropic;
             })) {
         throw std::logic_error(
-            "ionization MCC requires the 3V collision interface");
+            "ionization and anisotropic MCC require the 3V "
+            "collision interface");
     }
     if (!std::isfinite(timestep) || !(timestep > 0.0)) {
         throw std::invalid_argument(

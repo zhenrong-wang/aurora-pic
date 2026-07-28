@@ -35,6 +35,13 @@ unsupported processes by default. `--allow-partial`,
 not silent fallbacks. AuroraPIC does not yet convert `EFFECTIVE`, `MOMENTUM`,
 `ATTACHMENT`, or `ROTATION` blocks.
 
+Imported elastic channels remain explicitly isotropic. The converter does not
+guess a differential phase function or reinterpret momentum-transfer data as
+a total elastic cross section. Energy-dependent anisotropic scattering can be
+added only when the source provides enough documented information to build
+the separate mean-cosine table described in
+[`collisions.md`](collisions.md).
+
 LXCat/BOLSIG+ exports use eV for energy and square metres for cross sections.
 The generated manifest therefore declares `units = si` and cannot be loaded
 by a normalized simulation. Gas manifest version 2 makes this unit contract

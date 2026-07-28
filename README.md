@@ -198,6 +198,9 @@ E/N using the production collision kernel and emits traceable transport and
 channel-rate diagnostics. Its local comparison tool maps user-supplied
 measured or evaluated coefficients to those outputs and produces a hashed,
 uncertainty-aware acceptance report without bundling the reference data.
+Elastic 3V channels may additionally provide a validated energy-dependent
+mean-cosine table for Henyey-Greenstein anisotropic scattering; isotropic
+behavior remains the explicit default.
 
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
 

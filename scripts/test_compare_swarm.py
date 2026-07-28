@@ -102,15 +102,16 @@ def main() -> int:
         report = work / "report.json"
         simulation.write_text(
             "dataset_id,dataset_version,gas,population_model,"
-            "reduced_field_td,electron_drift_velocity_m_s,"
+            "collision_model_signature,reduced_field_td,"
+            "electron_drift_velocity_m_s,"
             "mean_velocity_x_standard_error_m_s,mean_energy_ev,"
             "mean_energy_standard_error_ev\n"
             "synthetic.dataset,1,synthetic_swarm_gas,"
-            "fixed_population_no_avalanche,1,100,2,1.0,0.02\n"
+            "fixed_population_no_avalanche,12345,1,100,2,1.0,0.02\n"
             "synthetic.dataset,1,synthetic_swarm_gas,"
-            "fixed_population_no_avalanche,5,200,3,2.0,0.03\n"
+            "fixed_population_no_avalanche,12345,5,200,3,2.0,0.03\n"
             "synthetic.dataset,1,synthetic_swarm_gas,"
-            "fixed_population_no_avalanche,10,300,4,3.0,0.04\n",
+            "fixed_population_no_avalanche,12345,10,300,4,3.0,0.04\n",
             encoding="utf-8",
         )
         reference.write_text(

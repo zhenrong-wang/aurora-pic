@@ -371,6 +371,96 @@ int main() {
                         0.1 * static_cast<double>(vector_accepted),
                 "2D3V elastic MCC scattering is not statistically isotropic");
 
+            const auto mean_cosine_path =
+                std::filesystem::path(
+                    "test_mean_cosine_table.dat");
+            {
+                std::ofstream angular(mean_cosine_path);
+                angular << "0 0.8\n2 0.8\n";
+            }
+            pic::MeanCosineTable mean_cosines(mean_cosine_path);
+            require_near(
+                mean_cosines.evaluate(1.0), 0.8, 1e-15,
+                "mean-cosine interpolation is incorrect");
+            auto angular_config = elastic_config;
+            angular_config.channels.front().angular_scattering =
+                pic::AngularScatteringKind::HenyeyGreenstein;
+            angular_config.channels.front().mean_cosine_file =
+                mean_cosine_path;
+            pic::NullCollisionModel angular_elastic(
+                angular_config, 1.0);
+            std::mt19937_64 angular_rng(161803);
+            std::uint64_t single_angular_collisions = 0;
+            double angular_cosine_sum = 0.0;
+            for (std::size_t sample = 0; sample < 20000; ++sample) {
+                pic::Vec3 velocity{std::sqrt(2.0), 0.0, 0.0};
+                const auto stats = angular_elastic.collide(
+                    velocity, 0.1, angular_rng);
+                require_near(
+                    norm(velocity), std::sqrt(2.0), 1e-14,
+                    "anisotropic elastic MCC changed particle energy");
+                if (stats.channel_collisions[0] != 1) continue;
+                angular_cosine_sum +=
+                    velocity.x / std::sqrt(2.0);
+                ++single_angular_collisions;
+            }
+            require(
+                single_angular_collisions > 1200,
+                "anisotropic elastic MCC sampled too few collisions");
+            require_near(
+                angular_cosine_sum /
+                    static_cast<double>(single_angular_collisions),
+                0.8, 0.04,
+                "Henyey-Greenstein scattering did not preserve "
+                "the configured mean cosine");
+            require_throws_contains(
+                [&] {
+                    double velocity = std::sqrt(2.0);
+                    (void)angular_elastic.collide(
+                        velocity, 0.1, angular_rng);
+                },
+                "3V collision interface",
+                "scalar MCC accepted anisotropic scattering");
+            const auto original_angular_signature =
+                angular_elastic.signature();
+            {
+                std::ofstream changed(mean_cosine_path);
+                changed << "0 0.7\n2 0.7\n";
+            }
+            pic::NullCollisionModel changed_angular(
+                angular_config, 1.0);
+            require(
+                changed_angular.signature() !=
+                    original_angular_signature,
+                "MCC signature ignored changed angular data");
+            {
+                std::ofstream uncovered(mean_cosine_path);
+                uncovered << "0 0.7\n1 0.7\n";
+            }
+            require_throws_contains(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        angular_config, 1.0);
+                },
+                "must cover the cross-section table",
+                "MCC accepted incomplete angular energy coverage");
+            const auto invalid_mean_cosine_path =
+                std::filesystem::path(
+                    "test_invalid_mean_cosine_table.dat");
+            {
+                std::ofstream invalid(invalid_mean_cosine_path);
+                invalid << "0 0\n1 1\n";
+            }
+            require_throws_contains(
+                [&] {
+                    (void)pic::MeanCosineTable(
+                        invalid_mean_cosine_path);
+                },
+                "strictly between -1 and 1",
+                "mean-cosine table accepted a singular endpoint");
+            std::filesystem::remove(invalid_mean_cosine_path);
+            std::filesystem::remove(mean_cosine_path);
+
             auto finite_mass_config = elastic_config;
             finite_mass_config.neutral_mass = 3.0;
             pic::NullCollisionModel finite_mass_elastic(
@@ -2958,6 +3048,21 @@ int main() {
                         gas_dataset.channels.front().process ==
                             pic::CollisionProcessKind::Ionization,
                     "standalone gas dataset loader lost manifest data");
+                const auto angular_gas_path =
+                    std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                    "examples" / "synthetic_swarm.gas";
+                const auto angular_gas =
+                    pic::load_gas_dataset(angular_gas_path);
+                require(
+                    angular_gas.channels.size() == 3 &&
+                        angular_gas.channels.front()
+                                .angular_scattering ==
+                            pic::AngularScatteringKind::
+                                HenyeyGreenstein &&
+                        angular_gas.channels.front()
+                                .mean_cosine_file.filename() ==
+                            "synthetic_swarm_mean_cosine.dat",
+                    "gas dataset loader lost angular scattering data");
 
                 const auto invalid_dataset =
                     std::filesystem::path(

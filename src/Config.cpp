@@ -303,6 +303,14 @@ void validate_config(const Config& cfg) {
             channel.cross_section_scale,
             "collision channel '" + channel.name +
                 "' cross_section_scale");
+        if (channel.angular_scattering !=
+                AngularScatteringKind::Isotropic ||
+            !channel.mean_cosine_file.empty() ||
+            channel.mean_cosine_energy_scale != 1.0) {
+            throw std::runtime_error(
+                "1D collision channels do not support anisotropic "
+                "scattering");
+        }
         if (channel.process == CollisionProcessKind::Elastic &&
             channel.threshold_energy != 0.0) {
             throw std::runtime_error(

@@ -401,6 +401,7 @@ def compare(
             "dataset_id",
             "dataset_version",
             "population_model",
+            "collision_model_signature",
             *(
                 column
                 for observable in contract.observables
@@ -446,6 +447,10 @@ def compare(
     simulation_population_models = {
         row["population_model"] for _, row, _ in simulation_index
     }
+    simulation_collision_signatures = {
+        row["collision_model_signature"]
+        for _, row, _ in simulation_index
+    }
     if len(simulation_dataset_ids) != 1 or "" in simulation_dataset_ids:
         raise ComparisonInputError(
             "simulation rows must share one non-empty dataset_id"
@@ -462,6 +467,14 @@ def compare(
             "simulation population_model values do not match reference "
             f"contract {contract.population_model!r}: "
             f"{sorted(simulation_population_models)}"
+        )
+    if (
+        len(simulation_collision_signatures) != 1
+        or "" in simulation_collision_signatures
+    ):
+        raise ComparisonInputError(
+            "simulation rows must share one non-empty "
+            "collision_model_signature"
         )
 
     comparisons: list[dict[str, object]] = []
@@ -585,6 +598,9 @@ def compare(
                 iter(simulation_dataset_versions)
             ),
             "population_model": contract.population_model,
+            "collision_model_signature": next(
+                iter(simulation_collision_signatures)
+            ),
             "rows": len(simulation_rows),
         },
         "reference": {

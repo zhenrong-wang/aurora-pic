@@ -24,6 +24,10 @@ struct SpeciesConfig {
 };
 
 enum class CollisionModelKind { BGK, NullCollision };
+enum class AngularScatteringKind {
+    Isotropic,
+    HenyeyGreenstein
+};
 enum class CollisionProcessKind {
     Elastic,
     Excitation,
@@ -50,6 +54,16 @@ inline std::string to_string(CollisionProcessKind process) {
     return "unknown";
 }
 
+inline std::string to_string(AngularScatteringKind model) {
+    switch (model) {
+        case AngularScatteringKind::Isotropic:
+            return "isotropic";
+        case AngularScatteringKind::HenyeyGreenstein:
+            return "henyey_greenstein";
+    }
+    return "unknown";
+}
+
 struct CollisionChannelConfig {
     std::string name{};
     CollisionProcessKind process{CollisionProcessKind::Elastic};
@@ -59,6 +73,10 @@ struct CollisionChannelConfig {
     double cross_section_scale{1.0};
     std::string secondary_species{};
     std::string ion_species{};
+    AngularScatteringKind angular_scattering{
+        AngularScatteringKind::Isotropic};
+    std::filesystem::path mean_cosine_file{};
+    double mean_cosine_energy_scale{1.0};
 };
 
 struct CollisionConfig {

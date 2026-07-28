@@ -285,6 +285,19 @@ void validate_config(
                 "swarm max_energy_ev exceeds channel '" +
                 channel.name + "' table coverage");
         }
+        if (channel.angular_scattering ==
+            AngularScatteringKind::HenyeyGreenstein) {
+            const MeanCosineTable angular_table(
+                channel.mean_cosine_file,
+                channel.mean_cosine_energy_scale);
+            const double angular_max_ev =
+                angular_table.energies().back() / ev_to_j;
+            if (config.max_energy_ev > angular_max_ev) {
+                throw std::runtime_error(
+                    "swarm max_energy_ev exceeds channel '" +
+                    channel.name + "' angular table coverage");
+            }
+        }
     }
     if (!has_elastic) {
         throw std::runtime_error(
@@ -355,6 +368,7 @@ SwarmBenchmarkResult run_field(
     energy_samples.reserve(sampling_steps);
 
     SwarmBenchmarkResult result;
+    result.collision_model_signature = model.signature();
     result.reduced_field_td = reduced_field_td;
     result.electric_field_v_m = electric_field;
     result.channels.reserve(model.channel_names().size());
@@ -673,6 +687,7 @@ void write_swarm_benchmark_csv(
         << "citation,license,gas_data_file,population_model,"
         << "neutral_density_m3,timestep_s,steps,burn_in_steps,"
         << "particles,work_item_limit,seed,reduced_field_td,"
+        << "collision_model_signature,"
         << "electric_field_v_m,mean_velocity_x_m_s,"
         << "mean_velocity_x_standard_error_m_s,"
         << "electron_drift_velocity_m_s,"
@@ -711,6 +726,7 @@ void write_swarm_benchmark_csv(
             << config.work_item_limit << ','
             << config.seed + static_cast<std::uint64_t>(row) << ','
             << result.reduced_field_td << ','
+            << result.collision_model_signature << ','
             << result.electric_field_v_m << ','
             << result.mean_velocity_x_m_s << ','
             << result.mean_velocity_x_standard_error_m_s << ','

@@ -35,6 +35,7 @@ struct SwarmChannelResult {
 };
 
 struct SwarmBenchmarkResult {
+    std::uint64_t collision_model_signature{0};
     double reduced_field_td{0.0};
     double electric_field_v_m{0.0};
     double mean_velocity_x_m_s{0.0};
