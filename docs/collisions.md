@@ -1,7 +1,8 @@
 # Collision models
 
-AuroraPIC provides two bounded 1D collision models. Collision processing occurs
-after electrostatic velocity synchronization at each timestep.
+AuroraPIC provides a bounded 1D BGK compatibility model and tabulated
+null-collision MCC for 1D1V and imported planar 2D3V runs. Collision processing
+occurs after electrostatic/Boris velocity synchronization at each timestep.
 
 ## BGK compatibility model
 
@@ -20,8 +21,8 @@ collision model.
 
 ## Tabulated null-collision MCC
 
-The first production MCC slice supports stationary-neutral elastic and
-excitation channels for one named 1D kinetic species:
+The MCC slice supports stationary-heavy-neutral elastic and excitation
+channels for one named kinetic species:
 
 ```ini
 [collisions]
@@ -85,7 +86,41 @@ history.
 
 Elastic events preserve kinetic energy and randomize the sign of the 1D
 velocity. Excitation events remove exactly `threshold_energy`, then randomize
-the sign. A channel below its threshold has zero rate regardless of its table.
+the sign. Imported 2D3V events instead sample an isotropic direction over the
+unit sphere while preserving the post-collision speed. A channel below its
+threshold has zero rate regardless of its table.
+
+## Imported 2D3V gas metadata
+
+Imported runs use the same channel sections and additionally require:
+
+```ini
+[collisions]
+enabled = true
+model = null_collision
+species = electrons
+gas = argon
+neutral_density = 2.4e20
+neutral_mass = 6.6335209e-26
+neutral_temperature = 300.0
+data_provenance = dataset name, version, and citation
+max_frequency = 1.0e8
+```
+
+`gas` is an explicit identity label. In SI, `neutral_mass` is kg,
+`neutral_temperature` is K, and `neutral_density` is `m^-3`; normalized runs
+must use a self-consistent normalized contract. Gas identity, mass,
+temperature, provenance, rate controls, target species, and effective tables
+are checkpoint-fingerprinted.
+
+The present kinematics use the stationary-heavy-neutral approximation.
+Therefore neutral mass and temperature are required provenance and
+forward-compatibility metadata but do not yet add thermal neutral velocity,
+finite-mass recoil, gas heating, or depletion.
+
+`examples/imported_mcc_2d.cfg` exercises the complete imported parser,
+isotropic scatter, diagnostics, and v6 restart path using deliberately
+synthetic constant cross sections. It is not an Argon or other material model.
 
 ## Diagnostics and restart
 
@@ -93,19 +128,22 @@ An enabled collision model writes `collisions.csv`, containing interval and
 cumulative candidate, null-collision, and named-channel counts at the scalar
 output cadence.
 
-1D checkpoint v3 records collision model identity, a fingerprint of effective
-cross-section tables and MCC parameters, and cumulative collision counts. It
-rejects restart with changed collision data or model parameters. Historical
-v1/v2 checkpoints remain usable for collision-free and BGK runs; they cannot
-restart null-collision MCC because they contain no MCC provenance.
+1D checkpoint v3 and imported checkpoint v6 record collision model identity, a
+fingerprint of effective cross-section tables and MCC parameters, cumulative
+collision counts, and RNG state. They reject restart with changed collision
+data or model parameters. Historical 1D v1/v2 and imported v1-v5 checkpoints
+cannot restart null-collision MCC because they contain no compatible MCC
+provenance. Historical 1D v3 MCC signatures remain compatible when the new
+optional gas metadata is absent.
 
 ## Current limitations
 
-- MCC is integrated only with the 1D1V runtime.
 - Collision sampling is currently serial to preserve deterministic RNG order.
-- Neutrals are stationary; neutral thermal motion and depletion are absent.
-- 1D scattering can only randomize velocity sign, not a physical 3D angle.
+- Neutrals are stationary and infinitely heavy in the kinematics; thermal
+  motion, recoil, depletion, and gas heating are absent.
+- Structured 2D and structured 3D do not yet expose MCC configuration.
 - Ionization, attachment, charge exchange, Coulomb collisions, and secondary
   particle creation are not implemented.
-- Cross-section provenance is the user's responsibility. The checked-in MCC
-  tables are synthetic software-validation data, not material data.
+- Cross-section licensing and provenance are the user's responsibility. The
+  checked-in MCC tables are synthetic software-validation data, not He, Ar,
+  Kr, Xe, or other material data.

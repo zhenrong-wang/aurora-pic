@@ -61,6 +61,10 @@ struct CollisionConfig {
     double max_frequency{0.0};
     std::size_t max_candidates_per_particle{64};
     std::vector<CollisionChannelConfig> channels{};
+    std::string gas_name{};
+    double neutral_mass{0.0};
+    double neutral_temperature{0.0};
+    std::string data_provenance{};
 };
 
 struct Config {

@@ -29,24 +29,25 @@ The C++ imported-domain runtime follows the same cycle. It samples particles uni
 
 Imported runs are reachable from the CLI with `mesh = imported`. Their checkpoints include a deterministic signature over node coordinates, element connectivity, physical tags, and labels; a restart is rejected if the configured geometry differs.
 
-Imported boundary sources inject a configured integer number of macro-particles at the beginning of each active timestep. Boundary faces sharing a physical label are selected by length, then sampled uniformly along the selected face and inset into the adjacent domain. The configured normal velocity is inward; thermal normal speed uses an inward half-range Gaussian magnitude, while tangential and out-of-plane thermal velocities remain signed Gaussian. New particles are initialized into the same leapfrog/Boris time staggering as initial particles before joining the push. Dead storage slots are reused deterministically. Imported checkpoint v5 records the source identity, schedule, three-component velocity parameters, cumulative counts, dynamic particle state, RNG state, and unit contract so continuation reproduces uninterrupted injection.
+Imported boundary sources inject a configured integer number of macro-particles at the beginning of each active timestep. Boundary faces sharing a physical label are selected by length, then sampled uniformly along the selected face and inset into the adjacent domain. The configured normal velocity is inward; thermal normal speed uses an inward half-range Gaussian magnitude, while tangential and out-of-plane thermal velocities remain signed Gaussian. New particles are initialized into the same leapfrog/Boris time staggering as initial particles before joining the push. Dead storage slots are reused deterministically. Imported checkpoint v6 records the source identity, schedule, three-component velocity parameters, cumulative counts, dynamic particle state, RNG state, and unit contract so continuation reproduces uninterrupted injection.
 
-Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, full three-velocity incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal and signed tangential/out-of-plane distributions as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Imported checkpoint v5 preserves emission definitions, cumulative emitted counts, flux state, particle state, RNG state, and unit metadata.
+Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, full three-velocity incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal and signed tangential/out-of-plane distributions as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Imported checkpoint v6 preserves emission definitions, cumulative emitted counts, flux state, particle state, RNG state, unit metadata, and optional MCC state.
 
 Imported-mesh quality reporting computes cell-area and edge-length extrema, the minimum cell-corner angle, and the maximum within-cell edge-length ratio. These inexpensive metrics complement the mandatory finite, nondegenerate, convex, consistently oriented, manifold, and exactly tagged boundary validation. The biased-probe integration mesh pins explicit angle, edge-ratio, area, topology, and physical-label envelopes.
 
 ## Collisions
 
 The historical optional BGK velocity-reset model remains available for
-compatibility. The tabulated 1D MCC path evaluates
-`nu_i(E) = neutral_density * sigma_i(E) * abs(v)` and uses exponential
+compatibility. The tabulated 1D and imported 2D3V MCC paths evaluate
+`nu_i(E) = neutral_density * sigma_i(E) * speed` and use exponential
 null-collision candidate times with a strictly enforced user-supplied maximum
 frequency. Elastic events conserve particle kinetic energy; excitation events
-remove a configured threshold energy. Both randomize the sign of the 1D
-velocity. Named interval/cumulative counts are written to `collisions.csv`,
-and 1D checkpoint v3 fingerprints the effective tables and preserves the
-counters. See `docs/collisions.md` for the table, scaling, and limitation
-contract.
+remove a configured threshold energy. The 1D path randomizes velocity sign;
+the imported path samples an isotropic three-dimensional direction. Named
+interval/cumulative counts are written to `collisions.csv`. Checkpoint v3 in
+1D and v6 for imported geometry fingerprint effective tables and preserve
+counters. See `docs/collisions.md` for the gas metadata, scaling, and
+limitation contract.
 
 ## Stability guidance
 

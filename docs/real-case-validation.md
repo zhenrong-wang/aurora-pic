@@ -32,7 +32,7 @@ when starting any imported-mesh run.
 - ion-induced, weight-aware secondary-electron emission from the probe;
 - species/tag-resolved particle, charge, energy, rate, and flux diagnostics;
 - prescribed magnetic field, VTU field output, particle sampling, and
-  checkpoint v5.
+  checkpoint v6.
 
 The smoke acceptance envelope requires 20 completed timesteps, 350–450 live
 macro-particles, at least 250 outlet impacts, at least 80 probe impacts,

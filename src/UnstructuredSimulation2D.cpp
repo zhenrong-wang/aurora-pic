@@ -34,6 +34,8 @@ constexpr const char* CHECKPOINT_MAGIC_V4 =
     "AuroraPIC-unstructured-2D-checkpoint-v4";
 constexpr const char* CHECKPOINT_MAGIC_V5 =
     "AuroraPIC-unstructured-2D-checkpoint-v5";
+constexpr const char* CHECKPOINT_MAGIC_V6 =
+    "AuroraPIC-unstructured-2D-checkpoint-v6";
 
 double cross(Vec2 first, Vec2 second) {
     return first.x * second.y - first.y * second.x;
@@ -88,6 +90,67 @@ bool has_magnetic_field(Vec3 magnetic_field) {
     return magnetic_field.x != 0.0 ||
            magnetic_field.y != 0.0 ||
            magnetic_field.z != 0.0;
+}
+
+std::string csv_quote(const std::string& value);
+
+void add_collision_statistics(
+    CollisionDiagnostics& destination,
+    const CollisionStepStatistics& source) {
+    destination.candidates += source.candidates;
+    destination.null_collisions += source.null_collisions;
+    if (destination.channel_collisions.size() !=
+        source.channel_collisions.size()) {
+        throw std::runtime_error(
+            "imported MCC channel statistics size mismatch");
+    }
+    for (std::size_t channel = 0;
+         channel < source.channel_collisions.size(); ++channel) {
+        destination.channel_collisions[channel] +=
+            source.channel_collisions[channel];
+    }
+}
+
+void clear_collision_counts(CollisionDiagnostics& diagnostics) {
+    diagnostics.candidates = 0;
+    diagnostics.null_collisions = 0;
+    std::fill(
+        diagnostics.channel_collisions.begin(),
+        diagnostics.channel_collisions.end(), 0);
+}
+
+void write_collision_header(
+    std::ofstream& output,
+    const CollisionDiagnostics& diagnostics) {
+    output << "step,time,candidates,null_collisions";
+    for (const auto& name : diagnostics.channel_names) {
+        output << ',' << csv_quote(name);
+    }
+    output << ",cumulative_candidates,cumulative_null_collisions";
+    for (const auto& name : diagnostics.channel_names) {
+        output << ',' << csv_quote("cumulative_" + name);
+    }
+    output << '\n';
+}
+
+void write_collision_sample(
+    std::ofstream& output,
+    std::size_t step,
+    double time,
+    const CollisionDiagnostics& interval,
+    const CollisionDiagnostics& totals) {
+    output << step << ',' << std::setprecision(17) << time << ','
+           << interval.candidates << ',' << interval.null_collisions;
+    for (const auto count : interval.channel_collisions) {
+        output << ',' << count;
+    }
+    output << ',' << totals.candidates << ','
+           << totals.null_collisions;
+    for (const auto count : totals.channel_collisions) {
+        output << ',' << count;
+    }
+    output << '\n';
+    output.flush();
 }
 
 void initialize_particle_pusher(Particle2D& particle, Vec2 electric, double charge_to_mass,
@@ -303,6 +366,45 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
                     label, UnstructuredBoundaryFlux2D{});
             }
         }
+    }
+    if (config_.collisions.enabled) {
+        if (config_.collisions.model !=
+            CollisionModelKind::NullCollision) {
+            throw std::invalid_argument(
+                "imported 2D supports only null-collision MCC");
+        }
+        if (config_.collisions.gas_name.empty() ||
+            config_.collisions.data_provenance.empty() ||
+            !std::isfinite(config_.collisions.neutral_mass) ||
+            !(config_.collisions.neutral_mass > 0.0) ||
+            !std::isfinite(config_.collisions.neutral_temperature) ||
+            config_.collisions.neutral_temperature < 0.0) {
+            throw std::invalid_argument(
+                "imported MCC requires gas name, provenance, positive "
+                "neutral mass, and non-negative neutral temperature");
+        }
+        const auto target = std::find_if(
+            species_configs_.begin(), species_configs_.end(),
+            [&](const auto& species) {
+                return species.name == config_.collisions.species;
+            });
+        if (target == species_configs_.end()) {
+            throw std::invalid_argument(
+                "imported MCC target species was not found: " +
+                config_.collisions.species);
+        }
+        mcc_species_id_ = static_cast<std::size_t>(
+            target - species_configs_.begin());
+        mcc_model_ = std::make_unique<NullCollisionModel>(
+            config_.collisions, target->mass);
+        collision_totals_.channel_names =
+            mcc_model_->channel_names();
+        collision_totals_.channel_collisions.assign(
+            collision_totals_.channel_names.size(), 0);
+        collision_interval_.channel_names =
+            collision_totals_.channel_names;
+        collision_interval_.channel_collisions.assign(
+            collision_totals_.channel_names.size(), 0);
     }
     std::set<std::string> source_names;
     for (const auto& source_config : config_.sources) {
@@ -1054,8 +1156,53 @@ void UnstructuredSimulation2D::step() {
     }
     timing_.particle_seconds +=
         std::chrono::duration<double>(SteadyClock::now() - second_particle_start).count();
+    const auto collision_start = SteadyClock::now();
+    apply_collisions();
+    timing_.particle_seconds +=
+        std::chrono::duration<double>(
+            SteadyClock::now() - collision_start).count();
     ++step_;
     time_ += config_.dt;
+}
+
+void UnstructuredSimulation2D::apply_collisions() {
+    if (!mcc_model_) return;
+    auto& species = species_[mcc_species_id_];
+    const double charge_to_mass =
+        species.charge() / species.mass();
+    for (std::size_t particle_id = 0;
+         particle_id < species.particles().size(); ++particle_id) {
+        auto& particle = species.particles()[particle_id];
+        if (!particle.alive) continue;
+        Vec3 velocity{
+            particle.velocity.x,
+            particle.velocity.y,
+            particle.velocity_z};
+        const auto statistics =
+            mcc_model_->collide(velocity, config_.dt, rng_);
+        add_collision_statistics(collision_totals_, statistics);
+        add_collision_statistics(collision_interval_, statistics);
+        particle.velocity = {velocity.x, velocity.y};
+        particle.velocity_z = velocity.z;
+        bool cache_hit = false;
+        const auto electric = interpolate_electric(
+            mesh_, particle.position,
+            particle_locations_[mcc_species_id_][particle_id],
+            &cache_hit);
+        cache_hit ? ++timing_.location_cache_hits
+                  : ++timing_.location_searches;
+        if (!electric) {
+            throw std::runtime_error(
+                "MCC particle is outside imported mesh");
+        }
+        initialize_particle_pusher(
+            particle, *electric, charge_to_mass,
+            Vec3{
+                config_.magnetic_field_x,
+                config_.magnetic_field_y,
+                config_.magnetic_field_z},
+            config_.dt);
+    }
 }
 
 UnstructuredDiagnosticSample2D UnstructuredSimulation2D::sample() const {
@@ -1249,13 +1396,23 @@ void UnstructuredSimulation2D::save_checkpoint(const std::filesystem::path& path
                                  path.string());
     }
     output << std::setprecision(17);
-    output << CHECKPOINT_MAGIC_V5 << '\n';
+    output << CHECKPOINT_MAGIC_V6 << '\n';
     output << "mesh_signature " << mesh_signature() << '\n';
     output << "units " << to_string(config_.units.system) << ' '
            << config_.units.relative_permittivity << ' '
            << config_.units.permittivity() << '\n';
     output << "step " << step_ << '\n';
     output << "time " << time_ << '\n';
+    output << "collision_model "
+           << (mcc_model_ ? "null_collision" : "off") << ' '
+           << (mcc_model_ ? mcc_model_->signature() : 0) << '\n';
+    output << "collision_totals " << collision_totals_.candidates
+           << ' ' << collision_totals_.null_collisions
+           << ' ' << collision_totals_.channel_collisions.size();
+    for (const auto count : collision_totals_.channel_collisions) {
+        output << ' ' << count;
+    }
+    output << '\n';
     output << "absorbed_count " << absorbed_by_label_.size() << '\n';
     for (const auto& [label, count] : absorbed_by_label_) {
         output << "absorbed " << std::quoted(label) << ' ' << count << '\n';
@@ -1343,8 +1500,9 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
     const bool checkpoint_v3 = magic == CHECKPOINT_MAGIC_V3;
     const bool checkpoint_v4 = magic == CHECKPOINT_MAGIC_V4;
     const bool checkpoint_v5 = magic == CHECKPOINT_MAGIC_V5;
+    const bool checkpoint_v6 = magic == CHECKPOINT_MAGIC_V6;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
-        !checkpoint_v4 && !checkpoint_v5) {
+        !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6) {
         throw std::runtime_error("invalid unstructured checkpoint magic");
     }
     std::string key;
@@ -1359,7 +1517,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         input >> unit_system >> relative_permittivity >> permittivity;
-        if ((!checkpoint_v4 && !checkpoint_v5) ||
+        if ((!checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6) ||
             unit_system != to_string(config_.units.system) ||
             relative_permittivity !=
                 config_.units.relative_permittivity ||
@@ -1368,7 +1526,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
                 "unstructured checkpoint unit system mismatch");
         }
         input >> key;
-    } else if (checkpoint_v4 || checkpoint_v5 ||
+    } else if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6 ||
                config_.units.system != UnitSystem::Normalized ||
                config_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1380,6 +1538,37 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
     input >> key >> time_;
     if (key != "time" || !std::isfinite(time_) || time_ < 0.0) {
         throw std::runtime_error("unstructured checkpoint has invalid time");
+    }
+    if (checkpoint_v6) {
+        std::string collision_model;
+        std::uint64_t collision_signature = 0;
+        input >> key >> collision_model >> collision_signature;
+        const std::string configured_model =
+            mcc_model_ ? "null_collision" : "off";
+        const std::uint64_t configured_signature =
+            mcc_model_ ? mcc_model_->signature() : 0;
+        if (key != "collision_model" ||
+            collision_model != configured_model ||
+            collision_signature != configured_signature) {
+            throw std::runtime_error(
+                "unstructured checkpoint collision model mismatch");
+        }
+        std::size_t channel_count = 0;
+        input >> key >> collision_totals_.candidates
+              >> collision_totals_.null_collisions >> channel_count;
+        if (key != "collision_totals" ||
+            channel_count !=
+                collision_totals_.channel_collisions.size()) {
+            throw std::runtime_error(
+                "unstructured checkpoint collision totals mismatch");
+        }
+        for (auto& count : collision_totals_.channel_collisions) {
+            input >> count;
+        }
+        clear_collision_counts(collision_interval_);
+    } else if (mcc_model_) {
+        throw std::runtime_error(
+            "legacy unstructured checkpoint cannot restart MCC");
     }
     std::size_t absorbed_count = 0;
     input >> key >> absorbed_count;
@@ -1427,7 +1616,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
                   >> std::quoted(boundary) >> particles_per_step
                   >> start_step >> end_step >> normal_velocity
                   >> tangential_velocity >> thermal_velocity;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 input >> out_of_plane_velocity;
             }
             input >> injected_particles;
@@ -1454,7 +1643,8 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
             source->injected_particles = injected_particles;
         }
     }
-    if (!checkpoint_v3 && !checkpoint_v4 && !checkpoint_v5) {
+    if (!checkpoint_v3 && !checkpoint_v4 && !checkpoint_v5 &&
+        !checkpoint_v6) {
         if (!emissions_.empty()) {
             throw std::runtime_error(
                 "legacy unstructured checkpoint cannot restart configured "
@@ -1493,7 +1683,7 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
                   >> std::quoted(emitted_species) >> yield
                   >> max_particles_per_impact >> normal_velocity
                   >> tangential_velocity >> thermal_velocity;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 input >> out_of_plane_velocity;
             }
             input >> emitted_particles;
@@ -1598,13 +1788,13 @@ void UnstructuredSimulation2D::load_checkpoint(const std::filesystem::path& path
             int alive = 0;
             input >> particle.position.x >> particle.position.y
                   >> particle.velocity.x >> particle.velocity.y;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 input >> particle.velocity_z;
             } else {
                 particle.velocity_z = 0.0;
             }
             input >> particle.velocity_half.x >> particle.velocity_half.y;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 input >> particle.velocity_half_z;
             } else {
                 particle.velocity_half_z = 0.0;
@@ -1640,6 +1830,20 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     std::ofstream diagnostics(config_.output_dir / "scalars.csv");
     if (!diagnostics) throw std::runtime_error("cannot open unstructured diagnostics output");
     write_diagnostics_header(diagnostics);
+    std::ofstream collision_output;
+    if (mcc_model_) {
+        collision_output.open(config_.output_dir / "collisions.csv");
+        if (!collision_output) {
+            throw std::runtime_error(
+                "cannot open imported collision diagnostics output");
+        }
+        write_collision_header(
+            collision_output, collision_totals_);
+        write_collision_sample(
+            collision_output, step_, time_,
+            collision_interval_, collision_totals_);
+        clear_collision_counts(collision_interval_);
+    }
 
     std::vector<UnstructuredDiagnosticSample2D> history;
     UnstructuredRunSummary2D summary;
@@ -1666,6 +1870,12 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
         auto current = sample();
         history.push_back(current);
         write_diagnostics_sample(diagnostics, current);
+        if (mcc_model_) {
+            write_collision_sample(
+                collision_output, step_, time_,
+                collision_interval_, collision_totals_);
+            clear_collision_counts(collision_interval_);
+        }
         summary.final_sample = current;
         if (config_.vtk_output) {
             write_vtk_xml(

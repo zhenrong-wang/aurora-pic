@@ -14,6 +14,7 @@ The checked-in examples are intentionally small so they run in CI and on develop
 | `examples/plasma_2d.cfg` | 2D3V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
+| `examples/imported_mcc_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 | 6 | Synthetic stationary-neutral isotropic elastic MCC, provenance metadata, diagnostics, and checkpoint v6. |
 | `examples/biased_probe_2d.cfg` | 2D3V | 725 nodes / 1,342 triangles / internal probe hole | 800 initial / 404 final in the pinned run | 20 | Gmsh-authored real geometry, local refinement, mixed probe fields, injection, collection, secondary emission, flux diagnostics, VTU, checkpoint. |
 | `examples/plasma_3d.cfg` | 3D3V | 8 x 8 x 8 nodes | 128 | 3 | Structured 3D CLI path, VTK legacy/XML output, particle samples. |
 
@@ -77,4 +78,4 @@ The M6 baseline now includes:
 - an install/package smoke test that installs the built tree, runs the installed CLI, builds a downstream `find_package(AuroraPIC CONFIG REQUIRED)` consumer, and inspects the generated `TGZ` package;
 - this documented performance envelope.
 
-The remaining hardening work is to add measured benchmark history, publish signed release artifacts, expand compiler/platform coverage, and implement deeper physics validation for electromagnetic fields plus multidimensional/reactive collision models.
+The remaining hardening work is to add measured benchmark history, publish signed release artifacts, expand compiler/platform coverage, and implement deeper physics validation for electromagnetic fields plus reactive collision models and authoritative gas datasets.

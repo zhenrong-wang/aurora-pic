@@ -338,6 +338,36 @@ int main() {
             require(
                 accepted > 620 && accepted < 800,
                 "elastic collision acceptance left its statistical envelope");
+            std::mt19937_64 vector_rng(8128);
+            std::uint64_t vector_accepted = 0;
+            double mean_direction_x = 0.0;
+            double mean_direction_y = 0.0;
+            double mean_direction_z = 0.0;
+            for (std::size_t sample = 0; sample < 10000; ++sample) {
+                pic::Vec3 velocity{std::sqrt(2.0), 0.0, 0.0};
+                const auto stats =
+                    elastic.collide(velocity, 0.1, vector_rng);
+                vector_accepted += stats.channel_collisions[0];
+                require_near(
+                    norm(velocity), std::sqrt(2.0), 1e-14,
+                    "2D3V elastic MCC did not preserve particle energy");
+                if (stats.channel_collisions[0] != 0) {
+                    mean_direction_x += velocity.x / std::sqrt(2.0);
+                    mean_direction_y += velocity.y / std::sqrt(2.0);
+                    mean_direction_z += velocity.z / std::sqrt(2.0);
+                }
+            }
+            require(
+                vector_accepted > 620 && vector_accepted < 800,
+                "2D3V elastic collision acceptance left its statistical envelope");
+            require(
+                std::abs(mean_direction_x) <
+                        0.1 * static_cast<double>(vector_accepted) &&
+                    std::abs(mean_direction_y) <
+                        0.1 * static_cast<double>(vector_accepted) &&
+                    std::abs(mean_direction_z) <
+                        0.1 * static_cast<double>(vector_accepted),
+                "2D3V elastic MCC scattering is not statistically isotropic");
 
             auto excitation_config = elastic_config;
             excitation_config.max_frequency = 4.0;
@@ -364,6 +394,21 @@ int main() {
                           excitation_stats.channel_collisions[0]),
                 1e-13,
                 "excitation MCC removed the wrong threshold energy");
+            pic::Vec3 excited_vector{2.0, 0.0, 0.0};
+            const double initial_vector_energy =
+                0.5 * norm(excited_vector) * norm(excited_vector);
+            const auto vector_excitation_stats =
+                excitation.collide(excited_vector, 2.0, vector_rng);
+            require(
+                vector_excitation_stats.channel_collisions[0] > 0,
+                "2D3V excitation MCC did not accept a collision");
+            require_near(
+                initial_vector_energy -
+                    0.5 * norm(excited_vector) * norm(excited_vector),
+                0.5 * static_cast<double>(
+                          vector_excitation_stats.channel_collisions[0]),
+                1e-13,
+                "2D3V excitation MCC removed the wrong threshold energy");
 
             auto unsafe_config = elastic_config;
             unsafe_config.max_frequency = 0.1;
@@ -2700,6 +2745,141 @@ int main() {
                         imported_config.particle_boundaries.at("electrode") ==
                             pic::ParticleBoundary::Reflecting,
                     "imported 2D example config did not load expected runtime settings");
+            const auto imported_mcc_example =
+                std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                "examples" / "imported_mcc_2d.cfg";
+            const auto imported_mcc_config =
+                pic::load_unstructured_config_2d(imported_mcc_example);
+            require(
+                imported_mcc_config.collisions.enabled &&
+                    imported_mcc_config.collisions.model ==
+                        pic::CollisionModelKind::NullCollision &&
+                    imported_mcc_config.collisions.species == "tracers" &&
+                    imported_mcc_config.collisions.gas_name ==
+                        "synthetic_validation_gas" &&
+                    imported_mcc_config.collisions.neutral_mass == 40.0 &&
+                    imported_mcc_config.collisions.neutral_temperature ==
+                        300.0 &&
+                    imported_mcc_config.collisions.channels.size() == 1 &&
+                    imported_mcc_config.collisions.channels.front()
+                            .cross_section_file.filename() ==
+                        "mcc_2d3v_elastic.dat",
+                "imported 2D MCC config did not preserve gas and channel metadata");
+            {
+                const auto invalid_path =
+                    std::filesystem::path(
+                        "test_imported_mcc_missing_provenance.cfg");
+                std::string invalid_text =
+                    read_file_text(imported_mcc_example);
+                const auto provenance =
+                    invalid_text.find("data_provenance =");
+                require(
+                    provenance != std::string::npos,
+                    "imported MCC fixture is missing provenance");
+                invalid_text.erase(
+                    provenance,
+                    invalid_text.find('\n', provenance) - provenance + 1);
+                {
+                    std::ofstream invalid(invalid_path);
+                    invalid << invalid_text;
+                }
+                require_throws(
+                    [&]() {
+                        try {
+                            (void)pic::load_unstructured_config_2d(
+                                invalid_path);
+                        } catch (...) {
+                            std::filesystem::remove(invalid_path);
+                            throw;
+                        }
+                        std::filesystem::remove(invalid_path);
+                    },
+                    "imported MCC parser accepted missing data provenance");
+            }
+
+            {
+                const auto output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_mcc");
+                const auto continued_output_dir =
+                    std::filesystem::path(
+                        "test_output_unstructured_mcc_continued");
+                const auto changed_table =
+                    std::filesystem::absolute(
+                        "test_unstructured_mcc_changed.dat");
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_output_dir);
+
+                auto config = imported_mcc_config;
+                config.output_dir = output_dir;
+                pic::UnstructuredSimulation2D continuous(config);
+                const auto continuous_summary = continuous.run();
+                const auto& continuous_collisions =
+                    continuous.collision_diagnostics();
+                require(
+                    continuous_summary.steps_completed == 6 &&
+                        continuous_collisions.candidates == 44 &&
+                        continuous_collisions.null_collisions == 20 &&
+                        continuous_collisions.channel_collisions ==
+                            std::vector<std::uint64_t>{24},
+                    "imported 2D3V MCC deterministic collision envelope changed");
+                require_near(
+                    continuous_summary.final_sample.kinetic_energy,
+                    32.0, 1e-12,
+                    "imported elastic MCC did not conserve kinetic energy");
+                const auto collision_csv =
+                    read_file_text(output_dir / "collisions.csv");
+                require(
+                    collision_csv.find("cumulative_synthetic_elastic") !=
+                            std::string::npos &&
+                        count_lines(collision_csv) == 8,
+                    "imported MCC diagnostics are incomplete");
+
+                auto continued_config = config;
+                continued_config.restart_path =
+                    output_dir / "checkpoint_3.apc";
+                continued_config.output_dir = continued_output_dir;
+                continued_config.checkpoint_output = false;
+                pic::UnstructuredSimulation2D continued(
+                    continued_config);
+                const auto continued_summary = continued.run();
+                require_species_close(
+                    continuous.species(), continued.species(),
+                    "imported MCC checkpoint restart determinism");
+                require(
+                    continued.collision_diagnostics().candidates ==
+                            continuous_collisions.candidates &&
+                        continued.collision_diagnostics().null_collisions ==
+                            continuous_collisions.null_collisions &&
+                        continued.collision_diagnostics()
+                                .channel_collisions ==
+                            continuous_collisions.channel_collisions,
+                    "imported MCC checkpoint did not preserve collision state");
+                require_near(
+                    continued_summary.final_sample.total_energy,
+                    continuous_summary.final_sample.total_energy, 1e-13,
+                    "imported MCC checkpoint changed total energy");
+
+                {
+                    std::ofstream changed(changed_table);
+                    changed << "0 0.5\n10 0.5\n";
+                }
+                auto changed_config = continued_config;
+                changed_config.collisions.channels.front()
+                    .cross_section_file = changed_table;
+                require_throws_contains(
+                    [&]() {
+                        pic::UnstructuredSimulation2D changed(
+                            changed_config);
+                        (void)changed.run();
+                    },
+                    "collision model mismatch",
+                    "imported MCC checkpoint accepted changed cross sections");
+
+                std::filesystem::remove_all(output_dir);
+                std::filesystem::remove_all(continued_output_dir);
+                std::filesystem::remove(changed_table);
+            }
 
             {
                 const auto real_case_mesh =

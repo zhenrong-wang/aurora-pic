@@ -157,6 +157,13 @@ NullCollisionModel::NullCollisionModel(
         throw std::invalid_argument(
             "MCC requires at least one collision channel");
     }
+    if (!std::isfinite(config_.neutral_mass) ||
+        config_.neutral_mass < 0.0 ||
+        !std::isfinite(config_.neutral_temperature) ||
+        config_.neutral_temperature < 0.0) {
+        throw std::invalid_argument(
+            "MCC neutral mass and temperature must be finite and non-negative");
+    }
 
     constexpr std::uint64_t fnv_offset = 1469598103934665603ULL;
     signature_ = fnv_offset;
@@ -165,6 +172,18 @@ NullCollisionModel::NullCollisionModel(
     hash_double(signature_, config_.neutral_density);
     hash_double(signature_, config_.max_frequency);
     hash_double(signature_, particle_mass_);
+    // Preserve the historical 1D MCC signature when the optional gas
+    // metadata is absent. Imported 2D MCC requires these fields and therefore
+    // fingerprints them without invalidating existing 1D v3 checkpoints.
+    if (!config_.gas_name.empty() ||
+        config_.neutral_mass != 0.0 ||
+        config_.neutral_temperature != 0.0 ||
+        !config_.data_provenance.empty()) {
+        hash_string(signature_, config_.gas_name);
+        hash_double(signature_, config_.neutral_mass);
+        hash_double(signature_, config_.neutral_temperature);
+        hash_string(signature_, config_.data_provenance);
+    }
     const std::uint64_t candidate_limit =
         config_.max_candidates_per_particle;
     hash_uint64(signature_, candidate_limit);
@@ -224,7 +243,14 @@ std::vector<double> NullCollisionModel::rates(double velocity) const {
     if (!std::isfinite(velocity)) {
         throw std::invalid_argument("MCC particle velocity must be finite");
     }
-    const double speed = std::abs(velocity);
+    return rates_for_speed(std::abs(velocity));
+}
+
+std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
+    if (!std::isfinite(speed) || speed < 0.0) {
+        throw std::invalid_argument(
+            "MCC particle speed must be finite and non-negative");
+    }
     const double energy = 0.5 * particle_mass_ * speed * speed;
     if (!std::isfinite(energy)) {
         throw std::overflow_error("MCC particle energy overflow");
@@ -269,6 +295,32 @@ void NullCollisionModel::apply_channel(
     velocity = direction(rng) == 0 ? -speed : speed;
 }
 
+void NullCollisionModel::apply_channel(
+    std::size_t channel_index,
+    Vec3& velocity,
+    std::mt19937_64& rng) const {
+    const auto& channel = channels_.at(channel_index);
+    const double initial_speed = std::sqrt(
+        velocity.x * velocity.x +
+        velocity.y * velocity.y +
+        velocity.z * velocity.z);
+    double energy =
+        0.5 * particle_mass_ * initial_speed * initial_speed;
+    if (channel.config.process == CollisionProcessKind::Excitation) {
+        energy = std::max(
+            0.0, energy - channel.config.threshold_energy);
+    }
+    const double speed = std::sqrt(2.0 * energy / particle_mass_);
+    std::uniform_real_distribution<double> unit(0.0, 1.0);
+    const double cosine = 2.0 * unit(rng) - 1.0;
+    const double sine = std::sqrt(std::max(0.0, 1.0 - cosine * cosine));
+    const double azimuth = 2.0 * std::acos(-1.0) * unit(rng);
+    velocity = {
+        speed * sine * std::cos(azimuth),
+        speed * sine * std::sin(azimuth),
+        speed * cosine};
+}
+
 CollisionStepStatistics NullCollisionModel::collide(
     double& velocity,
     double timestep,
@@ -297,6 +349,66 @@ CollisionStepStatistics NullCollisionModel::collide(
                 "max_candidates_per_particle");
         }
         const auto channel_rates = rates(velocity);
+        const double selection =
+            std::generate_canonical<double, 64>(rng) *
+            config_.max_frequency;
+        double cumulative = 0.0;
+        bool accepted = false;
+        for (std::size_t channel = 0;
+             channel < channel_rates.size(); ++channel) {
+            cumulative += channel_rates[channel];
+            if (selection < cumulative) {
+                apply_channel(channel, velocity, rng);
+                ++statistics.channel_collisions[channel];
+                accepted = true;
+                break;
+            }
+        }
+        if (!accepted) ++statistics.null_collisions;
+    }
+    return statistics;
+}
+
+CollisionStepStatistics NullCollisionModel::collide(
+    Vec3& velocity,
+    double timestep,
+    std::mt19937_64& rng) const {
+    if (!std::isfinite(velocity.x) ||
+        !std::isfinite(velocity.y) ||
+        !std::isfinite(velocity.z)) {
+        throw std::invalid_argument(
+            "MCC particle velocity must be finite");
+    }
+    if (!std::isfinite(timestep) || !(timestep > 0.0)) {
+        throw std::invalid_argument(
+            "MCC timestep must be positive and finite");
+    }
+    CollisionStepStatistics statistics;
+    statistics.channel_collisions.assign(channels_.size(), 0);
+    const auto speed = [&]() {
+        return std::sqrt(
+            velocity.x * velocity.x +
+            velocity.y * velocity.y +
+            velocity.z * velocity.z);
+    };
+    (void)rates_for_speed(speed());
+    double elapsed = 0.0;
+    while (true) {
+        const double waiting_time =
+            -std::log(open_unit_interval(rng)) / config_.max_frequency;
+        if (!std::isfinite(waiting_time) ||
+            waiting_time >= timestep - elapsed) {
+            break;
+        }
+        elapsed += waiting_time;
+        ++statistics.candidates;
+        if (statistics.candidates >
+            config_.max_candidates_per_particle) {
+            throw std::runtime_error(
+                "MCC candidate limit exceeded; reduce dt or increase "
+                "max_candidates_per_particle");
+        }
+        const auto channel_rates = rates_for_speed(speed());
         const double selection =
             std::generate_canonical<double, 64>(rng) *
             config_.max_frequency;

@@ -347,6 +347,29 @@ def check_imported_plasma_2d(output_dir: Path) -> None:
     require_file(output_dir / "checkpoint_3.apc")
 
 
+def check_imported_mcc_2d(output_dir: Path) -> None:
+    _, scalar_rows = require_csv(
+        output_dir / "scalars.csv", min_rows=7
+    )
+    require_step(scalar_rows, 6, output_dir / "scalars.csv")
+    collision_header, collision_rows = require_csv(
+        output_dir / "collisions.csv", min_rows=7
+    )
+    require_step(collision_rows, 6, output_dir / "collisions.csv")
+    final = {
+        name: float(value)
+        for name, value in zip(collision_header, collision_rows[-1])
+    }
+    require(
+        final["cumulative_candidates"] == 44 and
+        final["cumulative_null_collisions"] == 20 and
+        final["cumulative_synthetic_elastic"] == 24,
+        "imported 2D3V MCC deterministic collision envelope changed",
+    )
+    require_file(output_dir / "checkpoint_3.apc")
+    require_file(output_dir / "checkpoint_6.apc")
+
+
 def check_biased_probe_2d(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
@@ -401,6 +424,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),
+        ("imported_mcc_2d.cfg", "imported_mcc_2d", check_imported_mcc_2d),
         ("biased_probe_2d.cfg", "biased_probe_2d", check_biased_probe_2d),
         ("plasma_3d.cfg", "plasma_3d", check_plasma_3d),
     ]

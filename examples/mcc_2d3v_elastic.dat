@@ -1,0 +1,4 @@
+# Synthetic validation data: energy  cross_section
+# Constant values deliberately exercise null-collision acceptance.
+0.0  1.0
+10.0 1.0

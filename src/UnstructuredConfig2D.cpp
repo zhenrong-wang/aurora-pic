@@ -25,10 +25,12 @@ struct NamedBlock {
 
 struct ParsedConfig {
     Values global;
+    Values collisions;
     std::vector<NamedBlock> boundaries;
     std::vector<NamedBlock> species;
     std::vector<NamedBlock> sources;
     std::vector<NamedBlock> emissions;
+    std::vector<NamedBlock> collision_channels;
 };
 
 std::string trim(std::string value) {
@@ -96,6 +98,15 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "max_particles_per_impact", "normal_velocity", "tangential_velocity",
         "thermal_velocity", "out_of_plane_velocity",
     };
+    static const std::set<std::string> collision_keys{
+        "enabled", "model", "species", "gas", "neutral_density",
+        "neutral_mass", "neutral_temperature", "data_provenance",
+        "max_frequency", "max_candidates_per_particle",
+    };
+    static const std::set<std::string> collision_channel_keys{
+        "type", "cross_section_file", "threshold_energy",
+        "energy_scale", "cross_section_scale",
+    };
 
     ParsedConfig result;
     Values* current = &result.global;
@@ -104,6 +115,8 @@ ParsedConfig parse(const std::filesystem::path& path) {
     std::set<std::string> species_names;
     std::set<std::string> source_names;
     std::set<std::string> emission_names;
+    std::set<std::string> collision_channel_names;
+    bool have_collisions = false;
     std::string line;
     std::size_t line_number = 0;
     while (std::getline(input, line)) {
@@ -119,7 +132,16 @@ ParsedConfig parse(const std::filesystem::path& path) {
             constexpr const char* species_prefix = "species.";
             constexpr const char* source_prefix = "source.";
             constexpr const char* emission_prefix = "emission.";
-            if (lowered.rfind(boundary_prefix, 0) == 0) {
+            constexpr const char* collision_prefix = "collision.";
+            if (lowered == "collisions") {
+                if (have_collisions) {
+                    config_error(
+                        line_number, "duplicate collisions section");
+                }
+                have_collisions = true;
+                current = &result.collisions;
+                allowed = &collision_keys;
+            } else if (lowered.rfind(boundary_prefix, 0) == 0) {
                 const std::string name =
                     trim(section.substr(std::char_traits<char>::length(boundary_prefix)));
                 if (name.empty() || !boundary_names.insert(name).second) {
@@ -157,6 +179,19 @@ ParsedConfig parse(const std::filesystem::path& path) {
                 result.emissions.push_back({name, {}});
                 current = &result.emissions.back().values;
                 allowed = &emission_keys;
+            } else if (lowered.rfind(collision_prefix, 0) == 0) {
+                const std::string name =
+                    trim(section.substr(
+                        std::char_traits<char>::length(collision_prefix)));
+                if (name.empty() ||
+                    !collision_channel_names.insert(name).second) {
+                    config_error(
+                        line_number,
+                        "empty or duplicate collision channel section");
+                }
+                result.collision_channels.push_back({name, {}});
+                current = &result.collision_channels.back().values;
+                allowed = &collision_channel_keys;
             } else {
                 config_error(line_number, "unknown section '" + section + "'");
             }
@@ -361,6 +396,49 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
     result.runtime.threads =
         number<std::size_t>(global, "runtime_threads", result.runtime.threads);
 
+    if (!parsed.collisions.empty()) {
+        result.collisions.enabled =
+            boolean(parsed.collisions, "enabled", true);
+        const std::string model = lower(
+            parsed.collisions.contains("model")
+                ? parsed.collisions.at("model")
+                : "null_collision");
+        if (model != "null_collision" && model != "null-collision" &&
+            model != "mcc") {
+            throw std::runtime_error(
+                "imported 2D collisions support only model = null_collision");
+        }
+        result.collisions.model = CollisionModelKind::NullCollision;
+        if (result.collisions.enabled) {
+            result.collisions.species = required(
+                parsed.collisions, "species", "collisions");
+            result.collisions.gas_name = required(
+                parsed.collisions, "gas", "collisions");
+            result.collisions.data_provenance = required(
+                parsed.collisions, "data_provenance", "collisions");
+            (void)required(
+                parsed.collisions, "neutral_density", "collisions");
+            (void)required(
+                parsed.collisions, "neutral_mass", "collisions");
+            (void)required(
+                parsed.collisions, "neutral_temperature", "collisions");
+            (void)required(
+                parsed.collisions, "max_frequency", "collisions");
+        }
+        result.collisions.neutral_density = number<double>(
+            parsed.collisions, "neutral_density", 0.0);
+        result.collisions.neutral_mass = number<double>(
+            parsed.collisions, "neutral_mass", 0.0);
+        result.collisions.neutral_temperature = number<double>(
+            parsed.collisions, "neutral_temperature", 0.0);
+        result.collisions.max_frequency = number<double>(
+            parsed.collisions, "max_frequency", 0.0);
+        result.collisions.max_candidates_per_particle =
+            number<std::size_t>(
+                parsed.collisions, "max_candidates_per_particle",
+                result.collisions.max_candidates_per_particle);
+    }
+
     for (const auto& boundary : parsed.boundaries) {
         const std::string field = boundary.values.contains("field")
                                       ? lower(boundary.values.at("field"))
@@ -529,6 +607,58 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 "' references an unknown species");
         }
         result.emissions.push_back(std::move(value));
+    }
+    for (const auto& channel : parsed.collision_channels) {
+        CollisionChannelConfig value;
+        value.name = channel.name;
+        const std::string type = lower(required(
+            channel.values, "type",
+            "collision channel '" + channel.name + "'"));
+        if (type == "elastic") {
+            value.process = CollisionProcessKind::Elastic;
+        } else if (type == "excitation") {
+            value.process = CollisionProcessKind::Excitation;
+        } else {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' type must be elastic or excitation");
+        }
+        value.cross_section_file = resolved_path(
+            path, required(
+                channel.values, "cross_section_file",
+                "collision channel '" + channel.name + "'"));
+        value.threshold_energy = number<double>(
+            channel.values, "threshold_energy",
+            value.threshold_energy);
+        value.energy_scale = number<double>(
+            channel.values, "energy_scale", value.energy_scale);
+        value.cross_section_scale = number<double>(
+            channel.values, "cross_section_scale",
+            value.cross_section_scale);
+        result.collisions.channels.push_back(std::move(value));
+    }
+    if (result.collisions.enabled) {
+        if (parsed.collisions.empty()) {
+            throw std::runtime_error(
+                "enabled imported collisions require a [collisions] section");
+        }
+        if (!configured_species.contains(result.collisions.species)) {
+            throw std::runtime_error(
+                "collisions reference unknown species '" +
+                result.collisions.species + "'");
+        }
+        if (result.collisions.gas_name.empty() ||
+            result.collisions.data_provenance.empty()) {
+            throw std::runtime_error(
+                "imported MCC requires non-empty gas and data_provenance");
+        }
+        if (result.collisions.channels.empty()) {
+            throw std::runtime_error(
+                "imported MCC requires collision channel sections");
+        }
+    } else if (!parsed.collision_channels.empty()) {
+        throw std::runtime_error(
+            "collision channels require enabled imported collisions");
     }
     return result;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pic/Collision.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/UnstructuredFieldSolver2D.hpp"
@@ -101,6 +102,7 @@ struct UnstructuredSimulation2DConfig {
     std::vector<UnstructuredSpecies2DConfig> species;
     std::vector<UnstructuredBoundarySource2DConfig> sources;
     std::vector<UnstructuredSecondaryEmission2DConfig> emissions;
+    CollisionConfig collisions{};
 };
 
 struct UnstructuredDiagnosticSample2D {
@@ -159,6 +161,9 @@ public:
         return poisson_solver_ ? poisson_solver_->solve_count() : 0;
     }
     const UnstructuredTiming2D& timing() const { return timing_; }
+    const CollisionDiagnostics& collision_diagnostics() const {
+        return collision_totals_;
+    }
 
 private:
     struct BoundarySegment {
@@ -196,6 +201,7 @@ private:
     Vec2 sample_position(const UnstructuredSpecies2DConfig& config);
     void inject_boundary_sources();
     void process_boundary_impacts(std::vector<BoundaryImpact> impacts);
+    void apply_collisions();
     void deposit_and_solve();
     std::optional<BoundaryImpact> advance_with_boundaries(
         Particle2D& particle, Vec2 previous_position);
@@ -216,6 +222,10 @@ private:
     std::vector<SamplingTriangle> sampling_triangles_;
     std::vector<BoundarySourceRuntime> sources_;
     std::vector<SecondaryEmissionRuntime> emissions_;
+    std::unique_ptr<NullCollisionModel> mcc_model_;
+    std::size_t mcc_species_id_{0};
+    CollisionDiagnostics collision_totals_{};
+    CollisionDiagnostics collision_interval_{};
     std::map<std::string, std::size_t> absorbed_by_label_;
     std::map<std::string, double> boundary_lengths_;
     std::map<std::string,

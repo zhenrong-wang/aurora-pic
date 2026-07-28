@@ -35,12 +35,23 @@ struct CollisionStepStatistics {
     std::vector<std::uint64_t> channel_collisions{};
 };
 
+struct CollisionDiagnostics {
+    std::uint64_t candidates{0};
+    std::uint64_t null_collisions{0};
+    std::vector<std::string> channel_names{};
+    std::vector<std::uint64_t> channel_collisions{};
+};
+
 class NullCollisionModel {
 public:
     NullCollisionModel(CollisionConfig config, double particle_mass);
 
     CollisionStepStatistics collide(
         double& velocity,
+        double timestep,
+        std::mt19937_64& rng) const;
+    CollisionStepStatistics collide(
+        Vec3& velocity,
         double timestep,
         std::mt19937_64& rng) const;
 
@@ -63,9 +74,14 @@ private:
     };
 
     std::vector<double> rates(double velocity) const;
+    std::vector<double> rates_for_speed(double speed) const;
     void apply_channel(
         std::size_t channel,
         double& velocity,
+        std::mt19937_64& rng) const;
+    void apply_channel(
+        std::size_t channel,
+        Vec3& velocity,
         std::mt19937_64& rng) const;
 
     CollisionConfig config_{};

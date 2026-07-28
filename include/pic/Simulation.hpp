@@ -16,13 +16,6 @@ struct RunSummary {
     DiagnosticSample final_sample{};
 };
 
-struct CollisionDiagnostics {
-    std::uint64_t candidates{0};
-    std::uint64_t null_collisions{0};
-    std::vector<std::string> channel_names{};
-    std::vector<std::uint64_t> channel_collisions{};
-};
-
 class Simulation {
 public:
     explicit Simulation(Config cfg);

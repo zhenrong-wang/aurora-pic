@@ -84,7 +84,7 @@ relative and effective permittivity, spatial dimension, and the dimensional
 basis of macro-particle weight and energy.
 
 Current 1D checkpoint v3, structured 2D checkpoint v3, structured 3D
-checkpoint v2, and imported checkpoint v5 record and validate the unit
+checkpoint v2, and imported checkpoint v6 record and validate the unit
 contract. Historical structured v1
 and imported v1–v3 checkpoints remain readable only with normalized units and
 `relative_permittivity = 1`, because those formats contain no unit metadata.
