@@ -22,7 +22,7 @@ Production readiness is now tracked as explicit milestones instead of an open-en
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
+cmake --build build --parallel 1
 ```
 
 OpenMP support is enabled by default when CMake finds a C++ OpenMP toolchain. Disable it explicitly with `-DAURORA_ENABLE_OPENMP=OFF` to force serial-only builds.
@@ -47,6 +47,11 @@ The full smoke suite builds the project, validates milestone and release-enginee
 ```sh
 scripts/verify.sh
 ```
+
+Local verification defaults to one compiler job, one CTest job, and one
+implicit OpenMP thread so it remains responsive on shared workstations.
+Dedicated build hosts can opt in to higher limits with
+`AURORA_BUILD_JOBS`, `AURORA_TEST_JOBS`, and `AURORA_OPENMP_THREADS`.
 
 The example smoke tests copy each config to a temporary `test_output_aurorapic_verify/` directory, rewrite only `output_dir`, run `aurorapic_cli`, and assert the expected scalar, field, VTK, and particle-inspection files are structurally valid. Temporary smoke outputs are removed on success; set `KEEP_VERIFY_OUTPUTS=1` or pass `--keep-output` to `scripts/verify_examples.py` to retain them for debugging:
 

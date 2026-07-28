@@ -19,6 +19,13 @@ The checked-in examples are intentionally small so they run in CI and on develop
 
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.
 
+The local verification entry point is deliberately resource-conservative:
+one compiler job, one CTest job, and one implicit OpenMP thread by default.
+Use `AURORA_BUILD_JOBS`, `AURORA_TEST_JOBS`, or
+`AURORA_OPENMP_THREADS` only to opt in to greater concurrency on a dedicated
+machine. Individual runtime configs can still request a tested explicit
+thread count.
+
 ## Practical scaling expectations
 
 The current implementation is aimed at correctness and regression coverage before whole-solver performance. Expect memory and runtime to scale approximately with:

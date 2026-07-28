@@ -130,7 +130,9 @@ int main() {
     )
 
 
-def smoke_downstream_consumer(prefix: Path, work: Path) -> None:
+def smoke_downstream_consumer(
+    prefix: Path, work: Path, jobs: int
+) -> None:
     consumer = work / "consumer"
     build = work / "consumer-build"
     write_consumer_project(consumer)
@@ -145,11 +147,13 @@ def smoke_downstream_consumer(prefix: Path, work: Path) -> None:
             "-DCMAKE_BUILD_TYPE=Release",
         ]
     )
-    run(["cmake", "--build", str(build), "--parallel"])
+    run(["cmake", "--build", str(build), "--parallel", str(jobs)])
     run([str(build / "consumer")])
 
 
-def smoke_install_tree(build_dir: Path, work: Path) -> Path:
+def smoke_install_tree(
+    build_dir: Path, work: Path, jobs: int
+) -> Path:
     prefix = work / "install-prefix"
     run(["cmake", "--install", str(build_dir), "--prefix", str(prefix)])
     require_file(prefix / "lib" / "cmake" / "AuroraPIC" / "AuroraPICConfig.cmake")
@@ -158,7 +162,7 @@ def smoke_install_tree(build_dir: Path, work: Path) -> Path:
     require_dir(prefix / "include" / "pic")
     require_dir(prefix / "share" / "aurorapic" / "examples")
     smoke_installed_cli(prefix, work)
-    smoke_downstream_consumer(prefix, work)
+    smoke_downstream_consumer(prefix, work, jobs)
     return prefix
 
 
@@ -168,8 +172,13 @@ def newest_package(build_dir: Path) -> Path:
     return packages[-1]
 
 
-def smoke_tgz_package(build_dir: Path, work: Path) -> None:
-    run(["cmake", "--build", str(build_dir), "--target", "package"])
+def smoke_tgz_package(
+    build_dir: Path, work: Path, jobs: int
+) -> None:
+    run([
+        "cmake", "--build", str(build_dir), "--parallel", str(jobs),
+        "--target", "package",
+    ])
     package = newest_package(build_dir)
     require(tarfile.is_tarfile(package), f"package is not a valid tar archive: {package}")
     extract_dir = work / "package-extract"
@@ -190,18 +199,25 @@ def smoke_tgz_package(build_dir: Path, work: Path) -> None:
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("build_dir", nargs="?", default="build", help="configured AuroraPIC build directory")
+    parser.add_argument(
+        "--jobs", type=int, default=1,
+        help="maximum concurrent build jobs (default: 1)",
+    )
     parser.add_argument("--keep-output", action="store_true", help="retain temporary install/package smoke outputs")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    if args.jobs <= 0:
+        print("install/package smoke failed: --jobs must be positive", file=sys.stderr)
+        return 2
     build_dir = (ROOT / args.build_dir).resolve() if not Path(args.build_dir).is_absolute() else Path(args.build_dir)
     require_dir(build_dir)
     temp_root = Path(tempfile.mkdtemp(prefix="aurorapic_install_smoke_", dir=ROOT))
     try:
-        smoke_install_tree(build_dir, temp_root)
-        smoke_tgz_package(build_dir, temp_root)
+        smoke_install_tree(build_dir, temp_root, args.jobs)
+        smoke_tgz_package(build_dir, temp_root, args.jobs)
     except (InstallSmokeError, subprocess.CalledProcessError) as exc:
         print(f"install/package smoke failed: {exc}", file=sys.stderr)
         print(f"retained smoke output: {temp_root}", file=sys.stderr)

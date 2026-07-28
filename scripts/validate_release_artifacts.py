@@ -71,9 +71,9 @@ def validate_ci_matrix() -> None:
         "compiler: appleclang",
         "AURORA_ENABLE_OPENMP=${{ matrix.openmp }}",
         "python3 scripts/validate_release_artifacts.py",
-        "ctest --test-dir build --output-on-failure",
+        "ctest --test-dir build --parallel 1 --output-on-failure",
         "python3 scripts/verify_examples.py build/aurorapic_cli",
-        "python3 scripts/verify_install_package.py build",
+        "python3 scripts/verify_install_package.py build --jobs 2",
         "actions/upload-artifact@v4",
     ):
         require(term in ci, f"CI workflow must include {term!r}")
@@ -134,9 +134,29 @@ def validate_cross_references() -> None:
     require("docs/performance-envelope.md" in roadmap, "roadmap must link the performance envelope")
     require("CI matrix" in roadmap and "CPack" in roadmap, "roadmap must document CI matrix and CPack as M6 evidence")
     require("install/package smoke" in roadmap, "roadmap must document install/package smoke evidence")
-    for script in ("validate_release_artifacts", "verify_install_package"):
-        pattern = re.compile(rf"^python3\s+scripts/{script}\.py(?:\s+build)?\s*$", re.MULTILINE)
-        require(pattern.search(verify) is not None, f"scripts/verify.sh must run scripts/{script}.py")
+    require(
+        re.search(
+            r"^python3\s+scripts/validate_release_artifacts\.py\s*$",
+            verify, re.MULTILINE,
+        ) is not None,
+        "scripts/verify.sh must run scripts/validate_release_artifacts.py",
+    )
+    require(
+        'python3 scripts/verify_install_package.py build --jobs "$BUILD_JOBS"'
+        in verify,
+        "scripts/verify.sh must run the resource-limited install/package smoke",
+    )
+    for term in (
+        "AURORA_BUILD_JOBS",
+        "AURORA_TEST_JOBS",
+        "AURORA_OPENMP_THREADS",
+        'cmake --build build --parallel "$BUILD_JOBS"',
+        'ctest --test-dir build --parallel "$TEST_JOBS"',
+    ):
+        require(
+            term in verify,
+            f"scripts/verify.sh must enforce resource control {term!r}",
+        )
     require(
         "python3 scripts/benchmark_unstructured.py build/aurorapic_cli --repeats 1"
         in verify,
