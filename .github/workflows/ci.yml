@@ -54,6 +54,9 @@ jobs:
       - name: Validate electron-swarm CLI
         run: python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 
+      - name: Validate swarm reference comparison
+        run: python3 scripts/test_compare_swarm.py
+
       - name: Run CTest
         run: ctest --test-dir build --parallel 1 --output-on-failure
 

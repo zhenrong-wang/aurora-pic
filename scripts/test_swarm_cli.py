@@ -13,6 +13,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "examples" / "synthetic_swarm.swarm"
 GAS = ROOT / "examples" / "synthetic_swarm.gas"
+COMPARATOR = ROOT / "scripts" / "compare_swarm.py"
 
 
 def require(condition: bool, message: str) -> None:
@@ -60,6 +61,63 @@ def main(argv: list[str]) -> int:
                 for row in rows
             ),
             "swarm CLI omitted its model or energy-coverage contract",
+        )
+        reference = work / "reference.csv"
+        with reference.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(
+                ["reduced_field_td", "drift_velocity_m_s"]
+            )
+            for row in rows[:2]:
+                writer.writerow(
+                    [
+                        row["reduced_field_td"],
+                        row["electron_drift_velocity_m_s"],
+                    ]
+                )
+        manifest = work / "reference.swarm-reference"
+        manifest.write_text(
+            "\n".join(
+                [
+                    "[reference]",
+                    "swarm_reference_version = 1",
+                    f"data_file = {reference.name}",
+                    "reference_id = aurorapic.synthetic.cli",
+                    "reference_version = 1",
+                    "gas = synthetic_swarm_gas",
+                    "population_model = fixed_population_no_avalanche",
+                    "coefficient_convention = flux_fixed_population",
+                    "provenance = AuroraPIC synthetic CLI output",
+                    "citation = AuroraPIC synthetic fixture",
+                    "retrieved = 2026-07-28",
+                    "license = Synthetic test data",
+                    "",
+                    "[observable.drift]",
+                    "simulation_column = electron_drift_velocity_m_s",
+                    "reference_column = drift_velocity_m_s",
+                    "relative_tolerance = 0",
+                    "absolute_tolerance = 0",
+                    "uncertainty_multiplier = 0",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        comparison = work / "comparison.json"
+        subprocess.run(
+            [
+                sys.executable,
+                str(COMPARATOR),
+                str(output),
+                str(manifest),
+                "--output",
+                str(comparison),
+            ],
+            check=True,
+        )
+        require(
+            comparison.is_file(),
+            "swarm CLI output did not satisfy comparator schema",
         )
 
     print("swarm CLI validation passed")

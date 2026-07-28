@@ -120,8 +120,12 @@ user-supplied complete sets while rejecting unit, threshold, mass-ratio, and
 coverage ambiguity. A homogeneous fixed-population electron-swarm runner now
 uses the production 3V MCC kernel for reproducible E/N scans with enforced
 energy coverage, block uncertainty estimates, diffusion diagnostics, and
-per-channel rates. Avalanche multiplication, differential scattering, and
-reference-data comparison remain subsequent validation work. Charge
+per-channel rates. A strict local reference-comparison contract now maps
+user-supplied measured or evaluated swarm coefficients to simulation columns,
+combines declared numerical/reference uncertainty with explicit tolerances,
+and emits a hashed per-value acceptance report without redistributing the
+reference data. Actual gas-specific validation campaigns, avalanche
+multiplication, and differential scattering remain subsequent work. Charge
 exchange beyond the resonant case, thermal neutral motion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 

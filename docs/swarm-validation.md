@@ -61,6 +61,82 @@ For each E/N it reports:
 The reduced-mobility unit is `1 / (V m s)`. One Townsend is
 `1e-21 V m^2`.
 
+## Comparison with reference coefficients
+
+Reference data remain local, just like imported cross sections. Place the
+measured or evaluated coefficients in a strict CSV with
+`reduced_field_td` and one or more observable columns, then describe the
+source and acceptance contract in a `.swarm-reference` manifest:
+
+```ini
+[reference]
+swarm_reference_version = 1
+data_file = argon-reference.csv
+reference_id = laboratory.argon.swarm
+reference_version = 2026-01
+gas = Ar
+population_model = fixed_population_no_avalanche
+coefficient_convention = flux_fixed_population
+provenance = laboratory or evaluated database and source URL
+citation = citation requested by the contributor
+retrieved = 2026-01-15
+license = applicable dataset terms
+field_absolute_tolerance_td = 1e-12
+field_relative_tolerance = 1e-12
+
+[observable.drift]
+simulation_column = electron_drift_velocity_m_s
+reference_column = drift_velocity_m_s
+simulation_uncertainty_column = mean_velocity_x_standard_error_m_s
+reference_uncertainty_column = drift_velocity_standard_uncertainty_m_s
+relative_tolerance = 0.05
+absolute_tolerance = 0
+uncertainty_multiplier = 2
+
+[observable.mean_energy]
+simulation_column = mean_energy_ev
+reference_column = mean_energy_ev
+simulation_uncertainty_column = mean_energy_standard_error_ev
+reference_uncertainty_column = mean_energy_standard_uncertainty_ev
+relative_tolerance = 0.05
+absolute_tolerance = 0
+uncertainty_multiplier = 2
+```
+
+Run the local comparison with:
+
+```bash
+python3 scripts/compare_swarm.py argon_swarm.csv \
+  argon.swarm-reference --output argon-comparison.json
+```
+
+For each observable and E/N point, acceptance is:
+
+```text
+abs(simulation - reference)
+  <= absolute_tolerance
+   + relative_tolerance * abs(reference)
+   + uncertainty_multiplier
+     * hypot(simulation_uncertainty, reference_uncertainty)
+```
+
+Uncertainty columns are optional; omitting one contributes zero to the
+combined uncertainty. Every reference E/N must match exactly one simulated
+point within the declared field tolerance. The comparator does not silently
+interpolate reference data. Extra simulated points are retained in the report
+but do not affect acceptance. All simulation rows must also share one
+cross-section dataset ID/version and match the manifest's gas and
+`population_model`. `coefficient_convention` is recorded explicitly because
+bulk and flux swarm coefficients are not interchangeable; the current
+fixed-population mean-velocity estimator is described as
+`flux_fixed_population`.
+
+The JSON records the reference metadata, acceptance rule, residuals,
+uncertainties, per-value decisions, unmatched simulated fields, and SHA-256
+of the simulation CSV, reference CSV, and manifest. Exit status is zero when
+all values pass, one when a valid comparison misses its criteria, and two for
+an invalid or ambiguous input. Existing reports require `--overwrite`.
+
 ## Model boundary
 
 This first swarm implementation intentionally uses a fixed electron
@@ -80,7 +156,8 @@ electron multiplication.
 ## Production study checklist
 
 1. Use one complete and internally consistent collision set.
-2. Compare against independent measured or evaluated swarm coefficients.
+2. Compare against independent measured or evaluated swarm coefficients
+   using a traceable `.swarm-reference` contract.
 3. Repeat with smaller timesteps and higher particle counts.
 4. Extend burn-in until block means no longer show a transient trend.
 5. Confirm the maximum observed energy remains comfortably below

@@ -162,6 +162,10 @@ def smoke_install_tree(
     require_file(prefix / "lib" / "cmake" / "AuroraPIC" / "AuroraPICTargets.cmake")
     require_dir(prefix / "include" / "pic")
     require_dir(prefix / "share" / "aurorapic" / "examples")
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
+        "compare_swarm.py"
+    )
     smoke_installed_cli(prefix, work)
     smoke_downstream_consumer(prefix, work, jobs)
     return prefix
@@ -196,6 +200,10 @@ def smoke_tgz_package(
     require_file(packaged_prefix / "lib" / "cmake" / "AuroraPIC" / "AuroraPICTargets.cmake")
     require_dir(packaged_prefix / "include" / "pic")
     require_dir(packaged_prefix / "share" / "aurorapic" / "examples")
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "scripts" /
+        "compare_swarm.py"
+    )
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
