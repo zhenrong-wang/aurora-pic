@@ -236,6 +236,85 @@ of the simulation CSV, reference CSV, and manifest. Exit status is zero when
 all values pass, one when a valid comparison misses its criteria, and two for
 an invalid or ambiguous input. Existing reports require `--overwrite`.
 
+## Serialized validation campaigns
+
+A physical cross-section package is not validated by one stochastic run.
+Use `run_swarm_campaign.py` to execute two or more resolution studies
+serially, compare every result with the same independent reference contract,
+and test numerical convergence against a designated finest run:
+
+```ini
+[campaign]
+swarm_campaign_version = 1
+campaign_id = laboratory.argon.transport
+campaign_version = 2026-01
+provenance = local validation campaign and source-control revision
+retrieved = 2026-01-15
+reference_manifest = argon.swarm-reference
+run_order = baseline, timestep_refined, particle_refined
+reference_run = particle_refined
+field_absolute_tolerance_td = 1e-12
+field_relative_tolerance = 1e-12
+
+[run.baseline]
+config_file = argon-baseline.swarm
+result_file = results/argon-baseline.csv
+
+[run.timestep_refined]
+config_file = argon-timestep-refined.swarm
+result_file = results/argon-timestep-refined.csv
+
+[run.particle_refined]
+config_file = argon-particle-refined.swarm
+result_file = results/argon-particle-refined.csv
+
+[observable.drift]
+simulation_column = electron_drift_velocity_m_s
+uncertainty_column = mean_velocity_x_standard_error_m_s
+relative_tolerance = 0.03
+absolute_tolerance = 0
+uncertainty_multiplier = 2
+
+[observable.mean_energy]
+simulation_column = mean_energy_ev
+uncertainty_column = mean_energy_standard_error_ev
+relative_tolerance = 0.03
+absolute_tolerance = 0
+uncertainty_multiplier = 2
+```
+
+Each `result_file` must be the output selected by its corresponding swarm
+configuration. Run the campaign with:
+
+```bash
+python3 scripts/run_swarm_campaign.py argon.swarm-campaign \
+  --swarm-executable build/aurorapic_swarm \
+  --output argon-campaign.json
+```
+
+Runs are launched one at a time with `OMP_NUM_THREADS=1`,
+`OMP_DYNAMIC=FALSE`, and `OMP_MAX_ACTIVE_LEVELS=1`; a manifest is limited to
+16 runs. Existing result, comparison, or aggregate report files are rejected
+unless `--overwrite` is explicit. Every run is first evaluated by
+`compare_swarm.py`. The campaign then requires identical gas, dataset
+ID/version, population model, collision-model signature, and E/N points
+across resolutions. It applies the same uncertainty-aware residual form to
+each non-reference run relative to `reference_run`.
+
+The aggregate JSON records SHA-256 values for the campaign manifest, every
+configuration, every result, every per-run reference report, and the
+reference manifest, plus the swarm executable and comparator. Captured
+command output is retained per run. Per-run reference reports are stored in
+`<report-stem>.artifacts/`. Exit status is zero for a full pass, one for a
+well-formed campaign that misses reference or convergence criteria, and two
+for invalid inputs or failed simulations.
+
+The runner deliberately performs no download and assigns no license. Keep
+the original gas package, importer audit, reference data, and their terms
+beside the campaign. A convergence pass demonstrates stability under the
+declared refinements; it does not prove the collision data or model are
+physically correct.
+
 ## Model boundary
 
 The fixed mode intentionally excludes multiplication. The
@@ -267,7 +346,8 @@ independent measured or evaluated validation.
 1. Use one complete and internally consistent collision set.
 2. Compare against independent measured or evaluated swarm coefficients
    using a traceable `.swarm-reference` contract.
-3. Repeat with smaller timesteps and higher particle counts.
+3. Use a serialized `.swarm-campaign` to repeat with smaller timesteps and
+   higher particle counts.
 4. Extend burn-in until block means no longer show a transient trend.
 5. Confirm the maximum observed energy remains comfortably below
    `max_energy_ev`.

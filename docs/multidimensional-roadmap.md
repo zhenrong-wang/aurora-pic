@@ -134,12 +134,16 @@ reference-comparison contract now maps
 user-supplied measured or evaluated swarm coefficients to simulation columns,
 combines declared numerical/reference uncertainty with explicit tolerances,
 and emits a hashed per-value acceptance report without redistributing the
-reference data. Energy-dependent anisotropic elastic scattering is now
+reference data. A strict serialized campaign manifest now runs bounded
+resolution studies one at a time, applies that independent reference contract
+to every run, enforces a common collision-model identity and E/N grid, checks
+uncertainty-aware convergence against a designated finest run, and emits a
+hashed aggregate audit. Energy-dependent anisotropic elastic scattering is now
 available through a strict mean-cosine table and Henyey-Greenstein phase
 function, with total-cross-section semantics, 3V-only enforcement,
-energy-coverage checks, and restart fingerprinting. Actual gas-specific
-spatial Townsend validation campaigns and full differential cross-section
-models remain subsequent work. Charge
+energy-coverage checks, and restart fingerprinting. Executing and publishing
+campaigns with authoritative gas-specific reference data, plus full
+differential cross-section models, remain subsequent work. Charge
 exchange beyond the resonant case, thermal neutral motion, richer ionization
 kinematics, and curated measured material datasets remain future work.
 

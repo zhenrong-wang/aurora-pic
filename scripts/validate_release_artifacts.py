@@ -49,6 +49,7 @@ def validate_cmake_packaging() -> None:
         "install(DIRECTORY include/",
         "install(DIRECTORY examples/",
         "scripts/compare_swarm.py",
+        "scripts/run_swarm_campaign.py",
         "docs/performance-envelope.md",
         "docs/swarm-validation.md",
         "configure_package_config_file(",
@@ -76,6 +77,7 @@ def validate_ci_matrix() -> None:
         "python3 scripts/test_import_lxcat.py",
         "python3 scripts/test_swarm_cli.py build/aurorapic_swarm",
         "python3 scripts/test_compare_swarm.py",
+        "python3 scripts/test_swarm_campaign.py",
         "ctest --test-dir build --parallel 1 --output-on-failure",
         "python3 scripts/verify_examples.py build/aurorapic_cli",
         "python3 scripts/verify_install_package.py build --jobs 2",
@@ -98,6 +100,7 @@ def validate_install_smoke_script() -> None:
         "aurorapic_cli",
         "aurorapic_swarm",
         "compare_swarm.py",
+        "run_swarm_campaign.py",
     ):
         require(term in script, f"install/package smoke script must include {term!r}")
 

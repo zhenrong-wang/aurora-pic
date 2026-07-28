@@ -57,6 +57,9 @@ jobs:
       - name: Validate swarm reference comparison
         run: python3 scripts/test_compare_swarm.py
 
+      - name: Validate serialized swarm campaigns
+        run: python3 scripts/test_swarm_campaign.py
+
       - name: Run CTest
         run: ctest --test-dir build --parallel 1 --output-on-failure
 

@@ -201,6 +201,9 @@ E/N using the production collision kernel and emits traceable transport and
 channel-rate diagnostics. Its local comparison tool maps user-supplied
 measured or evaluated coefficients to those outputs and produces a hashed,
 uncertainty-aware acceptance report without bundling the reference data.
+The serialized campaign runner applies that contract to every resolution,
+checks physics identity and uncertainty-aware numerical convergence, and
+keeps all runs single-threaded and sequential by default.
 The runner also offers an explicit bounded branching mode: ionization and
 attachment respectively increase and decrease represented electron weight
 while systematic resampling holds computational population fixed, enabling
