@@ -56,7 +56,12 @@ int main(int argc, char** argv) {
                       << " dt=" << cfg.dt << " mode=" << pic::to_string(cfg.mode)
                       << " units=" << pic::to_string(cfg.units.system)
                       << " permittivity=" << cfg.units.permittivity()
-                      << " boundary=" << pic::to_string(cfg.boundary)
+                      << " boundary_x="
+                      << pic::to_string(
+                             cfg.boundary_x.value_or(cfg.boundary))
+                      << " boundary_y="
+                      << pic::to_string(
+                             cfg.boundary_y.value_or(cfg.boundary))
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
             pic::Simulation2D sim(std::move(cfg));
             auto summary = sim.run();

@@ -144,7 +144,7 @@ the models.
 | --- | --- | --- |
 | Electrostatic 2D3V PIC and Boris push | Available on structured and imported 2D meshes | Preserve analytic Larmor and E x B drift gates |
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
-| Mixed topology | Structured periodic or Dirichlet modes exist, but the complete LANDMARK side contract is not implemented | Support periodic azimuth plus independent axial/radial field and particle boundaries |
+| Mixed topology | Structured 2D supports independent periodic/Dirichlet axes with matching spacing, CIC, Poisson, gather, gradient, initialization, and default particle policies | Replace the correctness-first mixed SOR solve with a production FFT-periodic/direct-axial solver before full LANDMARK campaigns |
 | Volumetric pair source | Collision ionization and tagged-boundary sources exist | Add deterministic-rate spatial pair profiles with equal-position creation |
 | Cathode/current control | Not available | Implement the exact emission-plane current balance and potential correction |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
@@ -205,8 +205,11 @@ The first H0 field slice is complete: a shared strict `coordinate Bx By Bz`
 profile supports linear interpolation and full-domain coverage checks across
 structured 2D/3D and imported 2D, while preserving uniform-field
 compatibility. The committed LANDMARK magnetic profile is exercised only as a
-four-step integration smoke and cannot make a discharge claim. The next
-bounded slice is mixed periodic/nonperiodic structured topology plus analytic
-periodic wrapping and absorbing axial-flux verification. That capability is
-generic to crossed-field devices and open plasma domains; it is not embedded
-Hall-specific solver logic.
+four-step integration smoke and cannot make a discharge claim. Independent
+structured 2D axis topology is also complete at the correctness level:
+Dirichlet axial plus periodic azimuthal and its transposed orientation have
+analytic vacuum-field, charge-conservation, spacing, and default particle
+policy regressions. The current mixed Poisson implementation is an iterative
+baseline, not the FFT-periodic/direct-axial algorithm needed for millions of
+production steps. The next bounded physics slice is a generic spatial
+volumetric pair source with deterministic represented-rate accounting.

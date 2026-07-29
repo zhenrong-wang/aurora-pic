@@ -144,11 +144,18 @@ std::optional<std::uint64_t> parse_optional_uint64(
     }
 }
 
-Boundary parse_boundary(const KeyValue& kv, Boundary def) {
-    const auto value = lower(as<std::string>(kv, "boundary", to_string(def)));
+Boundary parse_boundary_key(
+    const KeyValue& kv, const std::string& key, Boundary def) {
+    const auto value =
+        lower(as<std::string>(kv, key, to_string(def)));
     if (value == "periodic") return Boundary::Periodic;
     if (value == "dirichlet" || value == "absorbing") return Boundary::Dirichlet;
-    throw std::runtime_error("invalid boundary value: '" + value + "'");
+    throw std::runtime_error(
+        "invalid boundary value for '" + key + "': '" + value + "'");
+}
+
+Boundary parse_boundary(const KeyValue& kv, Boundary def) {
+    return parse_boundary_key(kv, "boundary", def);
 }
 
 VTKOutputFormat parse_vtk_output_format(const KeyValue& kv, VTKOutputFormat def) {
@@ -789,6 +796,22 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
     validate_boundary_side(cfg.boundary_config.right, "right");
     validate_boundary_side(cfg.boundary_config.bottom, "bottom");
     validate_boundary_side(cfg.boundary_config.top, "top");
+    const Boundary boundary_x =
+        cfg.boundary_x.value_or(cfg.boundary);
+    const Boundary boundary_y =
+        cfg.boundary_y.value_or(cfg.boundary);
+    if (boundary_x == Boundary::Periodic &&
+        (cfg.boundary_config.left.potential != 0.0 ||
+         cfg.boundary_config.right.potential != 0.0)) {
+        throw std::runtime_error(
+            "2D phi_left/phi_right must be zero when boundary_x is periodic");
+    }
+    if (boundary_y == Boundary::Periodic &&
+        (cfg.boundary_config.bottom.potential != 0.0 ||
+         cfg.boundary_config.top.potential != 0.0)) {
+        throw std::runtime_error(
+            "2D phi_bottom/phi_top must be zero when boundary_y is periodic");
+    }
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("2D species name must not be empty");
         validate_positive(s.mass, "2D species '" + s.name + "' mass");
@@ -1334,7 +1357,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "dimension", "config_version", "nx", "ny", "length_x", "length_y", "dt", "steps",
         "mode", "steady_tolerance", "steady_window", "max_steps",
-        "output_interval", "output_dir", "seed", "boundary", "vtk_output", "vtk_format",
+        "output_interval", "output_dir", "seed", "boundary",
+        "boundary_x", "boundary_y", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path",
         "restart_path", "initial_state_path",
@@ -1390,6 +1414,14 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir.string());
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.boundary = parse_boundary(global, cfg.boundary);
+    if (global.count("boundary_x")) {
+        cfg.boundary_x =
+            parse_boundary_key(global, "boundary_x", cfg.boundary);
+    }
+    if (global.count("boundary_y")) {
+        cfg.boundary_y =
+            parse_boundary_key(global, "boundary_y", cfg.boundary);
+    }
     cfg.vtk_output = parse_bool(global, "vtk_output", cfg.vtk_output);
     cfg.vtk_format = parse_vtk_output_format(global, cfg.vtk_format);
     cfg.particle_output = parse_bool(global, "particle_output", cfg.particle_output);

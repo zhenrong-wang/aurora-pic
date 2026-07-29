@@ -22,7 +22,7 @@ a memory-scaling guarantee, not a high-volume I/O throughput claim.
 | `examples/mcc_ionization_1d.cfg` | 1D3V | 32 cells | 128 initial / 244 final | 4 | Simultaneous named electron/ion MCC, charge-paired ionization products, bounded storage, qualified diagnostics, and checkpoint restart contract. |
 | `examples/rf_electrode_1d.cfg` | 1D3V | 33 nodes | 128 | 16 | Sinusoidal Dirichlet electrode at exact field time levels, transverse velocity initialization, applied-potential diagnostics, and bounded RF CLI integration. |
 | `examples/plasma_2d.cfg` | 2D3V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
-| `examples/hall_field_profile_smoke.cfg` | 2D3V | 16 x 8 nodes | 4 | 4 | Single-thread parser/interpolation/Boris smoke for a one-coordinate magnetic profile; not a HET discharge result. |
+| `examples/hall_field_profile_smoke.cfg` | 2D3V | 16 x 8 nodes | 4 | 4 | Single-thread SI smoke for a one-coordinate magnetic profile, 200 V axial drop, and mixed Dirichlet-x/periodic-y topology; not a HET discharge result. |
 | `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
 | `examples/imported_mcc_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 | 6 | Synthetic stationary-neutral isotropic elastic MCC, provenance metadata, diagnostics, and checkpoint v6. |

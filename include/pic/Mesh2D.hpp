@@ -21,6 +21,9 @@ class Mesh2D {
 public:
     Mesh2D(std::size_t nx, std::size_t ny, double length_x, double length_y,
            Boundary boundary, BoundaryConfig2D boundary_config = {});
+    Mesh2D(std::size_t nx, std::size_t ny, double length_x, double length_y,
+           Boundary boundary_x, Boundary boundary_y,
+           BoundaryConfig2D boundary_config = {});
 
     std::size_t nx() const { return nx_; }
     std::size_t ny() const { return ny_; }
@@ -29,7 +32,17 @@ public:
     double length_y() const { return length_y_; }
     double dx() const { return dx_; }
     double dy() const { return dy_; }
-    Boundary boundary() const { return boundary_; }
+    Boundary boundary() const;
+    Boundary boundary_x() const { return boundary_x_; }
+    Boundary boundary_y() const { return boundary_y_; }
+    bool fully_periodic() const {
+        return boundary_x_ == Boundary::Periodic &&
+               boundary_y_ == Boundary::Periodic;
+    }
+    bool fully_dirichlet() const {
+        return boundary_x_ == Boundary::Dirichlet &&
+               boundary_y_ == Boundary::Dirichlet;
+    }
     const BoundaryConfig2D& boundary_config() const { return boundary_config_; }
 
     std::size_t index(std::size_t i, std::size_t j) const { return j * nx_ + i; }
@@ -55,7 +68,8 @@ private:
     double length_y_;
     double dx_;
     double dy_;
-    Boundary boundary_;
+    Boundary boundary_x_;
+    Boundary boundary_y_;
     BoundaryConfig2D boundary_config_;
     std::vector<double> rho_, phi_, electric_x_, electric_y_;
 };

@@ -134,19 +134,29 @@ void apply_dirichlet_boundary_potentials(Mesh2D& mesh) {
     const std::size_t nx = mesh.nx();
     const std::size_t ny = mesh.ny();
 
-    for (std::size_t j = 0; j < ny; ++j) {
-        phi[mesh.index(0, j)] = bc.left.potential;
-        phi[mesh.index(nx - 1, j)] = bc.right.potential;
+    if (mesh.boundary_x() == Boundary::Dirichlet) {
+        for (std::size_t j = 0; j < ny; ++j) {
+            phi[mesh.index(0, j)] = bc.left.potential;
+            phi[mesh.index(nx - 1, j)] = bc.right.potential;
+        }
     }
-    for (std::size_t i = 0; i < nx; ++i) {
-        phi[mesh.index(i, 0)] = bc.bottom.potential;
-        phi[mesh.index(i, ny - 1)] = bc.top.potential;
+    if (mesh.boundary_y() == Boundary::Dirichlet) {
+        for (std::size_t i = 0; i < nx; ++i) {
+            phi[mesh.index(i, 0)] = bc.bottom.potential;
+            phi[mesh.index(i, ny - 1)] = bc.top.potential;
+        }
     }
 
-    phi[mesh.index(0, 0)] = 0.5 * (bc.left.potential + bc.bottom.potential);
-    phi[mesh.index(nx - 1, 0)] = 0.5 * (bc.right.potential + bc.bottom.potential);
-    phi[mesh.index(0, ny - 1)] = 0.5 * (bc.left.potential + bc.top.potential);
-    phi[mesh.index(nx - 1, ny - 1)] = 0.5 * (bc.right.potential + bc.top.potential);
+    if (mesh.fully_dirichlet()) {
+        phi[mesh.index(0, 0)] =
+            0.5 * (bc.left.potential + bc.bottom.potential);
+        phi[mesh.index(nx - 1, 0)] =
+            0.5 * (bc.right.potential + bc.bottom.potential);
+        phi[mesh.index(0, ny - 1)] =
+            0.5 * (bc.left.potential + bc.top.potential);
+        phi[mesh.index(nx - 1, ny - 1)] =
+            0.5 * (bc.right.potential + bc.top.potential);
+    }
 }
 
 void apply_grounded_dirichlet_boundary(Mesh3D& mesh) {
@@ -188,7 +198,7 @@ void FieldSolver::solve(Grid& grid, double phi_left, double phi_right) const {
 }
 
 void FieldSolver::solve(Mesh2D& mesh) const {
-    if (mesh.boundary() == Boundary::Periodic) {
+    if (mesh.fully_periodic()) {
         solve_periodic_spectral(mesh);
     } else {
         solve_dirichlet_iterative(mesh);
@@ -419,12 +429,39 @@ void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
     bool converged = false;
     for (std::size_t iter = 0; iter < max_iterations; ++iter) {
         double max_delta = 0.0;
-        for (std::size_t j = 1; j + 1 < ny; ++j) {
-            for (std::size_t i = 1; i + 1 < nx; ++i) {
+        for (std::size_t j = 0; j < ny; ++j) {
+            if (mesh.boundary_y() == Boundary::Dirichlet &&
+                (j == 0 || j + 1 == ny)) {
+                continue;
+            }
+            const std::size_t jm =
+                mesh.boundary_y() == Boundary::Periodic
+                    ? (j + ny - 1) % ny
+                    : j - 1;
+            const std::size_t jp =
+                mesh.boundary_y() == Boundary::Periodic
+                    ? (j + 1) % ny
+                    : j + 1;
+            for (std::size_t i = 0; i < nx; ++i) {
+                if (mesh.boundary_x() == Boundary::Dirichlet &&
+                    (i == 0 || i + 1 == nx)) {
+                    continue;
+                }
+                const std::size_t im =
+                    mesh.boundary_x() == Boundary::Periodic
+                        ? (i + nx - 1) % nx
+                        : i - 1;
+                const std::size_t ip =
+                    mesh.boundary_x() == Boundary::Periodic
+                        ? (i + 1) % nx
+                        : i + 1;
                 const auto idx = mesh.index(i, j);
                 const double rhs = rho[idx] / permittivity_;
-                const double updated = ((phi[mesh.index(i - 1, j)] + phi[mesh.index(i + 1, j)]) * inv_dx2
-                                      + (phi[mesh.index(i, j - 1)] + phi[mesh.index(i, j + 1)]) * inv_dy2
+                const double updated =
+                    ((phi[mesh.index(im, j)] +
+                      phi[mesh.index(ip, j)]) * inv_dx2
+                     + (phi[mesh.index(i, jm)] +
+                        phi[mesh.index(i, jp)]) * inv_dy2
                                       + rhs) / diagonal;
                 const double delta = omega * (updated - phi[idx]);
                 phi[idx] += delta;
@@ -443,7 +480,14 @@ void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
     for (std::size_t j = 0; j < ny; ++j) {
         for (std::size_t i = 0; i < nx; ++i) {
             const auto idx = mesh.index(i, j);
-            if (i == 0) {
+            if (mesh.boundary_x() == Boundary::Periodic) {
+                const std::size_t im = (i + nx - 1) % nx;
+                const std::size_t ip = (i + 1) % nx;
+                Ex[idx] =
+                    -(phi[mesh.index(ip, j)] -
+                      phi[mesh.index(im, j)]) /
+                    (2.0 * mesh.dx());
+            } else if (i == 0) {
                 Ex[idx] = -(phi[mesh.index(1, j)] - phi[idx]) / mesh.dx();
             } else if (i + 1 == nx) {
                 Ex[idx] = -(phi[idx] - phi[mesh.index(i - 1, j)]) / mesh.dx();
@@ -451,7 +495,14 @@ void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
                 Ex[idx] = -(phi[mesh.index(i + 1, j)] - phi[mesh.index(i - 1, j)]) / (2.0 * mesh.dx());
             }
 
-            if (j == 0) {
+            if (mesh.boundary_y() == Boundary::Periodic) {
+                const std::size_t jm = (j + ny - 1) % ny;
+                const std::size_t jp = (j + 1) % ny;
+                Ey[idx] =
+                    -(phi[mesh.index(i, jp)] -
+                      phi[mesh.index(i, jm)]) /
+                    (2.0 * mesh.dy());
+            } else if (j == 0) {
                 Ey[idx] = -(phi[mesh.index(i, 1)] - phi[idx]) / mesh.dy();
             } else if (j + 1 == ny) {
                 Ey[idx] = -(phi[idx] - phi[mesh.index(i, j - 1)]) / mesh.dy();
@@ -559,10 +610,10 @@ double interpolate_electric(const Grid& grid, double x) {
 }
 
 Vec2 interpolate_electric(const Mesh2D& mesh, Vec2 position) {
-    const double x = mesh.boundary() == Boundary::Periodic
+    const double x = mesh.boundary_x() == Boundary::Periodic
                          ? wrap_periodic(position.x, mesh.length_x())
                          : std::clamp(position.x, 0.0, mesh.length_x());
-    const double y = mesh.boundary() == Boundary::Periodic
+    const double y = mesh.boundary_y() == Boundary::Periodic
                          ? wrap_periodic(position.y, mesh.length_y())
                          : std::clamp(position.y, 0.0, mesh.length_y());
     const double gx = x / mesh.dx();
@@ -574,18 +625,22 @@ Vec2 interpolate_electric(const Mesh2D& mesh, Vec2 position) {
     double fy = gy - static_cast<double>(j);
 
     std::size_t i0, i1, j0, j1;
-    if (mesh.boundary() == Boundary::Periodic) {
+    if (mesh.boundary_x() == Boundary::Periodic) {
         i0 = i % mesh.nx();
         i1 = (i + 1) % mesh.nx();
+    } else {
+        i = std::min(i, mesh.nx() - 2);
+        fx = std::clamp(
+            gx - static_cast<double>(i), 0.0, 1.0);
+        i0 = i;
+        i1 = i + 1;
+    }
+    if (mesh.boundary_y() == Boundary::Periodic) {
         j0 = j % mesh.ny();
         j1 = (j + 1) % mesh.ny();
     } else {
-        i = std::min(i, mesh.nx() - 2);
         j = std::min(j, mesh.ny() - 2);
-        fx = std::clamp(gx - static_cast<double>(i), 0.0, 1.0);
         fy = std::clamp(gy - static_cast<double>(j), 0.0, 1.0);
-        i0 = i;
-        i1 = i + 1;
         j0 = j;
         j1 = j + 1;
     }

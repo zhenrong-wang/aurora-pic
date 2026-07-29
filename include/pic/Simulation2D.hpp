@@ -6,6 +6,7 @@
 #include "pic/Runtime.hpp"
 #include "pic/Species2D.hpp"
 #include <filesystem>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -38,6 +39,8 @@ struct Simulation2DConfig {
     std::size_t steady_window{25};
     std::size_t max_steps{10000};
     Boundary boundary{Boundary::Periodic};
+    std::optional<Boundary> boundary_x{};
+    std::optional<Boundary> boundary_y{};
     BoundaryConfig2D boundary_config{};
     ParticleBoundaryConfig2D particle_boundary_config{};
     double magnetic_field_z{0.0};

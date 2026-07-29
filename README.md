@@ -94,7 +94,7 @@ python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 
 2D runs are selected by `dimension = 2` in the config file and are reachable from both the CLI/config loader and the C++ API. The 2D path provides:
 
-- `Mesh2D`: rectangular node-centered mesh with periodic or Dirichlet field boundary mode plus side boundary tags/potentials for electrode-style Dirichlet domains.
+- `Mesh2D`: rectangular node-centered mesh with independent periodic or Dirichlet field topology on each coordinate axis, plus side boundary tags/potentials for electrode-style Dirichlet axes. The legacy single `boundary` value still applies to both axes.
 - `ImportedMesh2D`: validated topology/label model for tagged planar Gmsh v2 ASCII imports; bounded parsing rejects non-finite coordinates, duplicate entities, degenerate or non-convex cells, inconsistent orientation, non-manifold edges, and incomplete boundary closure. The model exposes cell area/centroid and boundary-length metrics without exposing solver code to `.msh` details.
 - `UnstructuredMesh2D`: computational state over validated imported topology, with lumped nodal control areas, spatially accelerated triangle/quad point location, checkpoint-independent per-particle cell-location caches, conservative element-shape charge deposition, and nodal electric-field interpolation.
 - `UnstructuredPoissonSolver2D` / `solve_unstructured_poisson`: triangle/quad finite-element stiffness assembly, strict physical-label Dirichlet/Neumann mapping, CSR storage, Jacobi-preconditioned conjugate gradients, convergence reporting, and nodal electric-field recovery. The reusable solver binds to one topology and caches quadrature, boundary contributions, the constrained sparse operator, and its Jacobi diagonal; the free functions remain as one-shot convenience APIs.
@@ -338,6 +338,9 @@ dt = 0.002
 steps = 100
 mode = transient
 boundary = dirichlet
+# Optional 2D overrides; omission preserves the global boundary on each axis.
+boundary_x = dirichlet
+boundary_y = periodic
 phi_left = -5.0
 phi_right = 5.0
 phi_bottom = 0.0
@@ -348,7 +351,8 @@ boundary_bottom_tag = grounded_wall
 boundary_top_tag = grounded_wall
 # Particle boundaries are independent from field/electrode potentials.
 # particle_boundary sets the default for all sides; side-specific keys override it.
-# auto maps to periodic when boundary = periodic, and absorbing when boundary = dirichlet.
+# auto resolves independently: periodic on a periodic coordinate axis and
+# absorbing on a Dirichlet coordinate axis.
 particle_boundary = absorbing
 particle_boundary_right = reflecting
 # Optional uniform B field. Any nonzero component uses the 2D3V Boris pusher.
@@ -481,7 +485,8 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 
 - `particle_boundary`: default particle policy for all sides; one of `auto`, `absorbing`, `reflecting`, or `periodic`.
 - `particle_boundary_left`, `particle_boundary_right`, `particle_boundary_bottom`, `particle_boundary_top`: per-side overrides for the default policy; 3D also supports `particle_boundary_back` and `particle_boundary_front`.
-- `auto`: resolves to `periodic` for `boundary = periodic` field solves and `absorbing` for `boundary = dirichlet` field solves.
+- Structured 2D may set `boundary_x` and `boundary_y` independently to `periodic` or `dirichlet`. Omitted axis keys inherit the legacy global `boundary`. Endpoint-free spacing, node areas, CIC deposit/gather, Poisson neighbors, and electric gradients follow the selected axis topology.
+- `auto`: in structured 2D resolves per axis to `periodic` or `absorbing`; legacy 1D/3D behavior continues to follow the global field boundary.
 - `absorbing`: removes particles that leave the domain and increments the corresponding `absorbed_*` scalar diagnostic.
 - `reflecting`: mirrors escaped particles back into the domain and reverses the normal velocity component.
 - `periodic`: wraps escaped particles across that coordinate direction.
@@ -493,7 +498,7 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 - Uniform magnetic components and a profile are mutually exclusive. Extrapolation is rejected instead of silently clamped. [`examples/hall_field_profile_smoke.cfg`](examples/hall_field_profile_smoke.cfg) exercises a published Hall-benchmark profile as one consumer of this generic interface; it is explicitly not a discharge result.
 - The current field solve remains electrostatic Poisson. These controls add prescribed magnetic rotation to particle pushes, not a self-consistent electromagnetic field update or an arbitrary 2D/3D field-map importer.
 
-The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, invalid electrode drive amplitude/frequency/phase combinations, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
+The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, invalid electrode drive amplitude/frequency/phase combinations, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, nonzero electrode potentials on a periodic coordinate axis, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 
 Optional global initialization gates reject inconsistent generated or restarted
 particle states before time integration:

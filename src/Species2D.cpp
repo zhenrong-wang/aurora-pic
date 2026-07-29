@@ -54,11 +54,14 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
         for (auto& particle : particles_) {
             particle.position.x = ux(rng);
             particle.position.y = uy(rng);
-            if (mesh.boundary() == Boundary::Periodic) {
+            if (mesh.boundary_x() == Boundary::Periodic) {
                 particle.position.x = wrap_periodic(particle.position.x, mesh.length_x());
-                particle.position.y = wrap_periodic(particle.position.y, mesh.length_y());
             } else {
                 particle.position.x = std::clamp(particle.position.x, 0.0, mesh.length_x());
+            }
+            if (mesh.boundary_y() == Boundary::Periodic) {
+                particle.position.y = wrap_periodic(particle.position.y, mesh.length_y());
+            } else {
                 particle.position.y = std::clamp(particle.position.y, 0.0, mesh.length_y());
             }
             particle.velocity.x = vx(rng);
@@ -135,11 +138,14 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
             quiet_unit_coordinate(index, particles_.size(), 0);
         particle.position.y = ymin + (ymax - ymin) *
             quiet_unit_coordinate(index, particles_.size(), 1);
-        if (mesh.boundary() == Boundary::Periodic) {
+        if (mesh.boundary_x() == Boundary::Periodic) {
             particle.position.x = wrap_periodic(particle.position.x, mesh.length_x());
-            particle.position.y = wrap_periodic(particle.position.y, mesh.length_y());
         } else {
             particle.position.x = std::clamp(particle.position.x, 0.0, mesh.length_x());
+        }
+        if (mesh.boundary_y() == Boundary::Periodic) {
+            particle.position.y = wrap_periodic(particle.position.y, mesh.length_y());
+        } else {
             particle.position.y = std::clamp(particle.position.y, 0.0, mesh.length_y());
         }
         particle.velocity.x = velocity_x[index];

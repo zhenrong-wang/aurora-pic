@@ -163,7 +163,9 @@ void write_vtk_outputs(const Mesh2D& mesh, const std::filesystem::path& output_d
 Simulation2D::Simulation2D(Simulation2DConfig cfg)
     : cfg_(std::move(cfg)),
       mesh_(cfg_.nx, cfg_.ny, cfg_.length_x, cfg_.length_y,
-            cfg_.boundary, cfg_.boundary_config),
+            cfg_.boundary_x.value_or(cfg_.boundary),
+            cfg_.boundary_y.value_or(cfg_.boundary),
+            cfg_.boundary_config),
       solver_(cfg_.units.permittivity()),
       rng_(cfg_.seed) {
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
@@ -212,10 +214,22 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
         throw std::invalid_argument("2D checkpoint_interval must be positive when checkpoint_output is enabled");
     }
-    cfg_.particle_boundary_config.left = resolve_particle_boundary(cfg_.particle_boundary_config.left, cfg_.boundary);
-    cfg_.particle_boundary_config.right = resolve_particle_boundary(cfg_.particle_boundary_config.right, cfg_.boundary);
-    cfg_.particle_boundary_config.bottom = resolve_particle_boundary(cfg_.particle_boundary_config.bottom, cfg_.boundary);
-    cfg_.particle_boundary_config.top = resolve_particle_boundary(cfg_.particle_boundary_config.top, cfg_.boundary);
+    cfg_.particle_boundary_config.left =
+        resolve_particle_boundary(
+            cfg_.particle_boundary_config.left,
+            mesh_.boundary_x());
+    cfg_.particle_boundary_config.right =
+        resolve_particle_boundary(
+            cfg_.particle_boundary_config.right,
+            mesh_.boundary_x());
+    cfg_.particle_boundary_config.bottom =
+        resolve_particle_boundary(
+            cfg_.particle_boundary_config.bottom,
+            mesh_.boundary_y());
+    cfg_.particle_boundary_config.top =
+        resolve_particle_boundary(
+            cfg_.particle_boundary_config.top,
+            mesh_.boundary_y());
     for (const auto& sc : cfg_.species) species_.emplace_back(sc);
     if (species_.empty()) species_.emplace_back(Species2DConfig{});
 }
@@ -265,9 +279,10 @@ void Simulation2D::initialize() {
                         record.position.y <
                             species_config.init_y_min ||
                         record.position.y > maximum_y ||
-                        (mesh_.boundary() == Boundary::Periodic &&
-                         (record.position.x == mesh_.length_x() ||
-                          record.position.y == mesh_.length_y()));
+                        (mesh_.boundary_x() == Boundary::Periodic &&
+                         record.position.x == mesh_.length_x()) ||
+                        (mesh_.boundary_y() == Boundary::Periodic &&
+                         record.position.y == mesh_.length_y());
                     if (outside) {
                         throw std::runtime_error(
                             "external particle for species '" +

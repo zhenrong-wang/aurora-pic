@@ -114,9 +114,14 @@ ion-velocity, and plume measurements provide later experimental-validation
 targets. The first generic Hall-driven prerequisite is now implemented:
 strict one-coordinate tabulated magnetic profiles share interpolation and
 domain-coverage validation across structured 2D/3D and imported 2D while
-retaining the uniform-field interface. The next bounded target is mixed
-periodic/nonperiodic structured topology with analytic boundary verification.
-Full LANDMARK runs require exact source/current-control contracts,
+retaining the uniform-field interface. Independent periodic/Dirichlet
+structured 2D axes are now implemented through mesh spacing, node measures,
+CIC deposit/gather, Poisson neighbors, field gradients, initialization, and
+default particle policies, with analytic tests in both orientations. The
+correctness-first mixed SOR field solve still needs a production
+FFT-periodic/direct-axial implementation. The next bounded target is a generic
+spatial volumetric pair source with represented-rate accounting. Full
+LANDMARK runs require exact source/current-control contracts,
 statistical spectral diagnostics, MPI and scalable output; real HET validation
 additionally requires measured geometry/field inputs, neutral and wall
 physics, cathode/facility conditions, and uncertainty-aware comparison.

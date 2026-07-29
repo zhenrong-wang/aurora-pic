@@ -44,37 +44,59 @@ double wrap_periodic(double value, double length) {
 
 Mesh2D::Mesh2D(std::size_t nx, std::size_t ny, double length_x, double length_y,
                Boundary boundary, BoundaryConfig2D boundary_config)
+    : Mesh2D(
+          nx, ny, length_x, length_y,
+          boundary, boundary, std::move(boundary_config)) {}
+
+Mesh2D::Mesh2D(std::size_t nx, std::size_t ny,
+               double length_x, double length_y,
+               Boundary boundary_x, Boundary boundary_y,
+               BoundaryConfig2D boundary_config)
     : nx_(checked_extent(nx, "mesh nx")), ny_(checked_extent(ny, "mesh ny")),
       length_x_(checked_length(length_x, "domain length_x")),
       length_y_(checked_length(length_y, "domain length_y")),
-      dx_(length_x_ / static_cast<double>(boundary == Boundary::Periodic ? nx_ : nx_ - 1)),
-      dy_(length_y_ / static_cast<double>(boundary == Boundary::Periodic ? ny_ : ny_ - 1)),
-      boundary_(boundary), boundary_config_(checked_boundary_config(std::move(boundary_config))),
+      dx_(length_x_ / static_cast<double>(
+          boundary_x == Boundary::Periodic ? nx_ : nx_ - 1)),
+      dy_(length_y_ / static_cast<double>(
+          boundary_y == Boundary::Periodic ? ny_ : ny_ - 1)),
+      boundary_x_(boundary_x), boundary_y_(boundary_y),
+      boundary_config_(checked_boundary_config(std::move(boundary_config))),
       rho_(checked_node_count(nx_, ny_), 0.0), phi_(rho_.size(), 0.0),
       electric_x_(rho_.size(), 0.0), electric_y_(rho_.size(), 0.0) {}
 
 void Mesh2D::clear_charge() { std::fill(rho_.begin(), rho_.end(), 0.0); }
 
+Boundary Mesh2D::boundary() const {
+    if (boundary_x_ != boundary_y_) {
+        throw std::logic_error(
+            "2D mesh has mixed boundary topology; use boundary_x() and boundary_y()");
+    }
+    return boundary_x_;
+}
+
 double Mesh2D::node_area(std::size_t i, std::size_t j) const {
     if (i >= nx_ || j >= ny_) throw std::out_of_range("2D mesh node index out of range");
-    if (boundary_ == Boundary::Periodic) return dx_ * dy_;
-
-    const double wx = (i == 0 || i + 1 == nx_) ? 0.5 * dx_ : dx_;
-    const double wy = (j == 0 || j + 1 == ny_) ? 0.5 * dy_ : dy_;
+    const double wx =
+        boundary_x_ == Boundary::Periodic
+            ? dx_
+            : ((i == 0 || i + 1 == nx_) ? 0.5 * dx_ : dx_);
+    const double wy =
+        boundary_y_ == Boundary::Periodic
+            ? dy_
+            : ((j == 0 || j + 1 == ny_) ? 0.5 * dy_ : dy_);
     return wx * wy;
 }
 
 void deposit_charge_cic(Mesh2D& mesh, const std::vector<Particle2D>& particles, double charge, double weight) {
     auto& rho = mesh.rho();
     const double q = charge * weight;
-    const double q_over_area = q / (mesh.dx() * mesh.dy());
     for (const auto& particle : particles) {
         if (!particle.alive) continue;
 
-        const double x = mesh.boundary() == Boundary::Periodic
+        const double x = mesh.boundary_x() == Boundary::Periodic
                              ? wrap_periodic(particle.position.x, mesh.length_x())
                              : std::clamp(particle.position.x, 0.0, mesh.length_x());
-        const double y = mesh.boundary() == Boundary::Periodic
+        const double y = mesh.boundary_y() == Boundary::Periodic
                              ? wrap_periodic(particle.position.y, mesh.length_y())
                              : std::clamp(particle.position.y, 0.0, mesh.length_y());
         const double gx = x / mesh.dx();
@@ -86,33 +108,38 @@ void deposit_charge_cic(Mesh2D& mesh, const std::vector<Particle2D>& particles, 
         double fy = gy - static_cast<double>(j);
 
         std::size_t i0, i1, j0, j1;
-        if (mesh.boundary() == Boundary::Periodic) {
+        if (mesh.boundary_x() == Boundary::Periodic) {
             i0 = i % mesh.nx();
             i1 = (i + 1) % mesh.nx();
+        } else {
+            i = std::min(i, mesh.nx() - 2);
+            fx = std::clamp(
+                gx - static_cast<double>(i), 0.0, 1.0);
+            i0 = i;
+            i1 = i + 1;
+        }
+        if (mesh.boundary_y() == Boundary::Periodic) {
             j0 = j % mesh.ny();
             j1 = (j + 1) % mesh.ny();
         } else {
-            i = std::min(i, mesh.nx() - 2);
             j = std::min(j, mesh.ny() - 2);
-            fx = std::clamp(gx - static_cast<double>(i), 0.0, 1.0);
             fy = std::clamp(gy - static_cast<double>(j), 0.0, 1.0);
-            i0 = i;
-            i1 = i + 1;
             j0 = j;
             j1 = j + 1;
         }
 
-        if (mesh.boundary() == Boundary::Periodic) {
-            rho[mesh.index(i0, j0)] += q_over_area * (1.0 - fx) * (1.0 - fy);
-            rho[mesh.index(i1, j0)] += q_over_area * fx * (1.0 - fy);
-            rho[mesh.index(i0, j1)] += q_over_area * (1.0 - fx) * fy;
-            rho[mesh.index(i1, j1)] += q_over_area * fx * fy;
-        } else {
-            rho[mesh.index(i0, j0)] += q * (1.0 - fx) * (1.0 - fy) / mesh.node_area(i0, j0);
-            rho[mesh.index(i1, j0)] += q * fx * (1.0 - fy) / mesh.node_area(i1, j0);
-            rho[mesh.index(i0, j1)] += q * (1.0 - fx) * fy / mesh.node_area(i0, j1);
-            rho[mesh.index(i1, j1)] += q * fx * fy / mesh.node_area(i1, j1);
-        }
+        rho[mesh.index(i0, j0)] +=
+            q * (1.0 - fx) * (1.0 - fy) /
+            mesh.node_area(i0, j0);
+        rho[mesh.index(i1, j0)] +=
+            q * fx * (1.0 - fy) /
+            mesh.node_area(i1, j0);
+        rho[mesh.index(i0, j1)] +=
+            q * (1.0 - fx) * fy /
+            mesh.node_area(i0, j1);
+        rho[mesh.index(i1, j1)] +=
+            q * fx * fy /
+            mesh.node_area(i1, j1);
     }
 }
 }

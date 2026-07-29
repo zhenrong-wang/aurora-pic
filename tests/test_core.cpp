@@ -1074,6 +1074,9 @@ int main() {
                     << "dimension = 2\n"
                     << "nx = 8\nny = 8\n"
                     << "length_x = 1\nlength_y = 1\n"
+                    << "boundary = dirichlet\n"
+                    << "boundary_x = dirichlet\n"
+                    << "boundary_y = periodic\n"
                     << "magnetic_field_profile_file = "
                     << profile_path.string() << "\n"
                     << "magnetic_field_profile_axis = x\n";
@@ -1082,11 +1085,26 @@ int main() {
             require(
                 loaded.magnetic_field_profile.has_value(),
                 "2D config did not load magnetic field profile");
+            require(
+                loaded.boundary_x == pic::Boundary::Dirichlet &&
+                    loaded.boundary_y == pic::Boundary::Periodic,
+                "2D config did not load per-axis boundary topology");
             require_near(
                 loaded.magnetic_field_profile
                     ->evaluate({0.75, 0.0, 0.0}).z,
                 2.5, 1e-15,
                 "2D config magnetic field profile interpolation mismatch");
+            pic::Simulation2D mixed_topology_simulation(loaded);
+            require(
+                mixed_topology_simulation.particle_boundary_config().left ==
+                        pic::ParticleBoundary::Absorbing &&
+                    mixed_topology_simulation.particle_boundary_config().right ==
+                        pic::ParticleBoundary::Absorbing &&
+                    mixed_topology_simulation.particle_boundary_config().bottom ==
+                        pic::ParticleBoundary::Periodic &&
+                    mixed_topology_simulation.particle_boundary_config().top ==
+                        pic::ParticleBoundary::Periodic,
+                "2D mixed field topology did not resolve default particle boundaries per axis");
 
             auto conflicting = loaded;
             conflicting.magnetic_field_z = 1.0;
@@ -1475,6 +1493,206 @@ int main() {
             require(std::abs(mesh.phi()[mesh.index(mesh.nx() - 1, 0)] - 2.5) < 1e-12, "2D Dirichlet lower-right corner potential was not averaged");
             require(std::abs(mesh.phi()[mesh.index(0, mesh.ny() - 1)] - (-1.5)) < 1e-12, "2D Dirichlet upper-left corner potential was not averaged");
             require(std::abs(mesh.phi()[mesh.index(mesh.nx() - 1, mesh.ny() - 1)] - 3.5) < 1e-12, "2D Dirichlet upper-right corner potential was not averaged");
+        }
+        {
+            pic::BoundaryConfig2D electrodes;
+            electrodes.left.potential = 200.0;
+            electrodes.right.potential = 0.0;
+            pic::Mesh2D mesh(
+                17, 8, 0.025, 0.0128,
+                pic::Boundary::Dirichlet,
+                pic::Boundary::Periodic,
+                electrodes);
+            require(
+                mesh.boundary_x() == pic::Boundary::Dirichlet &&
+                    mesh.boundary_y() == pic::Boundary::Periodic,
+                "mixed 2D mesh did not retain per-axis topology");
+            require_near(
+                mesh.dx(), mesh.length_x() /
+                    static_cast<double>(mesh.nx() - 1),
+                1e-15,
+                "mixed 2D mesh used periodic spacing on Dirichlet x");
+            require_near(
+                mesh.dy(), mesh.length_y() /
+                    static_cast<double>(mesh.ny()),
+                1e-15,
+                "mixed 2D mesh used endpoint spacing on periodic y");
+            require_throws(
+                [&]() { (void)mesh.boundary(); },
+                "mixed 2D mesh global boundary compatibility accessor did not reject ambiguity");
+
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double maximum_phi_error = 0.0;
+            double maximum_ex_error = 0.0;
+            double maximum_ey = 0.0;
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const auto index = mesh.index(i, j);
+                    const double expected_phi =
+                        200.0 * (1.0 - mesh.node_x(i) /
+                                          mesh.length_x());
+                    maximum_phi_error = std::max(
+                        maximum_phi_error,
+                        std::abs(mesh.phi()[index] - expected_phi));
+                    maximum_ex_error = std::max(
+                        maximum_ex_error,
+                        std::abs(mesh.electric_x()[index] -
+                                 200.0 / mesh.length_x()));
+                    maximum_ey = std::max(
+                        maximum_ey,
+                        std::abs(mesh.electric_y()[index]));
+                }
+            }
+            require(
+                maximum_phi_error < 1e-8,
+                "mixed Dirichlet-x/periodic-y Poisson potential exceeded analytic tolerance");
+            require(
+                maximum_ex_error < 1e-6,
+                "mixed Dirichlet-x/periodic-y Poisson Ex exceeded analytic tolerance");
+            require(
+                maximum_ey < 1e-6,
+                "mixed Dirichlet-x/periodic-y Poisson produced spurious Ey");
+
+            const std::vector<pic::Particle2D> particles{
+                pic::Particle2D{
+                    pic::Vec2{0.5 * mesh.length_x(),
+                              1.25 * mesh.length_y()},
+                    pic::Vec2{}, true}};
+            mesh.clear_charge();
+            pic::deposit_charge_cic(mesh, particles, 2.0, 0.5);
+            double represented_charge = 0.0;
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    represented_charge +=
+                        mesh.rho()[mesh.index(i, j)] *
+                        mesh.node_area(i, j);
+                }
+            }
+            require_near(
+                represented_charge, 1.0, 1e-12,
+                "mixed-topology CIC deposition did not conserve charge");
+        }
+        {
+            pic::Mesh2D mesh(
+                18, 16, 1.2, 0.8,
+                pic::Boundary::Dirichlet,
+                pic::Boundary::Periodic);
+            const double kx =
+                std::numbers::pi / mesh.length_x();
+            const double ky =
+                2.0 * std::numbers::pi / mesh.length_y();
+            const double inv_dx2 =
+                1.0 / (mesh.dx() * mesh.dx());
+            const double inv_dy2 =
+                1.0 / (mesh.dy() * mesh.dy());
+            std::vector<double> expected(mesh.size(), 0.0);
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    expected[mesh.index(i, j)] =
+                        std::sin(kx * mesh.node_x(i)) *
+                        std::cos(ky * mesh.node_y(j));
+                }
+            }
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                const std::size_t jm =
+                    (j + mesh.ny() - 1) % mesh.ny();
+                const std::size_t jp =
+                    (j + 1) % mesh.ny();
+                for (std::size_t i = 1;
+                     i + 1 < mesh.nx(); ++i) {
+                    const auto index = mesh.index(i, j);
+                    mesh.rho()[index] = pic::EPS0 *
+                        ((2.0 * inv_dx2 + 2.0 * inv_dy2) *
+                             expected[index]
+                         - inv_dx2 *
+                             (expected[mesh.index(i - 1, j)] +
+                              expected[mesh.index(i + 1, j)])
+                         - inv_dy2 *
+                             (expected[mesh.index(i, jm)] +
+                              expected[mesh.index(i, jp)]));
+                }
+            }
+
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double maximum_phi_error = 0.0;
+            double maximum_ex_error = 0.0;
+            double maximum_ey_error = 0.0;
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                const std::size_t jm =
+                    (j + mesh.ny() - 1) % mesh.ny();
+                const std::size_t jp =
+                    (j + 1) % mesh.ny();
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const auto index = mesh.index(i, j);
+                    maximum_phi_error = std::max(
+                        maximum_phi_error,
+                        std::abs(mesh.phi()[index] -
+                                 expected[index]));
+                    const double expected_ex =
+                        i == 0
+                            ? -(expected[mesh.index(1, j)] -
+                                expected[index]) / mesh.dx()
+                            : i + 1 == mesh.nx()
+                                  ? -(expected[index] -
+                                      expected[mesh.index(i - 1, j)]) /
+                                        mesh.dx()
+                                  : -(expected[mesh.index(i + 1, j)] -
+                                      expected[mesh.index(i - 1, j)]) /
+                                        (2.0 * mesh.dx());
+                    const double expected_ey =
+                        -(expected[mesh.index(i, jp)] -
+                          expected[mesh.index(i, jm)]) /
+                        (2.0 * mesh.dy());
+                    maximum_ex_error = std::max(
+                        maximum_ex_error,
+                        std::abs(mesh.electric_x()[index] -
+                                 expected_ex));
+                    maximum_ey_error = std::max(
+                        maximum_ey_error,
+                        std::abs(mesh.electric_y()[index] -
+                                 expected_ey));
+                }
+            }
+            require(
+                maximum_phi_error < 1e-8,
+                "mixed-topology manufactured Poisson potential exceeded tolerance");
+            require(
+                maximum_ex_error < 1e-6,
+                "mixed-topology manufactured Poisson Ex exceeded tolerance");
+            require(
+                maximum_ey_error < 1e-6,
+                "mixed-topology manufactured Poisson Ey exceeded tolerance");
+        }
+        {
+            pic::BoundaryConfig2D electrodes;
+            electrodes.bottom.potential = -1.0;
+            electrodes.top.potential = 2.0;
+            pic::Mesh2D mesh(
+                8, 13, 1.0, 0.6,
+                pic::Boundary::Periodic,
+                pic::Boundary::Dirichlet,
+                electrodes);
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                const double expected_phi =
+                    -1.0 + 3.0 * mesh.node_y(j) /
+                               mesh.length_y();
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const auto index = mesh.index(i, j);
+                    require_near(
+                        mesh.phi()[index], expected_phi, 1e-8,
+                        "mixed periodic-x/Dirichlet-y Poisson potential mismatch");
+                    require_near(
+                        mesh.electric_x()[index], 0.0, 1e-6,
+                        "mixed periodic-x/Dirichlet-y Poisson produced spurious Ex");
+                    require_near(
+                        mesh.electric_y()[index], -5.0, 1e-6,
+                        "mixed periodic-x/Dirichlet-y Poisson Ey mismatch");
+                }
+            }
         }
         {
             pic::Mesh2D mesh(4, 4, 1.0, 1.0, pic::Boundary::Periodic);
@@ -2414,6 +2632,40 @@ int main() {
                 try { (void)pic::load_config_2d(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
                 std::filesystem::remove(path);
             }, "invalid 2D electrode potential validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path(
+                    "test_periodic_axis_potential.ini");
+                {
+                    std::ofstream out(path);
+                    out << "dimension = 2\n"
+                        << "boundary = dirichlet\n"
+                        << "boundary_x = periodic\n"
+                        << "phi_left = 1\n";
+                }
+                try {
+                    (void)pic::load_config_2d(path.string());
+                } catch (...) {
+                    std::filesystem::remove(path);
+                    throw;
+                }
+                std::filesystem::remove(path);
+            }, "2D config accepted an electrode potential on a periodic axis");
+            require_throws([] {
+                const auto path = std::filesystem::path(
+                    "test_invalid_2d_axis_boundary.ini");
+                {
+                    std::ofstream out(path);
+                    out << "dimension = 2\n"
+                        << "boundary_y = open\n";
+                }
+                try {
+                    (void)pic::load_config_2d(path.string());
+                } catch (...) {
+                    std::filesystem::remove(path);
+                    throw;
+                }
+                std::filesystem::remove(path);
+            }, "2D config accepted an invalid per-axis boundary value");
             require_throws([] {
                 const auto path = std::filesystem::path("test_empty_2d_boundary_tag.ini");
                 { std::ofstream out(path); out << "dimension = 2\nboundary_left_tag = \n"; }
