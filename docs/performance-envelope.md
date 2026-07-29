@@ -30,6 +30,14 @@ a memory-scaling guarantee, not a high-volume I/O throughput claim.
 
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.
 
+The same suite runs the quantitative
+[1D linear Landau-damping benchmark](kinetic-validation.md): 64 cells,
+32,768 electrons plus 32,768 effectively stationary ions, and 240 steps. It
+fits the electric-field mode damping rate and angular frequency against
+published Vlasov-Poisson values and gates total-energy drift. This bounded
+case is system-level kinetic verification, not a general convergence or
+experimental-validation claim.
+
 The local verification entry point is deliberately resource-conservative:
 one compiler job, one CTest job, and one implicit OpenMP thread by default.
 Use `AURORA_BUILD_JOBS`, `AURORA_TEST_JOBS`, or

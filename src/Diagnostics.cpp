@@ -41,6 +41,7 @@ void Diagnostics::write_sample(const DiagnosticSample& s) {
 void Diagnostics::write_fields(std::size_t step, const Grid& grid) const {
     std::ofstream out(output_dir_ / ("fields_" + std::to_string(step) + ".csv"));
     out << "x,rho,phi,E\n";
+    out << std::setprecision(17);
     for (std::size_t i = 0; i < grid.nx(); ++i) out << grid.node_x(i) << ',' << grid.rho()[i] << ',' << grid.phi()[i] << ',' << grid.electric()[i] << '\n';
 }
 

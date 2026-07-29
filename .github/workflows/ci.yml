@@ -66,6 +66,11 @@ jobs:
       - name: Validate pushers
         run: python3 scripts/validate_pushers.py
 
+      - name: Validate linear kinetic response
+        run: |
+          python3 scripts/test_kinetic_benchmarks.py
+          OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py build/aurorapic_cli
+
       - name: Run example smoke tests
         run: python3 scripts/verify_examples.py build/aurorapic_cli
 

@@ -50,6 +50,8 @@ def validate_cmake_packaging() -> None:
         "install(DIRECTORY examples/",
         "scripts/compare_swarm.py",
         "scripts/run_swarm_campaign.py",
+        "scripts/validate_kinetic_benchmarks.py",
+        "docs/kinetic-validation.md",
         "docs/performance-envelope.md",
         "docs/swarm-validation.md",
         "configure_package_config_file(",
@@ -78,6 +80,8 @@ def validate_ci_matrix() -> None:
         "python3 scripts/test_swarm_cli.py build/aurorapic_swarm",
         "python3 scripts/test_compare_swarm.py",
         "python3 scripts/test_swarm_campaign.py",
+        "python3 scripts/test_kinetic_benchmarks.py",
+        "python3 scripts/validate_kinetic_benchmarks.py build/aurorapic_cli",
         "ctest --test-dir build --parallel 1 --output-on-failure",
         "python3 scripts/verify_examples.py build/aurorapic_cli",
         "python3 scripts/verify_install_package.py build --jobs 2",
@@ -101,6 +105,8 @@ def validate_install_smoke_script() -> None:
         "aurorapic_swarm",
         "compare_swarm.py",
         "run_swarm_campaign.py",
+        "validate_kinetic_benchmarks.py",
+        "kinetic-validation.md",
     ):
         require(term in script, f"install/package smoke script must include {term!r}")
 
@@ -138,10 +144,12 @@ def validate_cross_references() -> None:
     roadmap = read(ROADMAP)
     verify = read(VERIFY)
     require("docs/performance-envelope.md" in readme, "README must link the performance envelope")
+    require("docs/kinetic-validation.md" in readme, "README must link kinetic verification")
     require("CI workflow" in readme, "README must document CI workflow coverage")
     require("CPack" in readme, "README must document CPack packaging")
     require("find_package(AuroraPIC CONFIG REQUIRED)" in readme, "README must document downstream CMake package use")
     require("docs/performance-envelope.md" in roadmap, "roadmap must link the performance envelope")
+    require("docs/kinetic-validation.md" in roadmap, "roadmap must link kinetic verification")
     require("CI matrix" in roadmap and "CPack" in roadmap, "roadmap must document CI matrix and CPack as M6 evidence")
     require("install/package smoke" in roadmap, "roadmap must document install/package smoke evidence")
     require(
@@ -171,6 +179,11 @@ def validate_cross_references() -> None:
         "python3 scripts/benchmark_unstructured.py build/aurorapic_cli --repeats 1"
         in verify,
         "scripts/verify.sh must run the unstructured benchmark smoke",
+    )
+    require(
+        "python3 scripts/validate_kinetic_benchmarks.py build/aurorapic_cli"
+        in verify,
+        "scripts/verify.sh must run the quantitative kinetic benchmark",
     )
 
 

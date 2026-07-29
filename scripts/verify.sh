@@ -26,6 +26,8 @@ python3 scripts/test_compare_swarm.py
 python3 scripts/test_swarm_campaign.py
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
 python3 scripts/validate_pushers.py
+python3 scripts/test_kinetic_benchmarks.py
+python3 scripts/validate_kinetic_benchmarks.py build/aurorapic_cli
 python3 scripts/verify_examples.py build/aurorapic_cli
 python3 scripts/benchmark_unstructured.py build/aurorapic_cli --repeats 1
 python3 scripts/verify_install_package.py build --jobs "$BUILD_JOBS"

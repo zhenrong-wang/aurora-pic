@@ -170,6 +170,14 @@ def smoke_install_tree(
         prefix / "share" / "aurorapic" / "scripts" /
         "run_swarm_campaign.py"
     )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
+        "validate_kinetic_benchmarks.py"
+    )
+    require_file(
+        prefix / "share" / "doc" / "AuroraPIC" /
+        "kinetic-validation.md"
+    )
     smoke_installed_cli(prefix, work)
     smoke_downstream_consumer(prefix, work, jobs)
     return prefix
@@ -211,6 +219,14 @@ def smoke_tgz_package(
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /
         "run_swarm_campaign.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "scripts" /
+        "validate_kinetic_benchmarks.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "doc" / "AuroraPIC" /
+        "kinetic-validation.md"
     )
 
 
