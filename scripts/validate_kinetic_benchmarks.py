@@ -242,6 +242,136 @@ def write_two_stream_config(
     )
 
 
+def write_langmuir_2d_state(
+    path: Path,
+    particles_per_axis: int,
+    length: float,
+    perturbation: float,
+    direction: str,
+) -> None:
+    require(
+        direction in ("x", "y"),
+        "2D Langmuir direction must be x or y",
+    )
+    particle_count = particles_per_axis * particles_per_axis
+    wavenumber = 2.0 * math.pi / length
+    with path.open("w", encoding="utf-8") as output:
+        output.write(
+            "AuroraPIC-particle-state-v1\n"
+            "dimension 2\n"
+            "units normalized\n"
+            "weighting species_constant\n"
+            "velocity_staggering time_centered\n"
+            f"particle_count {2 * particle_count}\n"
+            "records\n"
+        )
+        for y_index in range(particles_per_axis):
+            base_y = length * (
+                y_index + 0.5
+            ) / particles_per_axis
+            for x_index in range(particles_per_axis):
+                base_x = length * (
+                    x_index + 0.5
+                ) / particles_per_axis
+                x_position = base_x
+                y_position = base_y
+                if direction == "x":
+                    x_position = perturbed_position(
+                        (x_index + 0.5) / particles_per_axis,
+                        length,
+                        perturbation,
+                        wavenumber,
+                    )
+                else:
+                    y_position = perturbed_position(
+                        (y_index + 0.5) / particles_per_axis,
+                        length,
+                        perturbation,
+                        wavenumber,
+                    )
+                output.write(
+                    "particle electrons "
+                    f"{x_position:.17g} {y_position:.17g} "
+                    "0 0 0 0\n"
+                )
+        for y_index in range(particles_per_axis):
+            y_position = length * (
+                y_index + 0.5
+            ) / particles_per_axis
+            for x_index in range(particles_per_axis):
+                x_position = length * (
+                    x_index + 0.5
+                ) / particles_per_axis
+                output.write(
+                    "particle ions "
+                    f"{x_position:.17g} {y_position:.17g} "
+                    "0 0 0 0\n"
+                )
+        output.write("end\n")
+
+
+def write_langmuir_2d_config(
+    path: Path,
+    state_path: Path,
+    output_dir: Path,
+    particle_count: int,
+    length: float,
+) -> None:
+    weight = length * length / particle_count
+    path.write_text(
+        "\n".join(
+            [
+                "config_version = 1",
+                "units = normalized",
+                "dimension = 2",
+                "nx = 32",
+                "ny = 32",
+                f"length_x = {length:.17g}",
+                f"length_y = {length:.17g}",
+                "dt = 0.05",
+                "steps = 320",
+                "output_interval = 1",
+                "boundary = periodic",
+                "mode = transient",
+                "seed = 161803",
+                "runtime_backend = serial",
+                "runtime_threads = 1",
+                "vtk_output = false",
+                "particle_output = false",
+                f"output_dir = {output_dir.as_posix()}",
+                f"initial_state_path = {state_path.as_posix()}",
+                "initialization_max_relative_charge_imbalance = 1e-12",
+                "initialization_max_relative_pair_imbalance = 1e-12",
+                "initialization_charge_pairs = electrons:ions",
+                "",
+                "[species.electrons]",
+                "charge = -1",
+                "mass = 1",
+                f"weight = {weight:.17g}",
+                f"particles = {particle_count}",
+                "thermal_velocity = 0",
+                "init_x_min = 0",
+                f"init_x_max = {length:.17g}",
+                "init_y_min = 0",
+                f"init_y_max = {length:.17g}",
+                "",
+                "[species.ions]",
+                "charge = 1",
+                "mass = 1000000",
+                f"weight = {weight:.17g}",
+                f"particles = {particle_count}",
+                "thermal_velocity = 0",
+                "init_x_min = 0",
+                f"init_x_max = {length:.17g}",
+                "init_y_min = 0",
+                f"init_y_max = {length:.17g}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def field_mode_amplitude(path: Path, wavenumber: float) -> float:
     cosine = 0.0
     sine = 0.0
@@ -297,8 +427,13 @@ def analyze_damped_mode(times: Sequence[float], amplitudes: Sequence[float]) -> 
     require(len(peaks) >= 4, "damped-mode analysis found fewer than four usable peaks")
     peak_times = [times[index] for index in peaks]
     peak_amplitudes = [amplitudes[index] for index in peaks]
-    require(all(value > 0.0 for value in peak_amplitudes),
-            "damped-mode analysis found a non-positive peak")
+    require(
+        all(
+            math.isfinite(value) and value > 0.0
+            for value in peak_amplitudes
+        ),
+        "damped-mode analysis found a non-positive or non-finite peak",
+    )
     damping_rate, _ = linear_fit(
         peak_times, [math.log(value) for value in peak_amplitudes]
     )
@@ -371,6 +506,72 @@ def analyze_exponential_growth(
     }
 
 
+def analyze_oscillation_frequency(
+    times: Sequence[float],
+    amplitudes: Sequence[float],
+    minimum_time: float,
+    maximum_time: float,
+    minimum_peak_separation: float,
+) -> dict[str, float | int]:
+    require(
+        len(times) == len(amplitudes) and len(times) >= 5,
+        "oscillation analysis requires at least five samples",
+    )
+    candidates = [
+        index
+        for index in range(1, len(amplitudes) - 1)
+        if amplitudes[index] >= amplitudes[index - 1]
+        and amplitudes[index] > amplitudes[index + 1]
+        and minimum_time <= times[index] <= maximum_time
+    ]
+    peaks: list[int] = []
+    for candidate in candidates:
+        if (
+            peaks
+            and times[candidate] - times[peaks[-1]]
+            < minimum_peak_separation
+        ):
+            if amplitudes[candidate] > amplitudes[peaks[-1]]:
+                peaks[-1] = candidate
+            continue
+        peaks.append(candidate)
+    require(
+        len(peaks) >= 4,
+        "oscillation analysis found fewer than four usable peaks",
+    )
+    peak_times = [times[index] for index in peaks]
+    peak_amplitudes = [amplitudes[index] for index in peaks]
+    require(
+        all(
+            math.isfinite(value) and value > 0.0
+            for value in peak_amplitudes
+        ),
+        "oscillation analysis found a non-positive or non-finite peak",
+    )
+    half_periods = [
+        peak_times[index + 1] - peak_times[index]
+        for index in range(len(peak_times) - 1)
+    ]
+    require(
+        all(value > 0.0 for value in half_periods),
+        "oscillation peak times are not strictly increasing",
+    )
+    angular_frequency = math.pi / (
+        sum(half_periods) / len(half_periods)
+    )
+    return {
+        "peak_count": len(peaks),
+        "angular_frequency": angular_frequency,
+        "first_peak_time": peak_times[0],
+        "last_peak_time": peak_times[-1],
+        "first_peak_amplitude": peak_amplitudes[0],
+        "last_peak_amplitude": peak_amplitudes[-1],
+        "last_to_first_peak_ratio": (
+            peak_amplitudes[-1] / peak_amplitudes[0]
+        ),
+    }
+
+
 def read_scalar_energy(path: Path) -> tuple[float, float]:
     with path.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
@@ -380,6 +581,42 @@ def read_scalar_energy(path: Path) -> tuple[float, float]:
             "scalar diagnostics contain invalid total energy")
     reference = energies[0]
     return reference, max(abs(value - reference) / reference for value in energies)
+
+
+def read_scalar_field_history(
+    path: Path,
+) -> tuple[list[float], list[float]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    require(
+        len(rows) >= 5,
+        "scalar field history requires at least five samples",
+    )
+    times = [float(row["time"]) for row in rows]
+    field_energies = [
+        float(row["field_energy"]) for row in rows
+    ]
+    require(
+        all(
+            math.isfinite(value) and value >= 0.0
+            for value in field_energies
+        ),
+        "scalar field history contains invalid field energy",
+    )
+    field_amplitudes = [
+        math.sqrt(2.0 * value)
+        for value in field_energies
+    ]
+    require(
+        all(
+            math.isfinite(time)
+            and math.isfinite(amplitude)
+            and amplitude >= 0.0
+            for time, amplitude in zip(times, field_amplitudes)
+        ),
+        "scalar field history contains invalid values",
+    )
+    return times, field_amplitudes
 
 
 def run_landau(cli: Path, work: Path) -> dict[str, object]:
@@ -623,6 +860,182 @@ def run_two_stream(cli: Path, work: Path) -> dict[str, object]:
     }
 
 
+def run_langmuir_2d(cli: Path, work: Path) -> dict[str, object]:
+    particles_per_axis = 64
+    particle_count = particles_per_axis * particles_per_axis
+    length = 2.0 * math.pi
+    perturbation = 0.01
+    direction_reports: dict[str, dict[str, object]] = {}
+    for direction in ("x", "y"):
+        state_path = work / f"langmuir_2d_{direction}.aps"
+        config_path = work / f"langmuir_2d_{direction}.cfg"
+        output_dir = work / f"langmuir_2d_{direction}_output"
+        write_langmuir_2d_state(
+            state_path,
+            particles_per_axis,
+            length,
+            perturbation,
+            direction,
+        )
+        write_langmuir_2d_config(
+            config_path,
+            state_path,
+            output_dir,
+            particle_count,
+            length,
+        )
+        subprocess.run([str(cli), str(config_path)], check=True)
+        times, amplitudes = read_scalar_field_history(
+            output_dir / "scalars.csv"
+        )
+        oscillation = analyze_oscillation_frequency(
+            times,
+            amplitudes,
+            2.0,
+            15.8,
+            2.0,
+        )
+        initial_energy, max_energy_drift = read_scalar_energy(
+            output_dir / "scalars.csv"
+        )
+        with (output_dir / "scalars.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            first_row = next(csv.DictReader(handle))
+        direction_reports[direction] = {
+            "fit": oscillation,
+            "initial_field_energy": float(
+                first_row["field_energy"]
+            ),
+            "initial_total_energy": initial_energy,
+            "max_relative_total_energy_drift": max_energy_drift,
+        }
+
+    x_frequency = float(
+        direction_reports["x"]["fit"]["angular_frequency"]
+    )
+    y_frequency = float(
+        direction_reports["y"]["fit"]["angular_frequency"]
+    )
+    x_initial_field = float(
+        direction_reports["x"]["initial_field_energy"]
+    )
+    y_initial_field = float(
+        direction_reports["y"]["initial_field_energy"]
+    )
+    directional_frequency_difference = (
+        abs(x_frequency - y_frequency) /
+        (0.5 * (x_frequency + y_frequency))
+    )
+    directional_field_difference = (
+        abs(x_initial_field - y_initial_field) /
+        (0.5 * (x_initial_field + y_initial_field))
+    )
+    checks = {
+        "x_angular_frequency": {
+            "value": x_frequency,
+            "reference": 1.0,
+            "minimum": 0.97,
+            "maximum": 1.03,
+        },
+        "y_angular_frequency": {
+            "value": y_frequency,
+            "reference": 1.0,
+            "minimum": 0.97,
+            "maximum": 1.03,
+        },
+        "directional_frequency_difference": {
+            "value": directional_frequency_difference,
+            "minimum": 0.0,
+            "maximum": 0.005,
+        },
+        "directional_initial_field_difference": {
+            "value": directional_field_difference,
+            "minimum": 0.0,
+            "maximum": 0.001,
+        },
+        "x_initial_field_energy": {
+            "value": x_initial_field,
+            "reference": math.pi * math.pi * 1.0e-4,
+            "minimum": 0.00095,
+            "maximum": 0.00102,
+        },
+        "y_initial_field_energy": {
+            "value": y_initial_field,
+            "reference": math.pi * math.pi * 1.0e-4,
+            "minimum": 0.00095,
+            "maximum": 0.00102,
+        },
+        "x_last_to_first_peak_ratio": {
+            "value": direction_reports["x"]["fit"][
+                "last_to_first_peak_ratio"
+            ],
+            "minimum": 0.98,
+            "maximum": 1.02,
+        },
+        "y_last_to_first_peak_ratio": {
+            "value": direction_reports["y"]["fit"][
+                "last_to_first_peak_ratio"
+            ],
+            "minimum": 0.98,
+            "maximum": 1.02,
+        },
+        "x_max_relative_total_energy_drift": {
+            "value": direction_reports["x"][
+                "max_relative_total_energy_drift"
+            ],
+            "minimum": 0.0,
+            "maximum": 0.003,
+        },
+        "y_max_relative_total_energy_drift": {
+            "value": direction_reports["y"][
+                "max_relative_total_energy_drift"
+            ],
+            "minimum": 0.0,
+            "maximum": 0.003,
+        },
+    }
+    passed = True
+    for check in checks.values():
+        value = float(check["value"])
+        check["passed"] = (
+            float(check["minimum"]) <= value <=
+            float(check["maximum"])
+        )
+        passed = passed and bool(check["passed"])
+
+    return {
+        "schema_version": 1,
+        "benchmark": "langmuir_oscillation_2d",
+        "model": "electrostatic_2D3V_cold_plasma",
+        "reference": {
+            "description": (
+                "orthogonal cold Langmuir modes with normalized "
+                "electron plasma frequency"
+            ),
+            "angular_frequency": 1.0,
+            "citation": (
+                "PICLas plasma-wave tutorial; WarpX Langmuir "
+                "wave examples"
+            ),
+        },
+        "numerics": {
+            "mesh": [32, 32],
+            "particles_per_species": particle_count,
+            "particles_per_axis": particles_per_axis,
+            "timestep": 0.05,
+            "steps_per_direction": 320,
+            "length_x": length,
+            "length_y": length,
+            "wavenumber": 1.0,
+            "density_perturbation": perturbation,
+        },
+        "directions": direction_reports,
+        "checks": checks,
+        "passed": passed,
+    }
+
+
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -640,7 +1053,12 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--benchmark",
-        choices=("all", "landau", "two-stream"),
+        choices=(
+            "all",
+            "landau",
+            "two-stream",
+            "langmuir-2d",
+        ),
         default="all",
         help="benchmark to run (default: all)",
     )
@@ -662,10 +1080,13 @@ def main(argv: Iterable[str] = sys.argv[1:]) -> int:
             report = run_landau(cli, work)
         elif args.benchmark == "two-stream":
             report = run_two_stream(cli, work)
+        elif args.benchmark == "langmuir-2d":
+            report = run_langmuir_2d(cli, work)
         else:
             benchmarks = [
                 run_landau(cli, work),
                 run_two_stream(cli, work),
+                run_langmuir_2d(cli, work),
             ]
             report = {
                 "schema_version": 1,

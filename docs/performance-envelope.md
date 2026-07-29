@@ -34,11 +34,13 @@ The same suite runs the quantitative
 [1D kinetic benchmarks](kinetic-validation.md). Landau damping uses 64 cells,
 32,768 electrons plus 32,768 effectively stationary ions, and 240 steps. The
 two-stream case uses 128 cells, two 16,384-particle warm electron beams plus
-32,768 ions, and 1,000 steps. They run sequentially, fit electric-field
-damping/frequency and instability growth against published Vlasov-Poisson
-values, check nonlinear turnover, and gate total-energy drift. These bounded
-cases are system-level kinetic verification, not general convergence or
-experimental-validation claims.
+32,768 ions, and 1,000 steps. The 2D Langmuir case runs x- and y-directed
+modes sequentially on 32 by 32 nodes with 4,096 electrons plus 4,096 ions and
+320 steps per direction. They fit electric-field damping/frequency and
+instability growth against published or analytic Vlasov-Poisson values, check
+nonlinear turnover and directional symmetry, and gate total-energy drift.
+These bounded cases are system-level kinetic verification, not general
+convergence or experimental-validation claims.
 
 The local verification entry point is deliberately resource-conservative:
 one compiler job, one CTest job, and one implicit OpenMP thread by default.

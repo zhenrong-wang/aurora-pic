@@ -1,11 +1,12 @@
 # Kinetic verification
 
-AuroraPIC includes deterministic, quantitative linear Landau-damping and
-two-stream-instability benchmarks. These system-level physics cases check that
-particle loading, charge deposition, the periodic Poisson solve, field
-interpolation, leapfrog advancement, and diagnostics reproduce known
-collisionless kinetic responses together. This is stronger than a structural
-smoke test, but it is not experimental validation of a device or gas model.
+AuroraPIC includes deterministic, quantitative linear Landau-damping,
+two-stream-instability, and orthogonal 2D Langmuir benchmarks. These
+system-level physics cases check that particle loading, charge deposition, the
+periodic Poisson solve, field interpolation, leapfrog advancement, and
+diagnostics reproduce known collisionless kinetic responses together. This is
+stronger than a structural smoke test, but it is not experimental validation
+of a device or gas model.
 
 ## Linear Landau-damping case
 
@@ -116,20 +117,72 @@ OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py \
   --report build/two-stream-report.json
 ```
 
-The default invocation runs both kinetic benchmarks sequentially. Use
-`--benchmark landau` to select only Landau damping.
+## Orthogonal 2D Langmuir oscillations
+
+The first multidimensional quantitative case initializes a cold electron
+density perturbation
+
+```text
+n_e(s, 0) = 1 + 0.01*cos(s),  s = x or y
+```
+
+in a periodic `2*pi` by `2*pi` domain. Uniform ions with mass `1e6` provide an
+effectively stationary background. In normalized units, `q_e = -1`,
+`m_e = 1`, `n_e = 1`, and `epsilon = 1`, so the cold electron plasma
+frequency is
+
+```text
+omega_p = sqrt(n_e*q_e^2/(epsilon*m_e)) = 1.
+```
+
+This is the standard plasma-oscillation relation documented by the
+[PICLas plasma-wave tutorial](https://piclas.readthedocs.io/en/latest/userguide/tutorials/pic-poisson-plasma-wave/pic-poisson-plasma-wave.html).
+WarpX likewise publishes analytic
+[1D, 2D, and 3D Langmuir-wave examples](https://warpx.readthedocs.io/en/latest/usage/examples/langmuir/README.html).
+
+AuroraPIC runs separate x- and y-directed modes on the same 32 by 32 mesh.
+Each run uses a deterministic 64 by 64 particle lattice for 4,096 electrons
+and 4,096 ions, `dt = 0.05`, and 320 steps. Only scalar diagnostics are
+written. The validator obtains the mode frequency from five half-period
+field-energy peaks, tests amplitude retention, and compares the orthogonal
+results. For `alpha = 0.01` and `k = 1`, the analytic initial field
+amplitude is `alpha/k = 0.01`; integrating its squared sinusoid over the
+domain gives initial field energy `pi^2*1e-4`.
+
+| Quantity | Reference | Acceptance |
+| --- | ---: | ---: |
+| x-directed angular frequency | `1` | `0.97` to `1.03` |
+| y-directed angular frequency | `1` | `0.97` to `1.03` |
+| Relative x/y frequency difference | `0` | at most `0.005` |
+| Relative x/y initial-field difference | `0` | at most `0.001` |
+| Initial field energy, each direction | `pi^2*1e-4` | `0.00095` to `0.00102` |
+| Last/first field-amplitude peak, each direction | `1` | `0.98` to `1.02` |
+| Maximum relative total-energy drift, each direction | `0` | at most `0.003` |
+
+Run only the multidimensional case with:
+
+```sh
+OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py \
+  build/aurorapic_cli --benchmark langmuir-2d \
+  --report build/langmuir-2d-report.json
+```
+
+The default invocation runs all three kinetic benchmarks sequentially. Use
+`--benchmark landau`, `--benchmark two-stream`, or
+`--benchmark langmuir-2d` to select one.
 
 ## What remains
 
 Passing these cases verifies damped and unstable collisionless electrostatic
-kinetics in the current 1D path, including nonlinear two-stream turnover. It
-does not validate collision cross sections, material boundaries, imported
-geometry, multidimensional mode propagation, steady-state convergence,
+kinetics in the current 1D path, including nonlinear two-stream turnover, and
+cold directional plasma oscillations in structured 2D3V. It does not validate
+collision cross sections, material boundaries, imported geometry, warm
+multidimensional dispersion or damping, steady-state convergence,
 electromagnetic fields, or a real thruster/discharge.
 
 The next verification and validation ladder is:
 
-1. add 2D and 3D Langmuir-mode dispersion benchmarks;
+1. add the orthogonal 3D Langmuir-mode benchmark;
 2. reproduce the published Turner helium capacitively coupled plasma
    benchmark with an authoritative open collision dataset;
 3. add an imported-geometry probe current-voltage comparison;

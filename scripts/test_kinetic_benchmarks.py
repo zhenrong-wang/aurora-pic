@@ -61,6 +61,27 @@ def main() -> int:
         float(growth_fit["r_squared"]), 1.0, 1e-12,
         "synthetic growth fit quality changed",
     )
+    oscillation_frequency = 1.0
+    oscillation_times = [
+        0.025 * index for index in range(641)
+    ]
+    oscillating_amplitudes = [
+        abs(math.cos(oscillation_frequency * time))
+        for time in oscillation_times
+    ]
+    oscillation_fit = MODULE.analyze_oscillation_frequency(
+        oscillation_times,
+        oscillating_amplitudes,
+        2.0,
+        15.0,
+        2.0,
+    )
+    require_near(
+        float(oscillation_fit["angular_frequency"]),
+        oscillation_frequency,
+        0.01,
+        "synthetic oscillation-frequency fit changed",
+    )
     print("kinetic benchmark analyzer tests passed")
     return 0
 
