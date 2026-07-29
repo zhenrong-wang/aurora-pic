@@ -100,6 +100,11 @@ python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 2D runs are selected by `dimension = 2` in the config file and are reachable from both the CLI/config loader and the C++ API. The 2D path provides:
 
 - `Mesh2D`: rectangular node-centered mesh with independent periodic or Dirichlet field topology on each coordinate axis, plus side boundary tags/potentials for electrode-style Dirichlet axes. The legacy single `boundary` value still applies to both axes.
+- `FieldSolver` automatically selects a fully periodic spectral solve, a
+  mixed periodic/Dirichlet spectral-tridiagonal solve, or the fully Dirichlet
+  SOR path. Mixed topologies transform the periodic axis with radix-2,
+  mixed-radix, or Bluestein FFT algorithms and directly solve the Dirichlet
+  axis mode by mode.
 - `ImportedMesh2D`: validated topology/label model for tagged planar Gmsh v2 ASCII imports; bounded parsing rejects non-finite coordinates, duplicate entities, degenerate or non-convex cells, inconsistent orientation, non-manifold edges, and incomplete boundary closure. The model exposes cell area/centroid and boundary-length metrics without exposing solver code to `.msh` details.
 - `UnstructuredMesh2D`: computational state over validated imported topology, with lumped nodal control areas, spatially accelerated triangle/quad point location, checkpoint-independent per-particle cell-location caches, conservative element-shape charge deposition, and nodal electric-field interpolation.
 - `UnstructuredPoissonSolver2D` / `solve_unstructured_poisson`: triangle/quad finite-element stiffness assembly, strict physical-label Dirichlet/Neumann mapping, CSR storage, Jacobi-preconditioned conjugate gradients, convergence reporting, and nodal electric-field recovery. The reusable solver binds to one topology and caches quadrature, boundary contributions, the constrained sparse operator, and its Jacobi diagonal; the free functions remain as one-shot convenience APIs.

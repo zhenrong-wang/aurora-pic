@@ -117,9 +117,12 @@ domain-coverage validation across structured 2D/3D and imported 2D while
 retaining the uniform-field interface. Independent periodic/Dirichlet
 structured 2D axes are now implemented through mesh spacing, node measures,
 CIC deposit/gather, Poisson neighbors, field gradients, initialization, and
-default particle policies, with analytic tests in both orientations. The
-correctness-first mixed SOR field solve still needs a production
-FFT-periodic/direct-axial implementation. Structured 2D now also has bounded
+default particle policies, with analytic tests in both orientations. Mixed
+topologies now dispatch to a direct spectral-tridiagonal solve: mixed-radix
+FFT or Bluestein convolution transforms the periodic axis and independent
+complex tridiagonal systems resolve the Dirichlet axis. Discrete manufactured
+tests cover both orientations and composite/prime periodic sizes. Structured
+2D now also has bounded
 volumetric pair sources with shared positions, uniform/Gaussian/sinusoidal
 normalized profiles, mutually exclusive fixed-macro, total represented, and
 peak volumetric rates, explicit extrusion depth, deterministic fractional
@@ -132,8 +135,8 @@ averages, and complex periodic-axis modes. A checksum-pinned external
 reference comparator and non-launching resource preflight provide the
 uncertainty/residual and campaign-estimate contracts without claiming that
 synthetic regressions are LANDMARK results. Full LANDMARK runs still require
-the production mixed-topology solver, a production/convergence deck, MPI, and
-scalable output; real HET validation additionally requires measured
+a production/convergence deck, measured throughput, MPI, and scalable output;
+real HET validation additionally requires measured
 geometry/field inputs, neutral and wall physics, cathode/facility conditions,
 and uncertainty-aware experimental comparison.
 The first initial-value-problem hardening slice now adds a shared,

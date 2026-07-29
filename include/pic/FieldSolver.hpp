@@ -16,6 +16,7 @@ private:
     void solve_periodic_spectral(Grid& grid) const;
     void solve_periodic_spectral(Mesh2D& mesh) const;
     void solve_periodic_spectral(Mesh3D& mesh) const;
+    void solve_mixed_spectral_tridiagonal(Mesh2D& mesh) const;
     void solve_dirichlet_tridiagonal(Grid& grid, double phi_left, double phi_right) const;
     void solve_dirichlet_iterative(Mesh2D& mesh) const;
     void solve_dirichlet_iterative(Mesh3D& mesh) const;

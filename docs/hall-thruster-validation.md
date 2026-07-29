@@ -144,7 +144,7 @@ the models.
 | --- | --- | --- |
 | Electrostatic 2D3V PIC and Boris push | Available on structured and imported 2D meshes | Preserve analytic Larmor and E x B drift gates |
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
-| Mixed topology | Structured 2D supports independent periodic/Dirichlet axes with matching spacing, CIC, Poisson, gather, gradient, initialization, and default particle policies | Replace the correctness-first mixed SOR solve with a production FFT-periodic/direct-axial solver before full LANDMARK campaigns |
+| Mixed topology | Structured 2D automatically uses a direct spectral-tridiagonal Poisson solve for either periodic/Dirichlet orientation; mixed-radix FFT and Bluestein paths cover composite and prime periodic sizes | Measure the serial production grid, then distribute the transform and axial mode solves with MPI before full LANDMARK campaigns |
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
 | Cathode/current control | Structured 2D has species-weighted anode-loss current regulation, internal-plane SI eV Maxwellian emission, line-average potential referencing, diagnostics, and checkpoint v7 | Qualify the full-resolution, long-duration benchmark response and sensitivity to cathode temperature |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
@@ -322,21 +322,28 @@ updates/s, the lower-bound push time alone is 768,000 seconds (8.9 days).
 The preflight writes all assumptions and arithmetic to JSON, returns one when
 a declared memory or storage budget is exceeded, never launches AuroraPIC, and
 always records `launch_authorized = false`. The current case remains
-`reduced_integration_only`; a production deck, scalable mixed-topology
-Poisson solver, MPI decomposition, convergence tiers, and explicit execution
-authorization remain separate gates.
+`reduced_integration_only`; a production deck, measured solver throughput,
+MPI decomposition, convergence tiers, and explicit execution authorization
+remain separate gates.
 
 The first H0 field slice is complete: a shared strict `coordinate Bx By Bz`
 profile supports linear interpolation and full-domain coverage checks across
 structured 2D/3D and imported 2D, while preserving uniform-field
 compatibility. The committed LANDMARK magnetic profile is exercised only as a
 four-step integration smoke and cannot make a discharge claim. Independent
-structured 2D axis topology is also complete at the correctness level:
+structured 2D axis topology is also complete:
 Dirichlet axial plus periodic azimuthal and its transposed orientation have
 analytic vacuum-field, charge-conservation, spacing, and default particle
-policy regressions. The current mixed Poisson implementation is an iterative
-baseline, not the FFT-periodic/direct-axial algorithm needed for millions of
-production steps. A generic structured-2D volumetric source layer is now also
+policy regressions. Mixed cases now transform the periodic axis and solve one
+complex tridiagonal Dirichlet system per Fourier mode. Composite sizes use a
+mixed-radix FFT and prime sizes use Bluestein convolution, avoiding the former
+quadratic transform fallback; manufactured discrete-Poisson regressions cover
+both axis orientations and non-power-of-two sizes. A field-only regression
+also solves the published 320 by 400 Case 2a grid with vacuum charge and
+nonzero axial electrodes; it contains no particles or timesteps and is not a
+throughput claim. The implementation remains single-rank and requires measured
+production-grid qualification. A generic
+structured-2D volumetric source layer is now also
 complete: named scheduled sources create equal-weight, opposite-charge pairs
 at shared positions drawn from normalized uniform, Gaussian, or sinusoidal
 profiles; fixed macro rates, total represented physical rates, and peak
@@ -365,6 +372,7 @@ constitute one. The external comparator now pins reference/profile/mode/case
 hashes, performs uncertainty-aware residual checks, and derives modal
 frequency or growth from complex histories; the non-launching preflight pins
 resource arithmetic and refuses exceeded budgets. Both are guarded with
-synthetic data only. The next H2-enabling slice is the scalable
-FFT-periodic/direct-axial solver and production-deck/convergence campaign
-contract, followed by MPI decomposition required for the published run.
+synthetic data only. The next H2-enabling slice is the
+production-deck/convergence campaign contract and measured single-rank field
+and particle throughput, followed by MPI decomposition required for the
+published run.

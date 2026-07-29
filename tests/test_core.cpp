@@ -1574,8 +1574,36 @@ int main() {
                 "mixed-topology CIC deposition did not conserve charge");
         }
         {
+            pic::BoundaryConfig2D electrodes;
+            electrodes.left.potential = 200.0;
+            electrodes.right.potential = 0.0;
             pic::Mesh2D mesh(
-                18, 16, 1.2, 0.8,
+                320, 400, 0.025, 0.0128,
+                pic::Boundary::Dirichlet,
+                pic::Boundary::Periodic,
+                electrodes);
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            double maximum_phi_error = 0.0;
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const double expected =
+                        200.0 * (1.0 - mesh.node_x(i) /
+                                          mesh.length_x());
+                    maximum_phi_error = std::max(
+                        maximum_phi_error,
+                        std::abs(
+                            mesh.phi()[mesh.index(i, j)] -
+                            expected));
+                }
+            }
+            require(
+                maximum_phi_error < 1e-10,
+                "LANDMARK-grid mixed spectral-tridiagonal vacuum solve exceeded tolerance");
+        }
+        {
+            pic::Mesh2D mesh(
+                18, 37, 1.2, 0.8,
                 pic::Boundary::Dirichlet,
                 pic::Boundary::Periodic);
             const double kx =
@@ -1656,40 +1684,96 @@ int main() {
                 }
             }
             require(
-                maximum_phi_error < 1e-8,
-                "mixed-topology manufactured Poisson potential exceeded tolerance");
+                maximum_phi_error < 1e-11,
+                "mixed spectral-tridiagonal Poisson potential exceeded tolerance");
             require(
-                maximum_ex_error < 1e-6,
-                "mixed-topology manufactured Poisson Ex exceeded tolerance");
+                maximum_ex_error < 1e-10,
+                "mixed spectral-tridiagonal Poisson Ex exceeded tolerance");
             require(
-                maximum_ey_error < 1e-6,
-                "mixed-topology manufactured Poisson Ey exceeded tolerance");
+                maximum_ey_error < 1e-10,
+                "mixed spectral-tridiagonal Poisson Ey exceeded tolerance");
         }
         {
             pic::BoundaryConfig2D electrodes;
             electrodes.bottom.potential = -1.0;
             electrodes.top.potential = 2.0;
             pic::Mesh2D mesh(
-                8, 13, 1.0, 0.6,
+                10, 13, 1.0, 0.6,
                 pic::Boundary::Periodic,
                 pic::Boundary::Dirichlet,
                 electrodes);
-            pic::FieldSolver solver;
-            solver.solve(mesh);
+            const double kx =
+                4.0 * std::numbers::pi / mesh.length_x();
+            const double ky =
+                std::numbers::pi / mesh.length_y();
+            const double inv_dx2 =
+                1.0 / (mesh.dx() * mesh.dx());
+            const double inv_dy2 =
+                1.0 / (mesh.dy() * mesh.dy());
+            std::vector<double> expected(mesh.size(), 0.0);
             for (std::size_t j = 0; j < mesh.ny(); ++j) {
-                const double expected_phi =
+                const double linear =
                     -1.0 + 3.0 * mesh.node_y(j) /
                                mesh.length_y();
                 for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    expected[mesh.index(i, j)] =
+                        linear +
+                        0.4 * std::cos(kx * mesh.node_x(i)) *
+                            std::sin(ky * mesh.node_y(j));
+                }
+            }
+            for (std::size_t j = 1;
+                 j + 1 < mesh.ny();
+                 ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const std::size_t im =
+                        (i + mesh.nx() - 1) % mesh.nx();
+                    const std::size_t ip =
+                        (i + 1) % mesh.nx();
                     const auto index = mesh.index(i, j);
+                    mesh.rho()[index] = pic::EPS0 *
+                        ((2.0 * inv_dx2 + 2.0 * inv_dy2) *
+                             expected[index]
+                         - inv_dx2 *
+                             (expected[mesh.index(im, j)] +
+                              expected[mesh.index(ip, j)])
+                         - inv_dy2 *
+                             (expected[mesh.index(i, j - 1)] +
+                              expected[mesh.index(i, j + 1)]));
+                }
+            }
+            pic::FieldSolver solver;
+            solver.solve(mesh);
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const auto index = mesh.index(i, j);
+                    const std::size_t im =
+                        (i + mesh.nx() - 1) % mesh.nx();
+                    const std::size_t ip =
+                        (i + 1) % mesh.nx();
+                    const double expected_ex =
+                        -(expected[mesh.index(ip, j)] -
+                          expected[mesh.index(im, j)]) /
+                        (2.0 * mesh.dx());
+                    const double expected_ey =
+                        j == 0
+                            ? -(expected[mesh.index(i, 1)] -
+                                expected[index]) / mesh.dy()
+                            : j + 1 == mesh.ny()
+                                  ? -(expected[index] -
+                                      expected[mesh.index(i, j - 1)]) /
+                                        mesh.dy()
+                                  : -(expected[mesh.index(i, j + 1)] -
+                                      expected[mesh.index(i, j - 1)]) /
+                                        (2.0 * mesh.dy());
                     require_near(
-                        mesh.phi()[index], expected_phi, 1e-8,
+                        mesh.phi()[index], expected[index], 1e-11,
                         "mixed periodic-x/Dirichlet-y Poisson potential mismatch");
                     require_near(
-                        mesh.electric_x()[index], 0.0, 1e-6,
-                        "mixed periodic-x/Dirichlet-y Poisson produced spurious Ex");
+                        mesh.electric_x()[index], expected_ex, 1e-10,
+                        "mixed periodic-x/Dirichlet-y Poisson Ex mismatch");
                     require_near(
-                        mesh.electric_y()[index], -5.0, 1e-6,
+                        mesh.electric_y()[index], expected_ey, 1e-10,
                         "mixed periodic-x/Dirichlet-y Poisson Ey mismatch");
                 }
             }

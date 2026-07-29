@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <limits>
 #include <numbers>
 #include <stdexcept>
 #include <vector>
@@ -19,10 +20,9 @@ bool is_power_of_two(std::size_t n) {
     return n != 0 && (n & (n - 1)) == 0;
 }
 
-void dft(std::vector<Complex>& values, bool inverse) {
+void dft_unscaled(std::vector<Complex>& values, bool inverse) {
     const std::size_t n = values.size();
     const double sign = inverse ? 1.0 : -1.0;
-    const double scale = inverse ? 1.0 / static_cast<double>(n) : 1.0;
     const double twopi = 2.0 * std::numbers::pi;
     std::vector<Complex> out(n, Complex{0.0, 0.0});
 
@@ -31,10 +31,141 @@ void dft(std::vector<Complex>& values, bool inverse) {
             const double angle = sign * twopi * static_cast<double>(j * k) / static_cast<double>(n);
             out[k] += values[j] * Complex{std::cos(angle), std::sin(angle)};
         }
-        out[k] *= scale;
     }
 
     values.swap(out);
+}
+
+void fft_radix2(std::vector<Complex>& values, bool inverse);
+
+void fft_bluestein_unscaled(
+    std::vector<Complex>& values, bool inverse) {
+    const std::size_t n = values.size();
+    if (n >
+        std::numeric_limits<std::size_t>::max() / 2U + 1U) {
+        throw std::length_error(
+            "spectral transform size exceeds supported range");
+    }
+    const std::size_t convolution_extent = 2 * n - 1;
+    std::size_t padded_size = 1;
+    while (padded_size < convolution_extent) {
+        if (padded_size >
+            std::numeric_limits<std::size_t>::max() / 2U) {
+            throw std::length_error(
+                "spectral convolution size exceeds supported range");
+        }
+        padded_size *= 2;
+    }
+
+    const double sign = inverse ? 1.0 : -1.0;
+    const double pi_over_n =
+        std::numbers::pi / static_cast<double>(n);
+    std::vector<Complex> signal(
+        padded_size, Complex{0.0, 0.0});
+    std::vector<Complex> chirp(
+        padded_size, Complex{0.0, 0.0});
+    for (std::size_t index = 0; index < n; ++index) {
+        const double square =
+            static_cast<double>(index) *
+            static_cast<double>(index);
+        const double signal_angle =
+            sign * pi_over_n * square;
+        const double chirp_angle =
+            -sign * pi_over_n * square;
+        signal[index] =
+            values[index] *
+            Complex{std::cos(signal_angle),
+                    std::sin(signal_angle)};
+        const Complex chirp_value{
+            std::cos(chirp_angle),
+            std::sin(chirp_angle)};
+        chirp[index] = chirp_value;
+        if (index != 0) {
+            chirp[padded_size - index] = chirp_value;
+        }
+    }
+
+    fft_radix2(signal, false);
+    fft_radix2(chirp, false);
+    for (std::size_t index = 0;
+         index < padded_size;
+         ++index) {
+        signal[index] *= chirp[index];
+    }
+    fft_radix2(signal, true);
+
+    for (std::size_t frequency = 0;
+         frequency < n;
+         ++frequency) {
+        const double square =
+            static_cast<double>(frequency) *
+            static_cast<double>(frequency);
+        const double angle = sign * pi_over_n * square;
+        values[frequency] =
+            signal[frequency] *
+            Complex{std::cos(angle), std::sin(angle)};
+    }
+}
+
+std::size_t smallest_factor(std::size_t n) {
+    for (std::size_t factor = 2;
+         factor <= n / factor;
+         ++factor) {
+        if (n % factor == 0) return factor;
+    }
+    return n;
+}
+
+void fft_mixed_radix_unscaled(
+    std::vector<Complex>& values, bool inverse) {
+    const std::size_t n = values.size();
+    if (n <= 1) return;
+    const std::size_t radix = smallest_factor(n);
+    if (radix == n) {
+        if (n < 32) {
+            dft_unscaled(values, inverse);
+        } else {
+            fft_bluestein_unscaled(values, inverse);
+        }
+        return;
+    }
+
+    const std::size_t subtransform_size = n / radix;
+    std::vector<std::vector<Complex>> subtransforms(
+        radix,
+        std::vector<Complex>(subtransform_size));
+    for (std::size_t residue = 0; residue < radix; ++residue) {
+        for (std::size_t sample = 0;
+             sample < subtransform_size;
+             ++sample) {
+            subtransforms[residue][sample] =
+                values[residue + radix * sample];
+        }
+        fft_mixed_radix_unscaled(
+            subtransforms[residue], inverse);
+    }
+
+    const double sign = inverse ? 1.0 : -1.0;
+    const double twopi = 2.0 * std::numbers::pi;
+    std::vector<Complex> output(n, Complex{0.0, 0.0});
+    for (std::size_t frequency = 0;
+         frequency < n;
+         ++frequency) {
+        const std::size_t subfrequency =
+            frequency % subtransform_size;
+        for (std::size_t residue = 0;
+             residue < radix;
+             ++residue) {
+            const double angle =
+                sign * twopi *
+                static_cast<double>(residue * frequency) /
+                static_cast<double>(n);
+            output[frequency] +=
+                subtransforms[residue][subfrequency] *
+                Complex{std::cos(angle), std::sin(angle)};
+        }
+    }
+    values.swap(output);
 }
 
 void fft_radix2(std::vector<Complex>& values, bool inverse) {
@@ -73,7 +204,12 @@ void transform_1d(std::vector<Complex>& values, bool inverse) {
     if (is_power_of_two(values.size())) {
         fft_radix2(values, inverse);
     } else {
-        dft(values, inverse);
+        fft_mixed_radix_unscaled(values, inverse);
+        if (inverse) {
+            const double scale =
+                1.0 / static_cast<double>(values.size());
+            for (auto& value : values) value *= scale;
+        }
     }
 }
 
@@ -159,6 +295,59 @@ void apply_dirichlet_boundary_potentials(Mesh2D& mesh) {
     }
 }
 
+void compute_electric_field(Mesh2D& mesh) {
+    const std::size_t nx = mesh.nx();
+    const std::size_t ny = mesh.ny();
+    const auto& phi = mesh.phi();
+    auto& ex = mesh.electric_x();
+    auto& ey = mesh.electric_y();
+
+    for (std::size_t j = 0; j < ny; ++j) {
+        for (std::size_t i = 0; i < nx; ++i) {
+            const auto idx = mesh.index(i, j);
+            if (mesh.boundary_x() == Boundary::Periodic) {
+                const std::size_t im = (i + nx - 1) % nx;
+                const std::size_t ip = (i + 1) % nx;
+                ex[idx] =
+                    -(phi[mesh.index(ip, j)] -
+                      phi[mesh.index(im, j)]) /
+                    (2.0 * mesh.dx());
+            } else if (i == 0) {
+                ex[idx] =
+                    -(phi[mesh.index(1, j)] - phi[idx]) / mesh.dx();
+            } else if (i + 1 == nx) {
+                ex[idx] =
+                    -(phi[idx] - phi[mesh.index(i - 1, j)]) / mesh.dx();
+            } else {
+                ex[idx] =
+                    -(phi[mesh.index(i + 1, j)] -
+                      phi[mesh.index(i - 1, j)]) /
+                    (2.0 * mesh.dx());
+            }
+
+            if (mesh.boundary_y() == Boundary::Periodic) {
+                const std::size_t jm = (j + ny - 1) % ny;
+                const std::size_t jp = (j + 1) % ny;
+                ey[idx] =
+                    -(phi[mesh.index(i, jp)] -
+                      phi[mesh.index(i, jm)]) /
+                    (2.0 * mesh.dy());
+            } else if (j == 0) {
+                ey[idx] =
+                    -(phi[mesh.index(i, 1)] - phi[idx]) / mesh.dy();
+            } else if (j + 1 == ny) {
+                ey[idx] =
+                    -(phi[idx] - phi[mesh.index(i, j - 1)]) / mesh.dy();
+            } else {
+                ey[idx] =
+                    -(phi[mesh.index(i, j + 1)] -
+                      phi[mesh.index(i, j - 1)]) /
+                    (2.0 * mesh.dy());
+            }
+        }
+    }
+}
+
 void apply_grounded_dirichlet_boundary(Mesh3D& mesh) {
     auto& phi = mesh.phi();
     const std::size_t nx = mesh.nx();
@@ -200,6 +389,8 @@ void FieldSolver::solve(Grid& grid, double phi_left, double phi_right) const {
 void FieldSolver::solve(Mesh2D& mesh) const {
     if (mesh.fully_periodic()) {
         solve_periodic_spectral(mesh);
+    } else if (mesh.boundary_x() != mesh.boundary_y()) {
+        solve_mixed_spectral_tridiagonal(mesh);
     } else {
         solve_dirichlet_iterative(mesh);
     }
@@ -305,6 +496,164 @@ void FieldSolver::solve_periodic_spectral(Mesh2D& mesh) const {
             Ey[idx] = ey_hat[idx].real();
         }
     }
+}
+
+void FieldSolver::solve_mixed_spectral_tridiagonal(Mesh2D& mesh) const {
+    const bool periodic_y = mesh.boundary_y() == Boundary::Periodic;
+    if (periodic_y ==
+        (mesh.boundary_x() == Boundary::Periodic)) {
+        throw std::invalid_argument(
+            "mixed 2D spectral-tridiagonal solver requires exactly one periodic axis");
+    }
+
+    const std::size_t direct_size =
+        periodic_y ? mesh.nx() : mesh.ny();
+    const std::size_t periodic_size =
+        periodic_y ? mesh.ny() : mesh.nx();
+    const double direct_spacing =
+        periodic_y ? mesh.dx() : mesh.dy();
+    const double periodic_spacing =
+        periodic_y ? mesh.dy() : mesh.dx();
+    const double inverse_direct_spacing_squared =
+        1.0 / (direct_spacing * direct_spacing);
+    const double inverse_periodic_spacing_squared =
+        1.0 / (periodic_spacing * periodic_spacing);
+    const auto& boundary = mesh.boundary_config();
+    const double lower_potential =
+        periodic_y ? boundary.left.potential : boundary.bottom.potential;
+    const double upper_potential =
+        periodic_y ? boundary.right.potential : boundary.top.potential;
+    const std::size_t interior_size = direct_size - 2;
+
+    const auto mesh_index =
+        [&mesh, periodic_y](std::size_t direct,
+                            std::size_t periodic) {
+            return periodic_y
+                ? mesh.index(direct, periodic)
+                : mesh.index(periodic, direct);
+        };
+    const auto spectral_index =
+        [direct_size](std::size_t mode, std::size_t direct) {
+            return mode * direct_size + direct;
+        };
+
+    std::vector<Complex> rho_hat(
+        direct_size * periodic_size, Complex{0.0, 0.0});
+    std::vector<Complex> line(periodic_size);
+    for (std::size_t direct = 0; direct < direct_size; ++direct) {
+        for (std::size_t periodic = 0;
+             periodic < periodic_size;
+             ++periodic) {
+            line[periodic] =
+                mesh.rho()[mesh_index(direct, periodic)];
+        }
+        transform_1d(line, false);
+        for (std::size_t mode = 0; mode < periodic_size; ++mode) {
+            rho_hat[spectral_index(mode, direct)] = line[mode];
+        }
+    }
+
+    std::vector<Complex> phi_hat(
+        direct_size * periodic_size, Complex{0.0, 0.0});
+    std::vector<Complex> modified_upper(
+        interior_size, Complex{0.0, 0.0});
+    std::vector<Complex> modified_rhs(
+        interior_size, Complex{0.0, 0.0});
+    const double off_diagonal =
+        -inverse_direct_spacing_squared;
+    const double boundary_transform_scale =
+        static_cast<double>(periodic_size);
+
+    for (std::size_t mode = 0; mode < periodic_size; ++mode) {
+        const double angle =
+            std::numbers::pi * static_cast<double>(mode) /
+            static_cast<double>(periodic_size);
+        const double periodic_eigenvalue =
+            4.0 * std::sin(angle) * std::sin(angle) *
+            inverse_periodic_spacing_squared;
+        const double diagonal =
+            2.0 * inverse_direct_spacing_squared +
+            periodic_eigenvalue;
+        const Complex lower_boundary =
+            mode == 0
+                ? Complex{lower_potential *
+                              boundary_transform_scale,
+                          0.0}
+                : Complex{0.0, 0.0};
+        const Complex upper_boundary =
+            mode == 0
+                ? Complex{upper_potential *
+                              boundary_transform_scale,
+                          0.0}
+                : Complex{0.0, 0.0};
+
+        phi_hat[spectral_index(mode, 0)] = lower_boundary;
+        phi_hat[spectral_index(mode, direct_size - 1)] =
+            upper_boundary;
+
+        for (std::size_t interior = 0;
+             interior < interior_size;
+             ++interior) {
+            const std::size_t direct = interior + 1;
+            Complex rhs =
+                rho_hat[spectral_index(mode, direct)] /
+                permittivity_;
+            if (interior == 0) {
+                rhs += inverse_direct_spacing_squared *
+                       lower_boundary;
+            }
+            if (interior + 1 == interior_size) {
+                rhs += inverse_direct_spacing_squared *
+                       upper_boundary;
+            }
+
+            if (interior == 0) {
+                modified_upper[interior] =
+                    off_diagonal / diagonal;
+                modified_rhs[interior] = rhs / diagonal;
+            } else {
+                const Complex denominator =
+                    diagonal -
+                    off_diagonal *
+                        modified_upper[interior - 1];
+                modified_upper[interior] =
+                    interior + 1 == interior_size
+                        ? Complex{0.0, 0.0}
+                        : off_diagonal / denominator;
+                modified_rhs[interior] =
+                    (rhs -
+                     off_diagonal *
+                         modified_rhs[interior - 1]) /
+                    denominator;
+            }
+        }
+
+        phi_hat[spectral_index(mode, direct_size - 2)] =
+            modified_rhs[interior_size - 1];
+        for (std::size_t interior = interior_size - 1;
+             interior-- > 0;) {
+            phi_hat[spectral_index(mode, interior + 1)] =
+                modified_rhs[interior] -
+                modified_upper[interior] *
+                    phi_hat[spectral_index(
+                        mode, interior + 2)];
+        }
+    }
+
+    for (std::size_t direct = 0; direct < direct_size; ++direct) {
+        for (std::size_t mode = 0; mode < periodic_size; ++mode) {
+            line[mode] = phi_hat[spectral_index(mode, direct)];
+        }
+        transform_1d(line, true);
+        for (std::size_t periodic = 0;
+             periodic < periodic_size;
+             ++periodic) {
+            mesh.phi()[mesh_index(direct, periodic)] =
+                line[periodic].real();
+        }
+    }
+
+    compute_electric_field(mesh);
 }
 
 void FieldSolver::solve_periodic_spectral(Mesh3D& mesh) const {
@@ -413,8 +762,6 @@ void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
     const std::size_t nx = mesh.nx();
     const std::size_t ny = mesh.ny();
     auto& phi = mesh.phi();
-    auto& Ex = mesh.electric_x();
-    auto& Ey = mesh.electric_y();
     const auto& rho = mesh.rho();
 
     apply_dirichlet_boundary_potentials(mesh);
@@ -477,40 +824,7 @@ void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
         throw std::runtime_error("2D Dirichlet Poisson solve did not converge");
     }
 
-    for (std::size_t j = 0; j < ny; ++j) {
-        for (std::size_t i = 0; i < nx; ++i) {
-            const auto idx = mesh.index(i, j);
-            if (mesh.boundary_x() == Boundary::Periodic) {
-                const std::size_t im = (i + nx - 1) % nx;
-                const std::size_t ip = (i + 1) % nx;
-                Ex[idx] =
-                    -(phi[mesh.index(ip, j)] -
-                      phi[mesh.index(im, j)]) /
-                    (2.0 * mesh.dx());
-            } else if (i == 0) {
-                Ex[idx] = -(phi[mesh.index(1, j)] - phi[idx]) / mesh.dx();
-            } else if (i + 1 == nx) {
-                Ex[idx] = -(phi[idx] - phi[mesh.index(i - 1, j)]) / mesh.dx();
-            } else {
-                Ex[idx] = -(phi[mesh.index(i + 1, j)] - phi[mesh.index(i - 1, j)]) / (2.0 * mesh.dx());
-            }
-
-            if (mesh.boundary_y() == Boundary::Periodic) {
-                const std::size_t jm = (j + ny - 1) % ny;
-                const std::size_t jp = (j + 1) % ny;
-                Ey[idx] =
-                    -(phi[mesh.index(i, jp)] -
-                      phi[mesh.index(i, jm)]) /
-                    (2.0 * mesh.dy());
-            } else if (j == 0) {
-                Ey[idx] = -(phi[mesh.index(i, 1)] - phi[idx]) / mesh.dy();
-            } else if (j + 1 == ny) {
-                Ey[idx] = -(phi[idx] - phi[mesh.index(i, j - 1)]) / mesh.dy();
-            } else {
-                Ey[idx] = -(phi[mesh.index(i, j + 1)] - phi[mesh.index(i, j - 1)]) / (2.0 * mesh.dy());
-            }
-        }
-    }
+    compute_electric_field(mesh);
 }
 
 void FieldSolver::solve_dirichlet_iterative(Mesh3D& mesh) const {

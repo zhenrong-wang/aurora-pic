@@ -51,6 +51,17 @@ int main(int argc, char** argv) {
                            : 1;
             }
             auto cfg = pic::load_config_2d(argv[1]);
+            const pic::Boundary boundary_x =
+                cfg.boundary_x.value_or(cfg.boundary);
+            const pic::Boundary boundary_y =
+                cfg.boundary_y.value_or(cfg.boundary);
+            const char* field_solver =
+                boundary_x == pic::Boundary::Periodic &&
+                        boundary_y == pic::Boundary::Periodic
+                    ? "spectral"
+                    : boundary_x != boundary_y
+                          ? "mixed_spectral_tridiagonal"
+                          : "sor";
             std::cout << "AuroraPIC 2D: nx=" << cfg.nx << " ny=" << cfg.ny
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
                       << " out_of_plane_depth=" << cfg.out_of_plane_depth
@@ -58,11 +69,10 @@ int main(int argc, char** argv) {
                       << " units=" << pic::to_string(cfg.units.system)
                       << " permittivity=" << cfg.units.permittivity()
                       << " boundary_x="
-                      << pic::to_string(
-                             cfg.boundary_x.value_or(cfg.boundary))
+                      << pic::to_string(boundary_x)
                       << " boundary_y="
-                      << pic::to_string(
-                             cfg.boundary_y.value_or(cfg.boundary))
+                      << pic::to_string(boundary_y)
+                      << " field_solver=" << field_solver
                       << " current_source="
                       << (cfg.current_regulated_source ? "yes" : "no")
                       << " potential_reference="

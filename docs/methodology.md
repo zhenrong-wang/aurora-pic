@@ -140,6 +140,12 @@ initial-condition milestones.
   prescribed endpoint potentials. The 1D path supports independent
   sinusoidal endpoint drives; the solve after particle drift evaluates them
   at `t^(n+1)`, matching the new charge-density time level.
+- Structured 2D domains with exactly one periodic and one Dirichlet axis use a
+  direct spectral-tridiagonal solve. The periodic transform uses radix-2,
+  mixed-radix, or Bluestein algorithms according to its extent; each Fourier
+  mode then produces an independent complex tridiagonal Dirichlet system.
+  Electric fields use the same centered periodic and centered/one-sided
+  Dirichlet finite differences as particle gathering.
 - Imported finite-element domains support label-wise constant Dirichlet values and Neumann outward normal derivatives. For `-laplacian(phi) = rho / epsilon_0`, the Neumann term `dphi/dn` enters the weak-form right-hand side with a positive sign; therefore `E dot n = -dphi/dn`. At least one Dirichlet label is required to remove the constant-potential nullspace.
 - Validated imported 2D domains use triangle/bilinear-quadrilateral finite-element stiffness assembly with lumped nodal charge, physical-label Dirichlet constraints, CSR storage, and Jacobi-preconditioned conjugate gradients. The solve reports its residual and iteration count, projects element electric fields back to nodes, and is integrated with the imported-mesh CLI simulation loop.
 

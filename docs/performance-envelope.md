@@ -78,7 +78,13 @@ The current implementation is aimed at correctness and regression coverage befor
 
 - particles advanced per step: `O(total_particles)`;
 - structured field storage: `O(nx * ny * nz)` for the active dimension;
-- direct structured Poisson solve cost depending on boundary mode and dimension;
+- direct structured Poisson solve cost depending on boundary mode and
+  dimension. A mixed 2D periodic/Dirichlet solve transforms each direct-axis
+  line and solves one tridiagonal system per periodic mode, giving
+  `O(Ndirect * Nperiodic * log(Nperiodic))` arithmetic. Composite periodic
+  extents use mixed-radix FFTs and prime extents use Bluestein convolution.
+  The core regression includes one field-only 320 by 400 LANDMARK-grid vacuum
+  solve, but that bounded correctness check is not a campaign benchmark;
 - imported-mesh particle lookup depending on spatial-bin occupancy; the FEM quadrature, mixed-boundary contributions, constrained CSR operator, and Jacobi diagonal are assembled once per simulation, while charge right-hand-side formation, preconditioned-CG iterations, and field recovery remain per-step costs;
 - output volume proportional to written field nodes, particle sample count, and output frequency.
 
