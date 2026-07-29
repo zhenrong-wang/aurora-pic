@@ -26,6 +26,7 @@ python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 python3 scripts/test_compare_swarm.py
 python3 scripts/test_swarm_campaign.py
 python3 scripts/test_hall_comparison.py
+python3 scripts/test_hall_pilot.py build/aurorapic_cli
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
 python3 scripts/validate_pushers.py
 python3 scripts/test_kinetic_benchmarks.py

@@ -152,26 +152,74 @@ def write_json_atomic(
 def estimate(args: argparse.Namespace) -> dict[str, object]:
     parser, global_section, reference = load_case(args.case_manifest)
     case_id = required(global_section, "case_id")
-    cells_x = checked_int(reference, "production_cells_x")
-    cells_y = checked_int(reference, "production_cells_y")
-    nodes_x = checked_int(reference, "aurorapic_nodes_x")
-    nodes_y = checked_int(reference, "aurorapic_nodes_y")
-    if nodes_x != cells_x + 1 or nodes_y != cells_y:
+    tier_name = f"campaign.{args.tier}"
+    if tier_name not in parser:
+        raise HallPreflightError(f"case manifest is missing [{tier_name}]")
+    tier = parser[tier_name]
+    cells_x = checked_int(tier, "cells_x")
+    cells_y = checked_int(tier, "cells_y")
+    nodes_x = cells_x + 1
+    nodes_y = cells_y
+    if args.tier == "production" and (
+        cells_x != checked_int(reference, "production_cells_x")
+        or cells_y != checked_int(reference, "production_cells_y")
+        or nodes_x != checked_int(reference, "aurorapic_nodes_x")
+        or nodes_y != checked_int(reference, "aurorapic_nodes_y")
+    ):
         raise HallPreflightError(
-            "published Case 2 requires one more AuroraPIC node than cell "
-            "on Dirichlet x and equal node/cell counts on periodic y"
+            "production tier drifted from the published cell/node contract"
         )
-    steps = checked_int(reference, "production_steps")
+    steps = checked_int(tier, "steps")
     timestep = checked_float(reference, "production_dt_s")
-    if args.max_mode > cells_y // 2:
+    particles_per_cell = (
+        args.particles_per_cell
+        if args.particles_per_cell is not None
+        else checked_int(tier, "particles_per_cell_per_species")
+    )
+    diagnostic_interval = (
+        args.diagnostic_interval
+        if args.diagnostic_interval is not None
+        else checked_int(tier, "diagnostic_interval")
+    )
+    start_step = (
+        args.start_step
+        if args.start_step is not None
+        else tier.getint("diagnostic_start_step")
+    )
+    max_mode = (
+        args.max_mode
+        if args.max_mode is not None
+        else tier.getint("max_mode")
+    )
+    max_particles_per_species = (
+        args.max_particles_per_species
+        if args.max_particles_per_species is not None
+        else checked_int(tier, "max_particles_per_species")
+    )
+    retained_checkpoints = (
+        args.retained_checkpoints
+        if args.retained_checkpoints is not None
+        else (0 if tier.getint("checkpoint_interval") == 0 else 2)
+    )
+    memory_budget_gib = (
+        args.memory_budget_gib
+        if args.memory_budget_gib is not None
+        else checked_float(tier, "memory_budget_gib")
+    )
+    storage_budget_gib = (
+        args.storage_budget_gib
+        if args.storage_budget_gib is not None
+        else checked_float(tier, "storage_budget_gib")
+    )
+    if max_mode > cells_y // 2:
         raise HallPreflightError(
-            "max_mode exceeds the production azimuthal Nyquist limit"
+            "max_mode exceeds the selected tier's azimuthal Nyquist limit"
         )
-    if args.start_step > steps:
+    if start_step < 0 or start_step > steps:
         raise HallPreflightError(
-            "diagnostic start_step exceeds production steps"
+            "diagnostic start_step is outside the selected tier"
         )
-    if args.particles_per_cell > 10_000_000:
+    if particles_per_cell > 10_000_000:
         raise HallPreflightError(
             "particles_per_cell exceeds the bounded preflight limit"
         )
@@ -182,11 +230,13 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
 
     cells = cells_x * cells_y
     initial_particles = (
-        cells * args.particles_per_cell * args.species
+        cells * particles_per_cell * args.species
     )
-    particle_capacity = math.ceil(
-        initial_particles * args.particle_capacity_factor
-    )
+    particle_capacity = max_particles_per_species * args.species
+    if particle_capacity < initial_particles:
+        raise HallPreflightError(
+            "particle capacity is below the initial population"
+        )
     particle_memory = particle_capacity * args.particle_bytes
     mesh_points = nodes_x * nodes_y
     field_memory = (
@@ -195,20 +245,20 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
     diagnostic_grid_memory = (
         (nodes_x * (5 + 16 * args.species))
         + (nodes_y * 4 * args.species)
-        + ((args.max_mode + 1) * (3 + 4 * args.species) * 3)
+        + ((max_mode + 1) * (3 + 4 * args.species) * 3)
     ) * 8
     estimated_memory = (
         particle_memory + field_memory + diagnostic_grid_memory
     )
 
     snapshots = (
-        (steps - args.start_step) // args.diagnostic_interval + 1
+        (steps - start_step) // diagnostic_interval + 1
     )
     field_profile_rows = snapshots * nodes_x
     species_profile_rows = snapshots * nodes_x * args.species
     mode_quantities = 3 + 4 * args.species
     mode_rows = (
-        snapshots * (args.max_mode + 1) * mode_quantities
+        snapshots * (max_mode + 1) * mode_quantities
     )
     average_rows = nodes_x * (1 + args.species)
     diagnostic_storage = (
@@ -219,7 +269,7 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
     )
     checkpoint_bytes = particle_memory + field_memory
     checkpoint_storage = (
-        checkpoint_bytes * args.retained_checkpoints
+        checkpoint_bytes * retained_checkpoints
     )
     estimated_storage = diagnostic_storage + checkpoint_storage
     particle_updates_lower_bound = initial_particles * steps
@@ -228,12 +278,12 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
         if args.particle_push_rate is not None else None
     )
 
-    memory_budget = args.memory_budget_gib * 1024.0 ** 3
-    storage_budget = args.storage_budget_gib * 1024.0 ** 3
+    memory_budget = memory_budget_gib * 1024.0 ** 3
+    storage_budget = storage_budget_gib * 1024.0 ** 3
     checks = {
         "memory_budget": estimated_memory <= memory_budget,
         "storage_budget": estimated_storage <= storage_budget,
-        "mode_nyquist": args.max_mode <= cells_y // 2,
+        "mode_nyquist": max_mode <= cells_y // 2,
         "bounded_inputs": True,
     }
     within_budgets = all(checks.values())
@@ -281,6 +331,9 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
     return {
         "schema_version": 1,
         "case_id": case_id,
+        "campaign_tier": args.tier,
+        "campaign_purpose": required(tier, "purpose"),
+        "physics_claim": required(tier, "physics_claim"),
         "case_manifest": str(args.case_manifest.resolve()),
         "case_manifest_sha256": sha256(args.case_manifest),
         "production_scale": production_scale,
@@ -300,16 +353,18 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
         },
         "assumptions": {
             "species": args.species,
-            "particles_per_cell_per_species": args.particles_per_cell,
-            "particle_capacity_factor": args.particle_capacity_factor,
+            "particles_per_cell_per_species": particles_per_cell,
+            "max_particles_per_species": max_particles_per_species,
+            "particle_capacity_factor":
+                particle_capacity / initial_particles,
             "particle_bytes": args.particle_bytes,
             "field_arrays": args.field_arrays,
-            "diagnostic_interval_steps": args.diagnostic_interval,
-            "diagnostic_start_step": args.start_step,
-            "max_mode": args.max_mode,
-            "retained_checkpoints": args.retained_checkpoints,
-            "memory_budget_gib": args.memory_budget_gib,
-            "storage_budget_gib": args.storage_budget_gib,
+            "diagnostic_interval_steps": diagnostic_interval,
+            "diagnostic_start_step": start_step,
+            "max_mode": max_mode,
+            "retained_checkpoints": retained_checkpoints,
+            "memory_budget_gib": memory_budget_gib,
+            "storage_budget_gib": storage_budget_gib,
             "particle_push_rate_per_second": args.particle_push_rate,
         },
         "estimates": {
@@ -348,11 +403,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument(
-        "--particles-per-cell", type=positive_integer, default=75
+        "--tier",
+        choices=("micro", "workstation", "production"),
+        default="production",
+    )
+    parser.add_argument(
+        "--particles-per-cell", type=positive_integer, default=None
     )
     parser.add_argument("--species", type=positive_integer, default=2)
     parser.add_argument(
-        "--particle-capacity-factor", type=positive, default=1.5
+        "--max-particles-per-species",
+        type=positive_integer,
+        default=None,
     )
     parser.add_argument(
         "--particle-bytes", type=positive_integer, default=96
@@ -361,22 +423,22 @@ def parse_args() -> argparse.Namespace:
         "--field-arrays", type=positive_integer, default=16
     )
     parser.add_argument(
-        "--diagnostic-interval", type=positive_integer, default=5000
+        "--diagnostic-interval", type=positive_integer, default=None
     )
     parser.add_argument(
-        "--start-step", type=nonnegative_integer, default=0
+        "--start-step", type=nonnegative_integer, default=None
     )
     parser.add_argument(
-        "--max-mode", type=nonnegative_integer, default=128
+        "--max-mode", type=nonnegative_integer, default=None
     )
     parser.add_argument(
-        "--retained-checkpoints", type=nonnegative_integer, default=2
+        "--retained-checkpoints", type=nonnegative_integer, default=None
     )
     parser.add_argument(
-        "--memory-budget-gib", type=positive, default=8.0
+        "--memory-budget-gib", type=positive, default=None
     )
     parser.add_argument(
-        "--storage-budget-gib", type=positive, default=16.0
+        "--storage-budget-gib", type=positive, default=None
     )
     parser.add_argument(
         "--particle-push-rate",

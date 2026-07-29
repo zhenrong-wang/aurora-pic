@@ -6,18 +6,72 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <limits>
+#include <stdexcept>
 #include <string_view>
 #include <utility>
+#include <vector>
+
+namespace {
+constexpr std::string_view large_run_acknowledgement =
+    "I_UNDERSTAND_THIS_IS_A_LARGE_RUN";
+constexpr std::size_t local_particle_update_limit = 100'000'000;
+
+template <typename Species>
+bool exceeds_local_run_limit(
+    const std::vector<Species>& species,
+    std::size_t steps) {
+    std::size_t particles = 0;
+    for (const auto& item : species) {
+        if (item.particles >
+            std::numeric_limits<std::size_t>::max() - particles) {
+            return true;
+        }
+        particles += item.particles;
+    }
+    return steps != 0 &&
+        particles > local_particle_update_limit / steps;
+}
+
+void require_large_run_acknowledgement(
+    bool exceeds_limit,
+    bool acknowledged) {
+    if (exceeds_limit && !acknowledged) {
+        throw std::runtime_error(
+            "estimated initial particle updates exceed the conservative "
+            "100,000,000-update CLI limit; inspect with --validate-only, "
+            "or deliberately launch with --allow-large-run "
+            "I_UNDERSTAND_THIS_IS_A_LARGE_RUN");
+    }
+}
+} // namespace
 
 int main(int argc, char** argv) {
-    const bool validate_only =
-        argc == 3 && std::string_view(argv[1]) == "--validate-only";
-    if ((!validate_only && argc != 2) || (validate_only && argc != 3)) {
+    bool validate_only = false;
+    bool large_run_acknowledged = false;
+    const char* config_path = nullptr;
+    for (int index = 1; index < argc; ++index) {
+        const std::string_view argument(argv[index]);
+        if (argument == "--validate-only") {
+            validate_only = true;
+        } else if (argument == "--allow-large-run" && index + 1 < argc) {
+            large_run_acknowledged =
+                std::string_view(argv[++index]) ==
+                large_run_acknowledgement;
+        } else if (!config_path && !argument.starts_with("--")) {
+            config_path = argv[index];
+        } else {
+            config_path = nullptr;
+            break;
+        }
+    }
+    if (!config_path) {
         std::cerr
-            << "usage: aurorapic_cli [--validate-only] <config.cfg>\n";
+            << "usage: aurorapic_cli [--validate-only] "
+               "[--allow-large-run I_UNDERSTAND_THIS_IS_A_LARGE_RUN] "
+               "<config.cfg>\n";
         return 2;
     }
-    const char* config_path = argv[validate_only ? 2 : 1];
     try {
         const unsigned dimension = pic::detect_config_dimension(config_path);
         if (dimension == 2) {
@@ -34,6 +88,12 @@ int main(int argc, char** argv) {
                     std::cout << "configuration valid; simulation not launched\n";
                     return 0;
                 }
+                require_large_run_acknowledgement(
+                    exceeds_local_run_limit(
+                        cfg.species,
+                        cfg.mode == pic::RunMode::Transient
+                            ? cfg.steps : cfg.max_steps),
+                    large_run_acknowledged);
                 pic::UnstructuredSimulation2D sim(std::move(cfg));
                 const auto quality = sim.mesh().topology().quality();
                 std::cout << "mesh nodes=" << sim.mesh().topology().nodes().size()
@@ -91,6 +151,12 @@ int main(int argc, char** argv) {
                 std::cout << "configuration valid; simulation not launched\n";
                 return 0;
             }
+            require_large_run_acknowledgement(
+                exceeds_local_run_limit(
+                    cfg.species,
+                    cfg.mode == pic::RunMode::Transient
+                        ? cfg.steps : cfg.max_steps),
+                large_run_acknowledged);
             pic::Simulation2D sim(std::move(cfg));
             auto summary = sim.run();
             std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
@@ -113,6 +179,12 @@ int main(int argc, char** argv) {
                 std::cout << "configuration valid; simulation not launched\n";
                 return 0;
             }
+            require_large_run_acknowledgement(
+                exceeds_local_run_limit(
+                    cfg.species,
+                    cfg.mode == pic::RunMode::Transient
+                        ? cfg.steps : cfg.max_steps),
+                large_run_acknowledged);
             pic::Simulation3D sim(std::move(cfg));
             auto summary = sim.run();
             std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
@@ -150,6 +222,12 @@ int main(int argc, char** argv) {
             std::cout << "configuration valid; simulation not launched\n";
             return 0;
         }
+        require_large_run_acknowledgement(
+            exceeds_local_run_limit(
+                cfg.species,
+                cfg.mode == pic::RunMode::Transient
+                    ? cfg.steps : cfg.max_steps),
+            large_run_acknowledged);
         pic::Simulation sim(std::move(cfg));
         auto summary = sim.run();
         std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time

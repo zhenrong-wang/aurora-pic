@@ -301,23 +301,34 @@ Run the non-launching resource gate before creating a production deck:
 ```sh
 python3 scripts/preflight_hall.py \
   examples/hall_landmark_axial_azimuthal.case \
-  --particles-per-cell 75 \
-  --diagnostic-interval 5000 \
-  --max-mode 128 \
-  --memory-budget-gib 8 \
-  --storage-budget-gib 16 \
+  --tier production \
   --report hall-case2a-preflight.json
 ```
 
-With its documented conservative defaults, Case 2a contains 128,000 cells,
+The manifest defines three monotonic tiers:
+
+| Tier | Cells | Initial particles/species | Steps | Lower-bound updates | Generation |
+|---|---:|---:|---:|---:|---|
+| `micro` | 32×16 | 2,048 | 200 | 819,200 | unlocked |
+| `workstation` | 125×64 | 128,000 | 5,000 | 1.28 billion | cost acknowledgement |
+| `production` | 500×256 | 9.6 million | 4 million | 76.8 trillion | cost acknowledgement |
+
+Every tier retains the same physical domain, timestep, prescribed magnetic
+field, source, cathode controller, and potential-reference model. The reduced
+tiers make no physics claim; they test integration, population growth,
+diagnostics, and scaling only.
+
+The production Case 2 contract contains 128,000 cells,
 19.2 million initial macro-particles, and at least 76.8 trillion particle
-updates. A 1.5 capacity factor, 96-byte particle assumption, two retained
-checkpoints, 801 resolved samples, and modes 0–128 estimate about 2.59 GiB of
-resident memory and 5.75 GiB of diagnostics plus checkpoints. Both figures are
-planning estimates, not measurements; sources can increase the population and
-VTK, particle dumps, external data, replication, and temporary files are
-excluded. At an explicitly supplied measured rate of 100 million particle
-updates/s, the lower-bound push time alone is 768,000 seconds (8.9 days).
+updates. Its actual configured hard capacity of 80 million particles per
+species, a 96-byte particle assumption, two retained checkpoints, 161 resolved
+samples over 16–20 microseconds, and modes 0–128 estimate about 14.32 GiB of
+resident memory and 28.76 GiB of diagnostics plus checkpoints. These are
+capacity-based planning estimates, not expected live-population measurements;
+sources can increase population, while VTK, particle dumps, external data,
+replication, and temporary files are excluded. At an explicitly supplied
+measured rate of 100 million particle updates/s, the lower-bound push time
+alone is 768,000 seconds (8.9 days).
 
 The preflight distinguishes the paper's 500 by 256 cells from AuroraPIC's
 501 by 256 structured nodes, writes all assumptions and arithmetic to JSON,
@@ -330,8 +341,9 @@ after spelling out an explicit cost acknowledgement:
 ```sh
 python3 scripts/prepare_hall_campaign.py \
   examples/hall_landmark_axial_azimuthal.case \
+  --tier production \
   --output campaign/case2.cfg \
-  --acknowledge-production-cost I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_RUN
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_RUN
 ```
 
 This copies the checksum-verified magnetic profile beside the deck and writes
@@ -349,6 +361,20 @@ its particles or starting a timestep:
 ```sh
 aurorapic_cli --validate-only campaign/case2.cfg
 ```
+
+The CLI independently blocks configurations above 100 million initial
+particle updates. After scheduler and resource review, a deliberate large run
+requires `--allow-large-run I_UNDERSTAND_THIS_IS_A_LARGE_RUN`. This second
+guard prevents an already-generated workstation or production deck from being
+launched accidentally.
+
+The `micro` tier is the only Hall discharge tier exercised by ordinary
+verification. After it completes, `scripts/analyze_hall_pilot.py` checks
+sampling cadence, finite diagnostics, particle capacity, prescribed pair rate,
+cathode charge balance to one macro charge, potential-reference accuracy,
+profile-average shape, and complete azimuthal mode coverage. Its report always
+records `physics_claim = none`; passing it is an integration result, not
+agreement with the published discharge.
 
 The first H0 field slice is complete: a shared strict `coordinate Bx By Bz`
 profile supports linear interpolation and full-domain coverage checks across

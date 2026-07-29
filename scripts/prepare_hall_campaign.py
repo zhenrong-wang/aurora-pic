@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an explicitly authorized, published-scale LANDMARK Case 2 deck."""
+"""Generate a resource-tiered LANDMARK Case 2 campaign deck without running it."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ import tempfile
 
 
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_RUN"
+WORKSTATION_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_AN_OPT_IN_WORKSTATION_RUN"
 
 
 class CampaignError(RuntimeError):
@@ -55,11 +56,6 @@ def atomic_text(path: Path, text: str) -> None:
 
 
 def prepare(args: argparse.Namespace) -> Path:
-    if args.acknowledge_production_cost != ACKNOWLEDGEMENT:
-        raise CampaignError(
-            "production deck generation requires "
-            f"--acknowledge-production-cost {ACKNOWLEDGEMENT}"
-        )
     manifest_path = args.case_manifest.resolve()
     manifest = load_manifest(manifest_path)
     reference = manifest["reference"]
@@ -67,15 +63,37 @@ def prepare(args: argparse.Namespace) -> Path:
     source = manifest["pair_source"]
     cathode = manifest["cathode_control"]
     diagnostics = manifest["diagnostics"]
-
-    cells_x = reference.getint("production_cells_x")
-    cells_y = reference.getint("production_cells_y")
-    nodes_x = reference.getint("aurorapic_nodes_x")
-    nodes_y = reference.getint("aurorapic_nodes_y")
-    if (cells_x, cells_y, nodes_x, nodes_y) != (500, 256, 501, 256):
-        raise CampaignError("manifest does not describe original LANDMARK Case 2")
-    particles_per_species = cells_x * cells_y * args.particles_per_cell
-    if args.max_particles_per_species < particles_per_species:
+    tier_name = f"campaign.{args.tier}"
+    if tier_name not in manifest:
+        raise CampaignError(f"manifest is missing [{tier_name}]")
+    tier = manifest[tier_name]
+    authorization = tier["authorization"]
+    required_acknowledgement = {
+        "micro": None,
+        "workstation": WORKSTATION_ACKNOWLEDGEMENT,
+        "production": ACKNOWLEDGEMENT,
+    }[args.tier]
+    if (authorization == "explicit_cost_acknowledgement"
+            and args.acknowledge_cost != required_acknowledgement):
+        raise CampaignError(
+            f"{args.tier} deck generation requires --acknowledge-cost "
+            f"{required_acknowledgement}"
+        )
+    cells_x = tier.getint("cells_x")
+    cells_y = tier.getint("cells_y")
+    nodes_x = cells_x + 1
+    nodes_y = cells_y
+    if args.tier == "production" and (
+        cells_x != reference.getint("production_cells_x")
+        or cells_y != reference.getint("production_cells_y")
+        or nodes_x != reference.getint("aurorapic_nodes_x")
+        or nodes_y != reference.getint("aurorapic_nodes_y")
+    ):
+        raise CampaignError("production tier drifted from original LANDMARK Case 2")
+    particles_per_cell = tier.getint("particles_per_cell_per_species")
+    particles_per_species = cells_x * cells_y * particles_per_cell
+    max_particles_per_species = tier.getint("max_particles_per_species")
+    if max_particles_per_species < particles_per_species:
         raise CampaignError("particle capacity is below the initial population")
 
     source_asset = manifest_path.parent / magnetic["file"]
@@ -101,13 +119,20 @@ def prepare(args: argparse.Namespace) -> Path:
         output.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source_asset, asset)
 
-    start_step = args.diagnostic_start_step
-    steps = reference.getint("production_steps")
+    start_step = tier.getint("diagnostic_start_step")
+    steps = tier.getint("steps")
     if start_step > steps:
         raise CampaignError("diagnostic start step exceeds the production duration")
-    deck = f"""# Generated LANDMARK Case 2 production candidate.
-# Generation was explicitly acknowledged; no run has been launched.
-# Original reference grid: {cells_x} x {cells_y} cells.
+    checkpoint_interval = tier.getint("checkpoint_interval")
+    output_dir = (
+        args.output_dir
+        if args.output_dir is not None
+        else f"output_hall_landmark_{args.tier}"
+    )
+    deck = f"""# Generated LANDMARK Case 2 {args.tier} campaign tier.
+# Purpose: {tier['purpose']}; physics claim: {tier['physics_claim']}.
+# Generation authorization: {authorization}; no run has been launched.
+# Selected grid: {cells_x} x {cells_y} cells.
 # AuroraPIC structured grid: {nodes_x} x {nodes_y} nodes.
 config_version = 1
 dimension = 2
@@ -118,7 +143,7 @@ length_x = {reference['domain_x_m']}
 length_y = {reference['domain_y_m']}
 out_of_plane_depth = {source['out_of_plane_depth_m']}
 dt = {reference['production_dt_s']}
-steps = {steps}
+steps = {tier['steps']}
 mode = transient
 boundary = dirichlet
 boundary_x = dirichlet
@@ -133,16 +158,16 @@ current_source_temperature_ev = {cathode['emission_temperature_ev']}
 potential_reference_axis = {cathode['potential_reference_axis']}
 potential_reference_coordinate = {cathode['potential_reference_coordinate_m']}
 potential_reference_target = {cathode['potential_reference_target_v']}
-output_interval = {args.diagnostic_interval}
-output_dir = {args.output_dir}
+output_interval = {tier['diagnostic_interval']}
+output_dir = {output_dir}
 resolved_diagnostics = true
-resolved_diagnostic_interval = {args.diagnostic_interval}
+resolved_diagnostic_interval = {tier['diagnostic_interval']}
 resolved_diagnostic_start_step = {start_step}
 resolved_profile_axis = {diagnostics['profile_axis']}
 resolved_mode_axis = {diagnostics['mode_axis']}
-resolved_max_mode = {args.max_mode}
-checkpoint_output = true
-checkpoint_interval = {args.checkpoint_interval}
+resolved_max_mode = {tier['max_mode']}
+checkpoint_output = {'true' if checkpoint_interval > 0 else 'false'}
+checkpoint_interval = {checkpoint_interval}
 vtk_output = false
 particle_output = false
 magnetic_field_profile_file = {asset.name}
@@ -150,7 +175,7 @@ magnetic_field_profile_axis = {magnetic['axis']}
 seed = {args.seed}
 runtime_backend = serial
 runtime_threads = 1
-max_particles_per_species = {args.max_particles_per_species}
+max_particles_per_species = {max_particles_per_species}
 
 [species.electrons]
 charge = -1.602176634e-19
@@ -192,34 +217,31 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("case_manifest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--output-dir", default="output_hall_landmark_case2")
-    parser.add_argument("--particles-per-cell", type=int, default=75)
-    parser.add_argument("--max-particles-per-species", type=int, default=80_000_000)
-    parser.add_argument("--diagnostic-start-step", type=int, default=3_200_000)
-    parser.add_argument("--diagnostic-interval", type=int, default=5000)
-    parser.add_argument("--checkpoint-interval", type=int, default=500_000)
-    parser.add_argument("--max-mode", type=int, default=128)
+    parser.add_argument(
+        "--tier",
+        choices=("micro", "workstation", "production"),
+        default="production",
+    )
+    parser.add_argument("--output-dir", default=None)
     parser.add_argument("--seed", type=int, default=24680)
-    parser.add_argument("--acknowledge-production-cost")
-    args = parser.parse_args()
-    for name in ("particles_per_cell", "max_particles_per_species",
-                 "diagnostic_interval", "checkpoint_interval"):
-        if getattr(args, name) <= 0:
-            parser.error(f"--{name.replace('_', '-')} must be positive")
-    if args.diagnostic_start_step < 0 or args.max_mode < 0:
-        parser.error("diagnostic start and max mode must be non-negative")
-    if args.max_mode > 128:
-        parser.error("--max-mode exceeds the 256-cell azimuthal Nyquist limit")
-    return args
+    parser.add_argument(
+        "--acknowledge-cost",
+        "--acknowledge-production-cost",
+        dest="acknowledge_cost",
+    )
+    return parser.parse_args()
 
 
 def main() -> int:
+    args = parse_args()
     try:
-        path = prepare(parse_args())
+        path = prepare(args)
     except CampaignError as error:
         print(f"Hall campaign preparation error: {error}", file=sys.stderr)
         return 2
-    print(f"Generated production candidate without launching it: {path}")
+    print(
+        f"Generated {args.tier} campaign deck without launching it: {path}"
+    )
     return 0
 
 

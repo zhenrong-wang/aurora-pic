@@ -69,6 +69,42 @@ def main() -> int:
         and provenance["public_dataset_license"] == "CC0 1.0",
         "Hall article/public-dataset provenance drifted",
     )
+    expected_tiers = {
+        "micro": (32, 16, 4, 200, 8_192, "none"),
+        "workstation": (125, 64, 16, 5_000, 250_000, "none"),
+        "production": (
+            500, 256, 75, 4_000_000, 80_000_000,
+            "candidate_for_reference_comparison",
+        ),
+    }
+    previous_updates = 0
+    for tier_name, expected in expected_tiers.items():
+        tier = manifest[f"campaign.{tier_name}"]
+        actual = (
+            tier.getint("cells_x"),
+            tier.getint("cells_y"),
+            tier.getint("particles_per_cell_per_species"),
+            tier.getint("steps"),
+            tier.getint("max_particles_per_species"),
+            tier["physics_claim"],
+        )
+        require(
+            actual == expected,
+            f"Hall {tier_name} campaign tier drifted",
+        )
+        initial_per_species = actual[0] * actual[1] * actual[2]
+        require(
+            actual[4] >= initial_per_species
+            and tier.getint("diagnostic_start_step") <= actual[3]
+            and tier.getint("max_mode") <= actual[1] // 2,
+            f"Hall {tier_name} campaign bounds are inconsistent",
+        )
+        updates = initial_per_species * 2 * actual[3]
+        require(
+            updates > previous_updates,
+            "Hall campaign tiers must increase monotonically in work",
+        )
+        previous_updates = updates
     source = manifest["pair_source"]
     width = number(source, "x_max_m") - number(source, "x_min_m")
     height = number(source, "y_max_m") - number(source, "y_min_m")

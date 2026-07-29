@@ -305,6 +305,8 @@ def main() -> int:
                 == 501 * 256
             and estimate["estimates"]["initial_macroparticles"]
                 == 500 * 256 * 75 * 2
+            and estimate["estimates"]["particle_capacity"]
+                == 80_000_000 * 2
             and estimate["estimates"]["particle_updates_lower_bound"]
                 == 500 * 256 * 75 * 2 * 4_000_000
             and estimate["estimates"]["estimated_wall_seconds"] > 0,
@@ -326,6 +328,33 @@ def main() -> int:
             and "exceeded declared resource budgets"
                 in budget_failure.stderr,
             "Hall preflight ignored a memory budget failure",
+        )
+
+        micro_preflight_report = work / "micro_preflight.json"
+        micro_preflight = run(
+            [
+                sys.executable,
+                str(PREFLIGHT),
+                str(PRODUCTION_CASE),
+                "--tier",
+                "micro",
+                "--report",
+                str(micro_preflight_report),
+            ]
+        )
+        micro_estimate = json.loads(
+            micro_preflight_report.read_text(encoding="utf-8")
+        )
+        require(
+            micro_preflight.returncode == 0
+            and micro_estimate["campaign_tier"] == "micro"
+            and not micro_estimate["production_scale"]
+            and micro_estimate["physics_claim"] == "none"
+            and micro_estimate["estimates"]["initial_macroparticles"]
+                == 32 * 16 * 4 * 2
+            and micro_estimate["estimates"]["particle_updates_lower_bound"]
+                == 32 * 16 * 4 * 2 * 200,
+            "Hall micro-tier preflight contract is incomplete",
         )
 
         generated_deck = work / "campaign" / "case2.cfg"
@@ -373,6 +402,47 @@ def main() -> int:
             and generated_config["species.ions"].getint("particles")
                 == 500 * 256 * 75,
             "generated Hall production deck drifted from its campaign contract",
+        )
+
+        workstation_deck = work / "campaign" / "workstation.cfg"
+        workstation_unacknowledged = run(
+            [
+                sys.executable,
+                str(PREPARE),
+                str(PRODUCTION_CASE),
+                "--tier",
+                "workstation",
+                "--output",
+                str(workstation_deck),
+            ]
+        )
+        require(
+            workstation_unacknowledged.returncode == 2
+            and not workstation_deck.exists(),
+            "Hall workstation tier bypassed its cost acknowledgement",
+        )
+        micro_deck = work / "campaign" / "micro.cfg"
+        micro_generated = run(
+            [
+                sys.executable,
+                str(PREPARE),
+                str(PRODUCTION_CASE),
+                "--tier",
+                "micro",
+                "--output",
+                str(micro_deck),
+            ]
+        )
+        micro_config = load_with_global(micro_deck)
+        require(
+            micro_generated.returncode == 0
+            and micro_config["global"].getint("nx") == 33
+            and micro_config["global"].getint("ny") == 16
+            and micro_config["global"].getint("steps") == 200
+            and not micro_config["global"].getboolean("checkpoint_output")
+            and micro_config["species.electrons"].getint("particles")
+                == 32 * 16 * 4,
+            "Hall micro-tier deck generation drifted",
         )
 
     print("Hall comparison and preflight validation passed")

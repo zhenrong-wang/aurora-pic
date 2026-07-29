@@ -74,6 +74,54 @@ max_threads = 1
 physics_claim = none
 missing_physics = published_population,published_resolution,long_time_averaging
 
+[campaign.micro]
+purpose = bounded_local_integration
+authorization = generation_unlocked
+cells_x = 32
+cells_y = 16
+particles_per_cell_per_species = 4
+steps = 200
+diagnostic_start_step = 100
+diagnostic_interval = 10
+max_mode = 8
+max_particles_per_species = 8192
+checkpoint_interval = 0
+memory_budget_gib = 1
+storage_budget_gib = 1
+physics_claim = none
+
+[campaign.workstation]
+purpose = opt_in_scaling_and_population_pilot
+authorization = explicit_cost_acknowledgement
+cells_x = 125
+cells_y = 64
+particles_per_cell_per_species = 16
+steps = 5000
+diagnostic_start_step = 4000
+diagnostic_interval = 100
+max_mode = 32
+max_particles_per_species = 250000
+checkpoint_interval = 2500
+memory_budget_gib = 4
+storage_budget_gib = 4
+physics_claim = none
+
+[campaign.production]
+purpose = published_case2_candidate
+authorization = explicit_cost_acknowledgement
+cells_x = 500
+cells_y = 256
+particles_per_cell_per_species = 75
+steps = 4000000
+diagnostic_start_step = 3200000
+diagnostic_interval = 5000
+max_mode = 128
+max_particles_per_species = 80000000
+checkpoint_interval = 500000
+memory_budget_gib = 32
+storage_budget_gib = 32
+physics_claim = candidate_for_reference_comparison
+
 [diagnostics]
 profile_axis = x
 mode_axis = y

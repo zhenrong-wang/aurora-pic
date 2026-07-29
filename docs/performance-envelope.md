@@ -59,9 +59,10 @@ particle memory, field/diagnostic working memory, resolved CSV rows,
 checkpoint/output storage, and lower-bound particle updates without launching
 the CLI. Under the documented default assumptions it reports 19.2 million
 initial macro-particles, 76.8 trillion lower-bound particle updates, about
-2.59 GiB of resident memory, and about 5.75 GiB of retained checkpoints plus
-resolved CSVs. These are arithmetic planning values rather than measured
-performance or complete disk quotas; see
+14.32 GiB of capacity-based resident memory, and about 28.76 GiB of retained
+checkpoints plus resolved CSVs. These use the deck's actual 80-million-particle
+per-species hard capacity and are arithmetic planning values rather than
+measured performance or complete disk quotas; see
 [hall-thruster-validation.md](hall-thruster-validation.md) for exclusions and
 the launch-readiness blockers.
 
