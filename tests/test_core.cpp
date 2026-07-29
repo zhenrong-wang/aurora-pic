@@ -2160,6 +2160,12 @@ int main() {
                 [](const std::string& path) { return pic::load_config(path); },
                 "1D config accepted velocity_dimensions other than 1 or 3");
             require_config_rejects(
+                "test_mixed_collision_schemas.ini",
+                "[collisions]\nenabled = false\n"
+                "[collisions.electron_mcc]\nenabled = false\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D config mixed legacy and named collision schemas");
+            require_config_rejects(
                 "test_inactive_transverse_drift.ini",
                 "[species]\nweight = 1\ndrift_velocity_y = 1\n",
                 [](const std::string& path) { return pic::load_config(path); },
@@ -2694,6 +2700,207 @@ int main() {
                 read_file_text(checkpoint_path).find(
                     "AuroraPIC-checkpoint-v4\n") == 0,
                 "1D3V checkpoint did not use the velocity-aware format");
+            std::filesystem::remove_all(output_dir);
+            std::filesystem::remove(table_path);
+        }
+        {
+            const auto parsed =
+                pic::load_config(
+                    (std::filesystem::path(
+                         AURORA_TEST_SOURCE_DIR) /
+                     "examples" /
+                     "mcc_ionization_1d.cfg")
+                        .string());
+            require(
+                parsed.velocity_dimensions == 3 &&
+                    parsed.max_particles_per_species == 256 &&
+                    parsed.collision_models.size() == 2 &&
+                    parsed.collision_models[0].name ==
+                        "electron_mcc" &&
+                    parsed.collision_models[0].config.channels.size() ==
+                        1 &&
+                    parsed.collision_models[0].config.channels[0]
+                            .process ==
+                        pic::CollisionProcessKind::Ionization &&
+                    parsed.collision_models[0].config.channels[0]
+                            .secondary_species ==
+                        "electrons" &&
+                    parsed.collision_models[0].config.channels[0]
+                            .ion_species ==
+                        "ions" &&
+                    parsed.collision_models[1].name == "ion_mcc",
+                "named 1D MCC configuration did not preserve model "
+                "and ionization product mappings");
+
+            const auto table_path =
+                std::filesystem::path(
+                    "test_mcc_1d_multi_reactive.dat");
+            const auto output_dir =
+                std::filesystem::path(
+                    "test_output_mcc_1d_multi");
+            const auto checkpoint_path =
+                output_dir / "manual.apc";
+            std::filesystem::remove_all(output_dir);
+            {
+                std::ofstream table(table_path);
+                table << "0 0.5\n1000 0.5\n";
+            }
+            pic::SpeciesConfig electrons;
+            electrons.name = "electrons";
+            electrons.charge = -1.0;
+            electrons.mass = 1.0;
+            electrons.weight = 1.0;
+            electrons.particles = 64;
+            electrons.drift_velocity = 4.0;
+            electrons.thermal_velocity = 0.0;
+            electrons.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            pic::SpeciesConfig ions = electrons;
+            ions.name = "ions";
+            ions.charge = 1.0;
+            ions.mass = 40.0;
+
+            pic::CollisionConfig electron_mcc;
+            electron_mcc.enabled = true;
+            electron_mcc.model =
+                pic::CollisionModelKind::NullCollision;
+            electron_mcc.species = "electrons";
+            electron_mcc.neutral_density = 1.0;
+            electron_mcc.max_frequency = 3.0;
+            electron_mcc.channels = {
+                pic::CollisionChannelConfig{
+                    "ionization",
+                    pic::CollisionProcessKind::Ionization,
+                    table_path, 1.0, 1.0, 1.0,
+                    "electrons", "ions"}};
+            pic::CollisionConfig ion_mcc;
+            ion_mcc.enabled = true;
+            ion_mcc.model =
+                pic::CollisionModelKind::NullCollision;
+            ion_mcc.species = "ions";
+            ion_mcc.neutral_density = 1.0;
+            ion_mcc.max_frequency = 3.0;
+            ion_mcc.channels = {
+                pic::CollisionChannelConfig{
+                    "elastic",
+                    pic::CollisionProcessKind::Elastic,
+                    table_path, 0.0, 1.0, 1.0}};
+
+            pic::Config cfg;
+            cfg.velocity_dimensions = 3;
+            cfg.nx = 16;
+            cfg.dt = 0.1;
+            cfg.steps = 4;
+            cfg.output_interval = 4;
+            cfg.output_dir = output_dir.string();
+            cfg.seed = 271828;
+            cfg.max_particles_per_species = 256;
+            cfg.species = {electrons, ions};
+            cfg.collision_models = {
+                {"electron_mcc", electron_mcc},
+                {"ion_mcc", ion_mcc}};
+
+            auto duplicate_target = cfg;
+            duplicate_target.collision_models[1].config.species =
+                "electrons";
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(duplicate_target);
+                },
+                "multiple named MCC models accepted the same target");
+            auto invalid_products = cfg;
+            invalid_products.species[1].weight = 2.0;
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(invalid_products);
+                },
+                "1D ionization accepted unequal product macro weights");
+            auto inactive_velocity = cfg;
+            inactive_velocity.velocity_dimensions = 1;
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(inactive_velocity);
+                },
+                "1D1V accepted an ionization collision channel");
+
+            pic::Simulation continuous(cfg);
+            continuous.initialize();
+            const double initial_kinetic =
+                continuous.sample().kinetic_energy;
+            continuous.step();
+            const auto first_collision =
+                continuous.collision_diagnostics();
+            require(
+                first_collision.channel_names ==
+                    std::vector<std::string>{
+                        "electron_mcc.ionization",
+                        "ion_mcc.elastic"} &&
+                    first_collision.channel_collisions[0] > 0 &&
+                    first_collision.channel_collisions[1] > 0,
+                "simultaneous 1D electron and ion MCC did not "
+                "exercise both targets");
+            const std::size_t ionizations =
+                static_cast<std::size_t>(
+                    first_collision.channel_collisions[0]);
+            require(
+                continuous.species()[0].live_count() ==
+                        64 + ionizations &&
+                    continuous.species()[1].live_count() ==
+                        64 + ionizations,
+                "1D ionization did not create paired products");
+            require_near(
+                continuous.sample().kinetic_energy,
+                initial_kinetic -
+                    static_cast<double>(ionizations),
+                1e-10,
+                "1D ionization did not remove exactly one threshold "
+                "energy per macro-event");
+
+            continuous.step();
+            continuous.save_checkpoint(checkpoint_path);
+            for (std::size_t step = 2; step < cfg.steps; ++step) {
+                continuous.step();
+            }
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            for (std::size_t step = 2; step < cfg.steps; ++step) {
+                restarted.step();
+            }
+            require_species_close(
+                continuous.species(), restarted.species(),
+                "multi-model 1D ionization checkpoint restart");
+            require(
+                continuous.collision_diagnostics().channel_collisions ==
+                    restarted.collision_diagnostics()
+                        .channel_collisions,
+                "multi-model 1D restart lost collision diagnostics");
+
+            auto changed = cfg;
+            changed.collision_models[0].config.neutral_density =
+                2.0;
+            require_throws(
+                [&] {
+                    pic::Simulation incompatible(changed);
+                    incompatible.load_checkpoint(checkpoint_path);
+                },
+                "multi-model checkpoint accepted changed MCC physics");
+
+            auto bounded = cfg;
+            bounded.max_particles_per_species = 64;
+            pic::Simulation bounded_simulation(bounded);
+            bounded_simulation.initialize();
+            require_throws_contains(
+                [&] { bounded_simulation.step(); },
+                "max_particles_per_species",
+                "1D ionization ignored product storage capacity");
+            require(
+                bounded_simulation.species()[0].particles().size() ==
+                        64 &&
+                    bounded_simulation.species()[1].particles().size() ==
+                        64,
+                "1D ionization capacity failure created partial "
+                "products");
+
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }

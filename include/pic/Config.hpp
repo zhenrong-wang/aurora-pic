@@ -112,6 +112,11 @@ struct CollisionConfig {
     std::string license{};
 };
 
+struct NamedCollisionConfig {
+    std::string name{};
+    CollisionConfig config{};
+};
+
 struct SinusoidalVoltageConfig {
     double amplitude{0.0};
     double frequency{0.0};
@@ -137,7 +142,9 @@ struct Config {
     double steady_tolerance{1e-6};
     std::size_t steady_window{25};
     std::size_t max_steps{10000};
+    std::size_t max_particles_per_species{10000000};
     CollisionConfig collisions{};
+    std::vector<NamedCollisionConfig> collision_models{};
     bool checkpoint_output{false};
     std::size_t checkpoint_interval{0}; // zero inherits output_interval
     std::string checkpoint_path{};      // empty writes output_dir/checkpoint_<step>.apc

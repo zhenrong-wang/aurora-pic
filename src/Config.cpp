@@ -321,9 +321,12 @@ CollisionProcessKind parse_collision_process(
         kv, "type", to_string(def))));
     if (value == "elastic") return CollisionProcessKind::Elastic;
     if (value == "excitation") return CollisionProcessKind::Excitation;
+    if (value == "ionization") {
+        return CollisionProcessKind::Ionization;
+    }
     throw std::runtime_error(
         "invalid collision channel type: '" + value +
-        "'; expected elastic or excitation");
+        "'; expected elastic, excitation, or ionization");
 }
 
 UnitSystemConfig parse_units(
@@ -437,117 +440,244 @@ void validate_config(const Config& cfg) {
     validate_positive(cfg.steady_tolerance, "steady_tolerance");
     if (cfg.steady_window == 0) throw std::runtime_error("steady_window must be positive");
     if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) throw std::runtime_error("max_steps must be positive for steady-state mode");
-    validate_non_negative(cfg.collisions.frequency, "collision frequency");
-    validate_non_negative(cfg.collisions.neutral_temperature_velocity, "neutral_temperature_velocity");
-    validate_non_negative(cfg.collisions.neutral_density, "neutral_density");
-    validate_non_negative(cfg.collisions.max_frequency, "max_frequency");
-    if (cfg.collisions.max_candidates_per_particle == 0) {
+    if (cfg.max_particles_per_species == 0) {
         throw std::runtime_error(
-            "max_candidates_per_particle must be positive");
+            "max_particles_per_species must be positive");
     }
-    if (cfg.collisions.enabled &&
-        cfg.collisions.model == CollisionModelKind::NullCollision) {
-        validate_positive(cfg.collisions.neutral_density, "neutral_density");
-        validate_positive(cfg.collisions.max_frequency, "max_frequency");
-        if (cfg.collisions.species.empty()) {
-            throw std::runtime_error(
-                "null-collision MCC requires a target species");
-        }
-        if (cfg.collisions.channels.empty()) {
-            throw std::runtime_error(
-                "null-collision MCC requires at least one channel");
-        }
-        const auto target = std::find_if(
+    if (!cfg.collision_models.empty() &&
+        cfg.collisions.enabled) {
+        throw std::runtime_error(
+            "named collision models cannot be combined with the "
+            "legacy collision model");
+    }
+    const auto species_config =
+        [&](const std::string& name) -> const SpeciesConfig* {
+        const auto found = std::find_if(
             cfg.species.begin(), cfg.species.end(),
             [&](const SpeciesConfig& species) {
-                return species.name == cfg.collisions.species;
+                return species.name == name;
             });
-        if (target == cfg.species.end()) {
+        return found == cfg.species.end() ? nullptr : &*found;
+    };
+    const auto validate_collision =
+        [&](const CollisionConfig& collision,
+            const std::string& context,
+            bool named) {
+        validate_non_negative(
+            collision.frequency, context + " frequency");
+        validate_non_negative(
+            collision.neutral_temperature_velocity,
+            context + " neutral_temperature_velocity");
+        validate_non_negative(
+            collision.neutral_density,
+            context + " neutral_density");
+        validate_non_negative(
+            collision.max_frequency,
+            context + " max_frequency");
+        if (collision.max_candidates_per_particle == 0) {
             throw std::runtime_error(
-                "null-collision MCC target species does not exist: " +
-                cfg.collisions.species);
+                context +
+                " max_candidates_per_particle must be positive");
         }
-    }
-    std::unordered_set<std::string> collision_channel_names;
-    for (const auto& channel : cfg.collisions.channels) {
-        if (channel.name.empty()) {
+        if (!collision.enabled) return;
+        if (named &&
+            collision.model !=
+                CollisionModelKind::NullCollision) {
             throw std::runtime_error(
-                "collision channel name must not be empty");
+                context +
+                " named models support only null_collision");
+        }
+        if (collision.model !=
+            CollisionModelKind::NullCollision) {
+            return;
+        }
+        validate_positive(
+            collision.neutral_density,
+            context + " neutral_density");
+        validate_positive(
+            collision.max_frequency,
+            context + " max_frequency");
+        if (collision.species.empty()) {
+            throw std::runtime_error(
+                context + " requires a target species");
+        }
+        const auto* target =
+            species_config(collision.species);
+        if (!target) {
+            throw std::runtime_error(
+                context + " target species does not exist: " +
+                collision.species);
+        }
+        if (collision.channels.empty()) {
+            throw std::runtime_error(
+                context + " requires at least one channel");
+        }
+        std::unordered_set<std::string> channel_names;
+        for (const auto& channel : collision.channels) {
+            const std::string channel_context =
+                context + " channel '" + channel.name + "'";
+            if (channel.name.empty()) {
+                throw std::runtime_error(
+                    context +
+                    " channel name must not be empty");
+            }
+            if (!std::all_of(
+                    channel.name.begin(), channel.name.end(),
+                    [](unsigned char character) {
+                        return std::isalnum(character) ||
+                               character == '_' ||
+                               character == '-' ||
+                               character == '.';
+                    })) {
+                throw std::runtime_error(
+                    context +
+                    " channel names contain an invalid character");
+            }
+            if (!channel_names.insert(channel.name).second) {
+                throw std::runtime_error(
+                    context + " duplicate channel name: " +
+                    channel.name);
+            }
+            if (channel.cross_section_file.empty()) {
+                throw std::runtime_error(
+                    channel_context +
+                    " requires cross_section_file");
+            }
+            validate_non_negative(
+                channel.threshold_energy,
+                channel_context + " threshold_energy");
+            validate_positive(
+                channel.energy_scale,
+                channel_context + " energy_scale");
+            validate_positive(
+                channel.cross_section_scale,
+                channel_context + " cross_section_scale");
+            if (channel.angular_scattering !=
+                    AngularScatteringKind::Isotropic ||
+                !channel.mean_cosine_file.empty() ||
+                channel.mean_cosine_energy_scale != 1.0) {
+                throw std::runtime_error(
+                    channel_context +
+                    " does not support anisotropic scattering");
+            }
+            if (channel.process ==
+                    CollisionProcessKind::Attachment ||
+                channel.process ==
+                    CollisionProcessKind::ChargeExchange) {
+                throw std::runtime_error(
+                    channel_context +
+                    " process is not supported in 1D");
+            }
+            if (channel.process ==
+                CollisionProcessKind::Elastic) {
+                if (channel.threshold_energy != 0.0) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " elastic threshold_energy must be zero");
+                }
+            } else if (
+                channel.process ==
+                    CollisionProcessKind::Excitation ||
+                channel.process ==
+                    CollisionProcessKind::Ionization) {
+                if (!(channel.threshold_energy > 0.0)) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " inelastic threshold_energy must be positive");
+                }
+            }
+            if (channel.process ==
+                CollisionProcessKind::Ionization) {
+                if (cfg.velocity_dimensions != 3) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " ionization requires velocity_dimensions = 3");
+                }
+                const auto* secondary =
+                    species_config(channel.secondary_species);
+                const auto* ion =
+                    species_config(channel.ion_species);
+                if (!secondary || !ion) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " references an unknown product species");
+                }
+                if (target->charge == 0.0 ||
+                    target->weight != secondary->weight ||
+                    target->weight != ion->weight ||
+                    target->mass != secondary->mass ||
+                    target->charge != secondary->charge ||
+                    ion->charge != -target->charge) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " requires a charged target, equal macro "
+                        "weights, a secondary with target mass/charge, "
+                        "and an oppositely charged ion");
+                }
+            } else if (
+                !channel.secondary_species.empty() ||
+                !channel.ion_species.empty()) {
+                throw std::runtime_error(
+                    channel_context +
+                    " product species are valid only for ionization");
+            }
+        }
+    };
+    validate_collision(
+        cfg.collisions, "legacy collision model", false);
+    std::unordered_set<std::string> model_names;
+    std::unordered_set<std::string> target_names;
+    for (const auto& named : cfg.collision_models) {
+        if (named.name.empty() ||
+            !model_names.insert(named.name).second) {
+            throw std::runtime_error(
+                "named collision model names must be non-empty and "
+                "unique");
         }
         if (!std::all_of(
-                channel.name.begin(), channel.name.end(),
+                named.name.begin(), named.name.end(),
                 [](unsigned char character) {
                     return std::isalnum(character) ||
-                           character == '_' || character == '-' ||
-                           character == '.';
+                           character == '_' ||
+                           character == '-';
                 })) {
             throw std::runtime_error(
-                "collision channel names may contain only letters, "
-                "digits, '_', '-', and '.'");
+                "named collision model names may contain only "
+                "letters, digits, '_', and '-'");
         }
-        if (!collision_channel_names.insert(channel.name).second) {
+        validate_collision(
+            named.config,
+            "collision model '" + named.name + "'", true);
+        if (named.config.enabled &&
+            !target_names.insert(
+                named.config.species).second) {
             throw std::runtime_error(
-                "duplicate collision channel name: " + channel.name);
-        }
-        if (channel.cross_section_file.empty()) {
-            throw std::runtime_error(
-                "collision channel '" + channel.name +
-                "' requires cross_section_file");
-        }
-        validate_non_negative(
-            channel.threshold_energy,
-            "collision channel '" + channel.name + "' threshold_energy");
-        validate_positive(
-            channel.energy_scale,
-            "collision channel '" + channel.name + "' energy_scale");
-        validate_positive(
-            channel.cross_section_scale,
-            "collision channel '" + channel.name +
-                "' cross_section_scale");
-        if (channel.angular_scattering !=
-                AngularScatteringKind::Isotropic ||
-            !channel.mean_cosine_file.empty() ||
-            channel.mean_cosine_energy_scale != 1.0) {
-            throw std::runtime_error(
-                "1D collision channels do not support anisotropic "
-                "scattering");
-        }
-        if (channel.process == CollisionProcessKind::Attachment) {
-            throw std::runtime_error(
-                "1D simulation does not support attachment product "
-                "species; use imported 2D3V");
-        }
-        if (channel.process == CollisionProcessKind::Ionization ||
-            channel.process ==
-                CollisionProcessKind::ChargeExchange) {
-            throw std::runtime_error(
-                "1D simulation currently supports only elastic and "
-                "excitation collision channels");
-        }
-        if (channel.process == CollisionProcessKind::Elastic &&
-            channel.threshold_energy != 0.0) {
-            throw std::runtime_error(
-                "elastic collision channel '" + channel.name +
-                "' threshold_energy must be zero");
-        }
-        if (channel.process == CollisionProcessKind::Excitation &&
-            !(channel.threshold_energy > 0.0)) {
-            throw std::runtime_error(
-                "excitation collision channel '" + channel.name +
-                "' threshold_energy must be positive");
+                "multiple enabled collision models target species '" +
+                named.config.species + "'");
         }
     }
     validate_runtime_policy(cfg.runtime);
     validate_initialization_acceptance(
         cfg.initialization_acceptance,
         "1D initialization acceptance config");
+    std::unordered_set<std::string> species_names;
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("species name must not be empty");
+        if (!species_names.insert(s.name).second) {
+            throw std::runtime_error(
+                "1D species names must be unique: " + s.name);
+        }
         validate_positive(s.mass, "species '" + s.name + "' mass");
         validate_positive(s.weight, "species '" + s.name + "' weight");
         validate_positive(s.density, "species '" + s.name + "' density");
         if (!std::isfinite(s.charge)) throw std::runtime_error("species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("species '" + s.name + "' particles must be positive");
+        if (s.particles > cfg.max_particles_per_species) {
+            throw std::runtime_error(
+                "species '" + s.name +
+                "' initial particles exceed "
+                "max_particles_per_species");
+        }
         if (!std::isfinite(s.drift_velocity) ||
             !std::isfinite(s.drift_velocity_y) ||
             !std::isfinite(s.drift_velocity_z)) {
@@ -713,9 +843,15 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
     }
 }
 struct ParsedBlocks {
+    struct CollisionModelBlock {
+        std::string name{};
+        KeyValue values{};
+        std::vector<KeyValue> channel_blocks{};
+    };
     KeyValue global;
     KeyValue collisions;
     std::vector<KeyValue> collision_channel_blocks;
+    std::vector<CollisionModelBlock> collision_model_blocks;
     std::vector<KeyValue> species_blocks;
 };
 
@@ -734,6 +870,20 @@ ParsedBlocks parse_config_blocks(const std::string& path,
     KeyValue* current = &blocks.global;
     const std::unordered_set<std::string>* allowed = &global_keys;
     std::size_t line_number = 0;
+    const auto collision_model_block =
+        [&](const std::string& name) -> ParsedBlocks::CollisionModelBlock& {
+        const auto found = std::find_if(
+            blocks.collision_model_blocks.begin(),
+            blocks.collision_model_blocks.end(),
+            [&](const auto& block) {
+                return block.name == name;
+            });
+        if (found != blocks.collision_model_blocks.end()) {
+            return *found;
+        }
+        blocks.collision_model_blocks.push_back({name, {}, {}});
+        return blocks.collision_model_blocks.back();
+    };
     while (std::getline(in, line)) {
         ++line_number;
         auto comment = line.find_first_of("#;");
@@ -746,6 +896,51 @@ ParsedBlocks parse_config_blocks(const std::string& path,
             if (collision_keys && section == "collisions") {
                 current = &blocks.collisions;
                 allowed = collision_keys;
+            } else if (collision_keys &&
+                       starts_with(section, "collisions.")) {
+                const std::string suffix =
+                    trim(section.substr(
+                        std::string("collisions.").size()));
+                const std::string channel_marker = ".channel.";
+                const auto marker = suffix.find(channel_marker);
+                if (suffix.empty()) {
+                    throw config_error(
+                        line_number,
+                        "empty named collision model suffix");
+                }
+                if (marker == std::string::npos) {
+                    if (suffix.find('.') != std::string::npos) {
+                        throw config_error(
+                            line_number,
+                            "named collision model section must be "
+                            "[collisions.<model>] or "
+                            "[collisions.<model>.channel.<channel>]");
+                    }
+                    auto& model = collision_model_block(suffix);
+                    current = &model.values;
+                    allowed = collision_keys;
+                } else {
+                    const std::string model_name =
+                        trim(suffix.substr(0, marker));
+                    const std::string channel_name =
+                        trim(suffix.substr(
+                            marker + channel_marker.size()));
+                    if (model_name.empty() || channel_name.empty() ||
+                        model_name.find('.') != std::string::npos ||
+                        channel_name.find('.') != std::string::npos) {
+                        throw config_error(
+                            line_number,
+                            "invalid named collision channel section");
+                    }
+                    auto& model =
+                        collision_model_block(model_name);
+                    model.channel_blocks.emplace_back();
+                    current = &model.channel_blocks.back();
+                    allowed = collision_channel_keys;
+                    assign_key(
+                        *current, "name", channel_name,
+                        line_number);
+                }
             } else if (collision_channel_keys &&
                        (starts_with(section, "collision.") ||
                         starts_with(section, "collision_channel."))) {
@@ -794,6 +989,7 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "velocity_dimensions", "dt", "steps",
         "output_interval", "output_dir", "seed",
+        "max_particles_per_species",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
         "phi_right_amplitude", "phi_right_frequency", "phi_right_phase",
@@ -814,7 +1010,8 @@ Config load_config(const std::string& path) {
     };
     static const std::unordered_set<std::string> collision_channel_keys{
         "name", "type", "cross_section_file", "threshold_energy",
-        "energy_scale", "cross_section_scale"
+        "energy_scale", "cross_section_scale",
+        "secondary_species", "ion_species"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density",
@@ -870,6 +1067,9 @@ Config load_config(const std::string& path) {
     cfg.steady_tolerance = as<double>(global, "steady_tolerance", cfg.steady_tolerance);
     cfg.steady_window = as<std::size_t>(global, "steady_window", cfg.steady_window);
     cfg.max_steps = as<std::size_t>(global, "max_steps", cfg.max_steps);
+    cfg.max_particles_per_species = as<std::size_t>(
+        global, "max_particles_per_species",
+        cfg.max_particles_per_species);
     cfg.boundary = parse_boundary(global, cfg.boundary);
     cfg.mode = parse_mode(global, cfg.mode);
     cfg.collisions.enabled = parse_bool(collision, "enabled", cfg.collisions.enabled);
@@ -956,7 +1156,8 @@ Config load_config(const std::string& path) {
     const auto config_directory =
         std::filesystem::absolute(std::filesystem::path(path))
             .parent_path();
-    for (const auto& block : blocks.collision_channel_blocks) {
+    const auto parse_channel =
+        [&](const KeyValue& block) {
         CollisionChannelConfig channel;
         channel.name =
             as<std::string>(block, "name", channel.name);
@@ -983,7 +1184,66 @@ Config load_config(const std::string& path) {
             as<double>(
                 block, "cross_section_scale",
                 channel.cross_section_scale);
-        cfg.collisions.channels.push_back(std::move(channel));
+        channel.secondary_species =
+            as<std::string>(
+                block, "secondary_species",
+                channel.secondary_species);
+        channel.ion_species =
+            as<std::string>(
+                block, "ion_species",
+                channel.ion_species);
+        return channel;
+    };
+    for (const auto& block : blocks.collision_channel_blocks) {
+        cfg.collisions.channels.push_back(
+            parse_channel(block));
+    }
+    if (!blocks.collision_model_blocks.empty() &&
+        (!blocks.collisions.empty() ||
+         !blocks.collision_channel_blocks.empty())) {
+        throw std::runtime_error(
+            "named [collisions.<model>] sections cannot be mixed with "
+            "legacy [collisions] or [collision.<channel>] sections");
+    }
+    cfg.collision_models.clear();
+    for (const auto& block : blocks.collision_model_blocks) {
+        NamedCollisionConfig named;
+        named.name = block.name;
+        named.config.enabled =
+            parse_bool(block.values, "enabled", true);
+        named.config.model =
+            parse_collision_model(
+                block.values,
+                CollisionModelKind::NullCollision);
+        named.config.frequency =
+            as<double>(
+                block.values, "frequency",
+                named.config.frequency);
+        named.config.neutral_temperature_velocity =
+            as<double>(
+                block.values, "neutral_temperature_velocity",
+                named.config.neutral_temperature_velocity);
+        named.config.neutral_density =
+            as<double>(
+                block.values, "neutral_density",
+                named.config.neutral_density);
+        named.config.species =
+            as<std::string>(
+                block.values, "species",
+                named.config.species);
+        named.config.max_frequency =
+            as<double>(
+                block.values, "max_frequency",
+                named.config.max_frequency);
+        named.config.max_candidates_per_particle =
+            as<std::size_t>(
+                block.values, "max_candidates_per_particle",
+                named.config.max_candidates_per_particle);
+        for (const auto& channel : block.channel_blocks) {
+            named.config.channels.push_back(
+                parse_channel(channel));
+        }
+        cfg.collision_models.push_back(std::move(named));
     }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config(cfg);

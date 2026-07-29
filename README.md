@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V` and `1D3V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; in 1D3V those collisions use the same isotropic three-velocity kernel as multidimensional runs. Imported 2D3V runs support tabulated stationary or bounded-Maxwellian finite-mass neutral scattering, excitation, bounded electron-impact ionization, charge-conservative electron attachment, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V` and `1D3V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated null-collision MCC; 1D3V supports simultaneous named collision targets, isotropic elastic/excitation scattering, and bounded charge-conservative electron-impact ionization products. Imported 2D3V runs additionally support bounded-Maxwellian finite-mass neutrals, electron attachment, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
 
 ## Why this methodology
 
@@ -19,8 +19,8 @@ Vlasov-Poisson behavior.
 
 The next device-physics benchmark is defined in
 [`docs/ccp-validation.md`](docs/ccp-validation.md). It pins the published
-Turner helium CCP parameters, records completed RF-electrode and 1D3V support,
-and lists the remaining multispecies MCC, ionization, ion-scattering, and
+Turner helium CCP parameters, records completed RF-electrode, 1D3V,
+multispecies-MCC, and ionization support, and lists the remaining ion-scattering and
 statistical-diagnostic gates that prevent a premature validation claim.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI reduced-dimensional runs report per-unit omitted measure (`J/m²` in 1D and `J/m` in planar 2D).
@@ -260,7 +260,18 @@ external electrode supplies or removes energy.
 
 For tabulated MCC, select `model = null_collision`, name the target `species`,
 set `neutral_density` and a conservative `max_frequency`, then add one or more
-`[collision.<name>]` elastic/excitation sections. Imported 2D3V MCC also
+`[collision.<name>]` elastic/excitation sections. This legacy singular schema
+remains backward compatible. A 1D3V discharge that needs independent collision
+targets uses `[collisions.<model>]` and
+`[collisions.<model>.channel.<channel>]`. Named models must target distinct
+species. Their diagnostic columns are qualified as `<model>.<channel>`.
+Ionization channels name `secondary_species` and `ion_species`; the target,
+secondary, and ion must satisfy the equal-weight charge-conservation contract.
+Products are capacity-preflighted against `max_particles_per_species` and are
+staged until every collision target finishes, so newborn particles cannot
+collide in their birth timestep. See
+[`examples/mcc_ionization_1d.cfg`](examples/mcc_ionization_1d.cfg).
+Imported 2D3V MCC also
 requires `gas`, positive `neutral_mass`, non-negative `neutral_temperature`,
 and `data_provenance`, and can use ionization sections naming secondary and
 ion product species, attachment sections naming a negative-ion product, or
@@ -270,6 +281,7 @@ versioned `.gas` manifest containing gas identity, mass, dataset/version,
 provenance, citation, retrieval date, license, and channel tables while the
 simulation retains operating conditions and product-species mappings. See
 [`examples/mcc_relaxation.cfg`](examples/mcc_relaxation.cfg),
+[`examples/mcc_ionization_1d.cfg`](examples/mcc_ionization_1d.cfg),
 [`examples/imported_mcc_2d.cfg`](examples/imported_mcc_2d.cfg), and the
 [`examples/imported_ionization_2d.cfg`](examples/imported_ionization_2d.cfg)
 and

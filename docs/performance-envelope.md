@@ -19,6 +19,7 @@ a memory-scaling guarantee, not a high-volume I/O throughput claim.
 | `examples/two_stream.cfg` | 1D1V | 128 cells | 12,000 | 300 | Periodic electrostatic transient with multiple species. |
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
 | `examples/mcc_relaxation.cfg` | 1D3V | 32 cells | 1,000 | 50 | Synthetic tabulated elastic/excitation null-collision MCC with isotropic three-velocity scattering and channel diagnostics. |
+| `examples/mcc_ionization_1d.cfg` | 1D3V | 32 cells | 128 initial / 244 final | 4 | Simultaneous named electron/ion MCC, charge-paired ionization products, bounded storage, qualified diagnostics, and checkpoint restart contract. |
 | `examples/rf_electrode_1d.cfg` | 1D3V | 33 nodes | 128 | 16 | Sinusoidal Dirichlet electrode at exact field time levels, transverse velocity initialization, applied-potential diagnostics, and bounded RF CLI integration. |
 | `examples/plasma_2d.cfg` | 2D3V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |

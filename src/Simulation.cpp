@@ -6,11 +6,14 @@
 #include "pic/Units.hpp"
 #include <algorithm>
 #include <bit>
+#include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 #include <numbers>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -104,16 +107,18 @@ void require_stream(T& stream, const std::string& message) {
 
 void add_collision_statistics(
     CollisionDiagnostics& destination,
-    const CollisionStepStatistics& source) {
+    const CollisionStepStatistics& source,
+    std::size_t channel_offset = 0) {
     destination.candidates += source.candidates;
     destination.null_collisions += source.null_collisions;
-    if (destination.channel_collisions.size() !=
-        source.channel_collisions.size()) {
+    if (destination.channel_collisions.size() <
+        channel_offset + source.channel_collisions.size()) {
         throw std::logic_error("collision diagnostic channel mismatch");
     }
     for (std::size_t channel = 0;
          channel < source.channel_collisions.size(); ++channel) {
-        destination.channel_collisions[channel] +=
+        destination.channel_collisions[
+            channel_offset + channel] +=
             source.channel_collisions[channel];
     }
 }
@@ -160,27 +165,6 @@ void write_collision_sample(
     output.flush();
 }
 
-std::uint64_t collision_signature(
-    const Config& config,
-    const NullCollisionModel* model) {
-    if (!config.collisions.enabled) return 0;
-    if (model) return model->signature();
-    constexpr std::uint64_t offset = 1469598103934665603ULL;
-    constexpr std::uint64_t prime = 1099511628211ULL;
-    std::uint64_t hash = offset;
-    const auto append = [&](std::uint64_t value) {
-        for (unsigned byte = 0; byte < 8; ++byte) {
-            hash ^= static_cast<unsigned char>(
-                value >> (byte * 8));
-            hash *= prime;
-        }
-    };
-    append(std::bit_cast<std::uint64_t>(
-        config.collisions.frequency));
-    append(std::bit_cast<std::uint64_t>(
-        config.collisions.neutral_temperature_velocity));
-    return hash;
-}
 } // namespace
 
 Simulation::Simulation(Config cfg)
@@ -209,38 +193,248 @@ Simulation::Simulation(Config cfg)
     validate_initialization_acceptance(
         cfg_.initialization_acceptance,
         "1D initialization acceptance config");
-    for (const auto& sc : cfg_.species) {
-        species_.emplace_back(sc, cfg_.velocity_dimensions);
+    if (cfg_.max_particles_per_species == 0) {
+        throw std::invalid_argument(
+            "max_particles_per_species must be positive");
     }
-    if (cfg_.collisions.enabled) {
-        if (cfg_.collisions.model ==
-            CollisionModelKind::NullCollision) {
-            const auto target = std::find_if(
+    for (const auto& sc : cfg_.species) {
+        if (sc.particles > cfg_.max_particles_per_species) {
+            throw std::invalid_argument(
+                "initial particle count exceeds "
+                "max_particles_per_species for species '" +
+                sc.name + "'");
+        }
+        if (std::any_of(
                 species_.begin(), species_.end(),
                 [&](const Species& species) {
-                    return species.name() == cfg_.collisions.species;
-                });
-            if (target == species_.end()) {
-                throw std::invalid_argument(
-                    "MCC target species does not exist: " +
-                    cfg_.collisions.species);
-            }
-            mcc_species_id_ =
-                static_cast<std::size_t>(target - species_.begin());
-            mcc_model_ = std::make_unique<NullCollisionModel>(
-                cfg_.collisions, target->mass());
-            collision_totals_.channel_names =
-                mcc_model_->channel_names();
-        } else {
-            collision_totals_.channel_names = {"bgk"};
+                    return species.name() == sc.name;
+                })) {
+            throw std::invalid_argument(
+                "1D species names must be unique: " + sc.name);
         }
-        collision_totals_.channel_collisions.assign(
-            collision_totals_.channel_names.size(), 0);
-        collision_interval_.channel_names =
-            collision_totals_.channel_names;
-        collision_interval_.channel_collisions.assign(
-            collision_totals_.channel_names.size(), 0);
+        species_.emplace_back(sc, cfg_.velocity_dimensions);
     }
+    if (!cfg_.collision_models.empty() &&
+        cfg_.collisions.enabled) {
+        throw std::invalid_argument(
+            "named collision models cannot be combined with the "
+            "legacy collision model");
+    }
+    const auto species_id =
+        [&](const std::string& name) {
+        const auto target = std::find_if(
+            species_.begin(), species_.end(),
+            [&](const Species& species) {
+                return species.name() == name;
+            });
+        if (target == species_.end()) {
+            throw std::invalid_argument(
+                "MCC species does not exist: " + name);
+        }
+        return static_cast<std::size_t>(
+            target - species_.begin());
+    };
+    const auto add_mcc =
+        [&](const std::string& name,
+            const CollisionConfig& collision,
+            bool qualify_diagnostics) {
+        if (collision.model !=
+            CollisionModelKind::NullCollision) {
+            throw std::invalid_argument(
+                "named 1D collision models support only "
+                "null_collision");
+        }
+        MccRuntime runtime;
+        runtime.name = name;
+        runtime.species_id =
+            species_id(collision.species);
+        runtime.diagnostic_offset =
+            collision_totals_.channel_names.size();
+        runtime.model =
+            std::make_unique<NullCollisionModel>(
+                collision,
+                species_[runtime.species_id].mass());
+        runtime.ionization_channels.resize(
+            collision.channels.size());
+        const auto& target =
+            species_[runtime.species_id].config();
+        for (std::size_t channel = 0;
+             channel < collision.channels.size(); ++channel) {
+            const auto& channel_config =
+                collision.channels[channel];
+            if (channel_config.process ==
+                    CollisionProcessKind::Attachment ||
+                channel_config.process ==
+                    CollisionProcessKind::ChargeExchange) {
+                throw std::invalid_argument(
+                    "1D MCC does not support attachment or "
+                    "charge exchange");
+            }
+            if (channel_config.process !=
+                CollisionProcessKind::Ionization) {
+                continue;
+            }
+            if (cfg_.velocity_dimensions != 3) {
+                throw std::invalid_argument(
+                    "1D ionization requires "
+                    "velocity_dimensions = 3");
+            }
+            const std::size_t secondary =
+                species_id(
+                    channel_config.secondary_species);
+            const std::size_t ion =
+                species_id(channel_config.ion_species);
+            const auto& secondary_config =
+                species_[secondary].config();
+            const auto& ion_config =
+                species_[ion].config();
+            if (target.charge == 0.0 ||
+                target.weight != secondary_config.weight ||
+                target.weight != ion_config.weight ||
+                target.mass != secondary_config.mass ||
+                target.charge != secondary_config.charge ||
+                ion_config.charge != -target.charge) {
+                throw std::invalid_argument(
+                    "1D ionization products violate the "
+                    "equal-weight charge-conservation contract");
+            }
+            runtime.ionization_channels[channel] =
+                IonizationChannelRuntime{secondary, ion};
+        }
+        for (const auto& channel :
+             runtime.model->channel_names()) {
+            collision_totals_.channel_names.push_back(
+                qualify_diagnostics
+                    ? name + "." + channel
+                    : channel);
+        }
+        mcc_models_.push_back(std::move(runtime));
+    };
+    if (cfg_.collisions.enabled) {
+        if (cfg_.collisions.model ==
+            CollisionModelKind::BGK) {
+            legacy_bgk_enabled_ = true;
+            collision_totals_.channel_names = {"bgk"};
+        } else {
+            add_mcc("legacy", cfg_.collisions, false);
+        }
+    }
+    std::set<std::string> model_names;
+    std::set<std::size_t> target_species;
+    for (const auto& named : cfg_.collision_models) {
+        if (named.name.empty() ||
+            !model_names.insert(named.name).second) {
+            throw std::invalid_argument(
+                "named collision model names must be unique");
+        }
+        if (!std::all_of(
+                named.name.begin(), named.name.end(),
+                [](unsigned char character) {
+                    return std::isalnum(character) ||
+                           character == '_' ||
+                           character == '-';
+                })) {
+            throw std::invalid_argument(
+                "named collision model name has an invalid "
+                "character");
+        }
+        if (!named.config.enabled) continue;
+        const std::size_t target =
+            species_id(named.config.species);
+        if (!target_species.insert(target).second) {
+            throw std::invalid_argument(
+                "multiple collision models target species '" +
+                named.config.species + "'");
+        }
+        add_mcc(named.name, named.config, true);
+    }
+    collision_totals_.channel_collisions.assign(
+        collision_totals_.channel_names.size(), 0);
+    collision_interval_.channel_names =
+        collision_totals_.channel_names;
+    collision_interval_.channel_collisions.assign(
+        collision_totals_.channel_names.size(), 0);
+}
+
+std::uint64_t Simulation::collision_signature() const {
+    if (mcc_models_.empty()) {
+        if (!legacy_bgk_enabled_) return 0;
+        constexpr std::uint64_t offset =
+            1469598103934665603ULL;
+        constexpr std::uint64_t prime =
+            1099511628211ULL;
+        std::uint64_t hash = offset;
+        const auto append = [&](std::uint64_t value) {
+            for (unsigned byte = 0; byte < 8; ++byte) {
+                hash ^= static_cast<unsigned char>(
+                    value >> (byte * 8));
+                hash *= prime;
+            }
+        };
+        append(std::bit_cast<std::uint64_t>(
+            cfg_.collisions.frequency));
+        append(std::bit_cast<std::uint64_t>(
+            cfg_.collisions.neutral_temperature_velocity));
+        return hash;
+    }
+    if (mcc_models_.size() == 1 &&
+        cfg_.collision_models.empty()) {
+        return mcc_models_.front().model->signature();
+    }
+    constexpr std::uint64_t offset =
+        1469598103934665603ULL;
+    constexpr std::uint64_t prime =
+        1099511628211ULL;
+    std::uint64_t hash = offset;
+    const auto append_byte = [&](unsigned char value) {
+        hash ^= value;
+        hash *= prime;
+    };
+    const auto append_string = [&](const std::string& value) {
+        for (const unsigned char character : value) {
+            append_byte(character);
+        }
+        append_byte(0);
+    };
+    const auto append_integer = [&](std::uint64_t value) {
+        for (unsigned byte = 0; byte < 8; ++byte) {
+            append_byte(static_cast<unsigned char>(
+                value >> (byte * 8)));
+        }
+    };
+    for (const auto& runtime : mcc_models_) {
+        append_string(runtime.name);
+        const auto append_species =
+            [&](std::size_t species_id) {
+            const auto& species =
+                species_[species_id].config();
+            append_string(species.name);
+            append_integer(std::bit_cast<std::uint64_t>(
+                species.charge));
+            append_integer(std::bit_cast<std::uint64_t>(
+                species.mass));
+            append_integer(std::bit_cast<std::uint64_t>(
+                species.weight));
+        };
+        append_species(runtime.species_id);
+        append_integer(runtime.model->signature());
+        for (const auto& channel :
+             runtime.ionization_channels) {
+            append_integer(channel.has_value() ? 1 : 0);
+            if (!channel) continue;
+            append_species(
+                channel->secondary_species_id);
+            append_species(channel->ion_species_id);
+        }
+    }
+    return hash;
+}
+
+std::string Simulation::collision_identity() const {
+    if (!cfg_.collision_models.empty()) {
+        return "named_null_collision";
+    }
+    return to_string(cfg_.collisions.model);
 }
 
 double Simulation::electrode_potential(
@@ -326,61 +520,184 @@ void Simulation::initialize() {
     initialized_ = true;
 }
 
-void Simulation::apply_collisions(
-    Species& sp, std::size_t species_id) {
-    if (!cfg_.collisions.enabled) return;
-    if (cfg_.collisions.model ==
-        CollisionModelKind::NullCollision) {
-        if (species_id != mcc_species_id_) return;
+void Simulation::apply_collisions() {
+    if (legacy_bgk_enabled_ &&
+        cfg_.collisions.frequency > 0.0) {
+        const double probability =
+            1.0 - std::exp(
+                -cfg_.collisions.frequency * cfg_.dt);
+        for (auto& species : species_) {
+            std::uniform_real_distribution<double> unit(
+                0.0, 1.0);
+            std::normal_distribution<double> neutral_velocity(
+                0.0,
+                cfg_.collisions.neutral_temperature_velocity);
+            const double charge_to_mass =
+                species.charge() / species.mass();
+            for (auto& particle : species.particles()) {
+                if (!particle.alive ||
+                    unit(rng_) >= probability) {
+                    continue;
+                }
+                particle.v = neutral_velocity(rng_);
+                if (cfg_.velocity_dimensions == 3) {
+                    particle.velocity_y =
+                        neutral_velocity(rng_);
+                    particle.velocity_z =
+                        neutral_velocity(rng_);
+                }
+                ++collision_totals_.candidates;
+                ++collision_totals_.channel_collisions[0];
+                ++collision_interval_.candidates;
+                ++collision_interval_.channel_collisions[0];
+                initialize_leapfrog_half_step(
+                    particle,
+                    interpolate_electric(
+                        grid_, particle.x),
+                    charge_to_mass, cfg_.dt);
+            }
+        }
+    }
+    struct IonizationProduct {
+        double position{0.0};
+        Vec3 secondary_velocity{};
+        Vec3 ion_velocity{};
+        IonizationChannelRuntime channel{};
+    };
+    std::vector<IonizationProduct> products;
+    for (auto& runtime : mcc_models_) {
+        auto& sp = species_[runtime.species_id];
         const double qm = sp.charge() / sp.mass();
-        for (auto& part : sp.particles()) {
+        const std::size_t initial_particle_count =
+            sp.particles().size();
+        for (std::size_t particle_id = 0;
+             particle_id < initial_particle_count;
+             ++particle_id) {
+            auto& part = sp.particles()[particle_id];
             if (!part.alive) continue;
             CollisionStepStatistics statistics;
             if (cfg_.velocity_dimensions == 3) {
                 Vec3 velocity{
                     part.v, part.velocity_y, part.velocity_z};
                 statistics =
-                    mcc_model_->collide(
+                    runtime.model->collide(
                         velocity, cfg_.dt, rng_);
                 part.v = velocity.x;
                 part.velocity_y = velocity.y;
                 part.velocity_z = velocity.z;
             } else {
                 statistics =
-                    mcc_model_->collide(
+                    runtime.model->collide(
                         part.v, cfg_.dt, rng_);
             }
             add_collision_statistics(
-                collision_totals_, statistics);
+                collision_totals_, statistics,
+                runtime.diagnostic_offset);
             add_collision_statistics(
-                collision_interval_, statistics);
+                collision_interval_, statistics,
+                runtime.diagnostic_offset);
+            for (const auto& secondary :
+                 statistics.secondaries) {
+                if (secondary.channel >=
+                        runtime.ionization_channels.size() ||
+                    !runtime.ionization_channels[
+                        secondary.channel]) {
+                    throw std::logic_error(
+                        "MCC produced an unmapped 1D "
+                        "ionization channel");
+                }
+                products.push_back({
+                    part.x, secondary.velocity,
+                    secondary.ion_velocity,
+                    *runtime.ionization_channels[
+                        secondary.channel]});
+            }
             if (statistics.primary_removal_channel) {
-                part.alive = false;
-                continue;
+                throw std::logic_error(
+                    "1D MCC produced an unsupported primary "
+                    "removal event");
             }
             initialize_leapfrog_half_step(
                 part, interpolate_electric(grid_, part.x), qm,
                 cfg_.dt);
         }
-        return;
     }
-    if (cfg_.collisions.frequency <= 0.0) return;
-    const double p = 1.0 - std::exp(-cfg_.collisions.frequency * cfg_.dt);
-    const double qm = sp.charge() / sp.mass();
-    std::uniform_real_distribution<double> u(0.0, 1.0);
-    std::normal_distribution<double> nv(0.0, cfg_.collisions.neutral_temperature_velocity);
-    for (auto& part : sp.particles()) {
-        if (!part.alive || u(rng_) >= p) continue;
-        part.v = nv(rng_);
-        if (cfg_.velocity_dimensions == 3) {
-            part.velocity_y = nv(rng_);
-            part.velocity_z = nv(rng_);
+    std::vector<std::size_t> required_products(
+        species_.size(), 0);
+    for (const auto& product : products) {
+        ++required_products[
+            product.channel.secondary_species_id];
+        ++required_products[
+            product.channel.ion_species_id];
+    }
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        const auto& particles =
+            species_[species_id].particles();
+        if (particles.size() >
+            cfg_.max_particles_per_species) {
+            throw std::runtime_error(
+                "species storage already exceeds "
+                "max_particles_per_species");
         }
-        ++collision_totals_.candidates;
-        ++collision_totals_.channel_collisions[0];
-        ++collision_interval_.candidates;
-        ++collision_interval_.channel_collisions[0];
-        initialize_leapfrog_half_step(part, interpolate_electric(grid_, part.x), qm, cfg_.dt);
+        const std::size_t reusable =
+            static_cast<std::size_t>(
+                std::count_if(
+                    particles.begin(), particles.end(),
+                    [](const Particle& particle) {
+                        return !particle.alive;
+                    }));
+        const std::size_t available =
+            cfg_.max_particles_per_species -
+                particles.size() +
+            reusable;
+        if (required_products[species_id] > available) {
+            throw std::runtime_error(
+                "reactive collisions exceeded "
+                "max_particles_per_species for species '" +
+                species_[species_id].name() + "'");
+        }
+    }
+    const auto append_product =
+        [&](std::size_t species_id,
+            double position,
+            Vec3 velocity) {
+        auto& product_species =
+            species_[species_id];
+        auto& particles =
+            product_species.particles();
+        auto dead = std::find_if(
+            particles.begin(), particles.end(),
+            [](const Particle& particle) {
+                return !particle.alive;
+            });
+        if (dead == particles.end()) {
+            particles.emplace_back();
+            dead = std::prev(particles.end());
+        }
+        *dead = {};
+        dead->x = position;
+        dead->v = velocity.x;
+        dead->velocity_y = velocity.y;
+        dead->velocity_z = velocity.z;
+        dead->v_half = dead->v;
+        dead->alive = true;
+        initialize_leapfrog_half_step(
+            *dead,
+            interpolate_electric(grid_, position),
+            product_species.charge() /
+                product_species.mass(),
+            cfg_.dt);
+    };
+    for (const auto& product : products) {
+        append_product(
+            product.channel.secondary_species_id,
+            product.position,
+            product.secondary_velocity);
+        append_product(
+            product.channel.ion_species_id,
+            product.position,
+            product.ion_velocity);
     }
 }
 
@@ -413,8 +730,8 @@ void Simulation::step() {
             auto& p = particles[particle_id];
             if (p.alive) synchronize_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
         });
-        apply_collisions(sp, species_id);
     }
+    apply_collisions();
     ++step_;
     time_ += cfg_.dt;
 }
@@ -454,11 +771,13 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         << cfg_.units.permittivity() << "\n";
     out << "velocity_dimensions "
         << cfg_.velocity_dimensions << "\n";
+    const bool collisions_enabled =
+        legacy_bgk_enabled_ || !mcc_models_.empty();
     const std::uint64_t configured_collision_signature =
-        pic::collision_signature(cfg_, mcc_model_.get());
+        collision_signature();
     out << "collision_model "
-        << to_string(cfg_.collisions.model) << ' '
-        << (cfg_.collisions.enabled ? 1 : 0) << ' '
+        << collision_identity() << ' '
+        << (collisions_enabled ? 1 : 0) << ' '
         << configured_collision_signature << "\n";
     out << "collision_totals " << collision_totals_.candidates
         << ' ' << collision_totals_.null_collisions << ' '
@@ -543,11 +862,13 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         int enabled = 0;
         std::uint64_t signature = 0;
         in >> model >> enabled >> signature;
+        const bool collisions_enabled =
+            legacy_bgk_enabled_ || !mcc_models_.empty();
         const std::uint64_t expected_signature =
-            pic::collision_signature(cfg_, mcc_model_.get());
+            collision_signature();
         if ((!checkpoint_v3 && !checkpoint_v4) ||
-            model != to_string(cfg_.collisions.model) ||
-            enabled != (cfg_.collisions.enabled ? 1 : 0) ||
+            model != collision_identity() ||
+            enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
             throw std::runtime_error(
                 "checkpoint collision model does not match 1D config");
@@ -567,9 +888,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         clear_collision_counts(collision_interval_);
         in >> key;
     } else if (checkpoint_v3 || checkpoint_v4 ||
-               (cfg_.collisions.enabled &&
-                cfg_.collisions.model ==
-                    CollisionModelKind::NullCollision)) {
+               !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
@@ -592,6 +911,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key >> stored_species_id >> stored_name >> particle_count;
         if (key != "species" || stored_species_id != species_id || stored_name != species_[species_id].name()) {
             throw std::runtime_error("checkpoint species metadata does not match config");
+        }
+        if (particle_count >
+            cfg_.max_particles_per_species) {
+            throw std::runtime_error(
+                "checkpoint particle count exceeds "
+                "max_particles_per_species");
         }
         auto& particles = species_[species_id].particles();
         particles.resize(particle_count);
@@ -660,7 +985,9 @@ RunSummary Simulation::run() {
     diag.write_sample(s0);
     diag.write_fields(step_, grid_);
     std::ofstream collision_output;
-    if (cfg_.collisions.enabled) {
+    const bool collisions_enabled =
+        legacy_bgk_enabled_ || !mcc_models_.empty();
+    if (collisions_enabled) {
         collision_output.open(
             std::filesystem::path(cfg_.output_dir) /
             "collisions.csv");
@@ -688,7 +1015,7 @@ RunSummary Simulation::run() {
             auto s = diag.sample(step_, time_, grid_, species_);
             diag.write_sample(s);
             diag.write_fields(step_, grid_);
-            if (cfg_.collisions.enabled) {
+            if (collisions_enabled) {
                 write_collision_sample(
                     collision_output, step_, time_,
                     collision_interval_, collision_totals_);

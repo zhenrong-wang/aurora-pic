@@ -328,6 +328,54 @@ def check_mcc_relaxation(output_dir: Path) -> None:
     )
 
 
+def check_mcc_ionization_1d(output_dir: Path) -> None:
+    scalar_header, scalar_rows = require_csv(
+        output_dir / "scalars.csv",
+        expected_header=[
+            "step", "time", "kinetic_energy", "field_energy",
+            "total_energy", "charge_l1", "live_particles",
+            "phi_left", "phi_right",
+        ],
+        min_rows=5,
+    )
+    require_step(scalar_rows, 4, output_dir / "scalars.csv")
+    initial_energy = float(
+        scalar_rows[0][scalar_header.index("total_energy")]
+    )
+    final_energy = float(
+        scalar_rows[-1][scalar_header.index("total_energy")]
+    )
+    final_live = int(float(
+        scalar_rows[-1][scalar_header.index("live_particles")]
+    ))
+    collision_header, collision_rows = require_csv(
+        output_dir / "collisions.csv", min_rows=5
+    )
+    require_step(collision_rows, 4, output_dir / "collisions.csv")
+    final = {
+        name: int(float(value))
+        for name, value in zip(collision_header, collision_rows[-1])
+        if name != "time"
+    }
+    ionizations = final[
+        "cumulative_collisions_electron_mcc.ionization"
+    ]
+    require(
+        ionizations > 0 and
+        final["cumulative_collisions_ion_mcc.elastic"] > 0,
+        "1D multi-MCC example did not exercise both targets",
+    )
+    require(
+        final_live == 128 + 2 * ionizations,
+        "1D ionization did not create charge-paired products",
+    )
+    require(
+        final_energy < initial_energy,
+        "1D ionization case did not lose threshold energy",
+    )
+    require_file(output_dir / "checkpoint_2.apc")
+
+
 def check_rf_electrode_1d(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
@@ -648,6 +696,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("two_stream.cfg", "two_stream", check_two_stream),
         ("sheath_steady.cfg", "sheath_steady", check_sheath_steady),
         ("mcc_relaxation.cfg", "mcc_relaxation", check_mcc_relaxation),
+        ("mcc_ionization_1d.cfg", "mcc_ionization_1d", check_mcc_ionization_1d),
         ("rf_electrode_1d.cfg", "rf_electrode_1d", check_rf_electrode_1d),
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),

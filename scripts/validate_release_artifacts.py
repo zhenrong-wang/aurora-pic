@@ -133,6 +133,7 @@ def validate_performance_doc() -> None:
         "Release-engineering envelope",
         "examples/two_stream.cfg",
         "examples/rf_electrode_1d.cfg",
+        "examples/mcc_ionization_1d.cfg",
         "two-stream",
         "Langmuir",
         "3D Langmuir",

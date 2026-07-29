@@ -165,9 +165,13 @@ two-body kinematics that conserve projectile-plus-neutral momentum and energy;
 excitation events remove a configured threshold energy. The 1D1V path
 randomizes velocity sign at fixed speed; the 1D3V and imported paths sample
 an isotropic three-dimensional relative direction. Named
-interval/cumulative counts are written to `collisions.csv`. Checkpoint v4 in
+interval/cumulative counts are written to `collisions.csv`. Named 1D collision
+models may target distinct species simultaneously; their products are staged
+until all targets finish. Equal-weight electron/ion pairs from 1D3V ionization
+therefore conserve macro-charge and cannot collide in their birth timestep.
+Capacity is preflighted before product insertion. Checkpoint v4 in
 1D and v6 for imported geometry fingerprint effective tables and preserve
-counters. Imported 2D3V ionization removes its threshold, equally partitions
+counters. 1D3V and imported 2D3V ionization remove their threshold, equally partition
 the remaining primary/secondary electron energy, samples independent isotropic
 directions, and creates an opposite-charge ion at the sampled target-neutral
 velocity with bounded,

@@ -22,13 +22,14 @@ cross-section-based binary collision model.
 
 ## Tabulated null-collision MCC
 
-The 1D MCC slice supports elastic and excitation channels for one named
+The legacy 1D MCC schema supports elastic and excitation channels for one
 kinetic species against stationary neutrals. In 1D1V scattering randomizes
 the sign; in 1D3V it uses isotropic three-dimensional scattering and retains
-all components in energy diagnostics and restart. Imported 2D3V additionally
-supports finite-temperature neutrals and bounded
-electron-impact ionization, electron attachment with a kinetic negative-ion
-product, and resonant ion-neutral charge exchange:
+all components in energy diagnostics and restart. Named 1D3V models can target
+multiple distinct species simultaneously and support bounded electron-impact
+ionization. Imported 2D3V additionally supports finite-temperature neutrals,
+electron attachment with a kinetic negative-ion product, and resonant
+ion-neutral charge exchange:
 
 ```ini
 [collisions]
@@ -119,7 +120,7 @@ Excitation removes exactly `threshold_energy` and retains the heavy-neutral
 approximation. A channel below its threshold has zero rate regardless of its
 table.
 
-Ionization is available only through the imported 2D3V interface. Each
+Ionization is available through 1D3V and imported 2D3V. Each
 accepted event removes `threshold_energy`, divides the remaining incident
 electron energy equally between the scattered primary and one secondary
 electron, samples both directions independently and isotropically, and creates
@@ -131,8 +132,44 @@ must have identical nonzero charge, mass, and macro weight; the ion must have
 the opposite charge and the same macro weight. These constraints make each
 macro-event charge conservative and make the implemented electron energy
 partition well-defined. Product storage is preflighted against
-`max_particles_per_species`, and new particles do not collide again during
-their birth timestep.
+`max_particles_per_species`. In 1D, all products are staged until every named
+collision target has completed; newborn electrons and ions therefore cannot
+collide again during their birth timestep.
+
+Multiple 1D targets use an unambiguous model-qualified schema:
+
+```ini
+max_particles_per_species = 1000000
+
+[collisions.electron_mcc]
+model = null_collision
+species = electrons
+neutral_density = 1.0
+max_frequency = 3.0
+
+[collisions.electron_mcc.channel.ionization]
+type = ionization
+cross_section_file = ionization.dat
+threshold_energy = 1.0
+secondary_species = electrons
+ion_species = ions
+
+[collisions.ion_mcc]
+model = null_collision
+species = ions
+neutral_density = 1.0
+max_frequency = 0.25
+
+[collisions.ion_mcc.channel.elastic]
+type = elastic
+cross_section_file = ion_elastic.dat
+```
+
+Named models cannot be mixed with the legacy singular `[collisions]` block,
+and at most one enabled model may target a species. Diagnostics use qualified
+column names such as `collisions_electron_mcc.ionization`. The combined model,
+channel-table, target, product-species, and operating-parameter identity is
+included in the 1D checkpoint fingerprint.
 
 Attachment represents `electron + neutral -> negative ion` as a
 charge-conservative macro-event. The primary electron is retired and one
@@ -153,9 +190,9 @@ material data.
 
 This is a deliberately bounded ionization model: ion recoil, differential
 scattering data, neutral depletion, metastables, and multi-ionization are not
-yet represented. The bundled `examples/imported_ionization_2d.cfg` and
-`mcc_2d3v_ionization.dat` are deterministic software-validation inputs, not
-material data.
+yet represented. The bundled `examples/mcc_ionization_1d.cfg`,
+`examples/imported_ionization_2d.cfg`, and `mcc_2d3v_ionization.dat` are
+deterministic software-validation inputs, not material data.
 
 Resonant charge exchange represents the identity swap
 `A+_fast + A_slow -> A_fast + A+_slow`. It requires projectile mass equal to
@@ -336,14 +373,14 @@ enabling finite-mass recoil.
 ## Current limitations
 
 - Collision sampling is currently serial to preserve deterministic RNG order.
-- 1D supports only one configured collision target and elastic/excitation
-  channels; ionization products, attachment, charge exchange, and simultaneous
-  electron/ion MCC remain imported-2D-only.
+- 1D named models support one model per target plus elastic, excitation, and
+  equal-sharing ionization. Attachment and charge exchange remain
+  imported-2D-only.
 - SI neutrals have a bounded Maxwellian at fixed configured temperature.
   Neutral bulk flow, excitation/ionization recoil, depletion, and gas heating
   are absent; normalized-unit neutrals remain stationary.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
-- Ionization is limited to the equal-sharing imported 2D3V model above.
+- Ionization is limited to the equal-sharing 1D3V/imported-2D3V model above.
   Attachment is limited to the target-velocity negative-ion product model
   above.
   Charge exchange is limited to the resonant mass-matched model above.

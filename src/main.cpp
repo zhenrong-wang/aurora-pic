@@ -3,6 +3,7 @@
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
 #include "pic/UnstructuredSimulation2D.hpp"
+#include <algorithm>
 #include <exception>
 #include <iostream>
 #include <utility>
@@ -93,9 +94,20 @@ int main(int argc, char** argv) {
                   << " permittivity=" << cfg.units.permittivity()
                   << " boundary=" << pic::to_string(cfg.boundary)
                   << " collisions="
-                  << (cfg.collisions.enabled
-                          ? pic::to_string(cfg.collisions.model)
-                          : "off")
+                  << (!cfg.collision_models.empty()
+                          ? "named_mcc(" +
+                                std::to_string(
+                                    std::count_if(
+                                        cfg.collision_models.begin(),
+                                        cfg.collision_models.end(),
+                                        [](const auto& model) {
+                                            return model.config.enabled;
+                                        })) +
+                                ")"
+                          : (cfg.collisions.enabled
+                                 ? pic::to_string(
+                                       cfg.collisions.model)
+                                 : "off"))
                   << "\n";
         pic::Simulation sim(std::move(cfg));
         auto summary = sim.run();

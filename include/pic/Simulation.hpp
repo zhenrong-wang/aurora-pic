@@ -34,8 +34,22 @@ public:
         return collision_totals_;
     }
 private:
-    void apply_collisions(Species& sp, std::size_t species_id);
+    struct IonizationChannelRuntime {
+        std::size_t secondary_species_id{0};
+        std::size_t ion_species_id{0};
+    };
+    struct MccRuntime {
+        std::string name{};
+        std::size_t species_id{0};
+        std::size_t diagnostic_offset{0};
+        std::unique_ptr<NullCollisionModel> model{};
+        std::vector<std::optional<IonizationChannelRuntime>>
+            ionization_channels{};
+    };
+    void apply_collisions();
     void deposit_and_solve(double field_time);
+    std::uint64_t collision_signature() const;
+    std::string collision_identity() const;
     double electrode_potential(
         double offset,
         const SinusoidalVoltageConfig& drive,
@@ -44,8 +58,8 @@ private:
     Grid grid_;
     FieldSolver solver_;
     std::vector<Species> species_;
-    std::unique_ptr<NullCollisionModel> mcc_model_;
-    std::size_t mcc_species_id_{0};
+    std::vector<MccRuntime> mcc_models_;
+    bool legacy_bgk_enabled_{false};
     CollisionDiagnostics collision_totals_{};
     CollisionDiagnostics collision_interval_{};
     std::mt19937_64 rng_;
