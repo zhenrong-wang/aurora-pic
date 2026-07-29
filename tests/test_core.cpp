@@ -140,6 +140,12 @@ void require_species_close(const std::vector<pic::Species>& a,
         for (std::size_t i = 0; i < pa.size(); ++i) {
             require_near(pa[i].x, pb[i].x, 1e-12, label + ": particle x mismatch");
             require_near(pa[i].v, pb[i].v, 1e-12, label + ": particle v mismatch");
+            require_near(
+                pa[i].velocity_y, pb[i].velocity_y, 1e-12,
+                label + ": particle vy mismatch");
+            require_near(
+                pa[i].velocity_z, pb[i].velocity_z, 1e-12,
+                label + ": particle vz mismatch");
             require_near(pa[i].v_half, pb[i].v_half, 1e-12, label + ": particle v_half mismatch");
             require(pa[i].alive == pb[i].alive, label + ": particle alive mismatch");
         }
@@ -2018,6 +2024,7 @@ int main() {
                     << "units = si\n"
                     << "relative_permittivity = 2.5\n"
                     << "nx = 16\n"
+                    << "velocity_dimensions = 3\n"
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
@@ -2039,11 +2046,18 @@ int main() {
                     << "density = 5\n"
                     << "particles = 10\n"
                     << "thermal_velocity = 0\n"
+                    << "drift_velocity_y = 0.25\n"
+                    << "drift_velocity_z = -0.5\n"
+                    << "thermal_velocity_y = 0.1\n"
+                    << "thermal_velocity_z = 0.2\n"
                     << "init_x_min = 0.5\n"
                     << "init_x_max = 1.5\n";
             }
             auto cfg = pic::load_config(config_path.string());
             require(cfg.species.size() == 1, "config did not load one species");
+            require(
+                cfg.velocity_dimensions == 3,
+                "1D config did not load velocity_dimensions");
             require(cfg.runtime.backend == pic::RuntimeBackend::Serial && cfg.runtime.threads == 1,
                     "M4 1D runtime config aliases were not parsed");
             require(
@@ -2077,6 +2091,20 @@ int main() {
             require_near(
                 cfg.phi_right_drive.phase, -0.5, 1e-15,
                 "1D config did not load right voltage phase");
+            require_near(
+                cfg.species[0].drift_velocity_y, 0.25, 1e-15,
+                "1D3V config did not load drift_velocity_y");
+            require_near(
+                cfg.species[0].drift_velocity_z, -0.5, 1e-15,
+                "1D3V config did not load drift_velocity_z");
+            require_near(
+                *cfg.species[0].initialization.thermal_velocity_y,
+                0.1, 1e-15,
+                "1D3V config did not load thermal_velocity_y");
+            require_near(
+                *cfg.species[0].initialization.thermal_velocity_z,
+                0.2, 1e-15,
+                "1D3V config did not load thermal_velocity_z");
             require(std::abs(cfg.species[0].weight - 0.5) < 1e-15, "density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_path);
 
@@ -2126,6 +2154,21 @@ int main() {
                 "boundary = periodic\nphi_right_amplitude = 1\nphi_right_frequency = 1\n",
                 [](const std::string& path) { return pic::load_config(path); },
                 "1D periodic config accepted a sinusoidal electrode drive");
+            require_config_rejects(
+                "test_invalid_velocity_dimensions.ini",
+                "velocity_dimensions = 2\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D config accepted velocity_dimensions other than 1 or 3");
+            require_config_rejects(
+                "test_inactive_transverse_drift.ini",
+                "[species]\nweight = 1\ndrift_velocity_y = 1\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D1V config accepted active transverse drift");
+            require_config_rejects(
+                "test_inactive_transverse_thermal.ini",
+                "[species]\nweight = 1\nthermal_velocity_z = 1\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D1V config accepted active transverse thermal velocity");
             require_config_rejects(
                 "test_invalid_voltage_frequency.ini",
                 "boundary = dirichlet\nphi_right_amplitude = 1\nphi_right_frequency = -1\n",
@@ -2539,6 +2582,120 @@ int main() {
                     "total_energy,charge_l1,live_particles,"
                     "phi_left,phi_right\n") == 0,
                 "1D RF scalar diagnostics omitted electrode potentials");
+        }
+        {
+            const auto output_dir =
+                std::filesystem::path(
+                    "test_output_1d3v_acceptance");
+            std::filesystem::remove_all(output_dir);
+            pic::Config cfg;
+            cfg.velocity_dimensions = 3;
+            cfg.steps = 0;
+            cfg.output_dir = output_dir.string();
+            cfg.initialization_acceptance
+                .max_relative_current_imbalance = 0.0;
+            cfg.species = {
+                pic::SpeciesConfig{
+                    "electrons", -1.0, 1.0, 1.0, 4, 1.0,
+                    0.0, 0.0, 0.0, -1.0, {}, 1.0, 0.0},
+                pic::SpeciesConfig{
+                    "ions", 1.0, 1.0, 1.0, 4, 1.0,
+                    0.0, 0.0, 0.0, -1.0, {}, 0.0, 0.0}};
+            require_throws(
+                [&] {
+                    pic::Simulation simulation(cfg);
+                    (void)simulation.run();
+                },
+                "1D3V initialization acceptance ignored transverse current");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
+            const auto table_path =
+                std::filesystem::path(
+                    "test_mcc_1d3v_elastic.dat");
+            const auto output_dir =
+                std::filesystem::path(
+                    "test_output_mcc_1d3v");
+            const auto checkpoint_path =
+                output_dir / "manual.apc";
+            std::filesystem::remove_all(output_dir);
+            {
+                std::ofstream table(table_path);
+                table << "0 0.2\n10 0.2\n";
+            }
+
+            pic::Config cfg;
+            cfg.velocity_dimensions = 3;
+            cfg.nx = 16;
+            cfg.length = 1.0;
+            cfg.dt = 0.1;
+            cfg.steps = 8;
+            cfg.output_interval = 8;
+            cfg.output_dir = output_dir.string();
+            cfg.seed = 1307;
+            cfg.collisions.enabled = true;
+            cfg.collisions.model =
+                pic::CollisionModelKind::NullCollision;
+            cfg.collisions.species = "electrons";
+            cfg.collisions.neutral_density = 2.0;
+            cfg.collisions.max_frequency = 1.0;
+            cfg.collisions.channels = {
+                pic::CollisionChannelConfig{
+                    "elastic",
+                    pic::CollisionProcessKind::Elastic,
+                    table_path, 0.0, 1.0, 1.0}};
+            cfg.species = {
+                pic::SpeciesConfig{
+                    "electrons", 0.0, 1.0, 1.0, 128, 1.0,
+                    1.0, 0.0, 0.0, -1.0}};
+
+            pic::Simulation continuous(cfg);
+            continuous.initialize();
+            const double initial_energy =
+                continuous.sample().kinetic_energy;
+            for (std::size_t step = 0; step < 4; ++step) {
+                continuous.step();
+            }
+            continuous.save_checkpoint(checkpoint_path);
+            for (std::size_t step = 4; step < cfg.steps; ++step) {
+                continuous.step();
+            }
+            const bool populated_transverse =
+                std::any_of(
+                    continuous.species().front().particles().begin(),
+                    continuous.species().front().particles().end(),
+                    [](const pic::Particle& particle) {
+                        return std::abs(particle.velocity_y) > 1e-12 ||
+                               std::abs(particle.velocity_z) > 1e-12;
+                    });
+            require(
+                populated_transverse,
+                "1D3V elastic MCC did not scatter into transverse velocity");
+            require_near(
+                continuous.sample().kinetic_energy,
+                initial_energy, 1e-10,
+                "1D3V isotropic elastic MCC changed particle energy");
+
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            for (std::size_t step = 4; step < cfg.steps; ++step) {
+                restarted.step();
+            }
+            require_species_close(
+                continuous.species(), restarted.species(),
+                "1D3V MCC checkpoint restart determinism");
+            require(
+                continuous.collision_diagnostics().candidates ==
+                    restarted.collision_diagnostics().candidates &&
+                continuous.collision_diagnostics().channel_collisions ==
+                    restarted.collision_diagnostics().channel_collisions,
+                "1D3V MCC restart lost collision diagnostics");
+            require(
+                read_file_text(checkpoint_path).find(
+                    "AuroraPIC-checkpoint-v4\n") == 0,
+                "1D3V checkpoint did not use the velocity-aware format");
+            std::filesystem::remove_all(output_dir);
+            std::filesystem::remove(table_path);
         }
         {
             pic::Simulation2DConfig cfg;

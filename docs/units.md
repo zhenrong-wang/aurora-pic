@@ -87,9 +87,10 @@ Each run writes `units.txt` beside `scalars.csv`. It records the unit system,
 relative and effective permittivity, spatial dimension, and the dimensional
 basis of macro-particle weight and energy.
 
-Current 1D checkpoint v3, structured 2D checkpoint v3, structured 3D
+Current 1D checkpoint v4, structured 2D checkpoint v3, structured 3D
 checkpoint v2, and imported checkpoint v6 record and validate the unit
-contract. Historical structured v1
+contract. The 1D v4 format also records velocity dimensionality; 1D v1-v3
+can initialize only 1D1V. Historical structured v1
 and imported v1–v3 checkpoints remain readable only with normalized units and
 `relative_permittivity = 1`, because those formats contain no unit metadata.
 

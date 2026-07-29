@@ -521,7 +521,12 @@ InitializationSpeciesMoments summarize_initialization(
     for (const auto& particle : species.particles()) {
         if (!particle.alive) continue;
         position_accumulator.add(particle.x, 0.0, 0.0);
-        velocity_accumulator.add(particle.v, 0.0, 0.0);
+        velocity_accumulator.add(
+            particle.v,
+            species.velocity_dimensions() == 3
+                ? particle.velocity_y : 0.0,
+            species.velocity_dimensions() == 3
+                ? particle.velocity_z : 0.0);
     }
     return finish_moments(
         species.config().initialization.version, species.name(),

@@ -281,6 +281,17 @@ def check_sheath_steady(output_dir: Path) -> None:
 
 
 def check_mcc_relaxation(output_dir: Path) -> None:
+    initialization_header, initialization_rows = read_csv(
+        output_dir / "initialization.csv"
+    )
+    initialization = dict(zip(
+        initialization_header, initialization_rows[0]
+    ))
+    require(
+        float(initialization["thermal_velocity_y"]) > 0.05 and
+        float(initialization["thermal_velocity_z"]) > 0.05,
+        "1D3V MCC example did not initialize transverse velocity spread",
+    )
     scalar_header, scalar_rows = require_csv(
         output_dir / "scalars.csv",
         expected_header=[

@@ -1,8 +1,9 @@
 # Collision models
 
 AuroraPIC provides a bounded 1D BGK compatibility model and tabulated
-null-collision MCC for 1D1V and imported planar 2D3V runs. Collision processing
-occurs after electrostatic/Boris velocity synchronization at each timestep.
+null-collision MCC for 1D1V, 1D3V, and imported planar 2D3V runs. Collision
+processing occurs after electrostatic/Boris velocity synchronization at each
+timestep.
 
 ## BGK compatibility model
 
@@ -15,15 +16,17 @@ neutral_temperature_velocity = 0.03
 ```
 
 Each live particle has probability `1 - exp(-frequency * dt)` of having its
-velocity redrawn from a zero-mean Gaussian with the configured standard
-deviation. This is a relaxation model, not a cross-section-based binary
-collision model.
+active velocity components redrawn from a zero-mean Gaussian with the
+configured standard deviation. This is a relaxation model, not a
+cross-section-based binary collision model.
 
 ## Tabulated null-collision MCC
 
-The MCC slice supports elastic and excitation channels for one named kinetic
-species against stationary or finite-temperature neutrals. Imported 2D3V
-additionally supports bounded
+The 1D MCC slice supports elastic and excitation channels for one named
+kinetic species against stationary neutrals. In 1D1V scattering randomizes
+the sign; in 1D3V it uses isotropic three-dimensional scattering and retains
+all components in energy diagnostics and restart. Imported 2D3V additionally
+supports finite-temperature neutrals and bounded
 electron-impact ionization, electron attachment with a kinetic negative-ion
 product, and resonant ion-neutral charge exchange:
 
@@ -319,13 +322,13 @@ output cadence. Imported runs also write `collision_data.txt`, recording the
 resolved gas metadata, operating state, model signature, effective channel
 settings, table paths, and product mappings used by that run.
 
-1D checkpoint v3 and imported checkpoint v6 record collision model identity, a
+1D checkpoint v4 and imported checkpoint v6 record collision model identity, a
 fingerprint of effective cross-section tables and MCC parameters, cumulative
 collision counts, and RNG state. They reject restart with changed collision
 data, external dataset metadata, or model parameters. Historical 1D v1/v2 and
 imported v1-v5 checkpoints
 cannot restart null-collision MCC because they contain no compatible MCC
-provenance. Historical 1D v3 MCC signatures remain compatible when the new
+provenance. Historical 1D v3 MCC signatures remain compatible for 1D1V when the new
 optional gas metadata is absent. Checkpoints made with the earlier
 infinite-neutral-mass imported MCC signature are intentionally rejected after
 enabling finite-mass recoil.
@@ -333,6 +336,9 @@ enabling finite-mass recoil.
 ## Current limitations
 
 - Collision sampling is currently serial to preserve deterministic RNG order.
+- 1D supports only one configured collision target and elastic/excitation
+  channels; ionization products, attachment, charge exchange, and simultaneous
+  electron/ion MCC remain imported-2D-only.
 - SI neutrals have a bounded Maxwellian at fixed configured temperature.
   Neutral bulk flow, excitation/ionization recoil, depletion, and gas heating
   are absent; normalized-unit neutrals remain stationary.

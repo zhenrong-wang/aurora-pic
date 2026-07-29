@@ -21,8 +21,14 @@ namespace {
 constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
 constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
+constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 
 void validate_runtime_config(const Config& cfg) {
+    if (cfg.velocity_dimensions != 1 &&
+        cfg.velocity_dimensions != 3) {
+        throw std::invalid_argument(
+            "simulation velocity_dimensions must be 1 or 3");
+    }
     if (!std::isfinite(cfg.dt) || cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive and finite");
     if (cfg.output_interval == 0) throw std::invalid_argument("output_interval must be positive");
     if (!std::isfinite(cfg.phi_left) || !std::isfinite(cfg.phi_right)) {
@@ -194,10 +200,18 @@ Simulation::Simulation(Config cfg)
         throw std::invalid_argument(
             "initial_state_signature requires initial_state_path");
     }
+    if (cfg_.velocity_dimensions == 3 &&
+        !cfg_.initial_state_path.empty()) {
+        throw std::invalid_argument(
+            "external particle-state initialization is not yet "
+            "available for 1D3V");
+    }
     validate_initialization_acceptance(
         cfg_.initialization_acceptance,
         "1D initialization acceptance config");
-    for (const auto& sc : cfg_.species) species_.emplace_back(sc);
+    for (const auto& sc : cfg_.species) {
+        species_.emplace_back(sc, cfg_.velocity_dimensions);
+    }
     if (cfg_.collisions.enabled) {
         if (cfg_.collisions.model ==
             CollisionModelKind::NullCollision) {
@@ -321,8 +335,21 @@ void Simulation::apply_collisions(
         const double qm = sp.charge() / sp.mass();
         for (auto& part : sp.particles()) {
             if (!part.alive) continue;
-            const auto statistics =
-                mcc_model_->collide(part.v, cfg_.dt, rng_);
+            CollisionStepStatistics statistics;
+            if (cfg_.velocity_dimensions == 3) {
+                Vec3 velocity{
+                    part.v, part.velocity_y, part.velocity_z};
+                statistics =
+                    mcc_model_->collide(
+                        velocity, cfg_.dt, rng_);
+                part.v = velocity.x;
+                part.velocity_y = velocity.y;
+                part.velocity_z = velocity.z;
+            } else {
+                statistics =
+                    mcc_model_->collide(
+                        part.v, cfg_.dt, rng_);
+            }
             add_collision_statistics(
                 collision_totals_, statistics);
             add_collision_statistics(
@@ -345,6 +372,10 @@ void Simulation::apply_collisions(
     for (auto& part : sp.particles()) {
         if (!part.alive || u(rng_) >= p) continue;
         part.v = nv(rng_);
+        if (cfg_.velocity_dimensions == 3) {
+            part.velocity_y = nv(rng_);
+            part.velocity_z = nv(rng_);
+        }
         ++collision_totals_.candidates;
         ++collision_totals_.channel_collisions[0];
         ++collision_interval_.candidates;
@@ -416,11 +447,13 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV3 << '\n';
+    out << kCheckpointMagicV4 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
         << cfg_.units.permittivity() << "\n";
+    out << "velocity_dimensions "
+        << cfg_.velocity_dimensions << "\n";
     const std::uint64_t configured_collision_signature =
         pic::collision_signature(cfg_, mcc_model_.get());
     out << "collision_model "
@@ -442,7 +475,10 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         const auto& sp = species_[species_id];
         out << "species " << species_id << ' ' << sp.name() << ' ' << sp.particles().size() << "\n";
         for (const auto& p : sp.particles()) {
-            out << p.x << ' ' << p.v << ' ' << p.v_half << ' ' << (p.alive ? 1 : 0) << "\n";
+            out << p.x << ' ' << p.v << ' '
+                << p.velocity_y << ' ' << p.velocity_z << ' '
+                << p.v_half << ' '
+                << (p.alive ? 1 : 0) << "\n";
         }
     }
     require_stream(out, "failed while writing checkpoint: " + path.string());
@@ -456,7 +492,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v1 = magic == kCheckpointMagicV1;
     const bool checkpoint_v2 = magic == kCheckpointMagicV2;
     const bool checkpoint_v3 = magic == kCheckpointMagicV3;
-    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3) {
+    const bool checkpoint_v4 = magic == kCheckpointMagicV4;
+    if (!checkpoint_v1 && !checkpoint_v2 &&
+        !checkpoint_v3 && !checkpoint_v4) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -470,7 +508,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
-        if ((!checkpoint_v2 && !checkpoint_v3) ||
+        if ((!checkpoint_v2 && !checkpoint_v3 &&
+             !checkpoint_v4) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -479,10 +518,25 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         in >> key;
     } else if (checkpoint_v2 || checkpoint_v3 ||
+               checkpoint_v4 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
             "legacy checkpoint without unit metadata requires normalized units");
+    }
+    if (key == "velocity_dimensions") {
+        std::size_t velocity_dimensions = 0;
+        in >> velocity_dimensions;
+        if (!checkpoint_v4 ||
+            velocity_dimensions != cfg_.velocity_dimensions) {
+            throw std::runtime_error(
+                "checkpoint velocity dimensions do not match 1D config");
+        }
+        in >> key;
+    } else if (checkpoint_v4 ||
+               cfg_.velocity_dimensions != 1) {
+        throw std::runtime_error(
+            "legacy 1D1V checkpoint cannot initialize 1D3V");
     }
     if (key == "collision_model") {
         std::string model;
@@ -491,7 +545,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> model >> enabled >> signature;
         const std::uint64_t expected_signature =
             pic::collision_signature(cfg_, mcc_model_.get());
-        if (!checkpoint_v3 ||
+        if ((!checkpoint_v3 && !checkpoint_v4) ||
             model != to_string(cfg_.collisions.model) ||
             enabled != (cfg_.collisions.enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -512,7 +566,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         clear_collision_counts(collision_interval_);
         in >> key;
-    } else if (checkpoint_v3 ||
+    } else if (checkpoint_v3 || checkpoint_v4 ||
                (cfg_.collisions.enabled &&
                 cfg_.collisions.model ==
                     CollisionModelKind::NullCollision)) {
@@ -543,7 +597,15 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         particles.resize(particle_count);
         for (auto& p : particles) {
             int alive = 0;
-            in >> p.x >> p.v >> p.v_half >> alive;
+            if (checkpoint_v4) {
+                in >> p.x >> p.v >>
+                    p.velocity_y >> p.velocity_z >>
+                    p.v_half >> alive;
+            } else {
+                in >> p.x >> p.v >> p.v_half >> alive;
+                p.velocity_y = 0.0;
+                p.velocity_z = 0.0;
+            }
             p.alive = alive != 0;
         }
     }
@@ -584,7 +646,8 @@ RunSummary Simulation::run() {
     const auto initialization_acceptance =
         assess_initialization_acceptance(
             cfg_.initialization_acceptance,
-            initialization_moments, 1);
+            initialization_moments,
+            cfg_.velocity_dimensions);
     write_initialization_acceptance_report(
         std::filesystem::path(cfg_.output_dir) /
             "initialization_acceptance.csv",

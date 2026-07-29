@@ -384,6 +384,11 @@ void validate_config(const Config& cfg) {
             "initial_state_signature requires initial_state_path");
     }
     if (cfg.nx < 3) throw std::runtime_error("nx must be at least 3");
+    if (cfg.velocity_dimensions != 1 &&
+        cfg.velocity_dimensions != 3) {
+        throw std::runtime_error(
+            "velocity_dimensions must be 1 or 3");
+    }
     validate_positive(cfg.length, "length");
     validate_positive(cfg.dt, "dt");
     if (!std::isfinite(cfg.phi_left) ||
@@ -512,6 +517,13 @@ void validate_config(const Config& cfg) {
                 "1D simulation does not support attachment product "
                 "species; use imported 2D3V");
         }
+        if (channel.process == CollisionProcessKind::Ionization ||
+            channel.process ==
+                CollisionProcessKind::ChargeExchange) {
+            throw std::runtime_error(
+                "1D simulation currently supports only elastic and "
+                "excitation collision channels");
+        }
         if (channel.process == CollisionProcessKind::Elastic &&
             channel.threshold_energy != 0.0) {
             throw std::runtime_error(
@@ -536,10 +548,24 @@ void validate_config(const Config& cfg) {
         validate_positive(s.density, "species '" + s.name + "' density");
         if (!std::isfinite(s.charge)) throw std::runtime_error("species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("species '" + s.name + "' particles must be positive");
-        if (!std::isfinite(s.drift_velocity)) throw std::runtime_error("species '" + s.name + "' drift_velocity must be finite");
+        if (!std::isfinite(s.drift_velocity) ||
+            !std::isfinite(s.drift_velocity_y) ||
+            !std::isfinite(s.drift_velocity_z)) {
+            throw std::runtime_error(
+                "species '" + s.name +
+                "' drift velocities must be finite");
+        }
+        if (cfg.velocity_dimensions == 1 &&
+            (s.drift_velocity_y != 0.0 ||
+             s.drift_velocity_z != 0.0)) {
+            throw std::runtime_error(
+                "transverse drift velocities require "
+                "velocity_dimensions = 3");
+        }
         validate_non_negative(s.thermal_velocity, "species '" + s.name + "' thermal_velocity");
         validate_particle_initialization(
-            s.initialization, 1, s.thermal_velocity,
+            s.initialization, cfg.velocity_dimensions,
+            s.thermal_velocity,
             "species '" + s.name + "'");
         validate_density_profile(
             s.initialization, 1, s.particles,
@@ -766,7 +792,8 @@ ParsedBlocks parse_config_blocks(const std::string& path,
 
 Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
-        "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
+        "nx", "length", "velocity_dimensions", "dt", "steps",
+        "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
         "phi_right_amplitude", "phi_right_frequency", "phi_right_phase",
@@ -790,8 +817,11 @@ Config load_config(const std::string& path) {
         "energy_scale", "cross_section_scale"
     };
     static const std::unordered_set<std::string> species_keys{
-        "name", "charge", "mass", "weight", "particles", "density", "drift_velocity",
-        "thermal_velocity", "thermal_velocity_x", "initialization_version",
+        "name", "charge", "mass", "weight", "particles", "density",
+        "drift_velocity", "drift_velocity_y", "drift_velocity_z",
+        "thermal_velocity", "thermal_velocity_x",
+        "thermal_velocity_y", "thermal_velocity_z",
+        "initialization_version",
         "loading", "density_profile", "profile_center_x",
         "profile_scale_x", "profile_amplitude", "profile_phase",
         "profile_mode_x", "max_profile_sampling_attempts",
@@ -811,6 +841,8 @@ Config load_config(const std::string& path) {
     Config cfg;
     cfg.units = parse_units(global, cfg.units);
     cfg.nx = as<std::size_t>(global, "nx", cfg.nx);
+    cfg.velocity_dimensions = as<std::size_t>(
+        global, "velocity_dimensions", cfg.velocity_dimensions);
     cfg.length = as<double>(global, "length", cfg.length);
     cfg.dt = as<double>(global, "dt", cfg.dt);
     cfg.steps = as<std::size_t>(global, "steps", cfg.steps);
@@ -884,6 +916,10 @@ Config load_config(const std::string& path) {
         s.particles = as<std::size_t>(block, "particles", s.particles);
         s.density = as<double>(block, "density", s.density);
         s.drift_velocity = as<double>(block, "drift_velocity", s.drift_velocity);
+        s.drift_velocity_y = as<double>(
+            block, "drift_velocity_y", s.drift_velocity_y);
+        s.drift_velocity_z = as<double>(
+            block, "drift_velocity_z", s.drift_velocity_z);
         s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
         s.initialization.version = as<std::size_t>(
             block, "initialization_version", s.initialization.version);
@@ -894,6 +930,14 @@ Config load_config(const std::string& path) {
         if (block.count("thermal_velocity_x")) {
             s.initialization.thermal_velocity_x =
                 as<double>(block, "thermal_velocity_x", 0.0);
+        }
+        if (block.count("thermal_velocity_y")) {
+            s.initialization.thermal_velocity_y =
+                as<double>(block, "thermal_velocity_y", 0.0);
+        }
+        if (block.count("thermal_velocity_z")) {
+            s.initialization.thermal_velocity_z =
+                as<double>(block, "thermal_velocity_z", 0.0);
         }
         parse_density_profile(block, s.initialization, 1);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);

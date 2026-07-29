@@ -5,14 +5,34 @@
 #include <utility>
 
 namespace pic {
-Species::Species(SpeciesConfig cfg) : cfg_(std::move(cfg)) {
+Species::Species(
+    SpeciesConfig cfg, std::size_t velocity_dimensions)
+    : cfg_(std::move(cfg)),
+      velocity_dimensions_(velocity_dimensions) {
+    if (velocity_dimensions_ != 1 &&
+        velocity_dimensions_ != 3) {
+        throw std::invalid_argument(
+            "species velocity dimensions must be 1 or 3");
+    }
     if (!std::isfinite(cfg_.charge)) throw std::invalid_argument("species charge must be finite");
     if (!std::isfinite(cfg_.mass) || cfg_.mass <= 0.0) throw std::invalid_argument("species mass must be positive and finite");
     if (!std::isfinite(cfg_.weight) || cfg_.weight <= 0.0) throw std::invalid_argument("species weight must be positive and finite");
     if (cfg_.particles == 0) throw std::invalid_argument("species must contain particles");
-    if (!std::isfinite(cfg_.drift_velocity)) throw std::invalid_argument("species drift_velocity must be finite");
+    if (!std::isfinite(cfg_.drift_velocity) ||
+        !std::isfinite(cfg_.drift_velocity_y) ||
+        !std::isfinite(cfg_.drift_velocity_z)) {
+        throw std::invalid_argument(
+            "species drift velocities must be finite");
+    }
+    if (velocity_dimensions_ == 1 &&
+        (cfg_.drift_velocity_y != 0.0 ||
+         cfg_.drift_velocity_z != 0.0)) {
+        throw std::invalid_argument(
+            "transverse species drift requires 1D3V");
+    }
     validate_particle_initialization(
-        cfg_.initialization, 1, cfg_.thermal_velocity, "species");
+        cfg_.initialization, velocity_dimensions_,
+        cfg_.thermal_velocity, "species");
     validate_density_profile(
         cfg_.initialization, 1, cfg_.particles, "species");
 }
@@ -29,6 +49,16 @@ void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
         std::uniform_real_distribution<double> ux(xmin, xmax);
         std::normal_distribution<double> nv(
             cfg_.drift_velocity, thermal_velocity);
+        std::normal_distribution<double> nvy(
+            cfg_.drift_velocity_y,
+            resolved_thermal_velocity(
+                cfg_.initialization, 1,
+                cfg_.thermal_velocity));
+        std::normal_distribution<double> nvz(
+            cfg_.drift_velocity_z,
+            resolved_thermal_velocity(
+                cfg_.initialization, 2,
+                cfg_.thermal_velocity));
         for (auto& p : particles_) {
             p.x = ux(rng);
             if (grid.boundary() == Boundary::Periodic) {
@@ -37,6 +67,10 @@ void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
                 p.x = std::clamp(p.x, 0.0, grid.length());
             }
             p.v = nv(rng);
+            if (velocity_dimensions_ == 3) {
+                p.velocity_y = nvy(rng);
+                p.velocity_z = nvz(rng);
+            }
             p.v_half = p.v;
             p.alive = true;
         }
@@ -46,6 +80,22 @@ void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
     const auto velocities = initialize_velocity_component(
         particles_.size(), cfg_.drift_velocity, thermal_velocity,
         cfg_.initialization.loading, rng);
+    std::vector<double> velocities_y;
+    std::vector<double> velocities_z;
+    if (velocity_dimensions_ == 3) {
+        velocities_y = initialize_velocity_component(
+            particles_.size(), cfg_.drift_velocity_y,
+            resolved_thermal_velocity(
+                cfg_.initialization, 1,
+                cfg_.thermal_velocity),
+            cfg_.initialization.loading, rng);
+        velocities_z = initialize_velocity_component(
+            particles_.size(), cfg_.drift_velocity_z,
+            resolved_thermal_velocity(
+                cfg_.initialization, 2,
+                cfg_.thermal_velocity),
+            cfg_.initialization.loading, rng);
+    }
     if (cfg_.initialization.density_profile !=
         DensityProfileKind::Uniform) {
         std::uniform_real_distribution<double> unit(0.0, 1.0);
@@ -78,6 +128,10 @@ void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
             auto& particle = particles_[accepted];
             particle.x = x;
             particle.v = velocities[accepted];
+            if (velocity_dimensions_ == 3) {
+                particle.velocity_y = velocities_y[accepted];
+                particle.velocity_z = velocities_z[accepted];
+            }
             particle.v_half = particle.v;
             particle.alive = true;
             ++accepted;
@@ -95,6 +149,10 @@ void Species::initialize(const Grid& grid, std::mt19937_64& rng) {
             p.x = std::clamp(p.x, 0.0, grid.length());
         }
         p.v = velocities[index];
+        if (velocity_dimensions_ == 3) {
+            p.velocity_y = velocities_y[index];
+            p.velocity_z = velocities_z[index];
+        }
         p.v_half = p.v;
         p.alive = true;
     }
@@ -127,7 +185,16 @@ void Species::deposit_charge(Grid& grid) const {
 }
 double Species::kinetic_energy() const {
     double e = 0.0;
-    for (const auto& p : particles_) if (p.alive) e += 0.5 * cfg_.mass * cfg_.weight * p.v * p.v;
+    for (const auto& p : particles_) {
+        if (!p.alive) continue;
+        double speed_squared = p.v * p.v;
+        if (velocity_dimensions_ == 3) {
+            speed_squared +=
+                p.velocity_y * p.velocity_y +
+                p.velocity_z * p.velocity_z;
+        }
+        e += 0.5 * cfg_.mass * cfg_.weight * speed_squared;
+    }
     return e;
 }
 

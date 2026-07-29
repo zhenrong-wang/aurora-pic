@@ -1,6 +1,6 @@
 # AuroraPIC
 
-AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; imported 2D3V runs support tabulated stationary or bounded-Maxwellian finite-mass neutral scattering, excitation, bounded electron-impact ionization, charge-conservative electron attachment, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
+AuroraPIC is a C++20 starting point for scientific plasma dynamics simulation. The current codebase implements electrostatic `1D1V` and `1D3V`, planar `2D3V` (structured and imported geometry), and structured `3D3V` Particle-in-Cell (PIC) paths with configurable species, periodic or Dirichlet boundaries, transient fixed-step and steady-state convergence modes, scalar diagnostics, and text checkpoint/restart files. The 1D baseline provides the historical BGK relaxation model plus tabulated elastic/excitation null-collision MCC; in 1D3V those collisions use the same isotropic three-velocity kernel as multidimensional runs. Imported 2D3V runs support tabulated stationary or bounded-Maxwellian finite-mass neutral scattering, excitation, bounded electron-impact ionization, charge-conservative electron attachment, and resonant ion-neutral charge exchange. The multidimensional paths provide prescribed uniform magnetic-field Boris pushes, VTK field output, side-specific particle boundaries, and optional particle inspection CSVs. A separate homogeneous electron-swarm runner scans reduced electric field with the same three-velocity collision kernel before a gas package is used in a device geometry.
 
 ## Why this methodology
 
@@ -19,8 +19,8 @@ Vlasov-Poisson behavior.
 
 The next device-physics benchmark is defined in
 [`docs/ccp-validation.md`](docs/ccp-validation.md). It pins the published
-Turner helium CCP parameters, records completed RF-electrode support, and
-lists the remaining 1D3V, multispecies MCC, ionization, ion-scattering, and
+Turner helium CCP parameters, records completed RF-electrode and 1D3V support,
+and lists the remaining multispecies MCC, ionization, ion-scattering, and
 statistical-diagnostic gates that prevent a premature validation claim.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI reduced-dimensional runs report per-unit omitted measure (`J/m²` in 1D and `J/m` in planar 2D).
@@ -184,6 +184,7 @@ AuroraPIC uses a strict INI-like format. The optional `config_version` key curre
 
 ```ini
 config_version = 1
+velocity_dimensions = 1  # 1 (default) or 3
 nx = 128
 length = 1.0
 dt = 0.002
@@ -210,10 +211,16 @@ weight = 0.01             # macro-particle weight; required to be positive
 particles = 10000
 drift_velocity = 0
 thermal_velocity = 0.1
+# In 1D3V, x is the only spatial coordinate and electrostatic E_x is the
+# only field component; vy/vz are retained for distributions and collisions.
+# drift_velocity_y = 0
+# drift_velocity_z = 0
 # Optional versioned initial-condition controls:
 # initialization_version = 1
 # loading = quiet_start    # random (default) or quiet_start
-# thermal_velocity_x = 0.1 # overrides thermal_velocity for 1D1V
+# thermal_velocity_x = 0.1 # overrides thermal_velocity
+# thermal_velocity_y = 0.1 # accepted only with velocity_dimensions = 3
+# thermal_velocity_z = 0.1 # accepted only with velocity_dimensions = 3
 # density_profile = gaussian
 # profile_center_x = 0.5    # physical coordinate
 # profile_scale_x = 0.1     # positive Gaussian standard deviation
@@ -225,6 +232,14 @@ model = bgk
 frequency = 0.0
 neutral_temperature_velocity = 0.0
 ```
+
+The default `velocity_dimensions = 1` preserves the historical 1D1V state and
+random-number sequence. Selecting `3` evolves the same one-dimensional
+electrostatic position and `E_x` push while carrying `vy` and `vz` through
+initialization, kinetic-energy diagnostics, BGK relaxation, isotropic
+elastic/excitation MCC, and restart. External `.aps` initialization is
+currently restricted to 1D1V; 1D3V external-state ingestion is a subsequent
+interoperability slice.
 
 The sinusoidal drive keys are currently restricted to transient 1D Dirichlet
 domains. Driven `steady_state` mode is rejected until convergence is evaluated
@@ -413,7 +428,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v3 format fingerprints collision inputs and preserves collision counters; structured 2D v3, structured 3D v2, and imported v6 record unit metadata. The current 2D formats preserve all three velocity components; legacy 2D checkpoints load with zero out-of-plane velocity. Imported v6 records source/emission and boundary-flux state plus optional MCC identity, gas metadata, effective-table fingerprint, RNG state, and collision counters. Imported v1–v5 remain readable for collision-free runs, while imported MCC restart requires v6. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2.
+All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v4 format records the configured velocity dimensionality, all active velocity components, collision fingerprints, and collision counters; legacy 1D v1-v3 remain readable only by 1D1V runs. Structured 2D v3, structured 3D v2, and imported v6 record unit metadata. The current 2D formats preserve all three velocity components; legacy 2D checkpoints load with zero out-of-plane velocity. Imported v6 records source/emission and boundary-flux state plus optional MCC identity, gas metadata, effective-table fingerprint, RNG state, and collision counters. Imported v1–v5 remain readable for collision-free runs, while imported MCC restart requires v6. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.

@@ -54,8 +54,10 @@ particle species x y z vx vy vz
 ```
 
 The declared dimension must match the simulation. A 1D1V file requires
-`y = z = vy = vz = 0`; a planar 2D3V file requires `z = 0` while retaining all
-three velocity components. All numbers must be finite. `units` is exactly
+`y = z = vy = vz = 0`; external initialization of the newer 1D3V path is
+intentionally rejected until the interchange contract can declare velocity
+dimensionality without ambiguity. A planar 2D3V file requires `z = 0` while
+retaining all three velocity components. All numbers must be finite. `units` is exactly
 `normalized` or `si` and must match the run. Only `species_constant` weighting
 and time-centered velocities are accepted.
 

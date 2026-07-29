@@ -47,7 +47,7 @@ interpolated and values above the table range use the final tabulated value.
 
 ## AuroraPIC readiness
 
-The first prerequisite is complete:
+The first two bounded prerequisites are complete:
 
 - 1D Dirichlet electrodes accept independent static offsets plus sinusoidal
   amplitude, frequency, and phase;
@@ -55,7 +55,11 @@ The first prerequisite is complete:
 - restart reconstructs the waveform phase from the stored simulation time;
 - `scalars.csv` records the actual Dirichlet `phi_left` and `phi_right`;
 - `examples/rf_electrode_1d.cfg` checks the zero, quarter-cycle, and
-  half-cycle values with a bounded normalized run.
+  half-cycle values with a bounded normalized 1D3V run;
+- `velocity_dimensions = 3` retains transverse velocity through initialization,
+  energy diagnostics, BGK, isotropic elastic/excitation MCC, and deterministic
+  velocity-aware checkpoint/restart while preserving 1D1V as the default;
+- `examples/mcc_relaxation.cfg` exercises the 1D3V MCC command-line path.
 
 The configuration is:
 
@@ -79,22 +83,19 @@ cycle-averaged convergence is implemented.
 
 AuroraPIC must not claim a Turner result until all of these are complete:
 
-1. replace the current 1D1V particle state with a 1D3V path, or provide an
-   equally verified 1D spatial specialization of the multidimensional 3V
-   kernel;
-2. support simultaneous electron-neutral and ion-neutral MCC models in one
+1. support simultaneous electron-neutral and ion-neutral MCC models in one
    discharge;
-3. create equal-weight electron/He+ products during 1D ionization while
+2. create equal-weight electron/He+ products during 1D ionization while
    preserving charge, energy accounting, bounded storage, and restart;
-4. implement the benchmark's two-component He+-He scattering;
-5. import and pin the exact benchmark collision tables with their permitted
+3. implement the benchmark's two-component He+-He scattering;
+4. import and pin the exact benchmark collision tables with their permitted
    redistribution terms and provenance;
-6. report species-resolved electrode current, deposited power, spatial
+5. report species-resolved electrode current, deposited power, spatial
    density, ionization source, and phase/time averages;
-7. implement statistically bounded campaign and chi-squared comparison
+6. implement statistically bounded campaign and chi-squared comparison
    tooling;
-8. implement whole-RF-cycle convergence and phase/time averaging;
-9. run the full case only through an explicit production profile. Case 1
+7. implement whole-RF-cycle convergence and phase/time averaging;
+8. run the full case only through an explicit production profile. Case 1
    alone requires 512,000 steps at the published resolution, so it must never
    become an ordinary laptop/CI regression.
 

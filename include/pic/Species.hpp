@@ -8,7 +8,8 @@
 namespace pic {
 class Species {
 public:
-    explicit Species(SpeciesConfig cfg);
+    explicit Species(
+        SpeciesConfig cfg, std::size_t velocity_dimensions = 1);
     const SpeciesConfig& config() const { return cfg_; }
     const std::string& name() const { return cfg_.name; }
     double charge() const { return cfg_.charge; }
@@ -20,8 +21,12 @@ public:
     void deposit_charge(Grid& grid) const;
     double kinetic_energy() const;
     std::size_t live_count() const;
+    std::size_t velocity_dimensions() const {
+        return velocity_dimensions_;
+    }
 private:
     SpeciesConfig cfg_;
+    std::size_t velocity_dimensions_{1};
     std::vector<Particle> particles_;
 };
 }

@@ -1,10 +1,23 @@
 # AuroraPIC methodology
 
-AuroraPIC v0.1 implements deliberately bounded, auditable electrostatic `1D1V`, planar structured/imported `2D3V`, and structured `3D3V` Particle-in-Cell models for plasma dynamics research and engineering studies.
+AuroraPIC v0.1 implements deliberately bounded, auditable electrostatic
+`1D1V`/`1D3V`, planar structured/imported `2D3V`, and structured `3D3V`
+Particle-in-Cell models for plasma dynamics research and engineering studies.
 
 ## Model
 
-Particles carry position `x`, velocity `vx`, charge, mass, and macro-particle weight. Charge is deposited to a one-dimensional mesh with cloud-in-cell weighting. In 1D CLI configuration, `weight` is the direct macro-particle weight; alternatively, if `weight` is omitted, `density` is converted to `weight = density * initialization_width / particles` so the represented line density is explicit. The electrostatic field is obtained from Poisson's equation,
+Particles carry position `x`, velocity `vx`, charge, mass, and macro-particle
+weight in the backward-compatible 1D1V mode. With
+`velocity_dimensions = 3`, they additionally carry `vy` and `vz`. Position,
+charge deposition, and electrostatic acceleration remain one-dimensional;
+the transverse components participate in initialization, kinetic-energy
+diagnostics, BGK relaxation, isotropic MCC scattering, and restart. Charge is
+deposited to a one-dimensional mesh with cloud-in-cell weighting. In 1D CLI
+configuration, `weight` is the direct macro-particle weight; alternatively,
+if `weight` is omitted, `density` is converted to
+`weight = density * initialization_width / particles` so the represented line
+density is explicit. The electrostatic field is obtained from Poisson's
+equation,
 
 ```text
 d²phi/dx² = -rho / eps0,      E = -dphi/dx
@@ -82,7 +95,7 @@ and `initialization.csv` in the output directory, then aborts before stepping.
 `thermal_velocity` remains the backward-compatible isotropic Gaussian standard
 deviation. Optional `thermal_velocity_x`, `thermal_velocity_y`, and
 `thermal_velocity_z` values override it component by component; 1D1V accepts
-only the x override, while both 2D3V and 3D3V accept all three. Values are
+only the x override, while 1D3V, 2D3V, and 3D3V accept all three. Values are
 velocities in the configured unit system, not temperatures. Converting a
 physical temperature requires the species mass and the documented unit
 contract.
@@ -140,7 +153,8 @@ Imported-mesh quality reporting computes cell-area and edge-length extrema, the 
 ## Collisions
 
 The historical optional BGK velocity-reset model remains available for
-compatibility. The tabulated 1D and imported 2D3V MCC paths evaluate
+compatibility; in 1D3V it redraws all three velocity components. The tabulated
+1D and imported 2D3V MCC paths evaluate
 `nu_i(E) = neutral_density * sigma_i(E) * relative_speed` and use exponential
 null-collision candidate times with a strictly enforced user-supplied maximum
 frequency. Positive-temperature SI runs sample a Maxwellian neutral velocity
@@ -148,10 +162,10 @@ bounded at eight component standard deviations and enforce a conservative
 rate majorant over the reachable relative-speed interval. Elastic events with
 gas mass metadata use
 two-body kinematics that conserve projectile-plus-neutral momentum and energy;
-excitation events remove a configured threshold energy. The legacy 1D path
-without gas mass metadata randomizes velocity sign at fixed speed; the
-imported path samples an isotropic three-dimensional relative direction. Named
-interval/cumulative counts are written to `collisions.csv`. Checkpoint v3 in
+excitation events remove a configured threshold energy. The 1D1V path
+randomizes velocity sign at fixed speed; the 1D3V and imported paths sample
+an isotropic three-dimensional relative direction. Named
+interval/cumulative counts are written to `collisions.csv`. Checkpoint v4 in
 1D and v6 for imported geometry fingerprint effective tables and preserve
 counters. Imported 2D3V ionization removes its threshold, equally partitions
 the remaining primary/secondary electron energy, samples independent isotropic

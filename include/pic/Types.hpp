@@ -91,6 +91,8 @@ struct Particle {
     double v{0.0};          // time-centered velocity used for diagnostics/output
     bool alive{true};
     double v_half{0.0};     // leapfrog velocity at the adjacent half time step
+    double velocity_y{0.0};
+    double velocity_z{0.0};
 };
 
 struct Particle2D {

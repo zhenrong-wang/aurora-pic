@@ -25,6 +25,8 @@ struct SpeciesConfig {
     double init_x_min{0.0};
     double init_x_max{-1.0}; // negative means full domain
     ParticleInitializationConfig initialization{};
+    double drift_velocity_y{0.0};
+    double drift_velocity_z{0.0};
 };
 
 enum class CollisionModelKind { BGK, NullCollision };
@@ -118,6 +120,7 @@ struct SinusoidalVoltageConfig {
 
 struct Config {
     UnitSystemConfig units{};
+    std::size_t velocity_dimensions{1};
     std::size_t nx{128};
     double length{1.0};
     double dt{0.02};

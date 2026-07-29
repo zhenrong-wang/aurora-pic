@@ -85,7 +85,9 @@ int main(int argc, char** argv) {
         }
 
         auto cfg = pic::load_config(argv[1]);
-        std::cout << "AuroraPIC 1D: nx=" << cfg.nx << " length=" << cfg.length << " dt=" << cfg.dt
+        std::cout << "AuroraPIC 1D"
+                  << cfg.velocity_dimensions << "V: nx=" << cfg.nx
+                  << " length=" << cfg.length << " dt=" << cfg.dt
                   << " mode=" << pic::to_string(cfg.mode)
                   << " units=" << pic::to_string(cfg.units.system)
                   << " permittivity=" << cfg.units.permittivity()
