@@ -500,6 +500,34 @@ def load_case_id(path: Path) -> str:
     return parser["global"]["case_id"].strip()
 
 
+def load_runtime_identity(path: Path) -> tuple[int, str]:
+    parser = configparser.ConfigParser(interpolation=None, strict=True)
+    try:
+        parser.read_string(
+            "[global]\n" + path.read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeError, configparser.Error) as error:
+        raise HallComparisonInputError(
+            f"cannot read Hall runtime config {path}: {error}"
+        ) from error
+    global_section = parser["global"]
+    try:
+        seed = global_section.getint("seed")
+    except ValueError as error:
+        raise HallComparisonInputError(
+            f"Hall runtime config {path} requires an integer seed"
+        ) from error
+    if seed is None:
+        raise HallComparisonInputError(
+            f"Hall runtime config {path} requires an integer seed"
+        )
+    if seed < 0 or seed > 4_294_967_295:
+        raise HallComparisonInputError(
+            "Hall runtime seed must be an unsigned 32-bit integer"
+        )
+    return seed, sha256(path)
+
+
 def averaging_identity(
     rows: list[dict[str, str]],
     label: str,
@@ -1036,6 +1064,11 @@ def parse_args() -> argparse.Namespace:
         "--case-manifest", type=Path, required=True
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--runtime-config",
+        type=Path,
+        help="Seeded runtime deck to bind into an ensemble-ready report",
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
@@ -1047,6 +1080,15 @@ def main() -> int:
         report = compare(
             args.output_dir, args.case_manifest, reference
         )
+        if args.runtime_config is not None:
+            seed, runtime_hash = load_runtime_identity(
+                args.runtime_config
+            )
+            report["simulation"].update({
+                "runtime_config": str(args.runtime_config.resolve()),
+                "runtime_config_sha256": runtime_hash,
+                "seed": seed,
+            })
         write_json_atomic(args.output, report, args.overwrite)
     except HallComparisonInputError as error:
         print(f"Hall comparison input error: {error}", file=sys.stderr)

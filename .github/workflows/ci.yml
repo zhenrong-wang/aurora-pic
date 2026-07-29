@@ -63,6 +63,8 @@ jobs:
 
       - name: Validate Hall comparison and preflight
         run: python3 scripts/test_hall_comparison.py
+      - name: Validate Hall seeded ensembles
+        run: python3 scripts/test_hall_ensemble.py
       - name: Validate Hall external source lock
         run: python3 scripts/test_lock_hall_source.py
       - name: Validate Hall reference normalization

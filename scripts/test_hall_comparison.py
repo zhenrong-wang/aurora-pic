@@ -170,6 +170,13 @@ def main() -> int:
     ) as temporary:
         work = Path(temporary)
         output, manifest, case = write_fixture(work)
+        runtime_config = work / "runtime.cfg"
+        runtime_config.write_text(
+            "config_version = 1\n"
+            "dimension = 2\n"
+            "seed = 424242\n",
+            encoding="utf-8",
+        )
         report = work / "comparison.json"
         command = [
             sys.executable,
@@ -178,6 +185,8 @@ def main() -> int:
             str(manifest),
             "--case-manifest",
             str(case),
+            "--runtime-config",
+            str(runtime_config),
             "--output",
             str(report),
         ]
@@ -193,7 +202,10 @@ def main() -> int:
             and len(result["profile_comparisons"]) == 3
             and abs(mode_result["simulation"] - 1.0) < 1e-14
             and len(result["reference"]["profile_sha256"]) == 64
-            and len(result["simulation"]["case_manifest_sha256"]) == 64,
+            and len(result["simulation"]["case_manifest_sha256"]) == 64
+            and result["simulation"]["seed"] == 424242
+            and result["simulation"]["runtime_config_sha256"]
+                == digest(runtime_config),
             "passing Hall comparison report is incomplete",
         )
         existing = run(command)

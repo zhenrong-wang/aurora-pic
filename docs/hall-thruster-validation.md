@@ -148,7 +148,7 @@ the models.
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
 | Cathode/current control | Structured 2D has species-weighted anode-loss current regulation, internal-plane SI eV Maxwellian emission, line-average potential referencing, diagnostics, and checkpoint v7 | Qualify the full-resolution, long-duration benchmark response and sensitivity to cathode temperature |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
-| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, and complex periodic-axis Fourier histories | Add reference-corpus comparison, segment aggregation, convergence tiers, and random-seed ensemble statistics |
+| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, and seeded ensemble statistics | Add long-run segment aggregation and qualify the workflow with real reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
 | Scale-out runtime | Serial/OpenMP only | Add MPI domain decomposition before production-size LANDMARK runs |
 | High-volume output | VTK/XML, CSV, and text restart | Add openPMD/HDF5 or equivalent parallel, chunked output before large campaigns |
@@ -374,6 +374,55 @@ criteria, and two for malformed, ambiguous, unpinned, or mismatched inputs.
 Existing reports are never overwritten without `--overwrite`. The bounded
 regression uses synthetic data only; it tests the comparison machinery, not a
 LANDMARK result.
+
+## Seeded ensemble comparison
+
+A turbulent Hall result cannot be accepted from one favorable seed.
+`prepare_hall_ensemble.py` requires 3–64 unique unsigned 32-bit seeds and
+atomically writes one deck per seed plus `ensemble.json`. It never launches
+the decks, and workstation/production generation retains the same explicit
+cost acknowledgement as a single deck:
+
+```sh
+python3 scripts/prepare_hall_ensemble.py \
+  examples/hall_landmark_axial_azimuthal.case \
+  --tier production \
+  --seeds 104729,130363,155921 \
+  --output-dir campaign/case2-ensemble \
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_RUN
+```
+
+Each completed run is compared separately. Passing `--runtime-config` binds
+the seed and exact deck hash into its comparison report:
+
+```sh
+python3 scripts/compare_hall.py \
+  campaign/case2-ensemble/results/seed_104729 \
+  local/case2-reference/reference.hall-reference \
+  --case-manifest examples/hall_landmark_axial_azimuthal.case \
+  --runtime-config campaign/case2-ensemble/case_seed_104729.cfg \
+  --output campaign/case2-ensemble/comparisons/seed_104729.json
+```
+
+After all declared reports exist:
+
+```sh
+python3 scripts/aggregate_hall_ensemble.py \
+  campaign/case2-ensemble/ensemble.json \
+  --output campaign/case2-ensemble/ensemble-comparison.json
+```
+
+Aggregation rejects changed decks, seed/path mismatches, inconsistent
+reference hashes or averaging windows, different comparison shapes, and
+identical field/species/mode artifact hashes reused across nominally
+independent seeds. For every profile and mode observable it computes the
+ensemble mean, sample standard deviation, standard error, and two-sided 95%
+Student-t interval. The conservative error bound
+`abs(ensemble_mean - reference) + confidence_half_width` must fit inside the
+original comparison threshold, and at least two thirds of individual reports
+must pass by default. A passing reduced tier records
+`physics_claim_eligible = false`; production eligibility still does not by
+itself constitute experimental validation.
 
 ## Resource policy
 

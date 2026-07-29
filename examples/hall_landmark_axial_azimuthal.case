@@ -141,3 +141,5 @@ source_registry = hall_landmark_case2.sources
 source_registry_sha256 = b4ed94fd1fbb9f1372c9a62a5e00fd386c47fa89204efe80b74b0e8fd97e775a
 source_locker = scripts/lock_hall_source.py
 reference_normalizer = scripts/normalize_hall_reference.py
+ensemble_preparer = scripts/prepare_hall_ensemble.py
+ensemble_aggregator = scripts/aggregate_hall_ensemble.py

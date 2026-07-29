@@ -26,6 +26,7 @@ python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 python3 scripts/test_compare_swarm.py
 python3 scripts/test_swarm_campaign.py
 python3 scripts/test_hall_comparison.py
+python3 scripts/test_hall_ensemble.py
 python3 scripts/test_lock_hall_source.py
 python3 scripts/test_normalize_hall_reference.py
 python3 scripts/test_hall_pilot.py build/aurorapic_cli

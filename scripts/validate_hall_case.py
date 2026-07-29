@@ -362,7 +362,11 @@ def main() -> int:
         and comparison["preflight"] == "scripts/preflight_hall.py"
         and comparison["source_locker"] == "scripts/lock_hall_source.py"
         and comparison["reference_normalizer"]
-            == "scripts/normalize_hall_reference.py",
+            == "scripts/normalize_hall_reference.py"
+        and comparison["ensemble_preparer"]
+            == "scripts/prepare_hall_ensemble.py"
+        and comparison["ensemble_aggregator"]
+            == "scripts/aggregate_hall_ensemble.py",
         "Hall comparison/preflight contract drifted",
     )
     for key, manifest_key in (

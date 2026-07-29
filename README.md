@@ -43,6 +43,9 @@ registry and stream-hashes local artifacts without downloading them.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.
+`prepare_hall_ensemble.py` writes three or more independent seeded decks
+atomically; `aggregate_hall_ensemble.py` applies a conservative 95% Student-t
+acceptance test to their checksum-bound comparison reports.
 Use `aurorapic_cli --validate-only <config.cfg>` to parse and validate any
 deck without constructing a simulation or taking a timestep.
 The CLI also blocks configurations exceeding 100 million estimated initial
