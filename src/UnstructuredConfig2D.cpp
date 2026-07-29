@@ -79,6 +79,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "particle_output", "particle_output_interval", "particle_output_stride",
         "particle_sample_count", "checkpoint_output", "checkpoint_interval",
         "checkpoint_path", "restart_path", "initial_state_path",
+        "initial_state_signature",
         "runtime_backend", "runtime_threads",
         "poisson_relative_tolerance", "poisson_absolute_tolerance",
         "poisson_max_iterations",
@@ -276,6 +277,37 @@ bool boolean(const Values& values, const std::string& key, bool fallback) {
                              key + "': " + it->second);
 }
 
+std::optional<std::uint64_t> optional_uint64(
+    const Values& values, const std::string& key) {
+    const auto found = values.find(key);
+    if (found == values.end()) return {};
+    if (found->second.empty() || found->second.front() == '-') {
+        throw std::runtime_error(
+            "invalid unsigned 64-bit value for unstructured key '" +
+            key + "'");
+    }
+    try {
+        std::size_t consumed = 0;
+        const int base =
+            found->second.size() > 2 &&
+                    found->second[0] == '0' &&
+                    (found->second[1] == 'x' ||
+                     found->second[1] == 'X')
+                ? 16
+                : 10;
+        const auto value = std::stoull(
+            found->second, &consumed, base);
+        if (consumed != found->second.size()) {
+            throw std::invalid_argument("trailing");
+        }
+        return static_cast<std::uint64_t>(value);
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "invalid unsigned 64-bit value for unstructured key '" +
+            key + "': " + found->second);
+    }
+}
+
 InitializationAcceptanceConfig parse_initialization_acceptance(
     const Values& values) {
     InitializationAcceptanceConfig result;
@@ -445,10 +477,17 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 result.initial_state_path;
         }
     }
+    result.initial_state_signature = optional_uint64(
+        global, "initial_state_signature");
     if (!result.restart_path.empty() &&
         !result.initial_state_path.empty()) {
         throw std::runtime_error(
             "unstructured restart_path and initial_state_path are mutually exclusive");
+    }
+    if (result.initial_state_signature &&
+        result.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "unstructured initial_state_signature requires initial_state_path");
     }
     result.poisson.relative_tolerance = number<double>(
         global, "poisson_relative_tolerance", result.poisson.relative_tolerance);

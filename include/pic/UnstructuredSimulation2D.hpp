@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pic/Collision.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/UnstructuredFieldSolver2D.hpp"
@@ -97,6 +98,7 @@ struct UnstructuredSimulation2DConfig {
     std::filesystem::path checkpoint_path;
     std::filesystem::path restart_path;
     std::filesystem::path initial_state_path;
+    std::optional<std::uint64_t> initial_state_signature{};
     RuntimePolicy runtime{};
     InitializationAcceptanceConfig initialization_acceptance{};
     UnstructuredPoissonOptions2D poisson{};
@@ -263,6 +265,7 @@ private:
     double time_{0.0};
     std::size_t step_{0};
     bool initialized_{false};
+    ExternalParticleStateMetadata initial_state_metadata_{};
 };
 
 bool config_uses_unstructured_mesh_2d(const std::filesystem::path& path);

@@ -1,6 +1,7 @@
 #pragma once
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Species3D.hpp"
 #include <filesystem>
@@ -56,6 +57,7 @@ struct Simulation3DConfig {
     std::filesystem::path checkpoint_path{}; // empty writes output_dir/checkpoint_<step>.apc
     std::filesystem::path restart_path{};
     std::filesystem::path initial_state_path{};
+    std::optional<std::uint64_t> initial_state_signature{};
     RuntimePolicy runtime{};
     InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<Species3DConfig> species{};
@@ -90,5 +92,6 @@ private:
     std::size_t step_{0};
     BoundaryLoss3D boundary_losses_{};
     bool initialized_{false};
+    ExternalParticleStateMetadata initial_state_metadata_{};
 };
 }

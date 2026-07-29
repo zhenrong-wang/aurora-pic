@@ -3,6 +3,7 @@
 #include "pic/Config.hpp"
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
+#include "pic/ParticleState.hpp"
 #include "pic/Species.hpp"
 #include <filesystem>
 #include <memory>
@@ -47,5 +48,6 @@ private:
     double time_{0.0};
     std::size_t step_{0};
     bool initialized_{false};
+    ExternalParticleStateMetadata initial_state_metadata_{};
 };
 }

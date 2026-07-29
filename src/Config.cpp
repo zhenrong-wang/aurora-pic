@@ -116,6 +116,34 @@ bool parse_bool(const KeyValue& kv, const std::string& key, bool def) {
     throw std::runtime_error("invalid boolean value for '" + key + "': '" + it->second + "'");
 }
 
+std::optional<std::uint64_t> parse_optional_uint64(
+    const KeyValue& values, const std::string& key) {
+    const auto found = values.find(key);
+    if (found == values.end()) return {};
+    if (found->second.empty() || found->second.front() == '-') {
+        throw std::runtime_error(
+            "invalid unsigned 64-bit value for '" + key + "'");
+    }
+    try {
+        std::size_t parsed = 0;
+        const int base =
+            found->second.size() > 2 &&
+                    found->second[0] == '0' &&
+                    (found->second[1] == 'x' ||
+                     found->second[1] == 'X')
+                ? 16
+                : 10;
+        const auto value = std::stoull(
+            found->second, &parsed, base);
+        require_full_parse(found->second, parsed, key);
+        return static_cast<std::uint64_t>(value);
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "invalid unsigned 64-bit value for '" + key +
+            "': '" + found->second + "'");
+    }
+}
+
 Boundary parse_boundary(const KeyValue& kv, Boundary def) {
     const auto value = lower(as<std::string>(kv, "boundary", to_string(def)));
     if (value == "periodic") return Boundary::Periodic;
@@ -350,6 +378,11 @@ void validate_config(const Config& cfg) {
         throw std::runtime_error(
             "restart_path and initial_state_path are mutually exclusive");
     }
+    if (cfg.initial_state_signature &&
+        cfg.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "initial_state_signature requires initial_state_path");
+    }
     if (cfg.nx < 3) throw std::runtime_error("nx must be at least 3");
     validate_positive(cfg.length, "length");
     validate_positive(cfg.dt, "dt");
@@ -488,6 +521,11 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         throw std::runtime_error(
             "2D restart_path and initial_state_path are mutually exclusive");
     }
+    if (cfg.initial_state_signature &&
+        cfg.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "2D initial_state_signature requires initial_state_path");
+    }
     if (cfg.nx < 3) throw std::runtime_error("2D nx must be at least 3");
     if (cfg.ny < 3) throw std::runtime_error("2D ny must be at least 3");
     validate_positive(cfg.length_x, "length_x");
@@ -549,6 +587,11 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
         !cfg.initial_state_path.empty()) {
         throw std::runtime_error(
             "3D restart_path and initial_state_path are mutually exclusive");
+    }
+    if (cfg.initial_state_signature &&
+        cfg.initial_state_path.empty()) {
+        throw std::runtime_error(
+            "3D initial_state_signature requires initial_state_path");
     }
     if (cfg.nx < 3) throw std::runtime_error("3D nx must be at least 3");
     if (cfg.ny < 3) throw std::runtime_error("3D ny must be at least 3");
@@ -685,6 +728,7 @@ Config load_config(const std::string& path) {
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "boundary", "mode", "dimension", "config_version", "checkpoint_output", "checkpoint_interval",
         "checkpoint_path", "restart_path", "initial_state_path",
+        "initial_state_signature",
         "runtime_backend", "runtime_threads",
         "units", "relative_permittivity",
         "initialization_max_relative_charge_imbalance",
@@ -765,6 +809,8 @@ Config load_config(const std::string& path) {
             path, as<std::string>(
                       global, "initial_state_path", ""));
     }
+    cfg.initial_state_signature = parse_optional_uint64(
+        global, "initial_state_signature");
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);
@@ -877,6 +923,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path",
         "restart_path", "initial_state_path",
+        "initial_state_signature",
         "runtime_backend", "runtime_threads", "magnetic_field_x",
         "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
@@ -942,6 +989,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             path, as<std::string>(
                       global, "initial_state_path", ""));
     }
+    cfg.initial_state_signature = parse_optional_uint64(
+        global, "initial_state_signature");
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);
@@ -1030,6 +1079,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path",
         "restart_path", "initial_state_path",
+        "initial_state_signature",
         "runtime_backend", "runtime_threads", "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
@@ -1095,6 +1145,8 @@ Simulation3DConfig load_config_3d(const std::string& path) {
             path, as<std::string>(
                       global, "initial_state_path", ""));
     }
+    cfg.initial_state_signature = parse_optional_uint64(
+        global, "initial_state_signature");
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);

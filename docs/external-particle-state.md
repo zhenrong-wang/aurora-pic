@@ -11,6 +11,8 @@ Configure it with a global path resolved relative to the config file:
 
 ```ini
 initial_state_path = external_state_1d.aps
+# Optional decimal or 0x-prefixed canonical semantic signature:
+# initial_state_signature = 123456789
 ```
 
 `initial_state_path` and `restart_path` are mutually exclusive. Every
@@ -19,6 +21,14 @@ allowed, and each record count must exactly match that species' configured
 `particles` value. Charge, mass, and constant macro-particle weight remain
 species configuration properties. Per-particle weights are not supported in
 version 1.
+
+`initial_state_signature` pins the canonical 64-bit FNV-1a semantic signature
+of the declared metadata, sorted species populations, and every binary64
+position/velocity value. Decimal and `0x`-prefixed values are accepted. A
+changed record, species name, population, dimension, or unit contract fails
+before particle loading when a signature is pinned. The signature is a
+deterministic integrity mechanism, not a cryptographic authenticity
+guarantee.
 
 ## Version 1 grammar
 
@@ -61,7 +71,15 @@ Poisson problem, and derives leapfrog or Boris half-step velocities from the
 time-centered input velocities and self-consistent electric field. The
 realized state is then subject to the same initialization acceptance gates as
 generated and restarted states. `initialization.csv` identifies the source,
-loading, and density profile as `external`.
+loading, and density profile as `external`. External runs also write
+`initial_state_metadata.txt` with the resolved source path, realized signature,
+optional expected signature, dimension, units, and particle count.
+
+The public `write_external_particle_state` API emits deterministic version 1
+files in sorted species order with round-trip-stable binary64 text precision.
+It refuses to replace an existing file unless its caller explicitly enables
+overwrite. `external_particle_state_signature` lets preprocessors compute the
+same semantic signature before writing a run configuration.
 
 ## Scope and high-volume path
 

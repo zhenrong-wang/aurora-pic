@@ -127,8 +127,10 @@ audit written before any time integration. Portable external particle state
 now forms the fifth slice: a strict `.aps` version 1 backend loads
 time-centered records across structured 1D/2D/3D and imported 2D, validates
 units/species/counts/geometry, rebuilds the self-consistent half step, and
-feeds the same audits and acceptance gates. Chunked openPMD/HDF5 storage is
-the next scalability extension to this backend-neutral contract.
+feeds the same audits and acceptance gates. Deterministic writing, canonical
+semantic signatures, optional signature pinning, and explicit source
+provenance now harden that interchange contract. Chunked openPMD/HDF5 storage
+is the next scalability extension to this backend-neutral contract.
 The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining

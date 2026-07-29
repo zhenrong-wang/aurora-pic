@@ -355,6 +355,7 @@ int main() {
                     << "length_x = 1\nlength_y = 1\n"
                     << "dt = 0.01\n"
                     << "initial_state_path = initial_particles.aps\n"
+                    << "initial_state_signature = 0x2a\n"
                     << "initialization_max_relative_charge_imbalance = 0.01\n"
                     << "initialization_max_relative_current_imbalance = 0.02\n"
                     << "initialization_max_relative_pair_imbalance = 0.03\n"
@@ -403,7 +404,9 @@ int main() {
                     config.initialization_acceptance.charge_pairs.front()
                             .second_species == "ions" &&
                     config.initial_state_path.filename() ==
-                        "initial_particles.aps",
+                        "initial_particles.aps" &&
+                    config.initial_state_signature.value_or(0) ==
+                        42,
                 "2D config did not parse initialization acceptance gates");
         }
 
@@ -423,6 +426,7 @@ int main() {
                     << "mesh_file = " << mesh_path.string() << '\n'
                     << "dt = 0.01\nsteps = 0\n"
                     << "initial_state_path = imported_particles.aps\n"
+                    << "initial_state_signature = 43\n"
                     << "initialization_max_relative_pair_imbalance = 0.05\n"
                     << "initialization_charge_pairs = quiet:ions\n"
                     << "[boundary.inlet]\n"
@@ -464,7 +468,9 @@ int main() {
                     parsed.initialization_acceptance.charge_pairs.size() ==
                         1 &&
                     parsed.initial_state_path.filename() ==
-                        "imported_particles.aps",
+                        "imported_particles.aps" &&
+                    parsed.initial_state_signature.value_or(0) ==
+                        43,
                 "imported config did not parse initialization_region");
         }
 
@@ -636,8 +642,52 @@ int main() {
             require(
                 state.spatial_dimension == 1 &&
                     state.particle_count == 2 &&
-                    state.species.at("electrons").size() == 2,
+                    state.species.at("electrons").size() == 2 &&
+                    state.signature != 0,
                 "external particle-state loader lost metadata or records");
+            const auto roundtrip_path =
+                std::filesystem::path(
+                    "test_external_particle_state_roundtrip.aps");
+            std::filesystem::remove(roundtrip_path);
+            pic::write_external_particle_state(
+                roundtrip_path, state);
+            const auto roundtrip =
+                pic::load_external_particle_state(
+                    roundtrip_path, 2);
+            require(
+                roundtrip.signature == state.signature,
+                "external particle-state round trip changed its signature");
+            require_throws(
+                [&] {
+                    pic::write_external_particle_state(
+                        roundtrip_path, state);
+                },
+                "external particle-state writer overwrote a file without permission");
+            auto mutated = state;
+            mutated.species.at("electrons")[0]
+                .velocity.x += 0.25;
+            require(
+                pic::external_particle_state_signature(
+                    mutated) != state.signature,
+                "external particle-state signature ignored a changed record");
+            pic::write_external_particle_state(
+                roundtrip_path, mutated, true);
+            require(
+                pic::load_external_particle_state(
+                    roundtrip_path, 2).signature ==
+                    pic::external_particle_state_signature(
+                        mutated),
+                "explicit external particle-state overwrite did not round trip");
+            require_throws(
+                [&] {
+                    (void)pic::load_validated_external_particle_state(
+                        state_path, 1,
+                        pic::UnitSystem::Normalized,
+                        {{"electrons", 2}}, "test",
+                        state.signature + 1);
+                },
+                "external particle-state signature mismatch was accepted");
+            std::filesystem::remove(roundtrip_path);
             pic::validate_external_particle_state(
                 state, 1, pic::UnitSystem::Normalized,
                 {{"electrons", 2}}, "test");
@@ -679,6 +729,8 @@ int main() {
             config.steps = 0;
             config.output_dir = output_directory.string();
             config.initial_state_path = state_path;
+            config.initial_state_signature =
+                state.signature;
             config.species = {pic::SpeciesConfig{}};
             config.species.front().particles = 2;
             config.species.front().thermal_velocity = 0.0;
@@ -700,6 +752,20 @@ int main() {
                             "\"external\",1,\"electrons\",\"external\",\"external\"") !=
                     std::string::npos,
                 "1D external state was not identified in its audit");
+            const std::string state_metadata =
+                read_text(
+                    output_directory /
+                    "initial_state_metadata.txt");
+            require(
+                state_metadata.find(
+                    "signature " +
+                    std::to_string(state.signature)) !=
+                    std::string::npos &&
+                    state_metadata.find(
+                        "expected_signature " +
+                        std::to_string(state.signature)) !=
+                    std::string::npos,
+                "external initial-state provenance metadata is incomplete");
             std::filesystem::remove_all(output_directory);
             pic::Config bounded_config = config;
             bounded_config.output_dir =

@@ -3,7 +3,9 @@
 #include "pic/Runtime.hpp"
 #include "pic/Types.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -130,6 +132,7 @@ struct Config {
     std::string checkpoint_path{};      // empty writes output_dir/checkpoint_<step>.apc
     std::string restart_path{};
     std::filesystem::path initial_state_path{};
+    std::optional<std::uint64_t> initial_state_signature{};
     RuntimePolicy runtime{};
     InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<SpeciesConfig> species{};

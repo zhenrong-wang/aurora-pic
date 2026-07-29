@@ -382,6 +382,7 @@ All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for det
 - `checkpoint_path`: optional fixed checkpoint file path. If omitted, checkpoints are written as `output_dir/checkpoint_<step>.apc`. If provided, each checkpoint write updates that same path.
 - `restart_path`: optional checkpoint file to load before the run loop starts. The run resumes from the checkpoint step/time and continues until the configured `steps`/`max_steps` limit.
 - `initial_state_path`: optional versioned `.aps` particle initial state, resolved relative to the config file. It starts at step/time zero, validates dimension, units, species, counts, finite records, and geometry, and rebuilds the field and half-step state. It cannot be combined with `restart_path`.
+- `initial_state_signature`: optional decimal or `0x`-prefixed canonical 64-bit semantic signature for `initial_state_path`. A mismatch rejects changed input before loading. External runs write the resolved source and realized/expected signatures to `initial_state_metadata.txt`.
 
 ## Run modes and termination
 

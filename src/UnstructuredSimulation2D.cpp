@@ -302,6 +302,11 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         throw std::invalid_argument(
             "unstructured restart_path and initial_state_path are mutually exclusive");
     }
+    if (config_.initial_state_signature &&
+        config_.initial_state_path.empty()) {
+        throw std::invalid_argument(
+            "unstructured initial_state_signature requires initial_state_path");
+    }
     validate_initialization_acceptance(
         config_.initialization_acceptance,
         "unstructured initialization acceptance config");
@@ -1019,7 +1024,10 @@ void UnstructuredSimulation2D::initialize() {
             load_validated_external_particle_state(
                 config_.initial_state_path, 2,
                 config_.units.system, expected,
-                "unstructured 2D simulation");
+                "unstructured 2D simulation",
+                config_.initial_state_signature);
+        initial_state_metadata_ =
+            external_particle_state_metadata(*external_state);
     }
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         auto& particles = species_[species_id].particles();
@@ -2390,6 +2398,14 @@ UnstructuredRunSummary2D UnstructuredSimulation2D::run() {
     }
     std::filesystem::create_directories(config_.output_dir);
     write_unit_metadata(config_.output_dir, config_.units, 2);
+    if (!config_.initial_state_path.empty()) {
+        write_external_particle_state_metadata(
+            config_.output_dir /
+                "initial_state_metadata.txt",
+            config_.initial_state_path,
+            initial_state_metadata_,
+            config_.initial_state_signature);
+    }
     std::vector<InitializationSpeciesMoments> initialization_moments;
     initialization_moments.reserve(species_.size());
     for (std::size_t species_id = 0;

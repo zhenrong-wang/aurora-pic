@@ -253,6 +253,16 @@ def check_external_state_1d(output_dir: Path) -> None:
             for row in initialization_rows),
         "external-state example initialization source is not external",
     )
+    state_metadata = require_file(
+        output_dir / "initial_state_metadata.txt"
+    ).read_text(encoding="utf-8")
+    require(
+        "format aurorapic_particle_state\n" in state_metadata and
+        "version 1\n" in state_metadata and
+        re.search(r"^signature [1-9][0-9]*$", state_metadata, re.MULTILINE) and
+        "expected_signature 15689689587873937355\n" in state_metadata,
+        "external-state example provenance metadata is incomplete",
+    )
 
 
 def check_sheath_steady(output_dir: Path) -> None:

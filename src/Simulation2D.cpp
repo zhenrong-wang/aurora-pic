@@ -165,6 +165,11 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
         throw std::invalid_argument(
             "2D restart_path and initial_state_path are mutually exclusive");
     }
+    if (cfg_.initial_state_signature &&
+        cfg_.initial_state_path.empty()) {
+        throw std::invalid_argument(
+            "2D initial_state_signature requires initial_state_path");
+    }
     validate_initialization_acceptance(
         cfg_.initialization_acceptance,
         "2D initialization acceptance config");
@@ -214,7 +219,10 @@ void Simulation2D::initialize() {
             load_validated_external_particle_state(
                 cfg_.initial_state_path, 2,
                 cfg_.units.system, expected,
-                "2D simulation");
+                "2D simulation",
+                cfg_.initial_state_signature);
+        initial_state_metadata_ =
+            external_particle_state_metadata(state);
         for (auto& species : species_) {
             const auto& records =
                 state.species.at(species.name());
@@ -452,6 +460,14 @@ RunSummary2D Simulation2D::run() {
     else initialize();
 
     write_unit_metadata(cfg_.output_dir, cfg_.units, 2);
+    if (!cfg_.initial_state_path.empty()) {
+        write_external_particle_state_metadata(
+            cfg_.output_dir /
+                "initial_state_metadata.txt",
+            cfg_.initial_state_path,
+            initial_state_metadata_,
+            cfg_.initial_state_signature);
+    }
     std::vector<InitializationSpeciesMoments> initialization_moments;
     initialization_moments.reserve(species_.size());
     for (const auto& species : species_) {

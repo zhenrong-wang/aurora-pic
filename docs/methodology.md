@@ -101,9 +101,13 @@ The current imported quiet-start implementation intentionally rejects a
 rectangular `init_x_*`/`init_y_*` clip instead of silently degrading to random
 or biased rejection sampling. Random loading continues to support those
 bounds. The versioned external `.aps` path validates time-centered particle
-records and then rebuilds the field-consistent half step. Physical-temperature
-inputs, general tabulated profiles, and a chunked openPMD/HDF5 particle-state
-backend remain subsequent initial-condition milestones.
+records and then rebuilds the field-consistent half step. Its deterministic
+semantic signature can be pinned in configuration, and external runs record
+the resolved source plus realized signature in `initial_state_metadata.txt`.
+The public writer preserves that signature across a text round trip.
+Physical-temperature inputs, general tabulated profiles, and a chunked
+openPMD/HDF5 particle-state backend remain subsequent initial-condition
+milestones.
 
 ## Field solvers
 
