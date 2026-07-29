@@ -60,3 +60,13 @@ max_steps = 4
 max_threads = 1
 physics_claim = none
 missing_physics = published_population,published_resolution,long_time_averaging
+
+[diagnostics]
+profile_axis = x
+mode_axis = y
+reduced_max_mode = 3
+field_profiles = resolved_field_profiles.csv
+species_profiles = resolved_species_profiles.csv
+mode_history = resolved_modes.csv
+field_time_average = resolved_field_time_average.csv
+species_time_average = resolved_species_time_average.csv

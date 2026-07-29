@@ -3,6 +3,7 @@
 #include "pic/FieldSolver.hpp"
 #include "pic/ParticleState.hpp"
 #include "pic/PrescribedField.hpp"
+#include "pic/ResolvedDiagnostics2D.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Species2D.hpp"
 #include <filesystem>
@@ -112,6 +113,7 @@ struct Simulation2DConfig {
     std::size_t particle_output_interval{0}; // zero inherits output_interval
     std::size_t particle_output_stride{1};
     std::size_t particle_sample_count{0}; // zero writes all stride-selected particles
+    ResolvedDiagnostics2DConfig resolved_diagnostics{};
     bool checkpoint_output{false};
     std::size_t checkpoint_interval{0}; // zero inherits output_interval
     std::filesystem::path checkpoint_path{}; // empty writes output_dir/checkpoint_<step>.apc

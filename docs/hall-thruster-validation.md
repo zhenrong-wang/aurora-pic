@@ -148,7 +148,7 @@ the models.
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
 | Cathode/current control | Structured 2D has species-weighted anode-loss current regulation, internal-plane SI eV Maxwellian emission, line-average potential referencing, diagnostics, and checkpoint v7 | Qualify the full-resolution, long-duration benchmark response and sensitivity to cathode temperature |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
-| HET diagnostics | Scalar and field snapshots exist | Add transverse/time averages, species moments, current components, Fourier spectra, and ensemble statistics |
+| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, and complex periodic-axis Fourier histories | Add reference-corpus comparison, segment aggregation, convergence tiers, and random-seed ensemble statistics |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
 | Scale-out runtime | Serial/OpenMP only | Add MPI domain decomposition before production-size LANDMARK runs |
 | High-volume output | VTK/XML, CSV, and text restart | Add openPMD/HDF5 or equivalent parallel, chunked output before large campaigns |
@@ -230,6 +230,12 @@ that plane. Focused regressions verify unequal-weight charge conversion,
 potential-gauge correction, and deterministic checkpoint continuation. The
 manifest also pins the published `10 eV` electron and `0.5 eV` Xe+
 temperatures for both initial loading and pair creation; strict SI conversion
-and sampled three-component moment regressions guard the contract. The next H1
-slice is production time/azimuth averaging and current/mode diagnostics,
-followed by solver scaling.
+and sampled three-component moment regressions guard the contract. The reduced
+runtime now emits five bounded axial profile/moment/current samples,
+trapezoidal field and density-weighted species averages, and complex azimuthal
+mode histories through mode three. Manufactured regressions pin the
+normalization and complex Fourier convention, while the manifest and example
+smoke pin the artifact schema. These diagnostics enable comparison but do not
+constitute one: the next H2-enabling slice is a checksum-pinned external
+reference comparator and resource/convergence campaign preflight, followed by
+the scalable mixed-topology solver and MPI required for the published run.

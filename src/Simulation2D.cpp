@@ -307,6 +307,10 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
             cfg_.boundary_config),
       solver_(cfg_.units.permittivity()),
       rng_(cfg_.seed) {
+    if (cfg_.resolved_diagnostics.enabled &&
+        cfg_.resolved_diagnostics.interval == 0) {
+        cfg_.resolved_diagnostics.interval = cfg_.output_interval;
+    }
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) cfg_.checkpoint_interval = cfg_.output_interval;
     if (!cfg_.restart_path.empty() &&
         !cfg_.initial_state_path.empty()) {
@@ -329,6 +333,40 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
     }
     if (cfg_.output_interval == 0) throw std::invalid_argument("2D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("2D particle_output_stride must be positive");
+    if (cfg_.resolved_diagnostics.enabled &&
+        cfg_.resolved_diagnostics.interval == 0) {
+        throw std::invalid_argument(
+            "2D resolved diagnostic interval must be positive");
+    }
+    if (cfg_.resolved_diagnostics.enabled) {
+        const auto profile_axis =
+            cfg_.resolved_diagnostics.profile_axis;
+        const auto mode_axis =
+            cfg_.resolved_diagnostics.mode_axis;
+        if (profile_axis == CoordinateAxis::Z ||
+            mode_axis == CoordinateAxis::Z ||
+            profile_axis == mode_axis) {
+            throw std::invalid_argument(
+                "2D resolved diagnostics require distinct x/y profile and mode axes");
+        }
+        const Boundary mode_boundary =
+            mode_axis == CoordinateAxis::X
+                ? mesh_.boundary_x()
+                : mesh_.boundary_y();
+        const std::size_t mode_nodes =
+            mode_axis == CoordinateAxis::X
+                ? mesh_.nx()
+                : mesh_.ny();
+        if (mode_boundary != Boundary::Periodic) {
+            throw std::invalid_argument(
+                "2D resolved diagnostic mode axis must be periodic");
+        }
+        if (cfg_.resolved_diagnostics.max_mode >
+            mode_nodes / 2) {
+            throw std::invalid_argument(
+                "2D resolved max_mode exceeds the mode-axis Nyquist limit");
+        }
+    }
     if (!std::isfinite(cfg_.magnetic_field_x) ||
         !std::isfinite(cfg_.magnetic_field_y) ||
         !std::isfinite(cfg_.magnetic_field_z)) {
@@ -1744,6 +1782,27 @@ RunSummary2D Simulation2D::run() {
     Diagnostics2D diag(
         cfg_.output_dir, species_, cfg_.units.permittivity(),
         cfg_.out_of_plane_depth);
+    std::unique_ptr<ResolvedDiagnostics2D> resolved_diagnostics;
+    if (cfg_.resolved_diagnostics.enabled) {
+        resolved_diagnostics =
+            std::make_unique<ResolvedDiagnostics2D>(
+                cfg_.output_dir, cfg_.resolved_diagnostics,
+                mesh_, species_, cfg_.units.system,
+                cfg_.out_of_plane_depth);
+    }
+    const auto write_resolved_sample = [&]() {
+        if (!resolved_diagnostics ||
+            step_ < cfg_.resolved_diagnostics.start_step) {
+            return;
+        }
+        const std::size_t offset =
+            step_ - cfg_.resolved_diagnostics.start_step;
+        if (offset % cfg_.resolved_diagnostics.interval != 0) {
+            return;
+        }
+        (void)resolved_diagnostics->sample(
+            step_, time_, mesh_, species_);
+    };
     std::ofstream source_output;
     if (!sources_.empty()) {
         source_output.open(cfg_.output_dir / "sources.csv");
@@ -1874,6 +1933,7 @@ RunSummary2D Simulation2D::run() {
     write_source_sample();
     write_current_source_sample();
     write_potential_reference_sample();
+    write_resolved_sample();
     if (cfg_.vtk_output) write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
     if (cfg_.particle_output) {
         diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
@@ -1901,6 +1961,7 @@ RunSummary2D Simulation2D::run() {
                              adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);
             if (reached_steady) summary.steady_state_reached = true;
         }
+        write_resolved_sample();
         if (cfg_.particle_output && (step_ % particle_interval == 0 || step_ == limit || reached_steady)) {
             diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
         }
@@ -1913,6 +1974,9 @@ RunSummary2D Simulation2D::run() {
     summary.steps_completed = step_;
     summary.final_time = time_;
     if (summary.final_sample.step != step_) summary.final_sample = sample();
+    if (resolved_diagnostics) {
+        resolved_diagnostics->write_time_averages();
+    }
     return summary;
 }
 

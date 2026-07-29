@@ -101,7 +101,7 @@ python3 scripts/verify_examples.py build/aurorapic_cli --keep-output
 - `UnstructuredSimulation2D`: imported-geometry runtime with area-uniform domain seeding, optional rectangular bounds or named physical cell-region initialization, deterministic tagged-boundary particle injection, weight-aware secondary emission, cached electrostatic field solves, electrostatic/Boris particle advance, earliest-crossing geometry-aware absorbing or reflecting boundary policies, species-resolved impact flux diagnostics, transient/steady execution, topology-checked restart, particle samples, and unstructured `.vtu` field output.
 - `Species2D`: explicit `Particle2D` storage with planar position and three-component velocity initialization, CIC deposition, full-velocity kinetic-energy accounting, and live-particle accounting.
 - `Simulation2D`: deposit -> solve -> particle push/drift -> redeposit/resolve loop using the existing 2D Poisson solvers, with per-side particle boundary policies (`auto`, `absorbing`, `reflecting`, `periodic`). The default zero magnetic field uses the electrostatic leapfrog pusher; any nonzero uniform component or tabulated magnetic profile switches particles to the 2D3V Boris rotation/kick.
-- `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, and optional sampled particle CSV files.
+- `Diagnostics2D`: scalar time histories in `scalars.csv`, cumulative absorbed-particle counts by side, optional sampled particle CSV files, and opt-in resolved profile/moment/mode diagnostics for structured meshes.
 - `write_legacy_vtk` / `write_vtk_xml`: structured-grid VTK writers for `rho`, `phi`, and electric-field vectors on `Mesh2D`.
 
 When `vtk_output = true`, 2D runs write field snapshots under `output_dir` for ParaView or VisIt. `vtk_format` selects `legacy` (`fields_<step>.vtk`, the default), `xml`/`vts` (`fields_<step>.vts`), or `both`.
@@ -158,6 +158,44 @@ Particle-output controls:
 - `particle_output_interval`: particle CSV interval; `0` inherits `output_interval`.
 - `particle_output_stride`: write every Nth particle per species traversal; must be positive.
 - `particle_sample_count`: maximum rows across all species for each file; `0` writes all stride-selected particles.
+
+Structured 2D can additionally emit resolved kinetic diagnostics:
+
+```ini
+resolved_diagnostics = true
+resolved_diagnostic_interval = 10
+resolved_diagnostic_start_step = 1000
+resolved_profile_axis = x
+resolved_mode_axis = y
+resolved_max_mode = 32
+```
+
+The profile and mode axes must be distinct; the mode axis must be periodic,
+and `resolved_max_mode` cannot exceed its mesh Nyquist limit. An interval of
+zero inherits `output_interval`. `resolved_field_profiles.csv` contains the
+transverse mean potential, electric field, and charge density at every profile
+node. `resolved_species_profiles.csv` contains CIC-consistent represented
+number density, three mean velocities, three thermal speeds, scalar SI
+temperature in eV, and all three current-density components for each species.
+Normalized runs write `nan` for temperature because they have no implicit
+electron-volt scale.
+
+`resolved_modes.csv` records the real, imaginary, and one-sided amplitude of
+periodic-axis Fourier coefficients for charge density, both electric-field
+components, and each species' number density and three currents. Particles
+are accumulated onto the periodic diagnostic grid once per sample before the
+mode transform, so cost scales with particles plus mesh points times requested
+modes, rather than particles times modes.
+
+The final `resolved_field_time_average.csv` and
+`resolved_species_time_average.csv` use trapezoidal integration over the
+actual resolved-sample times. Species averages integrate density-weighted
+first and second velocity moments before deriving mean velocity and
+temperature. Their start/end time, duration, and sample count make the
+averaging window explicit. A restarted run creates a new output segment and
+therefore a segment-local average; production campaign tooling must combine
+segments using their recorded durations rather than averaging averages
+equally.
 
 ## 3D status
 

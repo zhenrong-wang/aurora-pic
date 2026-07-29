@@ -1535,6 +1535,9 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary",
         "boundary_x", "boundary_y", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
+        "resolved_diagnostics", "resolved_diagnostic_interval",
+        "resolved_diagnostic_start_step", "resolved_profile_axis",
+        "resolved_mode_axis", "resolved_max_mode",
         "max_particles_per_species",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path",
         "restart_path", "initial_state_path",
@@ -1632,6 +1635,28 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.particle_output_interval = as<std::size_t>(global, "particle_output_interval", cfg.particle_output_interval);
     cfg.particle_output_stride = as<std::size_t>(global, "particle_output_stride", cfg.particle_output_stride);
     cfg.particle_sample_count = as<std::size_t>(global, "particle_sample_count", cfg.particle_sample_count);
+    cfg.resolved_diagnostics.enabled = parse_bool(
+        global, "resolved_diagnostics",
+        cfg.resolved_diagnostics.enabled);
+    cfg.resolved_diagnostics.interval = as<std::size_t>(
+        global, "resolved_diagnostic_interval",
+        cfg.resolved_diagnostics.interval);
+    cfg.resolved_diagnostics.start_step = as<std::size_t>(
+        global, "resolved_diagnostic_start_step",
+        cfg.resolved_diagnostics.start_step);
+    if (global.count("resolved_profile_axis")) {
+        cfg.resolved_diagnostics.profile_axis =
+            parse_coordinate_axis(as<std::string>(
+                global, "resolved_profile_axis", "x"));
+    }
+    if (global.count("resolved_mode_axis")) {
+        cfg.resolved_diagnostics.mode_axis =
+            parse_coordinate_axis(as<std::string>(
+                global, "resolved_mode_axis", "y"));
+    }
+    cfg.resolved_diagnostics.max_mode = as<std::size_t>(
+        global, "resolved_max_mode",
+        cfg.resolved_diagnostics.max_mode);
     cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path.string());
@@ -1929,6 +1954,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         parse_density_profile(
             block.values, source.spatial_profile, 2);
         cfg.sources.push_back(std::move(source));
+    }
+    if (cfg.resolved_diagnostics.enabled &&
+        cfg.resolved_diagnostics.interval == 0) {
+        cfg.resolved_diagnostics.interval = cfg.output_interval;
     }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config_2d(cfg);

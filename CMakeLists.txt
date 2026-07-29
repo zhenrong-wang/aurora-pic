@@ -14,6 +14,7 @@ add_library(aurorapic
   src/Collision.cpp
   src/Config.cpp
   src/Diagnostics.cpp
+  src/ResolvedDiagnostics2D.cpp
   src/FieldSolver.cpp
   src/GasDataset.cpp
   src/Grid.cpp

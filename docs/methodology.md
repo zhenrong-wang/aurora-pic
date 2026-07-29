@@ -187,6 +187,25 @@ constant potential offset after each Poisson solve and leaves the electric
 field invariant. Checkpoint v7 preserves boundary counters, controller
 accumulator, diagnostics, RNG state, and both control definitions.
 
+Opt-in structured-2D resolved diagnostics reduce fields along one profile axis
+using nodal control-width quadrature and deposit species number plus first and
+second three-velocity moments to the same profile nodes with one-dimensional
+CIC weights. Number density uses the node control volume, including the
+configured extrusion depth. Mean velocity, component thermal speeds, scalar
+SI temperature, and charge-current density are derived from those deposited
+moments. Time averages trapezoidally integrate the field profiles and raw
+density-weighted particle moments over the actual sample times before deriving
+the averaged observables.
+
+On the distinct periodic mode axis, field coefficients use nodal-area
+quadrature. Species number and current are deposited once to the periodic
+diagnostic grid and transformed there, avoiding a particle scan per requested
+mode. The mode history retains complex coefficients as well as one-sided
+amplitudes so offline analysis can recover frequency and propagation phase.
+The reduced Hall smoke guards exact manufactured sine/cosine coefficients and
+the complete output schema, but its short averaging window has no discharge
+physics significance.
+
 Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, full three-velocity incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal and signed tangential/out-of-plane distributions as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Imported checkpoint v6 preserves emission definitions, cumulative emitted counts, flux state, particle state, RNG state, unit metadata, and optional MCC state.
 
 Imported-mesh quality reporting computes cell-area and edge-length extrema, the minimum cell-corner angle, and the maximum within-cell edge-length ratio. These inexpensive metrics complement the mandatory finite, nondegenerate, convex, consistently oriented, manifold, and exactly tagged boundary validation. The biased-probe integration mesh pins explicit angle, edge-ratio, area, topology, and physical-label envelopes.

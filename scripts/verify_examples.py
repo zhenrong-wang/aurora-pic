@@ -565,6 +565,102 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
         and abs(float(final_potential[7])) < 1e-12,
         "Hall smoke potential reference missed its target",
     )
+    field_path = output_dir / "resolved_field_profiles.csv"
+    field_header, field_rows = read_csv(field_path)
+    require(
+        field_header == [
+            "step", "time", "profile_axis", "coordinate",
+            "potential", "electric_x", "electric_y",
+            "charge_density",
+        ] and len(field_rows) == 5 * 16,
+        "Hall resolved field profiles are incomplete",
+    )
+    require(
+        all(row[2] == "x" for row in field_rows),
+        "Hall field profile used the wrong axis",
+    )
+    require_numeric_rows(
+        [field_header[index] for index in (0, 1, 3, 4, 5, 6, 7)],
+        [[row[index] for index in (0, 1, 3, 4, 5, 6, 7)]
+         for row in field_rows],
+        field_path,
+    )
+    require_step(field_rows, 4, field_path)
+
+    species_path = output_dir / "resolved_species_profiles.csv"
+    species_header, species_rows = read_csv(species_path)
+    require(
+        species_header == [
+            "step", "time", "profile_axis", "coordinate", "species",
+            "macro_particle_equivalent", "represented_number",
+            "number_density", "mean_velocity_x", "mean_velocity_y",
+            "mean_velocity_z", "thermal_speed_x", "thermal_speed_y",
+            "thermal_speed_z", "temperature_ev", "current_density_x",
+            "current_density_y", "current_density_z",
+        ] and len(species_rows) == 5 * 16 * 2,
+        "Hall resolved species profiles are incomplete",
+    )
+    require(
+        {row[4] for row in species_rows} == {"electrons", "ions"}
+        and all(row[2] == "x" for row in species_rows),
+        "Hall species profiles lost their axis or species identity",
+    )
+    require_numeric_rows(
+        [species_header[index]
+         for index in (0, 1, 3, *range(5, 18))],
+        [[row[index]
+          for index in (0, 1, 3, *range(5, 18))]
+         for row in species_rows],
+        species_path,
+    )
+    require_step(species_rows, 4, species_path)
+
+    mode_path = output_dir / "resolved_modes.csv"
+    mode_header, mode_rows = read_csv(mode_path)
+    require(
+        mode_header == [
+            "step", "time", "mode_axis", "mode", "wavenumber",
+            "quantity", "species", "real", "imaginary", "amplitude",
+        ] and len(mode_rows) == 5 * 4 * 11,
+        "Hall resolved mode history is incomplete",
+    )
+    require(
+        all(row[2] == "y" for row in mode_rows)
+        and {int(row[3]) for row in mode_rows} == {0, 1, 2, 3}
+        and {"charge_density", "electric_x", "electric_y",
+             "number_density", "current_x", "current_y", "current_z"}
+            == {row[5] for row in mode_rows},
+        "Hall mode history lost its axis, modes, or quantities",
+    )
+    require_numeric_rows(
+        [mode_header[index] for index in (0, 1, 3, 4, 7, 8, 9)],
+        [[row[index] for index in (0, 1, 3, 4, 7, 8, 9)]
+         for row in mode_rows],
+        mode_path,
+    )
+    require_step(mode_rows, 4, mode_path)
+
+    for name, expected_rows in (
+        ("resolved_field_time_average.csv", 16),
+        ("resolved_species_time_average.csv", 32),
+    ):
+        average_path = output_dir / name
+        average_header, average_rows = read_csv(average_path)
+        require(
+            len(average_rows) == expected_rows,
+            f"Hall time average has the wrong row count: {average_path}",
+        )
+        require(
+            all(
+                abs(float(row[0])) < 1e-30
+                and abs(float(row[1]) - 2e-11) < 1e-25
+                and abs(float(row[2]) - 2e-11) < 1e-25
+                and int(row[3]) == 5
+                and row[4] == "x"
+                for row in average_rows
+            ),
+            f"Hall time-average window metadata is wrong: {average_path}",
+        )
 
 
 def check_electrode_2d(output_dir: Path) -> None:

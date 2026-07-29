@@ -97,6 +97,12 @@ Each run writes `units.txt` beside `scalars.csv`. It records the unit system,
 relative and effective permittivity, spatial dimension, and the dimensional
 basis of macro-particle weight and energy.
 
+For SI structured-2D resolved diagnostics, species profile number density is
+in `m^-3`, current density is in `A/m^2`, velocity and thermal speed are in
+`m/s`, and scalar temperature is in eV. In normalized mode the same columns
+retain normalized density/current/velocity values and `temperature_ev` is
+written as `nan`; AuroraPIC does not invent an SI temperature scale.
+
 Current 1D checkpoint v4, structured 2D checkpoint v7, structured 3D
 checkpoint v2, and imported checkpoint v6 record and validate the unit
 contract. The 1D v4 format also records velocity dimensionality; 1D v1-v3

@@ -81,6 +81,7 @@ def main() -> int:
     runtime_source = runtime["source.channel_pair_seed"]
     cathode = manifest["cathode_control"]
     initial = manifest["initial_loading"]
+    diagnostics = manifest["diagnostics"]
     emitted_species = runtime[
         "species." + cathode["emitted_species"]
     ]
@@ -237,6 +238,29 @@ def main() -> int:
             number(cathode, "potential_reference_target_v"),
         ),
         "Hall runtime potential-reference linkage drifted",
+    )
+    require(
+        runtime_global.getboolean("resolved_diagnostics")
+        and runtime_global.getint("resolved_diagnostic_interval") == 1
+        and runtime_global.getint("resolved_diagnostic_start_step") == 0
+        and runtime_global["resolved_profile_axis"]
+            == diagnostics["profile_axis"]
+        and runtime_global["resolved_mode_axis"]
+            == diagnostics["mode_axis"]
+        and runtime_global.getint("resolved_max_mode")
+            == diagnostics.getint("reduced_max_mode"),
+        "Hall runtime resolved-diagnostic linkage drifted",
+    )
+    require(
+        diagnostics["field_profiles"] == "resolved_field_profiles.csv"
+        and diagnostics["species_profiles"]
+            == "resolved_species_profiles.csv"
+        and diagnostics["mode_history"] == "resolved_modes.csv"
+        and diagnostics["field_time_average"]
+            == "resolved_field_time_average.csv"
+        and diagnostics["species_time_average"]
+            == "resolved_species_time_average.csv",
+        "Hall resolved-diagnostic artifact contract drifted",
     )
     for key, manifest_key in (
         ("x_min", "x_min_m"),

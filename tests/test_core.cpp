@@ -1987,6 +1987,199 @@ int main() {
             std::filesystem::remove_all("test_output_quadrature");
         }
         {
+            pic::Mesh2D mesh(
+                5, 4, 1.0, 2.0,
+                pic::Boundary::Dirichlet,
+                pic::Boundary::Periodic);
+            for (std::size_t j = 0; j < mesh.ny(); ++j) {
+                const double phase =
+                    2.0 * std::numbers::pi *
+                    mesh.node_y(j) / mesh.length_y();
+                for (std::size_t i = 0; i < mesh.nx(); ++i) {
+                    const auto index = mesh.index(i, j);
+                    mesh.phi()[index] = 2.0 * mesh.node_x(i);
+                    mesh.rho()[index] =
+                        5.0 + 2.0 * std::cos(phase);
+                    mesh.electric_x()[index] =
+                        3.0 * std::sin(phase);
+                    mesh.electric_y()[index] =
+                        -4.0 * std::cos(phase);
+                }
+            }
+            pic::Species2DConfig species_config;
+            species_config.name = "diagnostic_species";
+            species_config.charge = -2.0;
+            species_config.mass =
+                pic::ELEMENTARY_CHARGE_SI;
+            species_config.weight = 2.0;
+            species_config.particles = 2;
+            pic::Species2D species(species_config);
+            pic::Particle2D first;
+            first.position = {0.5, 0.25};
+            first.velocity = {1.0, 2.0};
+            first.velocity_z = -1.0;
+            pic::Particle2D second;
+            second.position = {0.5, 1.25};
+            second.velocity = {3.0, 4.0};
+            second.velocity_z = 1.0;
+            species.particles() = {first, second};
+
+            pic::ResolvedDiagnostics2DConfig config;
+            config.enabled = true;
+            config.max_mode = 1;
+            const auto snapshot =
+                pic::compute_resolved_diagnostics_2d(
+                    7, 0.5, mesh, {species}, config,
+                    pic::UnitSystem::SI);
+            require(
+                snapshot.fields.size() == 5 &&
+                    snapshot.species.size() == 5,
+                "resolved 2D diagnostics emitted the wrong profile shape");
+            const auto& field = snapshot.fields[2];
+            require_near(
+                field.coordinate, 0.5, 1e-15,
+                "resolved 2D profile coordinate is wrong");
+            require_near(
+                field.potential, 1.0, 1e-14,
+                "resolved 2D transverse potential average is wrong");
+            require_near(
+                field.charge_density, 5.0, 1e-14,
+                "resolved 2D transverse charge average is wrong");
+            require_near(
+                field.electric_x, 0.0, 1e-14,
+                "resolved 2D transverse Ex average is wrong");
+            require_near(
+                field.electric_y, 0.0, 1e-14,
+                "resolved 2D transverse Ey average is wrong");
+            const auto& moments = snapshot.species[2];
+            require_near(
+                moments.number_density, 8.0, 1e-14,
+                "resolved 2D number density is wrong");
+            require_near(
+                moments.mean_velocity_x, 2.0, 1e-14,
+                "resolved 2D mean vx is wrong");
+            require_near(
+                moments.mean_velocity_y, 3.0, 1e-14,
+                "resolved 2D mean vy is wrong");
+            require_near(
+                moments.mean_velocity_z, 0.0, 1e-14,
+                "resolved 2D mean vz is wrong");
+            require_near(
+                moments.thermal_speed_x, 1.0, 1e-14,
+                "resolved 2D x thermal speed is wrong");
+            require_near(
+                moments.thermal_speed_y, 1.0, 1e-14,
+                "resolved 2D y thermal speed is wrong");
+            require_near(
+                moments.thermal_speed_z, 1.0, 1e-14,
+                "resolved 2D z thermal speed is wrong");
+            require_near(
+                moments.temperature_ev, 1.0, 1e-14,
+                "resolved 2D SI temperature is wrong");
+            require_near(
+                moments.current_density_x, -32.0, 1e-13,
+                "resolved 2D x current density is wrong");
+            require_near(
+                moments.current_density_y, -48.0, 1e-13,
+                "resolved 2D y current density is wrong");
+            require_near(
+                moments.current_density_z, 0.0, 1e-14,
+                "resolved 2D z current density is wrong");
+            const auto find_mode =
+                [&](const std::string& quantity) {
+                    return std::find_if(
+                        snapshot.modes.begin(),
+                        snapshot.modes.end(),
+                        [&](const auto& mode) {
+                            return mode.mode == 1 &&
+                                mode.quantity == quantity &&
+                                mode.species.empty();
+                        });
+                };
+            const auto rho_mode = find_mode("charge_density");
+            const auto ex_mode = find_mode("electric_x");
+            const auto ey_mode = find_mode("electric_y");
+            require(
+                rho_mode != snapshot.modes.end() &&
+                    ex_mode != snapshot.modes.end() &&
+                    ey_mode != snapshot.modes.end(),
+                "resolved 2D field modes are missing");
+            require_near(
+                rho_mode->real, 1.0, 1e-14,
+                "resolved 2D cosine mode real coefficient is wrong");
+            require_near(
+                rho_mode->amplitude, 2.0, 1e-14,
+                "resolved 2D cosine mode amplitude is wrong");
+            require_near(
+                ex_mode->imaginary, -1.5, 1e-14,
+                "resolved 2D sine mode imaginary coefficient is wrong");
+            require_near(
+                ex_mode->amplitude, 3.0, 1e-14,
+                "resolved 2D sine mode amplitude is wrong");
+            require_near(
+                ey_mode->real, -2.0, 1e-14,
+                "resolved 2D signed cosine coefficient is wrong");
+            require_near(
+                ey_mode->amplitude, 4.0, 1e-14,
+                "resolved 2D signed cosine amplitude is wrong");
+
+            const auto output_dir = std::filesystem::path(
+                "test_output_resolved_diagnostics");
+            std::filesystem::remove_all(output_dir);
+            pic::ResolvedDiagnostics2D diagnostics(
+                output_dir, config, mesh, {species},
+                pic::UnitSystem::SI);
+            (void)diagnostics.sample(
+                0, 0.0, mesh, {species});
+            for (double& potential : mesh.phi()) {
+                potential *= 3.0;
+            }
+            (void)diagnostics.sample(
+                2, 2.0, mesh, {species});
+            diagnostics.write_time_averages();
+            require(
+                diagnostics.sample_count() == 2,
+                "resolved 2D time-average sample count is wrong");
+            require(
+                std::filesystem::exists(
+                    output_dir /
+                    "resolved_field_profiles.csv") &&
+                    std::filesystem::exists(
+                        output_dir /
+                        "resolved_species_profiles.csv") &&
+                    std::filesystem::exists(
+                        output_dir / "resolved_modes.csv") &&
+                    std::filesystem::exists(
+                        output_dir /
+                        "resolved_field_time_average.csv") &&
+                    std::filesystem::exists(
+                        output_dir /
+                        "resolved_species_time_average.csv"),
+                "resolved 2D diagnostic outputs are incomplete");
+            require(
+                read_file_text(
+                    output_dir /
+                    "resolved_field_time_average.csv")
+                        .find("0,2,2,2,x,0.5,2,") !=
+                    std::string::npos,
+                "resolved 2D trapezoidal field average is wrong");
+            std::filesystem::remove_all(output_dir);
+
+            auto nonperiodic = config;
+            require_throws_contains(
+                [&] {
+                    pic::Mesh2D invalid_mesh(
+                        5, 4, 1.0, 2.0,
+                        pic::Boundary::Dirichlet);
+                    (void)pic::compute_resolved_diagnostics_2d(
+                        0, 0.0, invalid_mesh, {},
+                        nonperiodic,
+                        pic::UnitSystem::Normalized);
+                },
+                "mode axis must be periodic",
+                "resolved 2D modes accepted a nonperiodic axis");
+        }
+        {
             pic::Mesh3D mesh(5, 5, 5, 1.0, 1.0, 1.0, pic::Boundary::Dirichlet);
             const std::vector<pic::Particle3D> particles{pic::Particle3D{pic::Vec3{0.0, 0.0, 0.0}, pic::Vec3{}, true}};
             pic::deposit_charge_cic(mesh, particles, 2.0, 0.5);
