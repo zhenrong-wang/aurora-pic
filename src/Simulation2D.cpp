@@ -5,6 +5,8 @@
 #include "pic/Runtime.hpp"
 #include "pic/Units.hpp"
 #include "pic/VTKWriter.hpp"
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -18,6 +20,7 @@ namespace {
 constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
 constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
+constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -211,6 +214,10 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
         }
     }
     validate_runtime_policy(cfg_.runtime);
+    if (cfg_.max_particles_per_species == 0) {
+        throw std::invalid_argument(
+            "2D max_particles_per_species must be positive");
+    }
     if (cfg_.checkpoint_output && cfg_.checkpoint_interval == 0) {
         throw std::invalid_argument("2D checkpoint_interval must be positive when checkpoint_output is enabled");
     }
@@ -232,12 +239,129 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
             mesh_.boundary_y());
     for (const auto& sc : cfg_.species) species_.emplace_back(sc);
     if (species_.empty()) species_.emplace_back(Species2DConfig{});
+    for (const auto& species : species_) {
+        if (species.config().particles >
+            cfg_.max_particles_per_species) {
+            throw std::invalid_argument(
+                "2D initial species population exceeds max_particles_per_species");
+        }
+    }
+    for (const auto& source : cfg_.sources) {
+        if (!std::all_of(
+                source.name.begin(), source.name.end(),
+                [](unsigned char character) {
+                    return std::isalnum(character) ||
+                           character == '_' || character == '-';
+                })) {
+            throw std::invalid_argument(
+                "2D source names may contain only letters, digits, '_' and '-'");
+        }
+        if (source.name.empty() || source.pairs_per_step == 0) {
+            throw std::invalid_argument(
+                "2D volumetric pair source requires a name and positive pairs_per_step");
+        }
+        if (std::any_of(
+                sources_.begin(), sources_.end(),
+                [&](const auto& existing) {
+                    return existing.config.name == source.name;
+                })) {
+            throw std::invalid_argument(
+                "duplicate 2D source name '" + source.name + "'");
+        }
+        const double xmax =
+            source.x_max < 0.0 ? mesh_.length_x() : source.x_max;
+        const double ymax =
+            source.y_max < 0.0 ? mesh_.length_y() : source.y_max;
+        if (source.x_min < 0.0 || source.y_min < 0.0 ||
+            xmax > mesh_.length_x() || ymax > mesh_.length_y() ||
+            !(source.x_min < xmax) || !(source.y_min < ymax)) {
+            throw std::invalid_argument(
+                "2D source '" + source.name +
+                "' region must have positive area inside the domain");
+        }
+        if (source.end_step != 0 &&
+            source.end_step <= source.start_step) {
+            throw std::invalid_argument(
+                "2D source '" + source.name +
+                "' end_step must exceed start_step");
+        }
+        if (!std::isfinite(source.first_thermal_velocity) ||
+            source.first_thermal_velocity < 0.0 ||
+            !std::isfinite(source.second_thermal_velocity) ||
+            source.second_thermal_velocity < 0.0) {
+            throw std::invalid_argument(
+                "2D source '" + source.name +
+                "' thermal velocities must be non-negative and finite");
+        }
+        const auto finite_vector = [](Vec3 vector) {
+            return std::isfinite(vector.x) &&
+                   std::isfinite(vector.y) &&
+                   std::isfinite(vector.z);
+        };
+        if (!finite_vector(source.first_drift) ||
+            !finite_vector(source.second_drift)) {
+            throw std::invalid_argument(
+                "2D source '" + source.name +
+                "' drift velocities must be finite");
+        }
+        const auto find_species =
+            [&](const std::string& name) -> std::size_t {
+                const auto found = std::find_if(
+                    species_.begin(), species_.end(),
+                    [&](const Species2D& species) {
+                        return species.name() == name;
+                    });
+                if (found == species_.end()) {
+                    throw std::invalid_argument(
+                        "2D source '" + source.name +
+                        "' references unknown species '" + name + "'");
+                }
+                return static_cast<std::size_t>(
+                    std::distance(species_.begin(), found));
+            };
+        const std::size_t first =
+            find_species(source.first_species);
+        const std::size_t second =
+            find_species(source.second_species);
+        const auto& first_species = species_[first];
+        const auto& second_species = species_[second];
+        const double weight_scale = std::max(
+            first_species.weight(), second_species.weight());
+        if (std::abs(first_species.weight() -
+                     second_species.weight()) >
+            1e-12 * weight_scale) {
+            throw std::invalid_argument(
+                "2D source '" + source.name +
+                "' requires equal macro-particle weights");
+        }
+        const double charge_scale = std::max(
+            std::abs(first_species.charge()),
+            std::abs(second_species.charge()));
+        if (!((first_species.charge() < 0.0 &&
+               second_species.charge() > 0.0) ||
+              (first_species.charge() > 0.0 &&
+               second_species.charge() < 0.0)) ||
+            charge_scale == 0.0 ||
+            std::abs(first_species.charge() +
+                     second_species.charge()) >
+                1e-12 * charge_scale) {
+            throw std::invalid_argument(
+                "2D source '" + source.name +
+                "' requires opposite equal species charges");
+        }
+        sources_.push_back({source, first, second});
+        source_diagnostics_.push_back({source.name, 0, 0.0});
+    }
 }
 
 void Simulation2D::initialize() {
     time_ = 0.0;
     step_ = 0;
     boundary_losses_ = {};
+    for (auto& diagnostics : source_diagnostics_) {
+        diagnostics.macro_pairs_created = 0;
+        diagnostics.represented_pairs_created = 0.0;
+    }
     if (cfg_.initial_state_path.empty()) {
         for (auto& sp : species_) sp.initialize(mesh_, rng_);
     } else {
@@ -325,6 +449,128 @@ void Simulation2D::deposit_and_solve() {
     solver_.solve(mesh_);
 }
 
+void Simulation2D::inject_volumetric_pair_sources() {
+    const auto available_slots =
+        [&](const Species2D& species) {
+            const auto dead = static_cast<std::size_t>(
+                std::count_if(
+                    species.particles().begin(),
+                    species.particles().end(),
+                    [](const Particle2D& particle) {
+                        return !particle.alive;
+                    }));
+            return dead +
+                (cfg_.max_particles_per_species -
+                 std::min(cfg_.max_particles_per_species,
+                          species.particles().size()));
+        };
+    const auto insert_particle =
+        [](Species2D& species, Particle2D particle) {
+            const auto dead = std::find_if(
+                species.particles().begin(),
+                species.particles().end(),
+                [](const Particle2D& candidate) {
+                    return !candidate.alive;
+                });
+            if (dead != species.particles().end()) {
+                *dead = particle;
+            } else {
+                species.particles().push_back(particle);
+            }
+        };
+
+    for (std::size_t source_id = 0;
+         source_id < sources_.size(); ++source_id) {
+        const auto& source = sources_[source_id];
+        if (step_ < source.config.start_step ||
+            (source.config.end_step != 0 &&
+             step_ >= source.config.end_step)) {
+            continue;
+        }
+        auto& first = species_[source.first_species];
+        auto& second = species_[source.second_species];
+        if (available_slots(first) <
+                source.config.pairs_per_step ||
+            available_slots(second) <
+                source.config.pairs_per_step) {
+            throw std::runtime_error(
+                "2D source '" + source.config.name +
+                "' would exceed max_particles_per_species");
+        }
+        const double xmax =
+            source.config.x_max < 0.0
+                ? mesh_.length_x()
+                : source.config.x_max;
+        const double ymax =
+            source.config.y_max < 0.0
+                ? mesh_.length_y()
+                : source.config.y_max;
+        std::uniform_real_distribution<double> x_distribution(
+            source.config.x_min, xmax);
+        std::uniform_real_distribution<double> y_distribution(
+            source.config.y_min, ymax);
+        std::normal_distribution<double> first_vx(
+            source.config.first_drift.x,
+            source.config.first_thermal_velocity);
+        std::normal_distribution<double> first_vy(
+            source.config.first_drift.y,
+            source.config.first_thermal_velocity);
+        std::normal_distribution<double> first_vz(
+            source.config.first_drift.z,
+            source.config.first_thermal_velocity);
+        std::normal_distribution<double> second_vx(
+            source.config.second_drift.x,
+            source.config.second_thermal_velocity);
+        std::normal_distribution<double> second_vy(
+            source.config.second_drift.y,
+            source.config.second_thermal_velocity);
+        std::normal_distribution<double> second_vz(
+            source.config.second_drift.z,
+            source.config.second_thermal_velocity);
+
+        for (std::size_t pair = 0;
+             pair < source.config.pairs_per_step; ++pair) {
+            const Vec2 position{
+                x_distribution(rng_), y_distribution(rng_)};
+            Particle2D first_particle;
+            first_particle.position = position;
+            first_particle.velocity = {
+                first_vx(rng_), first_vy(rng_)};
+            first_particle.velocity_z = first_vz(rng_);
+            first_particle.velocity_half =
+                first_particle.velocity;
+            first_particle.velocity_half_z =
+                first_particle.velocity_z;
+            initialize_particle_pusher(
+                first_particle,
+                interpolate_electric(mesh_, position),
+                first.charge() / first.mass(), cfg_);
+
+            Particle2D second_particle;
+            second_particle.position = position;
+            second_particle.velocity = {
+                second_vx(rng_), second_vy(rng_)};
+            second_particle.velocity_z = second_vz(rng_);
+            second_particle.velocity_half =
+                second_particle.velocity;
+            second_particle.velocity_half_z =
+                second_particle.velocity_z;
+            initialize_particle_pusher(
+                second_particle,
+                interpolate_electric(mesh_, position),
+                second.charge() / second.mass(), cfg_);
+            insert_particle(first, first_particle);
+            insert_particle(second, second_particle);
+        }
+        auto& diagnostics = source_diagnostics_[source_id];
+        diagnostics.macro_pairs_created +=
+            source.config.pairs_per_step;
+        diagnostics.represented_pairs_created +=
+            static_cast<double>(source.config.pairs_per_step) *
+            first.weight();
+    }
+}
+
 void Simulation2D::apply_particle_boundaries(Particle2D& particle) {
     if (!apply_lower_boundary(particle.position.x, particle.velocity_half.x, mesh_.length_x(),
                               cfg_.particle_boundary_config.left, boundary_losses_.absorbed_left)) {
@@ -350,6 +596,7 @@ void Simulation2D::apply_particle_boundaries(Particle2D& particle) {
 
 void Simulation2D::step() {
     if (!initialized_) initialize();
+    inject_volumetric_pair_sources();
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
         for (auto& particle : sp.particles()) {
@@ -378,7 +625,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV3 << '\n';
+    out << kCheckpointMagicV4 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -389,6 +636,29 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
         << boundary_losses_.absorbed_bottom << ' ' << boundary_losses_.absorbed_top << "\n";
     out << "species_count " << species_.size() << "\n";
     out << "rng " << rng_ << "\n";
+    out << "source_count " << source_diagnostics_.size() << "\n";
+    for (std::size_t source_id = 0;
+         source_id < sources_.size(); ++source_id) {
+        const auto& config = sources_[source_id].config;
+        const auto& diagnostics = source_diagnostics_[source_id];
+        out << "source " << config.name << ' '
+            << config.first_species << ' '
+            << config.second_species << ' '
+            << config.pairs_per_step << ' '
+            << config.start_step << ' ' << config.end_step << ' '
+            << config.x_min << ' ' << config.x_max << ' '
+            << config.y_min << ' ' << config.y_max << ' '
+            << config.first_drift.x << ' '
+            << config.first_drift.y << ' '
+            << config.first_drift.z << ' '
+            << config.second_drift.x << ' '
+            << config.second_drift.y << ' '
+            << config.second_drift.z << ' '
+            << config.first_thermal_velocity << ' '
+            << config.second_thermal_velocity << ' '
+            << diagnostics.macro_pairs_created << ' '
+            << diagnostics.represented_pairs_created << "\n";
+    }
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         const auto& sp = species_[species_id];
         out << "species " << species_id << ' ' << sp.name() << ' ' << sp.particles().size() << "\n";
@@ -412,7 +682,9 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v1 = magic == kCheckpointMagicV1;
     const bool checkpoint_v2 = magic == kCheckpointMagicV2;
     const bool checkpoint_v3 = magic == kCheckpointMagicV3;
-    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3) {
+    const bool checkpoint_v4 = magic == kCheckpointMagicV4;
+    if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
+        !checkpoint_v4) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -426,7 +698,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
-        if ((!checkpoint_v2 && !checkpoint_v3) ||
+        if ((!checkpoint_v2 && !checkpoint_v3 && !checkpoint_v4) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -434,7 +706,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 "checkpoint unit system does not match 2D config");
         }
         in >> key;
-    } else if (checkpoint_v2 || checkpoint_v3 ||
+    } else if (checkpoint_v2 || checkpoint_v3 || checkpoint_v4 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -453,6 +725,62 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     in >> key;
     if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
     in >> rng_;
+    if (checkpoint_v4) {
+        std::size_t source_count = 0;
+        in >> key >> source_count;
+        if (key != "source_count" ||
+            source_count != source_diagnostics_.size()) {
+            throw std::runtime_error(
+                "checkpoint source count does not match 2D config");
+        }
+        for (std::size_t source_id = 0;
+             source_id < sources_.size(); ++source_id) {
+            VolumetricPairSource2DConfig stored;
+            auto& diagnostics = source_diagnostics_[source_id];
+            in >> key >> stored.name >> stored.first_species >>
+                stored.second_species >> stored.pairs_per_step >>
+                stored.start_step >> stored.end_step >>
+                stored.x_min >> stored.x_max >>
+                stored.y_min >> stored.y_max >>
+                stored.first_drift.x >> stored.first_drift.y >>
+                stored.first_drift.z >> stored.second_drift.x >>
+                stored.second_drift.y >> stored.second_drift.z >>
+                stored.first_thermal_velocity >>
+                stored.second_thermal_velocity >>
+                diagnostics.macro_pairs_created >>
+                diagnostics.represented_pairs_created;
+            const auto& expected = sources_[source_id].config;
+            if (key != "source" ||
+                stored.name != expected.name ||
+                stored.first_species != expected.first_species ||
+                stored.second_species != expected.second_species ||
+                stored.pairs_per_step != expected.pairs_per_step ||
+                stored.start_step != expected.start_step ||
+                stored.end_step != expected.end_step ||
+                stored.x_min != expected.x_min ||
+                stored.x_max != expected.x_max ||
+                stored.y_min != expected.y_min ||
+                stored.y_max != expected.y_max ||
+                stored.first_drift.x != expected.first_drift.x ||
+                stored.first_drift.y != expected.first_drift.y ||
+                stored.first_drift.z != expected.first_drift.z ||
+                stored.second_drift.x != expected.second_drift.x ||
+                stored.second_drift.y != expected.second_drift.y ||
+                stored.second_drift.z != expected.second_drift.z ||
+                stored.first_thermal_velocity !=
+                    expected.first_thermal_velocity ||
+                stored.second_thermal_velocity !=
+                    expected.second_thermal_velocity) {
+                throw std::runtime_error(
+                    "checkpoint source metadata does not match 2D config");
+            }
+        }
+    } else {
+        for (auto& source : source_diagnostics_) {
+            source.macro_pairs_created = 0;
+            source.represented_pairs_created = 0.0;
+        }
+    }
 
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         std::size_t stored_species_id = 0;
@@ -468,13 +796,13 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             int alive = 0;
             in >> p.position.x >> p.position.y
                >> p.velocity.x >> p.velocity.y;
-            if (checkpoint_v3) {
+            if (checkpoint_v3 || checkpoint_v4) {
                 in >> p.velocity_z;
             } else {
                 p.velocity_z = 0.0;
             }
             in >> p.velocity_half.x >> p.velocity_half.y;
-            if (checkpoint_v3) {
+            if (checkpoint_v3 || checkpoint_v4) {
                 in >> p.velocity_half_z;
             } else {
                 p.velocity_half_z = 0.0;
@@ -526,9 +854,41 @@ RunSummary2D Simulation2D::run() {
         initialization_acceptance);
     Diagnostics2D diag(
         cfg_.output_dir, species_, cfg_.units.permittivity());
+    std::ofstream source_output;
+    if (!sources_.empty()) {
+        source_output.open(cfg_.output_dir / "sources.csv");
+        if (!source_output) {
+            throw std::runtime_error(
+                "cannot open 2D source diagnostics output");
+        }
+        source_output
+            << "step,time,source,macro_pairs_created,"
+               "represented_pairs_created,"
+               "configured_represented_pair_rate\n";
+    }
+    const auto write_source_sample = [&]() {
+        for (std::size_t source_id = 0;
+             source_id < sources_.size(); ++source_id) {
+            const auto& source = sources_[source_id];
+            const auto& diagnostics =
+                source_diagnostics_[source_id];
+            const double rate =
+                static_cast<double>(
+                    source.config.pairs_per_step) *
+                species_[source.first_species].weight() /
+                cfg_.dt;
+            source_output << step_ << ',' << std::setprecision(17)
+                          << time_ << ',' << diagnostics.name
+                          << ',' << diagnostics.macro_pairs_created
+                          << ',' << diagnostics.represented_pairs_created
+                          << ',' << rate << '\n';
+        }
+        if (source_output) source_output.flush();
+    };
     diag.write_header();
     auto s0 = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
     diag.write_sample(s0);
+    write_source_sample();
     if (cfg_.vtk_output) write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
     if (cfg_.particle_output) {
         diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
@@ -545,6 +905,7 @@ RunSummary2D Simulation2D::run() {
         if (step_ % cfg_.output_interval == 0 || step_ == limit) {
             auto s = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
             diag.write_sample(s);
+            write_source_sample();
             summary.final_sample = s;
             if (cfg_.vtk_output) {
                 write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);

@@ -451,7 +451,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v4 format records the configured velocity dimensionality, all active velocity components, collision fingerprints, and collision counters; legacy 1D v1-v3 remain readable only by 1D1V runs. Structured 2D v3, structured 3D v2, and imported v6 record unit metadata. The current 2D formats preserve all three velocity components; legacy 2D checkpoints load with zero out-of-plane velocity. Imported v6 records source/emission and boundary-flux state plus optional MCC identity, gas metadata, effective-table fingerprint, RNG state, and collision counters. Imported v1–v5 remain readable for collision-free runs, while imported MCC restart requires v6. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2.
+All 1D, 2D, and 3D runs support a text `.apc` checkpoint format intended for deterministic restart and regression debugging. Checkpoints include the simulation dimension, unit contract, step/time, RNG engine state, per-species particle positions/velocities/leapfrog half-step state, live flags, and 2D/3D absorbed-particle counters. Imported 2D checkpoints additionally store a deterministic topology/coordinate/tag fingerprint and refuse restart against a different mesh. The current 1D v4 format records the configured velocity dimensionality, all active velocity components, collision fingerprints, and collision counters; legacy 1D v1-v3 remain readable only by 1D1V runs. Structured 2D v4 records volumetric-source counters in addition to unit metadata and full 3V particle state; structured 2D v1-v3 remain readable, with source counters initialized to zero for older files. Structured 3D v2 and imported v6 record unit metadata. Imported v6 records source/emission and boundary-flux state plus optional MCC identity, gas metadata, effective-table fingerprint, RNG state, and collision counters. Imported v1–v5 remain readable for collision-free runs, while imported MCC restart requires v6. Imported v1–v3 and structured v1 checkpoints remain readable only with the historical normalized unit contract; 1D v1/v2 cannot restart null-collision MCC. Physical flux history begins at zero when loading imported v1 or v2.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.
@@ -497,6 +497,26 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 - Alternatively, `magnetic_field_profile_file` and `magnetic_field_profile_axis = x | y | z` select a strict whitespace table with `coordinate Bx By Bz` columns. Coordinates must be finite and strictly increasing, values are linearly interpolated at each particle position, and the table must cover the full domain on its selected axis. Relative paths resolve from the configuration file.
 - Uniform magnetic components and a profile are mutually exclusive. Extrapolation is rejected instead of silently clamped. [`examples/hall_field_profile_smoke.cfg`](examples/hall_field_profile_smoke.cfg) exercises a published Hall-benchmark profile as one consumer of this generic interface; it is explicitly not a discharge result.
 - The current field solve remains electrostatic Poisson. These controls add prescribed magnetic rotation to particle pushes, not a self-consistent electromagnetic field update or an arbitrary 2D/3D field-map importer.
+
+Structured 2D configs may also declare bounded uniform-volume pair sources:
+
+```ini
+[source.channel_pair_seed]
+first_species = electrons
+second_species = ions
+pairs_per_step = 1
+start_step = 0
+end_step = 0
+x_min = 0.005
+x_max = 0.020
+y_min = 0
+y_max = 0.0128
+first_drift_velocity_y = 10000
+first_thermal_velocity = 0
+second_thermal_velocity = 0
+```
+
+Each active step samples one position uniformly in the configured rectangle for every macro-pair, creates both species at that position, and samples independent isotropic Gaussian velocity distributions around their configured drift vectors. `end_step` is exclusive and zero means unlimited. The two species must have opposite equal charge and equal macro weight, making every event exactly charge balanced and giving an unambiguous represented-pair count. Dead slots are reused before storage grows; `max_particles_per_species` prevents unbounded growth and a capacity failure creates no partial pair. `sources.csv` reports cumulative macro and represented pairs plus the configured represented-pair rate. Structured 2D checkpoint v4 preserves these counters and RNG state. This first source is uniform within a box and has a fixed integer macro-rate; arbitrary spatial profiles, fractional rate accumulation, neutral depletion, and self-consistent reaction rates remain future work.
 
 The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, invalid electrode drive amplitude/frequency/phase combinations, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, nonzero electrode potentials on a periodic coordinate axis, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 

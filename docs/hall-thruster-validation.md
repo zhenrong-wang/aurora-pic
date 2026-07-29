@@ -145,7 +145,7 @@ the models.
 | Electrostatic 2D3V PIC and Boris push | Available on structured and imported 2D meshes | Preserve analytic Larmor and E x B drift gates |
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D supports independent periodic/Dirichlet axes with matching spacing, CIC, Poisson, gather, gradient, initialization, and default particle policies | Replace the correctness-first mixed SOR solve with a production FFT-periodic/direct-axial solver before full LANDMARK campaigns |
-| Volumetric pair source | Collision ionization and tagged-boundary sources exist | Add deterministic-rate spatial pair profiles with equal-position creation |
+| Volumetric pair source | Structured 2D has bounded, scheduled, uniform-box pair creation with equal positions, exact charge balance, represented-rate diagnostics, and restart | Add the published cosine profile, physical-rate fractional accumulation, and source-energy diagnostics |
 | Cathode/current control | Not available | Implement the exact emission-plane current balance and potential correction |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Scalar and field snapshots exist | Add transverse/time averages, species moments, current components, Fourier spectra, and ensemble statistics |
@@ -211,5 +211,11 @@ Dirichlet axial plus periodic azimuthal and its transposed orientation have
 analytic vacuum-field, charge-conservation, spacing, and default particle
 policy regressions. The current mixed Poisson implementation is an iterative
 baseline, not the FFT-periodic/direct-axial algorithm needed for millions of
-production steps. The next bounded physics slice is a generic spatial
-volumetric pair source with deterministic represented-rate accounting.
+production steps. A generic structured-2D volumetric source baseline is now
+also complete: named scheduled sources create equal-weight, opposite-charge
+pairs at a shared uniformly sampled position inside a bounded rectangle,
+enforce atomic storage limits, report represented rates, and preserve counters
+through restart. The Hall smoke exercises this interface without claiming a
+physical ionization model. The next H1 slice is the reusable spatial-profile
+and fractional physical-rate layer needed to express the published cosine
+source independently of timestep and macro weight.

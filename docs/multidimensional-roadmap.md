@@ -119,8 +119,12 @@ structured 2D axes are now implemented through mesh spacing, node measures,
 CIC deposit/gather, Poisson neighbors, field gradients, initialization, and
 default particle policies, with analytic tests in both orientations. The
 correctness-first mixed SOR field solve still needs a production
-FFT-periodic/direct-axial implementation. The next bounded target is a generic
-spatial volumetric pair source with represented-rate accounting. Full
+FFT-periodic/direct-axial implementation. Structured 2D now also has a bounded
+uniform-box volumetric pair-source baseline with shared pair positions,
+charge/weight compatibility checks, schedules, deterministic represented-rate
+accounting, source diagnostics, storage caps, and restart. The next bounded
+target generalizes it to normalized spatial profiles and fractional physical
+rates independent of macro weight and timestep. Full
 LANDMARK runs require exact source/current-control contracts,
 statistical spectral diagnostics, MPI and scalable output; real HET validation
 additionally requires measured geometry/field inputs, neutral and wall

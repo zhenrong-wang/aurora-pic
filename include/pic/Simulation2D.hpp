@@ -26,6 +26,29 @@ struct ParticleBoundaryConfig2D {
     ParticleBoundary top{ParticleBoundary::Auto};
 };
 
+struct VolumetricPairSource2DConfig {
+    std::string name{};
+    std::string first_species{};
+    std::string second_species{};
+    std::size_t pairs_per_step{0};
+    std::size_t start_step{0};
+    std::size_t end_step{0}; // zero keeps the source active indefinitely
+    double x_min{0.0};
+    double x_max{-1.0}; // negative means the full remaining domain
+    double y_min{0.0};
+    double y_max{-1.0};
+    Vec3 first_drift{};
+    Vec3 second_drift{};
+    double first_thermal_velocity{0.0};
+    double second_thermal_velocity{0.0};
+};
+
+struct VolumetricPairSource2DDiagnostics {
+    std::string name{};
+    std::size_t macro_pairs_created{0};
+    double represented_pairs_created{0.0};
+};
+
 struct Simulation2DConfig {
     UnitSystemConfig units{};
     std::size_t nx{64};
@@ -62,9 +85,11 @@ struct Simulation2DConfig {
     std::filesystem::path restart_path{};
     std::filesystem::path initial_state_path{};
     std::optional<std::uint64_t> initial_state_signature{};
+    std::size_t max_particles_per_species{10000000};
     RuntimePolicy runtime{};
     InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<Species2DConfig> species{};
+    std::vector<VolumetricPairSource2DConfig> sources{};
 };
 
 Simulation2DConfig load_config_2d(const std::string& path);
@@ -82,15 +107,26 @@ public:
     const ParticleBoundaryConfig2D& particle_boundary_config() const { return cfg_.particle_boundary_config; }
     const BoundaryLoss2D& boundary_losses() const { return boundary_losses_; }
     const std::vector<Species2D>& species() const { return species_; }
+    const std::vector<VolumetricPairSource2DDiagnostics>& source_diagnostics() const {
+        return source_diagnostics_;
+    }
     double time() const { return time_; }
     std::size_t step_count() const { return step_; }
 private:
+    struct VolumetricPairSourceRuntime {
+        VolumetricPairSource2DConfig config{};
+        std::size_t first_species{0};
+        std::size_t second_species{0};
+    };
     void deposit_and_solve();
+    void inject_volumetric_pair_sources();
     void apply_particle_boundaries(Particle2D& particle);
     Simulation2DConfig cfg_;
     Mesh2D mesh_;
     FieldSolver solver_;
     std::vector<Species2D> species_;
+    std::vector<VolumetricPairSourceRuntime> sources_;
+    std::vector<VolumetricPairSource2DDiagnostics> source_diagnostics_;
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

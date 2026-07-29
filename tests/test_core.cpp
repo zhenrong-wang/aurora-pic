@@ -3572,6 +3572,162 @@ int main() {
             require(std::filesystem::exists(run_cfg.output_dir / "checkpoint_3.apc"), "2D run did not write final checkpoint");
         }
         {
+            const auto output_dir =
+                std::filesystem::path("test_output_2d_pair_source");
+            const auto checkpoint_path =
+                output_dir / "pair_source.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Species2DConfig electrons;
+            electrons.name = "electrons";
+            electrons.charge = -1.0;
+            electrons.mass = 1.0;
+            electrons.weight = 3.0;
+            electrons.particles = 4;
+            electrons.thermal_velocity = 0.0;
+            electrons.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            pic::Species2DConfig ions = electrons;
+            ions.name = "ions";
+            ions.charge = 1.0;
+            ions.mass = 10.0;
+
+            pic::VolumetricPairSource2DConfig source;
+            source.name = "pair_seed";
+            source.first_species = "electrons";
+            source.second_species = "ions";
+            source.pairs_per_step = 2;
+            source.start_step = 1;
+            source.end_step = 3;
+            source.x_min = 0.2;
+            source.x_max = 0.4;
+            source.y_min = 0.6;
+            source.y_max = 0.8;
+            source.first_drift = {0.0, 0.0, 0.03};
+            source.second_drift = {0.0, 0.0, -0.03};
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 8;
+            cfg.ny = 8;
+            cfg.dt = 0.01;
+            cfg.steps = 4;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir;
+            cfg.seed = 2027;
+            cfg.max_particles_per_species = 12;
+            cfg.species = {electrons, ions};
+            cfg.sources = {source};
+
+            pic::Simulation2D continuous(cfg);
+            continuous.initialize();
+            continuous.step();
+            require(
+                continuous.species()[0].live_count() == 4,
+                "2D pair source ignored start_step");
+            continuous.step();
+            require(
+                continuous.species()[0].live_count() == 6 &&
+                    continuous.species()[1].live_count() == 6,
+                "2D pair source did not create paired species");
+            require(
+                continuous.source_diagnostics()[0]
+                        .macro_pairs_created == 2,
+                "2D pair source macro-pair accounting is wrong");
+            require_near(
+                continuous.source_diagnostics()[0]
+                    .represented_pairs_created,
+                6.0, 1e-14,
+                "2D pair source represented-pair accounting is wrong");
+            require_near(
+                continuous.sample().charge_l1, 0.0, 1e-14,
+                "2D colocated pair source introduced charge");
+            for (std::size_t particle = 4;
+                 particle < 6; ++particle) {
+                const auto& first =
+                    continuous.species()[0].particles()[particle];
+                const auto& second =
+                    continuous.species()[1].particles()[particle];
+                require_near(
+                    first.position.x, second.position.x, 1e-14,
+                    "2D pair source did not share pair position x");
+                require_near(
+                    first.position.y, second.position.y, 1e-14,
+                    "2D pair source did not share pair position y");
+                require(
+                    first.position.x >= source.x_min &&
+                        first.position.x <= source.x_max &&
+                        first.position.y >= source.y_min &&
+                        first.position.y <= source.y_max,
+                    "2D pair source sampled outside its region");
+            }
+
+            continuous.save_checkpoint(checkpoint_path);
+            require(
+                read_file_text(checkpoint_path).find(
+                    "AuroraPIC-checkpoint-v4\n") == 0,
+                "2D pair source checkpoint did not use v4");
+            for (std::size_t step = continuous.step_count();
+                 step < cfg.steps; ++step) {
+                continuous.step();
+            }
+            require(
+                continuous.source_diagnostics()[0]
+                        .macro_pairs_created == 4 &&
+                    continuous.species()[0].live_count() == 8 &&
+                    continuous.species()[1].live_count() == 8,
+                "2D pair source schedule created the wrong total");
+
+            pic::Simulation2D restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            for (std::size_t step = restarted.step_count();
+                 step < cfg.steps; ++step) {
+                restarted.step();
+            }
+            require_species_close(
+                continuous.species(), restarted.species(),
+                "2D pair source checkpoint determinism");
+            require(
+                restarted.source_diagnostics()[0]
+                        .macro_pairs_created == 4 &&
+                    restarted.source_diagnostics()[0]
+                        .represented_pairs_created == 12.0,
+                "2D pair source checkpoint lost source counters");
+            auto changed_source = cfg;
+            changed_source.sources[0].pairs_per_step = 1;
+            require_throws_contains(
+                [&] {
+                    pic::Simulation2D incompatible(changed_source);
+                    incompatible.load_checkpoint(checkpoint_path);
+                },
+                "source metadata",
+                "2D pair-source checkpoint accepted changed source physics");
+
+            auto bounded = cfg;
+            bounded.max_particles_per_species = 5;
+            pic::Simulation2D bounded_simulation(bounded);
+            bounded_simulation.initialize();
+            bounded_simulation.step();
+            require_throws_contains(
+                [&] { bounded_simulation.step(); },
+                "max_particles_per_species",
+                "2D pair source ignored its storage bound");
+            require(
+                bounded_simulation.species()[0].particles().size() == 4 &&
+                    bounded_simulation.species()[1].particles().size() == 4,
+                "2D pair source capacity failure created a partial pair");
+
+            auto unequal_weight = cfg;
+            unequal_weight.species[1].weight = 2.0;
+            require_throws_contains(
+                [&] {
+                    pic::Simulation2D invalid(unequal_weight);
+                },
+                "equal macro-particle weights",
+                "2D pair source accepted unequal macro weights");
+
+            std::filesystem::remove_all(output_dir);
+        }
+        {
             const auto output_dir = std::filesystem::path("test_output_checkpoint_3d");
             const auto checkpoint_path = output_dir / "manual.apc";
             std::filesystem::remove_all(output_dir);

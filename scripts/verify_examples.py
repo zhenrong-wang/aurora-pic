@@ -473,11 +473,29 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
             "step", "time", "kinetic_energy", "field_energy", "total_energy",
             "charge_l1", "live_particles", "absorbed_left",
             "absorbed_right", "absorbed_bottom", "absorbed_top",
-            "live_particles_electrons",
+            "live_particles_electrons", "live_particles_ions",
         ],
         min_rows=3,
     )
     require_step(rows, 4, output_dir / "scalars.csv")
+    source_header, source_rows = read_csv(
+        output_dir / "sources.csv")
+    require(
+        source_header == [
+            "step", "time", "source", "macro_pairs_created",
+            "represented_pairs_created",
+            "configured_represented_pair_rate",
+        ],
+        f"unexpected header in {output_dir / 'sources.csv'}",
+    )
+    require(len(source_rows) >= 3, "Hall source diagnostics are incomplete")
+    final_source = next(
+        row for row in source_rows if int(float(row[0])) == 4)
+    require(
+        final_source[2] == "channel_pair_seed" and
+        int(final_source[3]) == 4,
+        "Hall smoke did not create its configured source pairs",
+    )
 
 
 def check_electrode_2d(output_dir: Path) -> None:

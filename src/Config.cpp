@@ -770,6 +770,10 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         throw std::runtime_error("max_steps must be positive for steady-state mode");
     }
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
+    if (cfg.max_particles_per_species == 0) {
+        throw std::runtime_error(
+            "2D max_particles_per_species must be positive");
+    }
     if (!std::isfinite(cfg.magnetic_field_x) ||
         !std::isfinite(cfg.magnetic_field_y) ||
         !std::isfinite(cfg.magnetic_field_z)) {
@@ -838,6 +842,63 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         if (ymax > cfg.length_y) throw std::runtime_error("2D species '" + s.name + "' init_y_max exceeds domain length_y");
         if (!(s.init_x_min < xmax)) throw std::runtime_error("2D species '" + s.name + "' x initialization interval must have positive width");
         if (!(s.init_y_min < ymax)) throw std::runtime_error("2D species '" + s.name + "' y initialization interval must have positive width");
+    }
+    for (const auto& source : cfg.sources) {
+        const std::string label =
+            "2D source '" + source.name + "'";
+        if (source.name.empty() || source.first_species.empty() ||
+            source.second_species.empty()) {
+            throw std::runtime_error(
+                label + " must name both source species");
+        }
+        if (!std::all_of(
+                source.name.begin(), source.name.end(),
+                [](unsigned char character) {
+                    return std::isalnum(character) ||
+                           character == '_' || character == '-';
+                })) {
+            throw std::runtime_error(
+                "2D source names may contain only letters, digits, '_' and '-'");
+        }
+        if (source.first_species == source.second_species) {
+            throw std::runtime_error(
+                label + " source species must be distinct");
+        }
+        if (source.pairs_per_step == 0) {
+            throw std::runtime_error(
+                label + " pairs_per_step must be positive");
+        }
+        if (source.end_step != 0 &&
+            source.end_step <= source.start_step) {
+            throw std::runtime_error(
+                label + " end_step must exceed start_step");
+        }
+        const double xmax =
+            source.x_max < 0.0 ? cfg.length_x : source.x_max;
+        const double ymax =
+            source.y_max < 0.0 ? cfg.length_y : source.y_max;
+        if (source.x_min < 0.0 || source.y_min < 0.0 ||
+            xmax > cfg.length_x || ymax > cfg.length_y ||
+            !(source.x_min < xmax) || !(source.y_min < ymax)) {
+            throw std::runtime_error(
+                label + " region must have positive area inside the domain");
+        }
+        const auto finite_vec = [](Vec3 value) {
+            return std::isfinite(value.x) &&
+                   std::isfinite(value.y) &&
+                   std::isfinite(value.z);
+        };
+        if (!finite_vec(source.first_drift) ||
+            !finite_vec(source.second_drift)) {
+            throw std::runtime_error(
+                label + " drift velocities must be finite");
+        }
+        validate_non_negative(
+            source.first_thermal_velocity,
+            label + " first_thermal_velocity");
+        validate_non_negative(
+            source.second_thermal_velocity,
+            label + " second_thermal_velocity");
     }
 }
 
@@ -917,6 +978,10 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
     }
 }
 struct ParsedBlocks {
+    struct NamedBlock {
+        std::string name{};
+        KeyValue values{};
+    };
     struct CollisionModelBlock {
         std::string name{};
         KeyValue values{};
@@ -927,6 +992,7 @@ struct ParsedBlocks {
     std::vector<KeyValue> collision_channel_blocks;
     std::vector<CollisionModelBlock> collision_model_blocks;
     std::vector<KeyValue> species_blocks;
+    std::vector<NamedBlock> source_blocks;
 };
 
 ParsedBlocks parse_config_blocks(const std::string& path,
@@ -935,6 +1001,8 @@ ParsedBlocks parse_config_blocks(const std::string& path,
                                  const std::unordered_set<std::string>* collision_keys,
                                  const std::unordered_set<std::string>*
                                      collision_channel_keys,
+                                 const std::unordered_set<std::string>*
+                                     source_keys,
                                  const std::string& loader_name) {
     std::ifstream in(path);
     if (!in) throw std::runtime_error("cannot open config: " + path);
@@ -1043,6 +1111,28 @@ ParsedBlocks parse_config_blocks(const std::string& path,
                     if (species_name.empty()) throw config_error(line_number, "empty species section suffix");
                     assign_key(*current, "name", species_name, line_number);
                 }
+            } else if (source_keys && starts_with(section, "source.")) {
+                const std::string source_name =
+                    trim(section.substr(std::string("source.").size()));
+                if (source_name.empty() ||
+                    source_name.find('.') != std::string::npos) {
+                    throw config_error(
+                        line_number, "invalid source section suffix");
+                }
+                const auto duplicate = std::find_if(
+                    blocks.source_blocks.begin(),
+                    blocks.source_blocks.end(),
+                    [&](const auto& block) {
+                        return block.name == source_name;
+                    });
+                if (duplicate != blocks.source_blocks.end()) {
+                    throw config_error(
+                        line_number,
+                        "duplicate source section '" + source_name + "'");
+                }
+                blocks.source_blocks.push_back({source_name, {}});
+                current = &blocks.source_blocks.back().values;
+                allowed = source_keys;
             } else {
                 throw config_error(line_number, "unknown section '" + section + "' in " + loader_name + " config");
             }
@@ -1101,7 +1191,7 @@ Config load_config(const std::string& path) {
 
     auto blocks = parse_config_blocks(
         path, global_keys, species_keys, &collision_keys,
-        &collision_channel_keys, "1D");
+        &collision_channel_keys, nullptr, "1D");
     const auto& global = blocks.global;
     const auto& collision = blocks.collisions;
 
@@ -1360,6 +1450,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "output_interval", "output_dir", "seed", "boundary",
         "boundary_x", "boundary_y", "vtk_output", "vtk_format",
         "particle_output", "particle_output_interval", "particle_output_stride", "particle_sample_count",
+        "max_particles_per_species",
         "checkpoint_output", "checkpoint_interval", "checkpoint_path",
         "restart_path", "initial_state_path",
         "initial_state_signature",
@@ -1388,9 +1479,18 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "init_x_min", "init_x_max",
         "init_y_min", "init_y_max"
     };
+    static const std::unordered_set<std::string> source_keys{
+        "first_species", "second_species", "pairs_per_step",
+        "start_step", "end_step", "x_min", "x_max", "y_min", "y_max",
+        "first_drift_velocity_x", "first_drift_velocity_y",
+        "first_drift_velocity_z", "second_drift_velocity_x",
+        "second_drift_velocity_y", "second_drift_velocity_z",
+        "first_thermal_velocity", "second_thermal_velocity"
+    };
 
     auto blocks = parse_config_blocks(
-        path, global_keys, species_keys, nullptr, nullptr, "2D");
+        path, global_keys, species_keys, nullptr, nullptr,
+        &source_keys, "2D");
     const auto& global = blocks.global;
 
     (void)parse_config_version(global, "2D");
@@ -1439,6 +1539,9 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     }
     cfg.initial_state_signature = parse_optional_uint64(
         global, "initial_state_signature");
+    cfg.max_particles_per_species = as<std::size_t>(
+        global, "max_particles_per_species",
+        cfg.max_particles_per_species);
     cfg.runtime = parse_runtime_policy(global, cfg.runtime);
     cfg.initialization_acceptance =
         parse_initialization_acceptance(global);
@@ -1516,6 +1619,45 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         cfg.species.push_back(s);
     }
     if (cfg.species.empty()) cfg.species.push_back(Species2DConfig{});
+    for (const auto& block : blocks.source_blocks) {
+        VolumetricPairSource2DConfig source;
+        source.name = block.name;
+        source.first_species = as<std::string>(
+            block.values, "first_species", "");
+        source.second_species = as<std::string>(
+            block.values, "second_species", "");
+        source.pairs_per_step = as<std::size_t>(
+            block.values, "pairs_per_step", 0);
+        source.start_step = as<std::size_t>(
+            block.values, "start_step", source.start_step);
+        source.end_step = as<std::size_t>(
+            block.values, "end_step", source.end_step);
+        source.x_min = as<double>(
+            block.values, "x_min", source.x_min);
+        source.x_max = as<double>(
+            block.values, "x_max", source.x_max);
+        source.y_min = as<double>(
+            block.values, "y_min", source.y_min);
+        source.y_max = as<double>(
+            block.values, "y_max", source.y_max);
+        source.first_drift.x = as<double>(
+            block.values, "first_drift_velocity_x", 0.0);
+        source.first_drift.y = as<double>(
+            block.values, "first_drift_velocity_y", 0.0);
+        source.first_drift.z = as<double>(
+            block.values, "first_drift_velocity_z", 0.0);
+        source.second_drift.x = as<double>(
+            block.values, "second_drift_velocity_x", 0.0);
+        source.second_drift.y = as<double>(
+            block.values, "second_drift_velocity_y", 0.0);
+        source.second_drift.z = as<double>(
+            block.values, "second_drift_velocity_z", 0.0);
+        source.first_thermal_velocity = as<double>(
+            block.values, "first_thermal_velocity", 0.0);
+        source.second_thermal_velocity = as<double>(
+            block.values, "second_thermal_velocity", 0.0);
+        cfg.sources.push_back(std::move(source));
+    }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;
     validate_config_2d(cfg);
     return cfg;
@@ -1555,7 +1697,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     };
 
     auto blocks = parse_config_blocks(
-        path, global_keys, species_keys, nullptr, nullptr, "3D");
+        path, global_keys, species_keys, nullptr, nullptr, nullptr, "3D");
     const auto& global = blocks.global;
 
     (void)parse_config_version(global, "3D");
