@@ -139,6 +139,23 @@ def main() -> int:
         and convergence["physics_claim"] == "none",
         "Hall workstation convergence contract drifted",
     )
+    horizon = manifest["horizon.workstation"]
+    require(
+        horizon.getint("horizon_contract_version") == 1
+        and horizon["base_tier"] == "workstation"
+        and horizon.getint("step_multiplier") == 4
+        and math.isclose(
+            horizon.getfloat("diagnostic_averaging_fraction"), 0.2
+        )
+        and horizon.getint("diagnostic_samples") == 11
+        and horizon.getfloat("population_growth_safety_factor") >= 4
+        and horizon.getfloat("capacity_headroom_factor") >= 1.25
+        and horizon.getint("maximum_added_particle_updates")
+            == 5_000_000_000
+        and horizon.getint("max_threads") == 1
+        and horizon["physics_claim"] == "none",
+        "Hall workstation horizon contract drifted",
+    )
     source = manifest["pair_source"]
     width = number(source, "x_max_m") - number(source, "x_min_m")
     height = number(source, "y_max_m") - number(source, "y_min_m")
@@ -410,7 +427,9 @@ def main() -> int:
         and comparison["convergence_preparer"]
             == "scripts/prepare_hall_convergence.py"
         and comparison["convergence_analyzer"]
-            == "scripts/analyze_hall_convergence.py",
+            == "scripts/analyze_hall_convergence.py"
+        and comparison["horizon_stage_preparer"]
+            == "scripts/prepare_hall_horizon_stage.py",
         "Hall comparison/preflight contract drifted",
     )
     for key, manifest_key in (

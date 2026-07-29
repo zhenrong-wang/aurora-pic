@@ -67,6 +67,8 @@ jobs:
         run: python3 scripts/test_hall_ensemble.py
       - name: Validate Hall convergence workflow
         run: python3 scripts/test_hall_convergence.py build/aurorapic_cli
+      - name: Validate Hall horizon workflow
+        run: python3 scripts/test_hall_horizon_stage.py build/aurorapic_cli
       - name: Validate Hall external source lock
         run: python3 scripts/test_lock_hall_source.py
       - name: Validate Hall reference normalization

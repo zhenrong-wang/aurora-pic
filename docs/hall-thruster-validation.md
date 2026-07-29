@@ -149,7 +149,7 @@ the models.
 | Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit diagnostics and checkpoint v8; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
 | Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically; the exact-control workstation pilot passed | Compare converged profiles against checksum-pinned published data |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
-| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, and a guarded population/duration convergence workflow | Execute the convergence ladder, add long-run segment aggregation, and qualify with real reference data |
+| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, a guarded population/duration convergence workflow, and checkpoint-chained horizon stages | Execute the guarded horizon ladder, add long-run segment aggregation, and qualify with native reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
 | Scale-out runtime | Serial/OpenMP only; a bounded, provenance-pinned runtime qualifier measures a selected host without permitting a production launch | Add MPI domain decomposition before production-size LANDMARK runs |
 | High-volume output | VTK/XML, CSV, and text restart | Add openPMD/HDF5 or equivalent parallel, chunked output before large campaigns |
@@ -417,6 +417,41 @@ half-range measures inter-code spread; it is not experimental uncertainty.
 Use the original authors' numerical supplement, or the checksum-pinned WarpX
 archive, for a validation claim. Screening-only reports are not accepted by
 the seeded ensemble aggregator.
+
+### Guarded time-horizon extension
+
+The workstation duration-convergence ladder ends at 10,000 steps, or 50 ns.
+That is useful for early-transient sensitivity but cannot approach the
+published 16–20 microsecond averaging window. Time-horizon work therefore uses
+one checkpoint-chained stage at a time. A stage is prepared only from a
+completed serial, single-thread prior run whose final scalar step, physical
+time, and checkpoint header agree.
+
+For the completed 5,000-step workstation pilot, prepare the 20,000-step
+(100 ns) stage without launching it:
+
+```sh
+python3 scripts/prepare_hall_horizon_stage.py \
+  examples/hall_landmark_axial_azimuthal.case \
+  --prior-deck /external/pilot/case.cfg \
+  --prior-output /external/pilot/output \
+  --output-dir /external/campaign/horizon-100ns \
+  --acknowledge-cost \
+  I_UNDERSTAND_THIS_EXTENDS_A_HALL_RUN_FROM_A_PINNED_CHECKPOINT
+```
+
+The generated `horizon.json` pins the prior deck, scalar history, and final
+checkpoint hashes. It records measured species growth, a four-times growth
+projection, 25% capacity headroom, added particle-update cost, and an
+11-sample average over the final 20% of the target horizon. The generated deck
+remains serial with one thread and is still protected by the CLI large-run
+acknowledgement. The preparer never launches it.
+
+After execution, integrity checks and published-profile screening must be
+repeated. Prepare another stage only if capacity remains safe and the profile
+trend is physically credible. Every stage retains `physics_claim = none`;
+reaching 20 microseconds, population/time-step/grid convergence, multiple
+seeds, and native-reference agreement remain separate gates.
 
 ## Seeded ensemble comparison
 
@@ -707,7 +742,7 @@ constitute one. The external comparator now pins reference/profile/mode/case
 hashes, performs uncertainty-aware residual checks, and derives modal
 frequency or growth from complex histories; the non-launching preflight pins
 resource arithmetic and refuses exceeded budgets. Both are guarded with
-synthetic data only. The next H2-enabling slice is the
-production-deck/convergence campaign contract and measured single-rank field
-and particle throughput, followed by MPI decomposition required for the
+synthetic data only. The next H2-enabling slice is execution and trend
+analysis of the guarded 100 ns checkpoint stage, followed by long-run
+diagnostic segment aggregation and MPI decomposition required for the
 published run.

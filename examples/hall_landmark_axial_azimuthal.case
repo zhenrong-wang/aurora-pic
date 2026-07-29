@@ -139,6 +139,18 @@ relative_linf_tolerance = 0.5
 maximum_fine_to_coarse_change_ratio = 1
 physics_claim = none
 
+[horizon.workstation]
+horizon_contract_version = 1
+base_tier = workstation
+step_multiplier = 4
+diagnostic_averaging_fraction = 0.2
+diagnostic_samples = 11
+population_growth_safety_factor = 4
+capacity_headroom_factor = 1.25
+maximum_added_particle_updates = 5000000000
+max_threads = 1
+physics_claim = none
+
 [diagnostics]
 profile_axis = x
 mode_axis = y
@@ -163,3 +175,4 @@ ensemble_preparer = scripts/prepare_hall_ensemble.py
 ensemble_aggregator = scripts/aggregate_hall_ensemble.py
 convergence_preparer = scripts/prepare_hall_convergence.py
 convergence_analyzer = scripts/analyze_hall_convergence.py
+horizon_stage_preparer = scripts/prepare_hall_horizon_stage.py
