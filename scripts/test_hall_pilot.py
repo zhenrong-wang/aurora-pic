@@ -101,6 +101,12 @@ def main() -> int:
             and result["metrics"]["resolved_modes"] == 9,
             f"Hall pilot analysis failed: {analyzed.stderr}",
         )
+        require(
+            result["metrics"][
+                "maximum_retained_negative_debt_macroparticles"
+            ] == 0,
+            "timestep-local Hall pilot retained negative controller debt",
+        )
 
         saturated_output = work / "saturated_output"
         shutil.copytree(output, saturated_output)
@@ -111,8 +117,10 @@ def main() -> int:
         macro_weight = 5e16 * 0.025 * 0.0128 / 2048
         macro_charge = 1.602176634e-19 * macro_weight
         final_current = current_rows[-1]
-        if "control_mode" in final_current:
-            final_current["control_mode"] = "cumulative"
+        if "control_mode" in current_fields:
+            current_fields.remove("control_mode")
+            for row in current_rows:
+                row.pop("control_mode")
         emitted_charge = float(
             final_current["cumulative_emitted_charge"]
         )

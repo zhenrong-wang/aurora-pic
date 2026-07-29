@@ -172,7 +172,13 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     macro_charge = 1.602176634e-19 * macro_weight
     maximum_charge_residual = 0.0
     maximum_controller_debt = 0.0
+    maximum_retained_negative_debt = 0.0
+    maximum_control_remainder = 0.0
+    maximum_unserved_reverse_charge = 0.0
     controller_saturation_samples = 0
+    expected_control_mode = manifest["cathode_control"].get(
+        "control_mode", "cumulative"
+    )
     for row in current:
         processed_charge = number(
             row, "cumulative_processed_monitored_charge",
@@ -210,6 +216,13 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
         if control_mode not in {"cumulative", "timestep_local"}:
             raise PilotError(
                 "current_source.csv contains an invalid control mode"
+            )
+        if (
+            "control_mode" in row
+            and control_mode != expected_control_mode
+        ):
+            raise PilotError(
+                "current-source control mode drifted from the manifest"
             )
         # The pinned emitted species is electrons, so its represented
         # macrocharge is negative. A negative remainder is valid actuator
@@ -269,6 +282,16 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 -remainder,
                 abs(unserved_reverse_charge) / macro_charge,
             )
+        maximum_retained_negative_debt = max(
+            maximum_retained_negative_debt, -remainder
+        )
+        maximum_control_remainder = max(
+            maximum_control_remainder, abs(remainder)
+        )
+        maximum_unserved_reverse_charge = max(
+            maximum_unserved_reverse_charge,
+            abs(unserved_reverse_charge),
+        )
         maximum_charge_residual = max(
             maximum_charge_residual, abs(residual)
         )
@@ -386,6 +409,14 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 controller_saturation_samples,
             "maximum_controller_debt_macroparticles":
                 maximum_controller_debt,
+            "maximum_retained_negative_debt_macroparticles":
+                maximum_retained_negative_debt,
+            "maximum_control_remainder_macroparticles":
+                maximum_control_remainder,
+            "maximum_unserved_reverse_charge_c":
+                maximum_unserved_reverse_charge,
+            "maximum_unserved_reverse_macroparticles":
+                maximum_unserved_reverse_charge / macro_charge,
             "maximum_potential_reference_error_v": maximum_reference_error,
             "resolved_modes": len(observed_modes),
         },
