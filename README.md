@@ -38,6 +38,11 @@ acknowledgement before it writes—but never launches—a full Case 2 candidate
 deck.
 `analyze_hall_pilot.py` checks bounded-tier diagnostic integrity and always
 reports `physics_claim = none`.
+`lock_hall_source.py` plans external acquisition from the committed source
+registry and stream-hashes local artifacts without downloading them.
+`normalize_hall_reference.py` verifies local raw-table and case hashes,
+performs explicit unit conversion and multi-code envelope reduction, and
+produces comparator-ready reference artifacts without interpolation.
 Use `aurorapic_cli --validate-only <config.cfg>` to parse and validate any
 deck without constructing a simulation or taking a timestep.
 The CLI also blocks configurations exceeding 100 million estimated initial

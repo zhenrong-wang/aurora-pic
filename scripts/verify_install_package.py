@@ -176,6 +176,18 @@ def smoke_install_tree(
     )
     require_file(
         prefix / "share" / "aurorapic" / "scripts" /
+        "lock_hall_source.py"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
+        "normalize_hall_reference.py"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "examples" /
+        "hall_landmark_case2.sources"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
         "preflight_hall.py"
     )
     require_file(
@@ -239,6 +251,18 @@ def smoke_tgz_package(
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /
         "analyze_hall_pilot.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "scripts" /
+        "lock_hall_source.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "scripts" /
+        "normalize_hall_reference.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "examples" /
+        "hall_landmark_case2.sources"
     )
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /

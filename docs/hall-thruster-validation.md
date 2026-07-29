@@ -193,9 +193,98 @@ turbulent physics claim.
 
 ## External reference comparison
 
-AuroraPIC does not redistribute the approximately 32 GB WarpX corpus or
-derived paper data. A local `.hall-reference` manifest instead pins the exact
-profile and mode CSV bytes:
+AuroraPIC does not redistribute the approximately 29 GB WarpX corpus or
+derived paper data. The public repository may also be inaccessible from some
+hosts. Acquisition is therefore separate from normalization. The committed
+`examples/hall_landmark_case2.sources` registry distinguishes the original
+500×256 LANDMARK supplement from the CC0 WarpX 512×256 AMReX corpus and pins
+their landing records, DOI, license, artifact identity, and acquisition
+method.
+
+The non-downloading source tool first writes an acquisition plan:
+
+```sh
+python3 scripts/lock_hall_source.py \
+  examples/hall_landmark_case2.sources \
+  --source warpx_deepblue \
+  --output local/warpx-acquisition-plan.json
+```
+
+Deep Blue directs this 29 GB artifact to external Globus transfer. After that
+transfer, the same tool stream-hashes the local archive. Files above 64 MiB
+require the explicit
+`I_UNDERSTAND_THIS_MAY_HASH_A_VERY_LARGE_FILE` acknowledgement. Supplying a
+checksum independently obtained from repository metadata records
+`repository_checksum_verified = true`; omitting it records that only local
+post-acquisition byte identity has been established. The tool never downloads,
+extracts, or loads the full archive into memory.
+
+An operator then extracts the required profile/mode tables with a recorded
+procedure and creates a local `.hall-source` table lock that pins those exact
+raw bytes and their column/unit map:
+
+```ini
+[source]
+hall_source_version = 1
+case_id = landmark-axial-azimuthal-2019
+case_variant = case-2-multicode-supplement
+case_manifest_sha256 = <lowercase SHA-256>
+profile_file = published-profiles.csv
+profile_sha256 = <lowercase SHA-256>
+mode_file = published-modes.csv
+mode_sha256 = <lowercase SHA-256>
+source_url = <direct artifact or repository record URL>
+source_artifact_id = <repository identifier or supplement filename>
+provenance = <how the two raw tables were obtained>
+citation = Charoy et al. 2019, doi:10.1088/1361-6595/ab46c5
+retrieved = YYYY-MM-DD
+license = <terms applying to the source tables>
+
+[profile]
+coordinate_column = x_cm
+coordinate_scale_to_m = 0.01
+electric_field_columns = code_a_ex,code_b_ex
+electric_field_scale_to_v_m = 1
+ion_density_columns = code_a_ni_cm3,code_b_ni_cm3
+ion_density_scale_to_m3 = 1e6
+electron_temperature_columns = code_a_te,code_b_te
+electron_temperature_scale_to_ev = 1
+
+[mode]
+mode_column = azimuthal_mode
+frequency_columns = code_a_frequency_khz,code_b_frequency_khz
+frequency_scale_to_hz = 1000
+comparison_mode = 16
+
+[acceptance]
+coordinate_absolute_tolerance_m = 1e-12
+relative_tolerance = 0.05
+uncertainty_multiplier = 1
+```
+
+Column lists contain independent published codes or replicates. Normalization
+uses their midpoint as the reference and half their range as uncertainty.
+One column is valid and produces zero range uncertainty. Values are converted
+only by the declared multiplicative scales. Source row order and coordinates
+are preserved; the normalizer refuses duplicate/non-increasing coordinates
+and performs no interpolation or extrapolation:
+
+```sh
+python3 scripts/normalize_hall_reference.py \
+  local/case2.hall-source \
+  --case-manifest examples/hall_landmark_axial_azimuthal.case \
+  --output-dir local/case2-reference
+```
+
+The command verifies the raw-table and case-manifest hashes before writing an
+atomic output directory containing canonical profile/mode CSVs,
+`reference.hall-reference`, and `normalization.json`. Existing output is never
+overwritten. The audit pins every input and output hash, source artifact
+identity, the `midpoint_and_half_range` envelope method, and the
+`native_no_interpolation` coordinate policy.
+
+The generated `.hall-reference` manifest pins the exact normalized profile and
+mode CSV bytes:
 
 ```ini
 [reference]

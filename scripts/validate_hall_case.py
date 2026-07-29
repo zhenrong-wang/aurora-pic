@@ -144,6 +144,36 @@ def main() -> int:
     initial = manifest["initial_loading"]
     diagnostics = manifest["diagnostics"]
     comparison = manifest["comparison"]
+    source_registry_path = MANIFEST.parent / comparison["source_registry"]
+    source_registry_digest = hashlib.sha256(
+        source_registry_path.read_bytes()
+    ).hexdigest()
+    source_registry = load_with_global(source_registry_path)
+    require(
+        source_registry["global"].getint("source_registry_version") == 1
+        and source_registry["global"]["case_id"]
+            == global_section["case_id"]
+        and source_registry_digest
+            == comparison["source_registry_sha256"],
+        "Hall source registry linkage drifted",
+    )
+    original_source = source_registry["source.original_supplement"]
+    warpx_source = source_registry["source.warpx_deepblue"]
+    require(
+        original_source["variant"] == "original-landmark-case2-500x256"
+        and original_source.getint("cells_x") == 500
+        and original_source.getint("cells_y") == 256
+        and original_source["doi"] == reference["doi"]
+        and warpx_source["variant"] == "warpx-case2-512x256"
+        and warpx_source.getint("cells_x") == 512
+        and warpx_source.getint("cells_y") == 256
+        and warpx_source["doi"] == provenance["public_dataset_doi"]
+        and warpx_source["license"] == "CC0-1.0"
+        and warpx_source["artifact_name"] == "baseline_20us.tar"
+        and warpx_source["file_set_id"] == "m900nv362"
+        and warpx_source["acquisition"] == "external_globus",
+        "Hall reference source identities drifted",
+    )
     emitted_species = runtime[
         "species." + cathode["emitted_species"]
     ]
@@ -329,7 +359,10 @@ def main() -> int:
         and comparison["reference_data_policy"]
             == "external_checksum_pinned"
         and comparison["comparator"] == "scripts/compare_hall.py"
-        and comparison["preflight"] == "scripts/preflight_hall.py",
+        and comparison["preflight"] == "scripts/preflight_hall.py"
+        and comparison["source_locker"] == "scripts/lock_hall_source.py"
+        and comparison["reference_normalizer"]
+            == "scripts/normalize_hall_reference.py",
         "Hall comparison/preflight contract drifted",
     )
     for key, manifest_key in (

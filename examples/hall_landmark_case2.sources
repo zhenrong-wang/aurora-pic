@@ -1,0 +1,32 @@
+source_registry_version = 1
+case_id = landmark-axial-azimuthal-2019
+
+[source.original_supplement]
+variant = original-landmark-case2-500x256
+kind = published_profile_and_mode_supplement
+cells_x = 500
+cells_y = 256
+landing_url = https://doi.org/10.1088/1361-6595/ab46c5
+doi = 10.1088/1361-6595/ab46c5
+license = publisher-supplement-terms
+acquisition = manual_from_publisher_record
+artifact_name = externally_supplied
+display_size = unknown
+
+[source.warpx_deepblue]
+variant = warpx-case2-512x256
+kind = amrex_plotfile_archive
+cells_x = 512
+cells_y = 256
+landing_url = https://deepblue.lib.umich.edu/data/concern/data_sets/vq27zp39n
+doi = 10.7302/5mfm-as86
+license = CC0-1.0
+license_url = https://creativecommons.org/publicdomain/zero/1.0/
+acquisition = external_globus
+artifact_name = baseline_20us.tar
+display_size = 29 GB
+file_set_id = m900nv362
+readme_file_set_id = mk61rh90m
+format = AMReX-plotfile
+output_interval_steps = 5000
+final_step = 4000000
