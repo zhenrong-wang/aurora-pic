@@ -508,6 +508,15 @@ sources. Published Case 2 data show growth from 75 to roughly 290
 particles/cell, so a projection based only on the initial 76.8 trillion
 updates is an optimistic lower bound for a complete discharge.
 
+The first complete 5,000-step workstation pilot is recorded in
+`benchmarks/hall/landmark-workstation-20260729-seed24680.json`. It completed
+on one low-priority CPU core in 267.56 seconds with 32.2 MiB peak resident
+memory and 121.5 MiB of artifacts. All integration checks passed, but the run
+exposed the timestep-local cathode and affine-potential differences now listed
+as explicit blockers. The committed record pins the executable, deck,
+manifest, analyzer, scalar, resolved-diagnostic, and checkpoint hashes while
+retaining `physics_claim = none`.
+
 The preflight distinguishes the paper's 500 by 256 cells from AuroraPIC's
 501 by 256 structured nodes, writes all assumptions and arithmetic to JSON,
 returns one when

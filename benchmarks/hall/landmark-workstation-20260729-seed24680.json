@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "workstation",
+  "physics_claim": "none",
+  "passed_integration_checks": true,
+  "simulation": {
+    "source_commit": "93cbdb4",
+    "date_utc": "2026-07-29",
+    "seed": 24680,
+    "cells_x": 125,
+    "cells_y": 64,
+    "initial_macroparticles": 256000,
+    "steps": 5000,
+    "timestep_s": 5e-12,
+    "final_time_s": 2.4999999999999016e-08,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "wall_seconds": 267.56,
+    "user_seconds": 267.31,
+    "system_seconds": 0.15,
+    "maximum_resident_kib": 32976,
+    "artifact_bytes": 126939952
+  },
+  "analysis": {
+    "source_commit": "ae3015f",
+    "passed": true,
+    "final_live_particles": 260923,
+    "maximum_live_particles": 260923,
+    "macro_pairs_created": 5020,
+    "cathode_macro_particles_created": 9207,
+    "controller_saturation_samples": 44,
+    "maximum_controller_debt_macroparticles": 66.9999999999993,
+    "maximum_charge_balance_residual_c": 1.3418229309750001e-09,
+    "maximum_potential_reference_error_v": 5.684341886080802e-14,
+    "resolved_samples": 11,
+    "resolved_modes": 33
+  },
+  "sha256": {
+    "executable": "40abcb18273f63d39bcefbb7544ba5c0ba55bc55330d157588401b4057f5ab2e",
+    "case_manifest_at_execution": "57bd78d29a794104308fecb31b4ee79b12a92996cea9c3258723bd7c5ee2f680",
+    "case_manifest_after_blocker_audit": "6c6ad884bee323c7a369f34d1f9bd3ea1bd8239432e053e249c3f5852c6672c8",
+    "runtime_config": "76b14cb7155730e503917ce341a0574f9857d258fadd6836497aec4c8db19b3d",
+    "preflight_report": "80117c3d7a5fc3252823e0346735e0cac5d144f60633ccf3b356c1dc62e7437f",
+    "analysis_report": "93eea23548c782efc48aa73f9420b74b3369c2c691cac2a98734a90869474337",
+    "analyzer": "e0bc3d7bfd0ad6a4269ac6558490b35e12917367e8ec0b3789cb2fff857c61c1",
+    "scalars": "d672bfb321ed315124ad12f843dbad2d0328ff00eabffa2fc161bea77c290a2d",
+    "field_time_average": "67668fd7f2a5e2df007f290c6a445e55f08b2aa91076735d4e8d96a9e0f2a755",
+    "species_time_average": "39996175dd037dd2ce876d8f144edc2e8db5e3f4fe48f63ad4f2070bcdf525f1",
+    "resolved_modes": "a541bb8344f67a83b9b5f650d69b0714bd35a78dc80f1efcfc3f8676d07e6425",
+    "checkpoint_0": "204fb5b26f3ee2688322fd1752efbf01e971ba361a48c24c253217e244778eaf",
+    "checkpoint_2500": "1f238965c426358d5c182e07757302f4b081ef03f6509f01858da403457d1938",
+    "checkpoint_5000": "24134b0279851b0bb93f051b3f36bdb69e1da0321d50c3b22418bbcfbbcc7609"
+  },
+  "findings": [
+    "This was a complete workstation-tier integration and resource pilot, not a published-resolution or physics-agreement result.",
+    "The generic cumulative cathode controller entered one-way actuator debt; LANDMARK requires timestep-local electron-minus-ion anode-loss injection.",
+    "The generic potential reference is a constant gauge shift; LANDMARK requires an affine axial potential correction that also changes the axial electric field.",
+    "The case manifest now lists both differences as explicit missing-physics blockers."
+  ],
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}
