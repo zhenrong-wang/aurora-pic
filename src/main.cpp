@@ -63,6 +63,10 @@ int main(int argc, char** argv) {
                       << " boundary_y="
                       << pic::to_string(
                              cfg.boundary_y.value_or(cfg.boundary))
+                      << " current_source="
+                      << (cfg.current_regulated_source ? "yes" : "no")
+                      << " potential_reference="
+                      << (cfg.potential_reference ? "yes" : "no")
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
             pic::Simulation2D sim(std::move(cfg));
             auto summary = sim.run();

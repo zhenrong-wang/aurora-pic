@@ -25,6 +25,7 @@ constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
+constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -200,7 +201,103 @@ double source_profile_integral(
                *source.spatial_profile.profile_center_y,
                *source.spatial_profile.profile_scale_y);
 }
+
+std::size_t boundary_loss(
+    const BoundaryLoss2D& losses, BoundarySide2DName side) {
+    switch (side) {
+        case BoundarySide2DName::Left:
+            return losses.absorbed_left;
+        case BoundarySide2DName::Right:
+            return losses.absorbed_right;
+        case BoundarySide2DName::Bottom:
+            return losses.absorbed_bottom;
+        case BoundarySide2DName::Top:
+            return losses.absorbed_top;
+    }
+    throw std::logic_error("invalid 2D boundary side");
+}
+
+BoundarySide2DName boundary_side_from_string(
+    const std::string& value) {
+    if (value == "left") return BoundarySide2DName::Left;
+    if (value == "right") return BoundarySide2DName::Right;
+    if (value == "bottom") return BoundarySide2DName::Bottom;
+    if (value == "top") return BoundarySide2DName::Top;
+    throw std::runtime_error(
+        "invalid 2D checkpoint boundary side '" + value + "'");
+}
+
+double line_average(
+    const Mesh2D& mesh, CoordinateAxis axis, double coordinate) {
+    const bool along_x = axis == CoordinateAxis::X;
+    const double spacing = along_x ? mesh.dx() : mesh.dy();
+    const std::size_t extent = along_x ? mesh.nx() : mesh.ny();
+    const Boundary axis_boundary =
+        along_x ? mesh.boundary_x() : mesh.boundary_y();
+    const double axis_length =
+        along_x ? mesh.length_x() : mesh.length_y();
+    const double normalized_coordinate =
+        axis_boundary == Boundary::Periodic
+            ? wrap_periodic(coordinate, axis_length)
+            : coordinate;
+    const double grid_coordinate =
+        normalized_coordinate / spacing;
+    std::size_t lower = static_cast<std::size_t>(
+        std::floor(grid_coordinate));
+    double fraction =
+        grid_coordinate - static_cast<double>(lower);
+    std::size_t upper = 0;
+    if (axis_boundary == Boundary::Periodic) {
+        lower %= extent;
+        upper = (lower + 1) % extent;
+    } else {
+        lower = std::min(lower, extent - 2);
+        fraction = std::clamp(
+            grid_coordinate - static_cast<double>(lower),
+            0.0, 1.0);
+        upper = lower + 1;
+    }
+    double weighted_sum = 0.0;
+    double weight_sum = 0.0;
+    const std::size_t transverse_extent =
+        along_x ? mesh.ny() : mesh.nx();
+    const Boundary transverse_boundary =
+        along_x ? mesh.boundary_y() : mesh.boundary_x();
+    for (std::size_t transverse = 0;
+         transverse < transverse_extent; ++transverse) {
+        const std::size_t first =
+            along_x
+                ? mesh.index(lower, transverse)
+                : mesh.index(transverse, lower);
+        const std::size_t second =
+            along_x
+                ? mesh.index(upper, transverse)
+                : mesh.index(transverse, upper);
+        const double value =
+            (1.0 - fraction) * mesh.phi()[first] +
+            fraction * mesh.phi()[second];
+        const double weight =
+            transverse_boundary == Boundary::Periodic ||
+                    (transverse != 0 &&
+                     transverse + 1 != transverse_extent)
+                ? 1.0
+                : 0.5;
+        weighted_sum += weight * value;
+        weight_sum += weight;
+    }
+    return weighted_sum / weight_sum;
+}
 } // namespace
+
+std::string to_string(BoundarySide2DName side) {
+    switch (side) {
+        case BoundarySide2DName::Left: return "left";
+        case BoundarySide2DName::Right: return "right";
+        case BoundarySide2DName::Bottom: return "bottom";
+        case BoundarySide2DName::Top: return "top";
+    }
+    return "unknown";
+}
 
 Simulation2D::Simulation2D(Simulation2DConfig cfg)
     : cfg_(std::move(cfg)),
@@ -288,6 +385,83 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
             cfg_.max_particles_per_species) {
             throw std::invalid_argument(
                 "2D initial species population exceeds max_particles_per_species");
+        }
+    }
+    species_boundary_losses_.resize(species_.size());
+    if (cfg_.current_regulated_source) {
+        const auto& source = *cfg_.current_regulated_source;
+        const auto found = std::find_if(
+            species_.begin(), species_.end(),
+            [&](const Species2D& species) {
+                return species.name() == source.species;
+            });
+        if (found == species_.end()) {
+            throw std::invalid_argument(
+                "2D current-regulated source references unknown species '" +
+                source.species + "'");
+        }
+        current_regulated_species_ = static_cast<std::size_t>(
+            std::distance(species_.begin(), found));
+        if (found->charge() == 0.0) {
+            throw std::invalid_argument(
+                "2D current-regulated source species must be charged");
+        }
+        const auto boundary_policy =
+            [&](BoundarySide2DName side) {
+                switch (side) {
+                    case BoundarySide2DName::Left:
+                        return cfg_.particle_boundary_config.left;
+                    case BoundarySide2DName::Right:
+                        return cfg_.particle_boundary_config.right;
+                    case BoundarySide2DName::Bottom:
+                        return cfg_.particle_boundary_config.bottom;
+                    case BoundarySide2DName::Top:
+                        return cfg_.particle_boundary_config.top;
+                }
+                return ParticleBoundary::Auto;
+            };
+        if (boundary_policy(source.monitor_boundary) !=
+            ParticleBoundary::Absorbing) {
+            throw std::invalid_argument(
+                "2D current-regulated source monitor boundary must be absorbing");
+        }
+        const double normal_length =
+            source.emission_boundary == BoundarySide2DName::Left ||
+                    source.emission_boundary == BoundarySide2DName::Right
+                ? mesh_.length_x()
+                : mesh_.length_y();
+        if (!std::isfinite(source.emission_inset) ||
+            source.emission_inset < 0.0 ||
+            !(source.emission_inset < normal_length)) {
+            throw std::invalid_argument(
+                "2D current-regulated source emission_inset must be finite and inside the domain");
+        }
+        if (!std::isfinite(source.thermal_velocity) ||
+            source.thermal_velocity < 0.0 ||
+            !std::isfinite(source.drift.x) ||
+            !std::isfinite(source.drift.y) ||
+            !std::isfinite(source.drift.z)) {
+            throw std::invalid_argument(
+                "2D current-regulated source velocities must be finite and thermal_velocity non-negative");
+        }
+        current_regulated_source_diagnostics_.emplace();
+    }
+    if (cfg_.potential_reference) {
+        const auto& reference = *cfg_.potential_reference;
+        if (reference.axis == CoordinateAxis::Z ||
+            !std::isfinite(reference.coordinate) ||
+            !std::isfinite(reference.target)) {
+            throw std::invalid_argument(
+                "2D potential reference requires a finite x/y coordinate and target");
+        }
+        const double length =
+            reference.axis == CoordinateAxis::X
+                ? mesh_.length_x()
+                : mesh_.length_y();
+        if (reference.coordinate < 0.0 ||
+            reference.coordinate > length) {
+            throw std::invalid_argument(
+                "2D potential reference coordinate lies outside the domain");
         }
     }
     for (const auto& source : cfg_.sources) {
@@ -445,6 +619,13 @@ void Simulation2D::initialize() {
     time_ = 0.0;
     step_ = 0;
     boundary_losses_ = {};
+    std::fill(
+        species_boundary_losses_.begin(),
+        species_boundary_losses_.end(), BoundaryLoss2D{});
+    potential_reference_offset_ = 0.0;
+    if (current_regulated_source_diagnostics_) {
+        *current_regulated_source_diagnostics_ = {};
+    }
     for (auto& diagnostics : source_diagnostics_) {
         diagnostics.macro_pairs_created = 0;
         diagnostics.represented_pairs_created = 0.0;
@@ -538,6 +719,23 @@ void Simulation2D::deposit_and_solve() {
         sp.deposit_charge(mesh_, cfg_.out_of_plane_depth);
     }
     solver_.solve(mesh_);
+    apply_potential_reference();
+}
+
+void Simulation2D::apply_potential_reference() {
+    potential_reference_offset_ = 0.0;
+    if (!cfg_.potential_reference) return;
+    const auto& reference = *cfg_.potential_reference;
+    const double mean =
+        line_average(mesh_, reference.axis, reference.coordinate);
+    potential_reference_offset_ = mean - reference.target;
+    if (!std::isfinite(potential_reference_offset_)) {
+        throw std::runtime_error(
+            "2D potential-reference offset is not finite");
+    }
+    for (double& potential : mesh_.phi()) {
+        potential -= potential_reference_offset_;
+    }
 }
 
 void Simulation2D::inject_volumetric_pair_sources() {
@@ -770,24 +968,186 @@ void Simulation2D::inject_volumetric_pair_sources() {
     }
 }
 
-void Simulation2D::apply_particle_boundaries(Particle2D& particle) {
+void Simulation2D::inject_current_regulated_source() {
+    if (!cfg_.current_regulated_source ||
+        !current_regulated_species_ ||
+        !current_regulated_source_diagnostics_) {
+        return;
+    }
+    const auto& config = *cfg_.current_regulated_source;
+    auto& emitted_species = species_[*current_regulated_species_];
+    auto& diagnostics =
+        *current_regulated_source_diagnostics_;
+    double cumulative_charge = 0.0;
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        const double contribution =
+            static_cast<double>(boundary_loss(
+                species_boundary_losses_[species_id],
+                config.monitor_boundary)) *
+            species_[species_id].charge() *
+            species_[species_id].weight();
+        cumulative_charge += contribution;
+    }
+    if (!std::isfinite(cumulative_charge)) {
+        throw std::runtime_error(
+            "2D current-regulated source monitored charge overflow");
+    }
+    const double delta_charge =
+        cumulative_charge -
+        diagnostics.processed_monitored_charge;
+    const double macro_charge =
+        emitted_species.charge() * emitted_species.weight();
+    const double accumulated =
+        diagnostics.control_macro_remainder +
+        delta_charge / macro_charge;
+    if (!std::isfinite(accumulated)) {
+        throw std::runtime_error(
+            "2D current-regulated source accumulator overflow");
+    }
+    if (accumulated >=
+        static_cast<double>(
+            std::numeric_limits<std::size_t>::max())) {
+        throw std::runtime_error(
+            "2D current-regulated source per-step count overflow");
+    }
+    const std::size_t particles_this_step =
+        accumulated > 0.0
+            ? static_cast<std::size_t>(std::floor(accumulated))
+            : 0;
+    const auto dead_slots = static_cast<std::size_t>(
+        std::count_if(
+            emitted_species.particles().begin(),
+            emitted_species.particles().end(),
+            [](const Particle2D& particle) {
+                return !particle.alive;
+            }));
+    const std::size_t growth_capacity =
+        cfg_.max_particles_per_species -
+        std::min(
+            cfg_.max_particles_per_species,
+            emitted_species.particles().size());
+    if (particles_this_step > dead_slots &&
+        particles_this_step - dead_slots > growth_capacity) {
+        throw std::runtime_error(
+            "2D current-regulated source would exceed max_particles_per_species");
+    }
+    if (particles_this_step >
+        std::numeric_limits<std::size_t>::max() -
+            diagnostics.macro_particles_created) {
+        throw std::runtime_error(
+            "2D current-regulated source counter overflow");
+    }
+
+    std::uniform_real_distribution<double> transverse(0.0, 1.0);
+    std::normal_distribution<double> velocity_x(
+        config.drift.x, config.thermal_velocity);
+    std::normal_distribution<double> velocity_y(
+        config.drift.y, config.thermal_velocity);
+    std::normal_distribution<double> velocity_z(
+        config.drift.z, config.thermal_velocity);
+    double injected_energy = 0.0;
+    for (std::size_t particle_id = 0;
+         particle_id < particles_this_step; ++particle_id) {
+        Particle2D particle;
+        const double sample = transverse(rng_);
+        switch (config.emission_boundary) {
+            case BoundarySide2DName::Left:
+                particle.position = {
+                    config.emission_inset,
+                    sample * mesh_.length_y()};
+                break;
+            case BoundarySide2DName::Right:
+                particle.position = {
+                    mesh_.length_x() - config.emission_inset,
+                    sample * mesh_.length_y()};
+                break;
+            case BoundarySide2DName::Bottom:
+                particle.position = {
+                    sample * mesh_.length_x(),
+                    config.emission_inset};
+                break;
+            case BoundarySide2DName::Top:
+                particle.position = {
+                    sample * mesh_.length_x(),
+                    mesh_.length_y() - config.emission_inset};
+                break;
+        }
+        particle.velocity = {
+            velocity_x(rng_), velocity_y(rng_)};
+        particle.velocity_z = velocity_z(rng_);
+        particle.velocity_half = particle.velocity;
+        particle.velocity_half_z = particle.velocity_z;
+        const double speed_squared =
+            particle.velocity.x * particle.velocity.x +
+            particle.velocity.y * particle.velocity.y +
+            particle.velocity_z * particle.velocity_z;
+        injected_energy +=
+            0.5 * emitted_species.weight() *
+            emitted_species.mass() * speed_squared;
+        initialize_particle_pusher(
+            particle,
+            interpolate_electric(mesh_, particle.position),
+            emitted_species.charge() / emitted_species.mass(),
+            cfg_);
+        const auto dead = std::find_if(
+            emitted_species.particles().begin(),
+            emitted_species.particles().end(),
+            [](const Particle2D& candidate) {
+                return !candidate.alive;
+            });
+        if (dead == emitted_species.particles().end()) {
+            emitted_species.particles().push_back(particle);
+        } else {
+            *dead = particle;
+        }
+    }
+    const double represented_increment =
+        static_cast<double>(particles_this_step) *
+        emitted_species.weight();
+    if (!std::isfinite(injected_energy) ||
+        !std::isfinite(
+            diagnostics.injected_kinetic_energy +
+            injected_energy) ||
+        !std::isfinite(
+            diagnostics.represented_particles_created +
+            represented_increment)) {
+        throw std::runtime_error(
+            "2D current-regulated source diagnostic overflow");
+    }
+    diagnostics.macro_particles_created += particles_this_step;
+    diagnostics.represented_particles_created +=
+        represented_increment;
+    diagnostics.control_macro_remainder =
+        accumulated - static_cast<double>(particles_this_step);
+    diagnostics.processed_monitored_charge =
+        cumulative_charge;
+    diagnostics.injected_kinetic_energy += injected_energy;
+}
+
+void Simulation2D::apply_particle_boundaries(
+    Particle2D& particle, std::size_t species_id) {
     if (!apply_lower_boundary(particle.position.x, particle.velocity_half.x, mesh_.length_x(),
                               cfg_.particle_boundary_config.left, boundary_losses_.absorbed_left)) {
+        ++species_boundary_losses_.at(species_id).absorbed_left;
         particle.alive = false;
         return;
     }
     if (!apply_upper_boundary(particle.position.x, particle.velocity_half.x, mesh_.length_x(),
                               cfg_.particle_boundary_config.right, boundary_losses_.absorbed_right)) {
+        ++species_boundary_losses_.at(species_id).absorbed_right;
         particle.alive = false;
         return;
     }
     if (!apply_lower_boundary(particle.position.y, particle.velocity_half.y, mesh_.length_y(),
                               cfg_.particle_boundary_config.bottom, boundary_losses_.absorbed_bottom)) {
+        ++species_boundary_losses_.at(species_id).absorbed_bottom;
         particle.alive = false;
         return;
     }
     if (!apply_upper_boundary(particle.position.y, particle.velocity_half.y, mesh_.length_y(),
                               cfg_.particle_boundary_config.top, boundary_losses_.absorbed_top)) {
+        ++species_boundary_losses_.at(species_id).absorbed_top;
         particle.alive = false;
         return;
     }
@@ -795,14 +1155,17 @@ void Simulation2D::apply_particle_boundaries(Particle2D& particle) {
 
 void Simulation2D::step() {
     if (!initialized_) initialize();
+    inject_current_regulated_source();
     inject_volumetric_pair_sources();
-    for (auto& sp : species_) {
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
         for (auto& particle : sp.particles()) {
             if (!particle.alive) continue;
             kick_particle(particle, interpolate_electric(mesh_, particle.position), qm, cfg_);
             drift_leapfrog(particle, cfg_.dt);
-            apply_particle_boundaries(particle);
+            apply_particle_boundaries(particle, species_id);
         }
     }
 
@@ -824,7 +1187,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV6 << '\n';
+    out << kCheckpointMagicV7 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -834,6 +1197,47 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     out << "time " << time_ << "\n";
     out << "boundary_losses " << boundary_losses_.absorbed_left << ' ' << boundary_losses_.absorbed_right << ' '
         << boundary_losses_.absorbed_bottom << ' ' << boundary_losses_.absorbed_top << "\n";
+    out << "species_boundary_losses "
+        << species_boundary_losses_.size() << "\n";
+    for (std::size_t species_id = 0;
+         species_id < species_boundary_losses_.size();
+         ++species_id) {
+        const auto& losses = species_boundary_losses_[species_id];
+        out << "species_boundary_loss " << species_id << ' '
+            << losses.absorbed_left << ' '
+            << losses.absorbed_right << ' '
+            << losses.absorbed_bottom << ' '
+            << losses.absorbed_top << "\n";
+    }
+    out << "current_regulated_source "
+        << (cfg_.current_regulated_source ? 1 : 0);
+    if (cfg_.current_regulated_source) {
+        const auto& config = *cfg_.current_regulated_source;
+        const auto& diagnostics =
+            *current_regulated_source_diagnostics_;
+        out << ' ' << config.species
+            << ' ' << to_string(config.monitor_boundary)
+            << ' ' << to_string(config.emission_boundary)
+            << ' ' << config.emission_inset
+            << ' ' << config.drift.x
+            << ' ' << config.drift.y
+            << ' ' << config.drift.z
+            << ' ' << config.thermal_velocity
+            << ' ' << diagnostics.macro_particles_created
+            << ' ' << diagnostics.represented_particles_created
+            << ' ' << diagnostics.control_macro_remainder
+            << ' ' << diagnostics.processed_monitored_charge
+            << ' ' << diagnostics.injected_kinetic_energy;
+    }
+    out << "\n";
+    out << "potential_reference "
+        << (cfg_.potential_reference ? 1 : 0);
+    if (cfg_.potential_reference) {
+        out << ' ' << to_string(cfg_.potential_reference->axis)
+            << ' ' << cfg_.potential_reference->coordinate
+            << ' ' << cfg_.potential_reference->target;
+    }
+    out << "\n";
     out << "species_count " << species_.size() << "\n";
     out << "rng " << rng_ << "\n";
     out << "source_count " << source_diagnostics_.size() << "\n";
@@ -921,8 +1325,10 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v4 = magic == kCheckpointMagicV4;
     const bool checkpoint_v5 = magic == kCheckpointMagicV5;
     const bool checkpoint_v6 = magic == kCheckpointMagicV6;
+    const bool checkpoint_v7 = magic == kCheckpointMagicV7;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
-        !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6) {
+        !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6 &&
+        !checkpoint_v7) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -937,9 +1343,9 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
         double out_of_plane_depth = 1.0;
-        if (checkpoint_v6) in >> out_of_plane_depth;
+        if (checkpoint_v6 || checkpoint_v7) in >> out_of_plane_depth;
         if ((!checkpoint_v2 && !checkpoint_v3 && !checkpoint_v4 &&
-             !checkpoint_v5 && !checkpoint_v6) ||
+             !checkpoint_v5 && !checkpoint_v6 && !checkpoint_v7) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity() ||
@@ -951,6 +1357,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     } else if (checkpoint_v2 || checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 ||
                checkpoint_v6 ||
+               checkpoint_v7 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -963,13 +1370,122 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     in >> key >> boundary_losses_.absorbed_left >> boundary_losses_.absorbed_right
        >> boundary_losses_.absorbed_bottom >> boundary_losses_.absorbed_top;
     if (key != "boundary_losses") throw std::runtime_error("checkpoint missing 2D boundary loss counters");
+    if (checkpoint_v7) {
+        std::size_t loss_species_count = 0;
+        in >> key >> loss_species_count;
+        if (key != "species_boundary_losses" ||
+            loss_species_count != species_.size()) {
+            throw std::runtime_error(
+                "checkpoint species boundary-loss count does not match 2D config");
+        }
+        for (std::size_t species_id = 0;
+             species_id < loss_species_count; ++species_id) {
+            std::size_t stored_species_id = 0;
+            auto& losses = species_boundary_losses_[species_id];
+            in >> key >> stored_species_id >>
+                losses.absorbed_left >> losses.absorbed_right >>
+                losses.absorbed_bottom >> losses.absorbed_top;
+            if (key != "species_boundary_loss" ||
+                stored_species_id != species_id) {
+                throw std::runtime_error(
+                    "checkpoint species boundary-loss metadata is invalid");
+            }
+        }
+        int has_current_source = 0;
+        in >> key >> has_current_source;
+        if (key != "current_regulated_source" ||
+            (has_current_source != 0 && has_current_source != 1) ||
+            (has_current_source != 0) !=
+                cfg_.current_regulated_source.has_value()) {
+            throw std::runtime_error(
+                "checkpoint current-regulated source presence does not match 2D config");
+        }
+        if (has_current_source != 0) {
+            CurrentRegulatedSource2DConfig stored;
+            std::string monitor_boundary;
+            std::string emission_boundary;
+            auto& diagnostics =
+                *current_regulated_source_diagnostics_;
+            in >> stored.species >> monitor_boundary >>
+                emission_boundary >> stored.emission_inset >>
+                stored.drift.x >> stored.drift.y >>
+                stored.drift.z >> stored.thermal_velocity >>
+                diagnostics.macro_particles_created >>
+                diagnostics.represented_particles_created >>
+                diagnostics.control_macro_remainder >>
+                diagnostics.processed_monitored_charge >>
+                diagnostics.injected_kinetic_energy;
+            stored.monitor_boundary =
+                boundary_side_from_string(monitor_boundary);
+            stored.emission_boundary =
+                boundary_side_from_string(emission_boundary);
+            const auto& expected =
+                *cfg_.current_regulated_source;
+            if (stored.species != expected.species ||
+                stored.monitor_boundary != expected.monitor_boundary ||
+                stored.emission_boundary != expected.emission_boundary ||
+                stored.emission_inset != expected.emission_inset ||
+                stored.drift.x != expected.drift.x ||
+                stored.drift.y != expected.drift.y ||
+                stored.drift.z != expected.drift.z ||
+                stored.thermal_velocity !=
+                    expected.thermal_velocity ||
+                !std::isfinite(
+                    diagnostics.represented_particles_created) ||
+                diagnostics.represented_particles_created < 0.0 ||
+                !std::isfinite(
+                    diagnostics.control_macro_remainder) ||
+                !std::isfinite(
+                    diagnostics.processed_monitored_charge) ||
+                !std::isfinite(
+                    diagnostics.injected_kinetic_energy) ||
+                diagnostics.injected_kinetic_energy < 0.0) {
+                throw std::runtime_error(
+                    "checkpoint current-regulated source metadata is invalid or does not match 2D config");
+            }
+        }
+        int has_potential_reference = 0;
+        in >> key >> has_potential_reference;
+        if (key != "potential_reference" ||
+            (has_potential_reference != 0 &&
+             has_potential_reference != 1) ||
+            (has_potential_reference != 0) !=
+                cfg_.potential_reference.has_value()) {
+            throw std::runtime_error(
+                "checkpoint potential-reference presence does not match 2D config");
+        }
+        if (has_potential_reference != 0) {
+            std::string axis;
+            PotentialReference2DConfig stored;
+            in >> axis >> stored.coordinate >> stored.target;
+            stored.axis = parse_coordinate_axis(axis);
+            const auto& expected = *cfg_.potential_reference;
+            if (stored.axis != expected.axis ||
+                stored.coordinate != expected.coordinate ||
+                stored.target != expected.target) {
+                throw std::runtime_error(
+                    "checkpoint potential-reference metadata does not match 2D config");
+            }
+        }
+    } else {
+        std::fill(
+            species_boundary_losses_.begin(),
+            species_boundary_losses_.end(),
+            BoundaryLoss2D{});
+        if (cfg_.current_regulated_source ||
+            cfg_.potential_reference) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore 2D current regulation or potential reference state");
+        }
+    }
     std::size_t species_count = 0;
     in >> key >> species_count;
     if (key != "species_count" || species_count != species_.size()) throw std::runtime_error("checkpoint species count does not match 2D config");
     in >> key;
     if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
     in >> rng_;
-    if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6) {
+    if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6 ||
+        checkpoint_v7) {
         std::size_t source_count = 0;
         in >> key >> source_count;
         if (key != "source_count" ||
@@ -983,7 +1499,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             auto& diagnostics = source_diagnostics_[source_id];
             in >> key >> stored.name >> stored.first_species >>
                 stored.second_species >> stored.pairs_per_step;
-            if (checkpoint_v5 || checkpoint_v6) {
+            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7) {
                 int has_rate = 0;
                 double rate = 0.0;
                 in >> has_rate >> rate;
@@ -994,7 +1510,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 if (has_rate != 0) {
                     stored.represented_pair_rate = rate;
                 }
-                if (checkpoint_v6) {
+                if (checkpoint_v6 || checkpoint_v7) {
                     int has_peak_rate = 0;
                     double peak_rate = 0.0;
                     in >> has_peak_rate >> peak_rate;
@@ -1017,7 +1533,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 stored.second_drift.y >> stored.second_drift.z >>
                 stored.first_thermal_velocity >>
                 stored.second_thermal_velocity;
-            if (checkpoint_v5 || checkpoint_v6) {
+            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7) {
                 std::string profile;
                 in >> profile;
                 stored.spatial_profile.density_profile =
@@ -1065,7 +1581,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             }
             in >> diagnostics.macro_pairs_created >>
                 diagnostics.represented_pairs_created;
-            if (checkpoint_v5 || checkpoint_v6) {
+            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7) {
                 in >> diagnostics
                           .fractional_macro_pair_remainder >>
                     diagnostics.injected_kinetic_energy;
@@ -1164,14 +1680,16 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> p.position.x >> p.position.y
                >> p.velocity.x >> p.velocity.y;
             if (checkpoint_v3 || checkpoint_v4 ||
-                checkpoint_v5 || checkpoint_v6) {
+                checkpoint_v5 || checkpoint_v6 ||
+                checkpoint_v7) {
                 in >> p.velocity_z;
             } else {
                 p.velocity_z = 0.0;
             }
             in >> p.velocity_half.x >> p.velocity_half.y;
             if (checkpoint_v3 || checkpoint_v4 ||
-                checkpoint_v5 || checkpoint_v6) {
+                checkpoint_v5 || checkpoint_v6 ||
+                checkpoint_v7) {
                 in >> p.velocity_half_z;
             } else {
                 p.velocity_half_z = 0.0;
@@ -1276,10 +1794,86 @@ RunSummary2D Simulation2D::run() {
         }
         if (source_output) source_output.flush();
     };
+    std::ofstream current_source_output;
+    if (cfg_.current_regulated_source) {
+        current_source_output.open(
+            cfg_.output_dir / "current_source.csv");
+        if (!current_source_output) {
+            throw std::runtime_error(
+                "cannot open 2D current-source diagnostics output");
+        }
+        current_source_output
+            << "step,time,species,monitor_boundary,"
+               "emission_boundary,macro_particles_created,"
+               "represented_particles_created,"
+               "control_macro_remainder,"
+               "cumulative_processed_monitored_charge,"
+               "cumulative_emitted_charge,"
+               "charge_balance_residual,"
+               "injected_kinetic_energy\n";
+    }
+    const auto write_current_source_sample = [&]() {
+        if (!current_source_output.is_open()) return;
+        const auto& config = *cfg_.current_regulated_source;
+        const auto& diagnostics =
+            *current_regulated_source_diagnostics_;
+        const auto& emitted =
+            species_[*current_regulated_species_];
+        const double emitted_charge =
+            diagnostics.represented_particles_created *
+            emitted.charge();
+        current_source_output
+            << step_ << ',' << std::setprecision(17) << time_
+            << ',' << config.species
+            << ',' << to_string(config.monitor_boundary)
+            << ',' << to_string(config.emission_boundary)
+            << ',' << diagnostics.macro_particles_created
+            << ',' << diagnostics.represented_particles_created
+            << ',' << diagnostics.control_macro_remainder
+            << ',' << diagnostics.processed_monitored_charge
+            << ',' << emitted_charge
+            << ',' << diagnostics.processed_monitored_charge -
+                           emitted_charge
+            << ',' << diagnostics.injected_kinetic_energy
+            << '\n';
+        current_source_output.flush();
+    };
+    std::ofstream potential_reference_output;
+    if (cfg_.potential_reference) {
+        potential_reference_output.open(
+            cfg_.output_dir / "potential_reference.csv");
+        if (!potential_reference_output) {
+            throw std::runtime_error(
+                "cannot open 2D potential-reference diagnostics output");
+        }
+        potential_reference_output
+            << "step,time,axis,coordinate,target,"
+               "unshifted_line_mean,applied_offset,"
+               "corrected_line_mean\n";
+    }
+    const auto write_potential_reference_sample = [&]() {
+        if (!potential_reference_output.is_open()) return;
+        const auto& reference = *cfg_.potential_reference;
+        potential_reference_output
+            << step_ << ',' << std::setprecision(17) << time_
+            << ',' << to_string(reference.axis)
+            << ',' << reference.coordinate
+            << ',' << reference.target
+            << ',' << reference.target +
+                           potential_reference_offset_
+            << ',' << potential_reference_offset_
+            << ',' << line_average(
+                           mesh_, reference.axis,
+                           reference.coordinate)
+            << '\n';
+        potential_reference_output.flush();
+    };
     diag.write_header();
     auto s0 = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
     diag.write_sample(s0);
     write_source_sample();
+    write_current_source_sample();
+    write_potential_reference_sample();
     if (cfg_.vtk_output) write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
     if (cfg_.particle_output) {
         diag.write_particle_sample(step_, species_, cfg_.particle_output_stride, cfg_.particle_sample_count);
@@ -1297,6 +1891,8 @@ RunSummary2D Simulation2D::run() {
             auto s = diag.sample(step_, time_, mesh_, species_, boundary_losses_);
             diag.write_sample(s);
             write_source_sample();
+            write_current_source_sample();
+            write_potential_reference_sample();
             summary.final_sample = s;
             if (cfg_.vtk_output) {
                 write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);

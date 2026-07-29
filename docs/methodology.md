@@ -165,9 +165,20 @@ the integer part, and carries the remainder. Capacity is checked for both
 species before storage changes; dead slots are reused deterministically.
 Diagnostics report cumulative macro/represented pairs, the fractional
 remainder, sampled full-3V kinetic energy, and configured rate. Structured
-checkpoint v6 fingerprints extrusion depth and the complete source definition and preserves the
+checkpoint v7 fingerprints extrusion depth and the complete source definition and preserves the
 accumulator, diagnostics, particle state, and RNG. This is a prescribed
 source, not a collision, neutral-depletion, recoil, or reaction-network model.
+
+Structured 2D current regulation accumulates represented charge crossing one
+absorbing boundary, resolved by species rather than by macro-particle count.
+The new charge since the previous control update is divided by the configured
+emitted species charge and macro weight. A positive integer count is emitted
+uniformly along an inset plane; signed fractional surplus or debt is carried
+to later steps. The controller therefore remains correct for unequal species
+weights. An optional x/y line-average potential reference applies only a
+constant potential offset after each Poisson solve and leaves the electric
+field invariant. Checkpoint v7 preserves boundary counters, controller
+accumulator, diagnostics, RNG state, and both control definitions.
 
 Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, full three-velocity incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal and signed tangential/out-of-plane distributions as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Imported checkpoint v6 preserves emission definitions, cumulative emitted counts, flux state, particle state, RNG state, unit metadata, and optional MCC state.
 

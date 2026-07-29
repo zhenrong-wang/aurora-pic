@@ -146,7 +146,7 @@ the models.
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D supports independent periodic/Dirichlet axes with matching spacing, CIC, Poisson, gather, gradient, initialization, and default particle policies | Replace the correctness-first mixed SOR solve with a production FFT-periodic/direct-axial solver before full LANDMARK campaigns |
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Add the exact published thermal-loading convention to the full H1 contract |
-| Cathode/current control | Not available | Implement the exact emission-plane current balance and potential correction |
+| Cathode/current control | Structured 2D has species-weighted anode-loss current regulation, internal-plane Maxwellian emission, line-average potential referencing, diagnostics, and checkpoint v7 | Qualify the full-resolution, long-duration benchmark response and sensitivity to cathode temperature |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Scalar and field snapshots exist | Add transverse/time averages, species moments, current components, Fourier spectra, and ensemble statistics |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
@@ -224,4 +224,9 @@ The versioned `examples/hall_landmark_axial_azimuthal.case` now derives
 `2.5104e19 s^-1` from the published peak, normalized profile integral, and an
 explicit `1 m` reduced extrusion depth. Its checksum, budgets, runtime linkage,
 and no-claim limitations are enforced by `scripts/validate_hall_case.py`.
-Cathode current control and potential correction are the next H1 physics slice.
+The same manifest now pins charge-regulated electron emission at `x = 2.4 cm`,
+the published `10 eV` velocity scale, and the zero-mean potential reference at
+that plane. Focused regressions verify unequal-weight charge conversion,
+potential-gauge correction, and deterministic checkpoint continuation. The
+next H1 slice is published thermal loading for the initial plasma and pair
+source, followed by production diagnostics and solver scaling.

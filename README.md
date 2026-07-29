@@ -451,7 +451,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support text `.apc` checkpoints for deterministic restart and regression debugging. Structured 2D checkpoint v6 records extrusion depth, complete volumetric-source definitions, counters, fractional accumulators, injected energy, unit metadata, RNG state, and full 3V particle state. Structured 2D v1-v5 remain readable only when their implicit unit-depth contract matches. Current 1D v4, structured 3D v2, and imported 2D v6 retain their documented compatibility rules; imported checkpoints additionally fingerprint mesh topology, coordinates, and tags.
+All 1D, 2D, and 3D runs support text `.apc` checkpoints for deterministic restart and regression debugging. Structured 2D checkpoint v7 records extrusion depth, volumetric and current-regulated source state, species-resolved boundary losses, potential-reference configuration, unit metadata, RNG state, and full 3V particle state. Structured 2D v1-v6 remain readable when no v7 controller state is required and their implicit unit-depth contract matches. Current 1D v4, structured 3D v2, and imported 2D v6 retain their documented compatibility rules; imported checkpoints additionally fingerprint mesh topology, coordinates, and tags.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.
@@ -526,7 +526,24 @@ Exactly one rate is required. `pairs_per_step` requests a fixed integer macro-pa
 
 Every created pair shares one sampled position and has independent isotropic Gaussian velocity distributions around the two configured drift vectors. The optional `density_profile = uniform | gaussian | sinusoidal` and associated `profile_*` keys use the same normalized rejection-sampling contract as species initialization. The profile determines relative position probability inside the source rectangle. It does not alter an explicitly configured total `represented_pair_rate`, but its analytic integral is part of the conversion from `peak_volumetric_pair_rate` to total rate. For example, sinusoidal amplitude `-1`, x mode `1`, and zero phase produce a centered `sin²(pi*x_normalized)` envelope. `end_step` is exclusive and zero means unlimited.
 
-The species must have opposite equal charge and equal macro weight, making every event exactly charge balanced. `sources.csv` reports cumulative macro and represented pairs, fractional remainder, injected energy, effective profile area, extrusion depth, peak rate, and derived total rate. Structured 2D checkpoint v6 preserves this contract. The machine-validated [`examples/hall_landmark_axial_azimuthal.case`](examples/hall_landmark_axial_azimuthal.case) pins the public benchmark derivation and reduced-run limits; `scripts/validate_hall_case.py` rejects drift. These remain prescribed sources, without neutral depletion, reaction closure, recoil, or arbitrary tabulated profiles.
+The species must have opposite equal charge and equal macro weight, making every event exactly charge balanced. `sources.csv` reports cumulative macro and represented pairs, fractional remainder, injected energy, effective profile area, extrusion depth, peak rate, and derived total rate. Structured 2D checkpoint v7 preserves this contract. The machine-validated [`examples/hall_landmark_axial_azimuthal.case`](examples/hall_landmark_axial_azimuthal.case) pins the public benchmark derivation and reduced-run limits; `scripts/validate_hall_case.py` rejects drift. These remain prescribed sources, without neutral depletion, reaction closure, recoil, or arbitrary tabulated profiles.
+
+Structured 2D can additionally regulate a single-species source from represented charge lost at an absorbing boundary:
+
+```ini
+current_source_species = electrons
+current_source_monitor_boundary = left
+current_source_emission_boundary = right
+current_source_emission_inset = 0.001
+current_source_thermal_velocity = 1326205.1154998604
+potential_reference_axis = x
+potential_reference_coordinate = 0.024
+potential_reference_target = 0
+```
+
+The controller sums `absorbed_count * charge * macro_weight` over every species at the monitored boundary. It converts the newly observed charge to the emitted species’ macro weight, creates the non-negative integer part at a uniformly sampled emission plane, and retains signed fractional surplus or debt. This makes unequal species weights safe and restart deterministic. `current_source.csv` reports the charge-balance residual and injected energy.
+
+The optional potential reference subtracts the interpolated transverse mean potential at the configured x or y coordinate and applies the requested target. This is a spatially constant gauge shift, so the electric field is unchanged. `potential_reference.csv` records the unshifted mean, applied offset, and corrected mean. The Hall smoke uses these generic controls for the published anode-current continuity and internal emission-plane reference, but remains far below production resolution and duration.
 
 The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, invalid electrode drive amplitude/frequency/phase combinations, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, nonzero electrode potentials on a periodic coordinate axis, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 

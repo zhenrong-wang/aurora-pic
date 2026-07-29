@@ -3390,6 +3390,144 @@ int main() {
             require(sim.boundary_losses().absorbed_left == 4, "2D absorbing boundary loss accessor is wrong");
         }
         {
+            const auto output_dir = std::filesystem::path(
+                "test_output_2d_current_regulation");
+            const auto checkpoint_path =
+                output_dir / "regulated.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Species2DConfig electrons;
+            electrons.name = "electrons";
+            electrons.charge = -1e-12;
+            electrons.mass = 1.0;
+            electrons.weight = 2.0;
+            electrons.particles = 3;
+            electrons.drift_velocity_x = -10.0;
+            electrons.thermal_velocity = 0.0;
+            electrons.init_x_min = 0.49;
+            electrons.init_x_max = 0.51;
+            electrons.init_y_min = 0.45;
+            electrons.init_y_max = 0.55;
+            electrons.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            auto ions = electrons;
+            ions.name = "ions";
+            ions.charge = 1e-12;
+            ions.weight = 4.0;
+            ions.particles = 1;
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 6;
+            cfg.ny = 6;
+            cfg.length_x = 1.0;
+            cfg.length_y = 1.0;
+            cfg.dt = 0.1;
+            cfg.steps = 2;
+            cfg.boundary = pic::Boundary::Dirichlet;
+            cfg.boundary_config.left.potential = 5.0;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir;
+            cfg.seed = 777;
+            cfg.max_particles_per_species = 5;
+            cfg.species = {electrons, ions};
+            cfg.current_regulated_source =
+                pic::CurrentRegulatedSource2DConfig{
+                    "electrons",
+                    pic::BoundarySide2DName::Left,
+                    pic::BoundarySide2DName::Right,
+                    0.1, {}, 0.0};
+            cfg.potential_reference =
+                pic::PotentialReference2DConfig{
+                    pic::CoordinateAxis::X, 0.8, 2.0};
+
+            pic::Simulation2D continuous(cfg);
+            continuous.initialize();
+            double referenced_mean = 0.0;
+            double reference_weight = 0.0;
+            for (std::size_t j = 0; j < cfg.ny; ++j) {
+                const double weight =
+                    (j == 0 || j + 1 == cfg.ny) ? 0.5 : 1.0;
+                referenced_mean += weight *
+                    continuous.mesh().phi()[
+                        continuous.mesh().index(4, j)];
+                reference_weight += weight;
+            }
+            require_near(
+                referenced_mean / reference_weight,
+                2.0, 1e-12,
+                "2D line-average potential reference missed its target");
+            require(
+                std::isfinite(
+                    continuous.potential_reference_offset()),
+                "2D potential-reference offset is not finite");
+            continuous.step();
+            require(
+                continuous.species_boundary_losses()[0]
+                        .absorbed_left == 3 &&
+                    continuous.species_boundary_losses()[1]
+                        .absorbed_left == 1,
+                "2D species-resolved boundary loss accounting is wrong");
+            continuous.save_checkpoint(checkpoint_path);
+            require(
+                read_file_text(checkpoint_path).find(
+                    "AuroraPIC-checkpoint-v7\n") == 0,
+                "2D current regulation checkpoint did not use v7");
+            continuous.step();
+            const auto& regulated =
+                *continuous
+                     .current_regulated_source_diagnostics();
+            require(
+                regulated.macro_particles_created == 1 &&
+                    continuous.species()[0].live_count() == 1,
+                "2D current regulator did not emit the charge-balanced macro-particle");
+            require_near(
+                regulated.represented_particles_created,
+                2.0, 1e-14,
+                "2D current regulator represented-particle accounting is wrong");
+            require_near(
+                regulated.processed_monitored_charge,
+                -2e-12, 1e-24,
+                "2D current regulator monitored the wrong represented charge");
+
+            pic::Simulation2D restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            restarted.step();
+            require_species_close(
+                continuous.species(), restarted.species(),
+                "2D current-regulation checkpoint determinism");
+            require(
+                restarted.species_boundary_losses()[0]
+                        .absorbed_left == 3 &&
+                    restarted
+                        .current_regulated_source_diagnostics()
+                        ->macro_particles_created == 1,
+                "2D current-regulation checkpoint lost controller state");
+            auto changed_controller = cfg;
+            changed_controller.current_regulated_source
+                ->emission_inset = 0.2;
+            require_throws_contains(
+                [&] {
+                    pic::Simulation2D incompatible(
+                        changed_controller);
+                    incompatible.load_checkpoint(
+                        checkpoint_path);
+                },
+                "current-regulated source metadata",
+                "2D checkpoint accepted changed current-controller physics");
+            auto changed_reference = cfg;
+            changed_reference.potential_reference->target = 1.0;
+            require_throws_contains(
+                [&] {
+                    pic::Simulation2D incompatible(
+                        changed_reference);
+                    incompatible.load_checkpoint(
+                        checkpoint_path);
+                },
+                "potential-reference metadata",
+                "2D checkpoint accepted changed potential-reference physics");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
             pic::Simulation2DConfig cfg;
             cfg.nx = 8;
             cfg.ny = 8;
@@ -3664,8 +3802,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v6\n") == 0,
-                "2D pair source checkpoint did not use v6");
+                    "AuroraPIC-checkpoint-v7\n") == 0,
+                "2D pair source checkpoint did not use v7");
             for (std::size_t step = continuous.step_count();
                  step < cfg.steps; ++step) {
                 continuous.step();

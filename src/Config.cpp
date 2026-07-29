@@ -394,6 +394,20 @@ ParticleBoundary parse_particle_boundary(const KeyValue& kv, const std::string& 
     throw std::runtime_error("invalid particle boundary value for '" + key + "': '" + value + "'");
 }
 
+BoundarySide2DName parse_boundary_side_2d(
+    const KeyValue& values, const std::string& key,
+    BoundarySide2DName default_value) {
+    const auto value = lower(trim(as<std::string>(
+        values, key, to_string(default_value))));
+    if (value == "left") return BoundarySide2DName::Left;
+    if (value == "right") return BoundarySide2DName::Right;
+    if (value == "bottom") return BoundarySide2DName::Bottom;
+    if (value == "top") return BoundarySide2DName::Top;
+    throw std::runtime_error(
+        "invalid 2D boundary side for '" + key + "': '" +
+        value + "'");
+}
+
 void validate_positive(double value, const std::string& name) {
     if (!std::isfinite(value) || !(value > 0.0)) throw std::runtime_error(name + " must be positive and finite");
 }
@@ -818,6 +832,24 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         throw std::runtime_error(
             "2D phi_bottom/phi_top must be zero when boundary_y is periodic");
     }
+    if (cfg.potential_reference) {
+        const auto& reference = *cfg.potential_reference;
+        if (reference.axis == CoordinateAxis::Z ||
+            !std::isfinite(reference.coordinate) ||
+            !std::isfinite(reference.target)) {
+            throw std::runtime_error(
+                "2D potential reference requires a finite x/y coordinate and target");
+        }
+        const double length =
+            reference.axis == CoordinateAxis::X
+                ? cfg.length_x
+                : cfg.length_y;
+        if (reference.coordinate < 0.0 ||
+            reference.coordinate > length) {
+            throw std::runtime_error(
+                "2D potential reference coordinate lies outside the domain");
+        }
+    }
     for (const auto& s : cfg.species) {
         if (s.name.empty()) throw std::runtime_error("2D species name must not be empty");
         validate_positive(s.mass, "2D species '" + s.name + "' mass");
@@ -844,6 +876,34 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         if (ymax > cfg.length_y) throw std::runtime_error("2D species '" + s.name + "' init_y_max exceeds domain length_y");
         if (!(s.init_x_min < xmax)) throw std::runtime_error("2D species '" + s.name + "' x initialization interval must have positive width");
         if (!(s.init_y_min < ymax)) throw std::runtime_error("2D species '" + s.name + "' y initialization interval must have positive width");
+    }
+    if (cfg.current_regulated_source) {
+        const auto& source = *cfg.current_regulated_source;
+        if (source.species.empty() ||
+            std::none_of(
+                cfg.species.begin(), cfg.species.end(),
+                [&](const Species2DConfig& species) {
+                    return species.name == source.species;
+                })) {
+            throw std::runtime_error(
+                "2D current-regulated source must reference a configured species");
+        }
+        const double normal_length =
+            source.emission_boundary == BoundarySide2DName::Left ||
+                    source.emission_boundary == BoundarySide2DName::Right
+                ? cfg.length_x
+                : cfg.length_y;
+        if (!std::isfinite(source.emission_inset) ||
+            source.emission_inset < 0.0 ||
+            !(source.emission_inset < normal_length) ||
+            !std::isfinite(source.drift.x) ||
+            !std::isfinite(source.drift.y) ||
+            !std::isfinite(source.drift.z) ||
+            !std::isfinite(source.thermal_velocity) ||
+            source.thermal_velocity < 0.0) {
+            throw std::runtime_error(
+                "2D current-regulated source has invalid position or velocity controls");
+        }
     }
     for (const auto& source : cfg.sources) {
         const std::string label =
@@ -1486,6 +1546,14 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "phi_left", "phi_right", "phi_bottom", "phi_top",
         "boundary_left_tag", "boundary_right_tag", "boundary_bottom_tag",
         "boundary_top_tag", "units", "relative_permittivity",
+        "current_source_species", "current_source_monitor_boundary",
+        "current_source_emission_boundary", "current_source_emission_inset",
+        "current_source_drift_velocity_x",
+        "current_source_drift_velocity_y",
+        "current_source_drift_velocity_z",
+        "current_source_thermal_velocity",
+        "potential_reference_axis", "potential_reference_coordinate",
+        "potential_reference_target",
         "initialization_max_relative_charge_imbalance",
         "initialization_max_relative_current_imbalance",
         "initialization_max_relative_pair_imbalance",
@@ -1599,6 +1667,57 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.boundary_config.right.tag = as<std::string>(global, "boundary_right_tag", cfg.boundary_config.right.tag);
     cfg.boundary_config.bottom.tag = as<std::string>(global, "boundary_bottom_tag", cfg.boundary_config.bottom.tag);
     cfg.boundary_config.top.tag = as<std::string>(global, "boundary_top_tag", cfg.boundary_config.top.tag);
+    const bool has_current_source = std::any_of(
+        global.begin(), global.end(), [](const auto& entry) {
+            return entry.first.starts_with("current_source_");
+        });
+    if (has_current_source) {
+        if (!global.count("current_source_species")) {
+            throw std::runtime_error(
+                "2D current_source_* controls require current_source_species");
+        }
+        CurrentRegulatedSource2DConfig source;
+        source.species = as<std::string>(
+            global, "current_source_species", "");
+        source.monitor_boundary = parse_boundary_side_2d(
+            global, "current_source_monitor_boundary",
+            source.monitor_boundary);
+        source.emission_boundary = parse_boundary_side_2d(
+            global, "current_source_emission_boundary",
+            source.emission_boundary);
+        source.emission_inset = as<double>(
+            global, "current_source_emission_inset",
+            source.emission_inset);
+        source.drift.x = as<double>(
+            global, "current_source_drift_velocity_x", 0.0);
+        source.drift.y = as<double>(
+            global, "current_source_drift_velocity_y", 0.0);
+        source.drift.z = as<double>(
+            global, "current_source_drift_velocity_z", 0.0);
+        source.thermal_velocity = as<double>(
+            global, "current_source_thermal_velocity", 0.0);
+        cfg.current_regulated_source = std::move(source);
+    }
+    const bool has_potential_reference = std::any_of(
+        global.begin(), global.end(), [](const auto& entry) {
+            return entry.first.starts_with("potential_reference_");
+        });
+    if (has_potential_reference) {
+        if (!global.count("potential_reference_axis") ||
+            !global.count("potential_reference_coordinate")) {
+            throw std::runtime_error(
+                "2D potential reference requires potential_reference_axis and potential_reference_coordinate");
+        }
+        PotentialReference2DConfig reference;
+        reference.axis = parse_coordinate_axis(
+            as<std::string>(
+                global, "potential_reference_axis", ""));
+        reference.coordinate = as<double>(
+            global, "potential_reference_coordinate", 0.0);
+        reference.target = as<double>(
+            global, "potential_reference_target", 0.0);
+        cfg.potential_reference = reference;
+    }
 
     cfg.species.clear();
     for (const auto& block : blocks.species_blocks) {

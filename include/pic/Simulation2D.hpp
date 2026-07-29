@@ -54,6 +54,33 @@ struct VolumetricPairSource2DDiagnostics {
     double injected_kinetic_energy{0.0};
 };
 
+enum class BoundarySide2DName { Left, Right, Bottom, Top };
+
+std::string to_string(BoundarySide2DName side);
+
+struct CurrentRegulatedSource2DConfig {
+    std::string species{};
+    BoundarySide2DName monitor_boundary{BoundarySide2DName::Left};
+    BoundarySide2DName emission_boundary{BoundarySide2DName::Right};
+    double emission_inset{0.0};
+    Vec3 drift{};
+    double thermal_velocity{0.0};
+};
+
+struct CurrentRegulatedSource2DDiagnostics {
+    std::size_t macro_particles_created{0};
+    double represented_particles_created{0.0};
+    double control_macro_remainder{0.0};
+    double processed_monitored_charge{0.0};
+    double injected_kinetic_energy{0.0};
+};
+
+struct PotentialReference2DConfig {
+    CoordinateAxis axis{CoordinateAxis::X};
+    double coordinate{0.0};
+    double target{0.0};
+};
+
 struct Simulation2DConfig {
     UnitSystemConfig units{};
     std::size_t nx{64};
@@ -96,6 +123,9 @@ struct Simulation2DConfig {
     InitializationAcceptanceConfig initialization_acceptance{};
     std::vector<Species2DConfig> species{};
     std::vector<VolumetricPairSource2DConfig> sources{};
+    std::optional<CurrentRegulatedSource2DConfig>
+        current_regulated_source{};
+    std::optional<PotentialReference2DConfig> potential_reference{};
 };
 
 Simulation2DConfig load_config_2d(const std::string& path);
@@ -116,6 +146,17 @@ public:
     const std::vector<VolumetricPairSource2DDiagnostics>& source_diagnostics() const {
         return source_diagnostics_;
     }
+    const std::optional<CurrentRegulatedSource2DDiagnostics>&
+    current_regulated_source_diagnostics() const {
+        return current_regulated_source_diagnostics_;
+    }
+    const std::vector<BoundaryLoss2D>&
+    species_boundary_losses() const {
+        return species_boundary_losses_;
+    }
+    double potential_reference_offset() const {
+        return potential_reference_offset_;
+    }
     double time() const { return time_; }
     std::size_t step_count() const { return step_; }
 private:
@@ -128,13 +169,21 @@ private:
     };
     void deposit_and_solve();
     void inject_volumetric_pair_sources();
-    void apply_particle_boundaries(Particle2D& particle);
+    void inject_current_regulated_source();
+    void apply_potential_reference();
+    void apply_particle_boundaries(
+        Particle2D& particle, std::size_t species_id);
     Simulation2DConfig cfg_;
     Mesh2D mesh_;
     FieldSolver solver_;
     std::vector<Species2D> species_;
     std::vector<VolumetricPairSourceRuntime> sources_;
     std::vector<VolumetricPairSource2DDiagnostics> source_diagnostics_;
+    std::optional<std::size_t> current_regulated_species_{};
+    std::optional<CurrentRegulatedSource2DDiagnostics>
+        current_regulated_source_diagnostics_{};
+    std::vector<BoundaryLoss2D> species_boundary_losses_{};
+    double potential_reference_offset_{0.0};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

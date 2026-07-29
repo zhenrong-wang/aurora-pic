@@ -503,6 +503,68 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
         abs(float(final_source[10]) - 2.5104e19) < 1e6,
         "Hall smoke did not create its configured source pairs",
     )
+    current_path = output_dir / "current_source.csv"
+    current_header, current_rows = read_csv(current_path)
+    require(
+        current_header == [
+            "step", "time", "species", "monitor_boundary",
+            "emission_boundary", "macro_particles_created",
+            "represented_particles_created",
+            "control_macro_remainder",
+            "cumulative_processed_monitored_charge",
+            "cumulative_emitted_charge",
+            "charge_balance_residual",
+            "injected_kinetic_energy",
+        ],
+        f"unexpected header in {current_path}",
+    )
+    require(
+        len(current_rows) >= 3,
+        "Hall current-source diagnostics are incomplete",
+    )
+    require_numeric_rows(
+        [current_header[index] for index in (0, 1, 5, 6, 7, 8, 9, 10, 11)],
+        [[row[index] for index in (0, 1, 5, 6, 7, 8, 9, 10, 11)]
+         for row in current_rows],
+        current_path,
+    )
+    final_current = next(
+        row for row in current_rows if int(float(row[0])) == 4)
+    require(
+        final_current[2:5] == ["electrons", "left", "right"]
+        and int(final_current[5]) == 0
+        and abs(float(final_current[10])) < 1e-30,
+        "Hall smoke current-control diagnostics are inconsistent",
+    )
+    potential_path = output_dir / "potential_reference.csv"
+    potential_header, potential_rows = read_csv(potential_path)
+    require(
+        potential_header == [
+            "step", "time", "axis", "coordinate", "target",
+            "unshifted_line_mean", "applied_offset",
+            "corrected_line_mean",
+        ],
+        f"unexpected header in {potential_path}",
+    )
+    require(
+        len(potential_rows) >= 3,
+        "Hall potential-reference diagnostics are incomplete",
+    )
+    require_numeric_rows(
+        [potential_header[index] for index in (0, 1, 3, 4, 5, 6, 7)],
+        [[row[index] for index in (0, 1, 3, 4, 5, 6, 7)]
+         for row in potential_rows],
+        potential_path,
+    )
+    final_potential = next(
+        row for row in potential_rows
+        if int(float(row[0])) == 4)
+    require(
+        final_potential[2] == "x"
+        and abs(float(final_potential[3]) - 0.024) < 1e-15
+        and abs(float(final_potential[7])) < 1e-12,
+        "Hall smoke potential reference missed its target",
+    )
 
 
 def check_electrode_2d(output_dir: Path) -> None:

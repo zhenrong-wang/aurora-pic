@@ -78,6 +78,10 @@ def main() -> int:
     runtime = load_with_global(runtime_path)
     runtime_global = runtime["global"]
     runtime_source = runtime["source.channel_pair_seed"]
+    cathode = manifest["cathode_control"]
+    emitted_species = runtime[
+        "species." + cathode["emitted_species"]
+    ]
     require(
         math.isclose(
             runtime_global.getfloat("length_x"),
@@ -113,6 +117,69 @@ def main() -> int:
         and runtime_global["magnetic_field_profile_axis"]
             == magnetic["axis"],
         "Hall runtime magnetic profile linkage drifted",
+    )
+    require(
+        runtime_global["current_source_species"]
+            == cathode["emitted_species"]
+        and runtime_global["current_source_monitor_boundary"]
+            == cathode["monitor_boundary"]
+        and runtime_global["current_source_emission_boundary"]
+            == cathode["emission_boundary"]
+        and math.isclose(
+            runtime_global.getfloat("length_x")
+            - runtime_global.getfloat(
+                "current_source_emission_inset"
+            ),
+            number(cathode, "emission_plane_x_m"),
+            rel_tol=0.0, abs_tol=1e-15,
+        )
+        and math.isclose(
+            runtime_global.getfloat(
+                "current_source_thermal_velocity"
+            ),
+            number(
+                cathode,
+                "emission_thermal_velocity_std_m_s",
+            ),
+            rel_tol=1e-14,
+        ),
+        "Hall runtime cathode current-control linkage drifted",
+    )
+    expected_cathode_thermal_velocity = math.sqrt(
+        number(cathode, "emission_temperature_ev")
+        * abs(emitted_species.getfloat("charge"))
+        / emitted_species.getfloat("mass")
+    )
+    require(
+        math.isclose(
+            expected_cathode_thermal_velocity,
+            number(
+                cathode,
+                "emission_thermal_velocity_std_m_s",
+            ),
+            rel_tol=1e-14,
+        ),
+        "Hall cathode temperature-to-velocity conversion drifted",
+    )
+    require(
+        runtime_global["potential_reference_axis"]
+            == cathode["potential_reference_axis"]
+        and math.isclose(
+            runtime_global.getfloat(
+                "potential_reference_coordinate"
+            ),
+            number(
+                cathode,
+                "potential_reference_coordinate_m",
+            ),
+        )
+        and math.isclose(
+            runtime_global.getfloat(
+                "potential_reference_target"
+            ),
+            number(cathode, "potential_reference_target_v"),
+        ),
+        "Hall runtime potential-reference linkage drifted",
     )
     for key, manifest_key in (
         ("x_min", "x_min_m"),
@@ -160,7 +227,11 @@ def main() -> int:
     )
     require(
         reduced["physics_claim"] == "none"
-        and "cathode_current_control" in reduced["missing_physics"],
+        and "published_resolution" in reduced["missing_physics"]
+        and "cathode_current_control"
+            not in reduced["missing_physics"]
+        and "potential_correction"
+            not in reduced["missing_physics"],
         "Hall reduced manifest must retain its no-claim limitations",
     )
     print("Hall LANDMARK reduced-case validation passed")
