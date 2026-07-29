@@ -22,6 +22,7 @@ add_library(aurorapic
   src/Mesh2D.cpp
   src/Mesh3D.cpp
   src/ParticleState.cpp
+  src/PrescribedField.cpp
   src/Pusher.cpp
   src/Runtime.cpp
   src/Simulation.cpp

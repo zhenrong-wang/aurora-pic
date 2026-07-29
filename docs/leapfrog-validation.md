@@ -31,4 +31,12 @@ The standalone validation script `scripts/validate_pushers.py` repeats the leapf
 
 ## Current scope
 
-Boris support currently uses prescribed uniform `magnetic_field_x/y/z` in both planar 2D3V and 3D while retaining the electrostatic Poisson field solve. In 2D3V, particle position and electric field remain planar, but all three velocity components participate in magnetic rotation. Self-consistent electromagnetic field updates are still a later roadmap item.
+Boris support uses either prescribed uniform `magnetic_field_x/y/z` or a
+strict linearly interpolated `coordinate Bx By Bz` profile in structured 2D3V,
+imported 2D3V, and structured 3D while retaining the electrostatic Poisson
+field solve. Profile interpolation and domain coverage have focused
+regressions, and the low-cost Hall-profile smoke exercises the CLI path. In
+2D3V, particle position and electric field remain planar, but all three
+velocity components participate in magnetic rotation. Arbitrary
+multidimensional field maps and self-consistent electromagnetic updates are
+later roadmap items.

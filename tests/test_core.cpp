@@ -7,6 +7,7 @@
 #include "pic/ImportedMesh2D.hpp"
 #include "pic/Mesh2D.hpp"
 #include "pic/Mesh3D.hpp"
+#include "pic/PrescribedField.hpp"
 #include "pic/Simulation.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
@@ -1010,6 +1011,100 @@ int main() {
                          "2D leapfrog pusher does not match constant-acceleration x velocity");
             require_near(particle.velocity.y, 0.3 + acceleration.y * t, 1e-14,
                          "2D leapfrog pusher does not match constant-acceleration y velocity");
+        }
+        {
+            const pic::TabulatedVectorField1D profile(
+                pic::CoordinateAxis::X,
+                {0.0, 0.5, 1.0},
+                {{0.0, 1.0, 2.0},
+                 {1.0, 3.0, 4.0},
+                 {2.0, 5.0, 6.0}});
+            const auto interpolated =
+                profile.evaluate({0.25, 9.0, -4.0});
+            require_near(
+                interpolated.x, 0.5, 1e-15,
+                "tabulated vector field x interpolation mismatch");
+            require_near(
+                interpolated.y, 2.0, 1e-15,
+                "tabulated vector field y interpolation mismatch");
+            require_near(
+                interpolated.z, 3.0, 1e-15,
+                "tabulated vector field z interpolation mismatch");
+            profile.validate_domain(
+                {0.1, 0.0, 0.0}, {0.9, 1.0, 1.0},
+                "test profile");
+            require(
+                pic::parse_coordinate_axis("Y") ==
+                    pic::CoordinateAxis::Y,
+                "coordinate-axis parser is not case insensitive");
+            require_throws(
+                [&]() { (void)profile.evaluate({-0.01, 0.0, 0.0}); },
+                "tabulated vector field extrapolated below its range");
+            require_throws(
+                [&]() {
+                    profile.validate_domain(
+                        {-0.1, 0.0, 0.0}, {0.9, 1.0, 1.0},
+                        "undersized profile");
+                },
+                "tabulated vector field accepted incomplete domain coverage");
+            require_throws(
+                []() {
+                    (void)pic::TabulatedVectorField1D(
+                        pic::CoordinateAxis::X,
+                        {0.0, 0.5, 0.5},
+                        {{}, {}, {}});
+                },
+                "tabulated vector field accepted duplicate coordinates");
+
+            const auto profile_path =
+                std::filesystem::path("test_magnetic_profile.dat");
+            const auto config_path =
+                std::filesystem::path("test_magnetic_profile.cfg");
+            {
+                std::ofstream output(profile_path);
+                output << "# x Bx By Bz\n"
+                       << "0 0 0 1\n"
+                       << "0.5 0 0 2\n"
+                       << "1 0 0 3\n";
+            }
+            {
+                std::ofstream output(config_path);
+                output
+                    << "config_version = 1\n"
+                    << "dimension = 2\n"
+                    << "nx = 8\nny = 8\n"
+                    << "length_x = 1\nlength_y = 1\n"
+                    << "magnetic_field_profile_file = "
+                    << profile_path.string() << "\n"
+                    << "magnetic_field_profile_axis = x\n";
+            }
+            const auto loaded = pic::load_config_2d(config_path.string());
+            require(
+                loaded.magnetic_field_profile.has_value(),
+                "2D config did not load magnetic field profile");
+            require_near(
+                loaded.magnetic_field_profile
+                    ->evaluate({0.75, 0.0, 0.0}).z,
+                2.5, 1e-15,
+                "2D config magnetic field profile interpolation mismatch");
+
+            auto conflicting = loaded;
+            conflicting.magnetic_field_z = 1.0;
+            require_throws(
+                [&]() { pic::Simulation2D simulation(conflicting); },
+                "2D simulation accepted uniform and profiled magnetic fields together");
+
+            pic::Simulation3DConfig config_3d;
+            config_3d.magnetic_field_profile =
+                pic::TabulatedVectorField1D(
+                    pic::CoordinateAxis::Y,
+                    {0.0, 1.0},
+                    {{0.0, 0.0, 1.0}, {0.0, 0.0, 2.0}});
+            pic::Simulation3D simulation_3d(config_3d);
+            (void)simulation_3d;
+
+            std::filesystem::remove(profile_path);
+            std::filesystem::remove(config_path);
         }
         {
             constexpr double dt = 0.04;
@@ -3600,8 +3695,19 @@ int main() {
                         imported_config.emissions.front().incident_species ==
                             "ions" &&
                         imported_config.particle_boundaries.at("electrode") ==
-                            pic::ParticleBoundary::Reflecting,
+                        pic::ParticleBoundary::Reflecting,
                     "imported 2D example config did not load expected runtime settings");
+            auto profiled_imported_config = imported_config;
+            profiled_imported_config.magnetic_field_profile =
+                pic::TabulatedVectorField1D(
+                    pic::CoordinateAxis::X,
+                    {0.0, 0.5, 1.0},
+                    {{0.0, 0.0, 0.5},
+                     {0.0, 0.0, 1.0},
+                     {0.0, 0.0, 1.5}});
+            pic::UnstructuredSimulation2D profiled_imported_simulation(
+                profiled_imported_config);
+            (void)profiled_imported_simulation;
             const auto imported_mcc_example =
                 std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
                 "examples" / "imported_mcc_2d.cfg";

@@ -2,6 +2,7 @@
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
 #include "pic/ParticleState.hpp"
+#include "pic/PrescribedField.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Species2D.hpp"
 #include <filesystem>
@@ -42,6 +43,7 @@ struct Simulation2DConfig {
     double magnetic_field_z{0.0};
     double magnetic_field_x{0.0};
     double magnetic_field_y{0.0}; // any nonzero uniform B component activates the 2D3V Boris pusher
+    std::optional<TabulatedVectorField1D> magnetic_field_profile{};
     unsigned seed{12345};
     bool vtk_output{false};
     VTKOutputFormat vtk_format{VTKOutputFormat::Legacy};

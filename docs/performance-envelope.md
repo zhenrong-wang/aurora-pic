@@ -22,6 +22,7 @@ a memory-scaling guarantee, not a high-volume I/O throughput claim.
 | `examples/mcc_ionization_1d.cfg` | 1D3V | 32 cells | 128 initial / 244 final | 4 | Simultaneous named electron/ion MCC, charge-paired ionization products, bounded storage, qualified diagnostics, and checkpoint restart contract. |
 | `examples/rf_electrode_1d.cfg` | 1D3V | 33 nodes | 128 | 16 | Sinusoidal Dirichlet electrode at exact field time levels, transverse velocity initialization, applied-potential diagnostics, and bounded RF CLI integration. |
 | `examples/plasma_2d.cfg` | 2D3V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
+| `examples/hall_field_profile_smoke.cfg` | 2D3V | 16 x 8 nodes | 4 | 4 | Single-thread parser/interpolation/Boris smoke for a one-coordinate magnetic profile; not a HET discharge result. |
 | `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
 | `examples/imported_mcc_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 | 6 | Synthetic stationary-neutral isotropic elastic MCC, provenance metadata, diagnostics, and checkpoint v6. |
@@ -98,7 +99,7 @@ For credible physical studies, document these checks with the run configuration 
 6. **Boundary model:** particle and field boundaries match the intended physical problem; imported Gmsh domains are checked for manifold topology and exact tagged-boundary closure. Their particle-grid coupling uses cached element-local shapes with spatial fallback, their electrostatic solve supports strict mixed Dirichlet/Neumann labels, and the runtime applies segment-based absorbing/reflecting and length-weighted injection policies by physical label.
 7. **Mesh convergence:** use the reported minimum angle and maximum edge ratio as quality guards, then repeat the physical study on at least three systematically refined meshes. The biased-probe smoke case verifies one mesh artifact; it does not establish mesh-independent physics.
 8. **Units:** require an explicit `units` declaration for maintained studies, archive `units.txt`, and apply the 1D/2D per-unit omitted-measure convention when comparing energy, current, or flux with physical data.
-9. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform magnetic rotation. There is no self-consistent electromagnetic field update yet.
+9. **Physics scope:** current fields are electrostatic Poisson fields plus optional prescribed uniform or one-coordinate tabulated magnetic rotation. There is no arbitrary multidimensional field-map import or self-consistent electromagnetic field update yet.
 
 ## Release-engineering envelope
 

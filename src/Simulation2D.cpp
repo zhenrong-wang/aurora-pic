@@ -100,12 +100,19 @@ void require_stream(T& stream, const std::string& message) {
 }
 
 bool has_magnetic_field(const Simulation2DConfig& cfg) {
-    return cfg.magnetic_field_x != 0.0 ||
+    return cfg.magnetic_field_profile.has_value() ||
+           cfg.magnetic_field_x != 0.0 ||
            cfg.magnetic_field_y != 0.0 ||
            cfg.magnetic_field_z != 0.0;
 }
 
-Vec3 magnetic_field(const Simulation2DConfig& cfg) {
+Vec3 magnetic_field(
+    const Simulation2DConfig& cfg,
+    Vec2 position) {
+    if (cfg.magnetic_field_profile) {
+        return cfg.magnetic_field_profile->evaluate(
+            {position.x, position.y, 0.0});
+    }
     return {
         cfg.magnetic_field_x,
         cfg.magnetic_field_y,
@@ -115,7 +122,7 @@ Vec3 magnetic_field(const Simulation2DConfig& cfg) {
 void initialize_particle_pusher(Particle2D& particle, Vec2 electric, double charge_to_mass, const Simulation2DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
         initialize_boris_half_step(
-            particle, electric, magnetic_field(cfg),
+            particle, electric, magnetic_field(cfg, particle.position),
             charge_to_mass, cfg.dt);
     } else {
         initialize_leapfrog_half_step(particle, electric, charge_to_mass, cfg.dt);
@@ -125,7 +132,7 @@ void initialize_particle_pusher(Particle2D& particle, Vec2 electric, double char
 void kick_particle(Particle2D& particle, Vec2 electric, double charge_to_mass, const Simulation2DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
         kick_boris(
-            particle, electric, magnetic_field(cfg),
+            particle, electric, magnetic_field(cfg, particle.position),
             charge_to_mass, cfg.dt);
     } else {
         kick_leapfrog(particle, electric, charge_to_mass, cfg.dt);
@@ -135,7 +142,7 @@ void kick_particle(Particle2D& particle, Vec2 electric, double charge_to_mass, c
 void synchronize_particle(Particle2D& particle, Vec2 electric, double charge_to_mass, const Simulation2DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
         synchronize_boris(
-            particle, electric, magnetic_field(cfg),
+            particle, electric, magnetic_field(cfg, particle.position),
             charge_to_mass, cfg.dt);
     } else {
         synchronize_leapfrog(particle, electric, charge_to_mass, cfg.dt);
@@ -181,6 +188,18 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
         !std::isfinite(cfg_.magnetic_field_z)) {
         throw std::invalid_argument(
             "2D magnetic_field components must be finite");
+    }
+    if (cfg_.magnetic_field_profile) {
+        if (cfg_.magnetic_field_x != 0.0 ||
+            cfg_.magnetic_field_y != 0.0 ||
+            cfg_.magnetic_field_z != 0.0) {
+            throw std::invalid_argument(
+                "2D uniform magnetic_field components and magnetic_field_profile are mutually exclusive");
+        }
+        cfg_.magnetic_field_profile->validate_domain(
+            {0.0, 0.0, 0.0},
+            {cfg_.length_x, cfg_.length_y, 0.0},
+            "2D simulation");
     }
     if (cfg_.mode == RunMode::SteadyState) {
         if (cfg_.max_steps == 0) throw std::invalid_argument("2D max_steps must be positive for steady-state mode");

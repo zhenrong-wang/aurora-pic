@@ -351,6 +351,33 @@ UnitSystemConfig parse_units(
     return result;
 }
 
+std::optional<TabulatedVectorField1D>
+parse_magnetic_field_profile(
+    const KeyValue& values,
+    const std::filesystem::path& config_path) {
+    const bool has_file =
+        values.count("magnetic_field_profile_file") != 0;
+    const bool has_axis =
+        values.count("magnetic_field_profile_axis") != 0;
+    if (!has_file && has_axis) {
+        throw std::runtime_error(
+            "magnetic_field_profile_axis requires magnetic_field_profile_file");
+    }
+    if (!has_file) return std::nullopt;
+    if (!has_axis) {
+        throw std::runtime_error(
+            "magnetic_field_profile_file requires magnetic_field_profile_axis");
+    }
+    const auto file = resolved_input_path(
+        config_path,
+        as<std::string>(
+            values, "magnetic_field_profile_file", ""));
+    const auto axis = parse_coordinate_axis(
+        as<std::string>(
+            values, "magnetic_field_profile_axis", ""));
+    return load_tabulated_vector_field_1d(file, axis);
+}
+
 ParticleBoundary parse_particle_boundary(const KeyValue& kv, const std::string& key, ParticleBoundary def) {
     const auto value = lower(as<std::string>(kv, key, to_string(def)));
     if (value == "auto") return ParticleBoundary::Auto;
@@ -742,6 +769,18 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         throw std::runtime_error(
             "2D magnetic_field components must be finite");
     }
+    if (cfg.magnetic_field_profile) {
+        if (cfg.magnetic_field_x != 0.0 ||
+            cfg.magnetic_field_y != 0.0 ||
+            cfg.magnetic_field_z != 0.0) {
+            throw std::runtime_error(
+                "2D uniform magnetic_field components and magnetic field profile are mutually exclusive");
+        }
+        cfg.magnetic_field_profile->validate_domain(
+            {0.0, 0.0, 0.0},
+            {cfg.length_x, cfg.length_y, 0.0},
+            "2D config");
+    }
     validate_runtime_policy(cfg.runtime);
     validate_initialization_acceptance(
         cfg.initialization_acceptance,
@@ -807,6 +846,18 @@ void validate_config_3d(const Simulation3DConfig& cfg) {
     if (cfg.particle_output_stride == 0) throw std::runtime_error("particle_output_stride must be positive");
     if (!std::isfinite(cfg.magnetic_field.x) || !std::isfinite(cfg.magnetic_field.y) || !std::isfinite(cfg.magnetic_field.z)) {
         throw std::runtime_error("magnetic_field components must be finite");
+    }
+    if (cfg.magnetic_field_profile) {
+        if (cfg.magnetic_field.x != 0.0 ||
+            cfg.magnetic_field.y != 0.0 ||
+            cfg.magnetic_field.z != 0.0) {
+            throw std::runtime_error(
+                "3D uniform magnetic_field components and magnetic field profile are mutually exclusive");
+        }
+        cfg.magnetic_field_profile->validate_domain(
+            {0.0, 0.0, 0.0},
+            {cfg.length_x, cfg.length_y, cfg.length_z},
+            "3D config");
     }
     validate_runtime_policy(cfg.runtime);
     validate_initialization_acceptance(
@@ -1290,6 +1341,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "initial_state_signature",
         "runtime_backend", "runtime_threads", "magnetic_field_x",
         "magnetic_field_y", "magnetic_field_z",
+        "magnetic_field_profile_file", "magnetic_field_profile_axis",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "phi_left", "phi_right", "phi_bottom", "phi_top",
@@ -1365,6 +1417,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         as<double>(
             global, "magnetic_field_y", cfg.magnetic_field_y);
     cfg.magnetic_field_z = as<double>(global, "magnetic_field_z", cfg.magnetic_field_z);
+    cfg.magnetic_field_profile =
+        parse_magnetic_field_profile(global, path);
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
     cfg.particle_boundary_config.right = parse_particle_boundary(global, "particle_boundary_right", default_particle_boundary);
@@ -1445,6 +1499,7 @@ Simulation3DConfig load_config_3d(const std::string& path) {
         "restart_path", "initial_state_path",
         "initial_state_signature",
         "runtime_backend", "runtime_threads", "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
+        "magnetic_field_profile_file", "magnetic_field_profile_axis",
         "particle_boundary", "particle_boundary_left", "particle_boundary_right",
         "particle_boundary_bottom", "particle_boundary_top",
         "particle_boundary_back", "particle_boundary_front", "units",
@@ -1517,6 +1572,8 @@ Simulation3DConfig load_config_3d(const std::string& path) {
     cfg.magnetic_field.x = as<double>(global, "magnetic_field_x", cfg.magnetic_field.x);
     cfg.magnetic_field.y = as<double>(global, "magnetic_field_y", cfg.magnetic_field.y);
     cfg.magnetic_field.z = as<double>(global, "magnetic_field_z", cfg.magnetic_field.z);
+    cfg.magnetic_field_profile =
+        parse_magnetic_field_profile(global, path);
     const ParticleBoundary default_particle_boundary = parse_particle_boundary(global, "particle_boundary", ParticleBoundary::Auto);
     cfg.particle_boundary_config.left = parse_particle_boundary(global, "particle_boundary_left", default_particle_boundary);
     cfg.particle_boundary_config.right = parse_particle_boundary(global, "particle_boundary_right", default_particle_boundary);

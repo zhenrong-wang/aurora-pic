@@ -2,6 +2,7 @@
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
 #include "pic/ParticleState.hpp"
+#include "pic/PrescribedField.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Species3D.hpp"
 #include <filesystem>
@@ -43,6 +44,7 @@ struct Simulation3DConfig {
     Boundary boundary{Boundary::Periodic};
     ParticleBoundaryConfig3D particle_boundary_config{};
     Vec3 magnetic_field{}; // uniform B used by the Boris pusher; zero keeps electrostatic leapfrog
+    std::optional<TabulatedVectorField1D> magnetic_field_profile{};
     unsigned seed{12345};
     bool vtk_output{false};
     VTKOutputFormat vtk_format{VTKOutputFormat::Legacy};

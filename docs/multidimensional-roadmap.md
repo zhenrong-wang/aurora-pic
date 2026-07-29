@@ -111,9 +111,12 @@ The Hall-effect-thruster path is now pinned in
 radial-azimuthal PIC cases provide the code-verification targets, public WarpX
 output provides an external reference corpus, and NASA HERMeS performance,
 ion-velocity, and plume measurements provide later experimental-validation
-targets. The immediate bounded implementation target is analytic magnetized
-particle verification plus a shared coordinate-dependent prescribed-field
-interface. Full LANDMARK runs require exact source/current-control contracts,
+targets. The first generic Hall-driven prerequisite is now implemented:
+strict one-coordinate tabulated magnetic profiles share interpolation and
+domain-coverage validation across structured 2D/3D and imported 2D while
+retaining the uniform-field interface. The next bounded target is mixed
+periodic/nonperiodic structured topology with analytic boundary verification.
+Full LANDMARK runs require exact source/current-control contracts,
 statistical spectral diagnostics, MPI and scalable output; real HET validation
 additionally requires measured geometry/field inputs, neutral and wall
 physics, cathode/facility conditions, and uncertainty-aware comparison.

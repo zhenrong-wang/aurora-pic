@@ -99,12 +99,26 @@ void require_stream(T& stream, const std::string& message) {
 }
 
 bool has_magnetic_field(const Simulation3DConfig& cfg) {
-    return cfg.magnetic_field.x != 0.0 || cfg.magnetic_field.y != 0.0 || cfg.magnetic_field.z != 0.0;
+    return cfg.magnetic_field_profile.has_value() ||
+           cfg.magnetic_field.x != 0.0 ||
+           cfg.magnetic_field.y != 0.0 ||
+           cfg.magnetic_field.z != 0.0;
+}
+
+Vec3 magnetic_field(
+    const Simulation3DConfig& cfg,
+    Vec3 position) {
+    if (cfg.magnetic_field_profile) {
+        return cfg.magnetic_field_profile->evaluate(position);
+    }
+    return cfg.magnetic_field;
 }
 
 void initialize_particle_pusher(Particle3D& particle, Vec3 electric, double charge_to_mass, const Simulation3DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
-        initialize_boris_half_step(particle, electric, cfg.magnetic_field, charge_to_mass, cfg.dt);
+        initialize_boris_half_step(
+            particle, electric, magnetic_field(cfg, particle.position),
+            charge_to_mass, cfg.dt);
     } else {
         initialize_leapfrog_half_step(particle, electric, charge_to_mass, cfg.dt);
     }
@@ -112,7 +126,9 @@ void initialize_particle_pusher(Particle3D& particle, Vec3 electric, double char
 
 void kick_particle(Particle3D& particle, Vec3 electric, double charge_to_mass, const Simulation3DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
-        kick_boris(particle, electric, cfg.magnetic_field, charge_to_mass, cfg.dt);
+        kick_boris(
+            particle, electric, magnetic_field(cfg, particle.position),
+            charge_to_mass, cfg.dt);
     } else {
         kick_leapfrog(particle, electric, charge_to_mass, cfg.dt);
     }
@@ -120,7 +136,9 @@ void kick_particle(Particle3D& particle, Vec3 electric, double charge_to_mass, c
 
 void synchronize_particle(Particle3D& particle, Vec3 electric, double charge_to_mass, const Simulation3DConfig& cfg) {
     if (has_magnetic_field(cfg)) {
-        synchronize_boris(particle, electric, cfg.magnetic_field, charge_to_mass, cfg.dt);
+        synchronize_boris(
+            particle, electric, magnetic_field(cfg, particle.position),
+            charge_to_mass, cfg.dt);
     } else {
         synchronize_leapfrog(particle, electric, charge_to_mass, cfg.dt);
     }
@@ -162,6 +180,18 @@ Simulation3D::Simulation3D(Simulation3DConfig cfg)
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("3D particle_output_stride must be positive");
     if (!std::isfinite(cfg_.magnetic_field.x) || !std::isfinite(cfg_.magnetic_field.y) || !std::isfinite(cfg_.magnetic_field.z)) {
         throw std::invalid_argument("3D magnetic_field components must be finite");
+    }
+    if (cfg_.magnetic_field_profile) {
+        if (cfg_.magnetic_field.x != 0.0 ||
+            cfg_.magnetic_field.y != 0.0 ||
+            cfg_.magnetic_field.z != 0.0) {
+            throw std::invalid_argument(
+                "3D uniform magnetic_field components and magnetic_field_profile are mutually exclusive");
+        }
+        cfg_.magnetic_field_profile->validate_domain(
+            {0.0, 0.0, 0.0},
+            {cfg_.length_x, cfg_.length_y, cfg_.length_z},
+            "3D simulation");
     }
     if (cfg_.mode == RunMode::SteadyState) {
         if (cfg_.max_steps == 0) throw std::invalid_argument("3D max_steps must be positive for steady-state mode");

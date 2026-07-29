@@ -143,7 +143,7 @@ the models.
 | Capability | Current state | Required action |
 | --- | --- | --- |
 | Electrostatic 2D3V PIC and Boris push | Available on structured and imported 2D meshes | Preserve analytic Larmor and E x B drift gates |
-| Prescribed magnetic field | Uniform vector only | Add coordinate-dependent field profiles and versioned sampled-map import |
+| Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured periodic or Dirichlet modes exist, but the complete LANDMARK side contract is not implemented | Support periodic azimuth plus independent axial/radial field and particle boundaries |
 | Volumetric pair source | Collision ionization and tagged-boundary sources exist | Add deterministic-rate spatial pair profiles with equal-position creation |
 | Cathode/current control | Not available | Implement the exact emission-plane current balance and potential correction |
@@ -201,7 +201,12 @@ checkpoint cadence, storage quota, and wall-time limit. Reference datasets
 remain external and checksum-pinned; they are never vendored into the Git
 repository.
 
-The next bounded implementation slice is H0 plus the shared coordinate-
-dependent prescribed-field interface. That work is useful to both structured
-benchmarks and imported real geometries and does not pretend that the complete
-LANDMARK discharge is already supported.
+The first H0 field slice is complete: a shared strict `coordinate Bx By Bz`
+profile supports linear interpolation and full-domain coverage checks across
+structured 2D/3D and imported 2D, while preserving uniform-field
+compatibility. The committed LANDMARK magnetic profile is exercised only as a
+four-step integration smoke and cannot make a discharge claim. The next
+bounded slice is mixed periodic/nonperiodic structured topology plus analytic
+periodic wrapping and absorbing axial-flux verification. That capability is
+generic to crossed-field devices and open plasma domains; it is not embedded
+Hall-specific solver logic.

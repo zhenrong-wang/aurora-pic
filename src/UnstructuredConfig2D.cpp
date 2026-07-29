@@ -75,6 +75,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "mode", "steady_tolerance", "steady_window", "max_steps",
         "max_particles_per_species", "seed",
         "magnetic_field_x", "magnetic_field_y", "magnetic_field_z",
+        "magnetic_field_profile_file", "magnetic_field_profile_axis",
         "output_interval", "output_dir", "vtk_output",
         "particle_output", "particle_output_interval", "particle_output_stride",
         "particle_sample_count", "checkpoint_output", "checkpoint_interval",
@@ -446,6 +447,25 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             result.magnetic_field_y);
     result.magnetic_field_z =
         number<double>(global, "magnetic_field_z", result.magnetic_field_z);
+    const bool has_magnetic_profile_file =
+        global.contains("magnetic_field_profile_file");
+    const bool has_magnetic_profile_axis =
+        global.contains("magnetic_field_profile_axis");
+    if (has_magnetic_profile_file != has_magnetic_profile_axis) {
+        throw std::runtime_error(
+            "unstructured magnetic_field_profile_file and magnetic_field_profile_axis must be specified together");
+    }
+    if (has_magnetic_profile_file) {
+        result.magnetic_field_profile =
+            load_tabulated_vector_field_1d(
+                resolved_path(
+                    path,
+                    required(
+                        global, "magnetic_field_profile_file", "global")),
+                parse_coordinate_axis(
+                    required(
+                        global, "magnetic_field_profile_axis", "global")));
+    }
     result.output_interval =
         number<std::size_t>(global, "output_interval", result.output_interval);
     if (global.contains("output_dir")) result.output_dir = global.at("output_dir");

@@ -5,6 +5,7 @@
 #include "pic/Runtime.hpp"
 #include "pic/Species2D.hpp"
 #include "pic/UnstructuredFieldSolver2D.hpp"
+#include "pic/PrescribedField.hpp"
 
 #include <filesystem>
 #include <iosfwd>
@@ -86,6 +87,7 @@ struct UnstructuredSimulation2DConfig {
     double magnetic_field_z{0.0};
     double magnetic_field_x{0.0};
     double magnetic_field_y{0.0};
+    std::optional<TabulatedVectorField1D> magnetic_field_profile{};
     std::size_t output_interval{10};
     std::filesystem::path output_dir{"output_unstructured_2d"};
     bool vtk_output{false};

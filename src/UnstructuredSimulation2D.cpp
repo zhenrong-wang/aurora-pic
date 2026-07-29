@@ -94,6 +94,19 @@ bool has_magnetic_field(Vec3 magnetic_field) {
            magnetic_field.z != 0.0;
 }
 
+Vec3 magnetic_field(
+    const UnstructuredSimulation2DConfig& config,
+    Vec2 position) {
+    if (config.magnetic_field_profile) {
+        return config.magnetic_field_profile->evaluate(
+            {position.x, position.y, 0.0});
+    }
+    return {
+        config.magnetic_field_x,
+        config.magnetic_field_y,
+        config.magnetic_field_z};
+}
+
 std::string csv_quote(const std::string& value);
 
 void add_collision_statistics(
@@ -331,6 +344,20 @@ UnstructuredSimulation2D::UnstructuredSimulation2D(UnstructuredSimulation2DConfi
         !std::isfinite(config_.magnetic_field_z)) {
         throw std::invalid_argument(
             "unstructured magnetic_field components must be finite");
+    }
+    if (config_.magnetic_field_profile) {
+        if (config_.magnetic_field_x != 0.0 ||
+            config_.magnetic_field_y != 0.0 ||
+            config_.magnetic_field_z != 0.0) {
+            throw std::invalid_argument(
+                "unstructured uniform magnetic_field components and magnetic field profile are mutually exclusive");
+        }
+        const Vec2 minimum = mesh_.topology().min_corner();
+        const Vec2 maximum = mesh_.topology().max_corner();
+        config_.magnetic_field_profile->validate_domain(
+            {minimum.x, minimum.y, 0.0},
+            {maximum.x, maximum.y, 0.0},
+            "unstructured 2D simulation");
     }
     if (config_.mode == RunMode::SteadyState) {
         if (config_.max_steps == 0 || config_.steady_window == 0 ||
@@ -982,10 +1009,7 @@ void UnstructuredSimulation2D::inject_boundary_sources() {
             }
             initialize_particle_pusher(
                 particle, *electric, species.charge() / species.mass(),
-                Vec3{
-                    config_.magnetic_field_x,
-                    config_.magnetic_field_y,
-                    config_.magnetic_field_z},
+                magnetic_field(config_, particle.position),
                 config_.dt);
             if (source.injected_particles ==
                 std::numeric_limits<std::size_t>::max()) {
@@ -1189,10 +1213,7 @@ void UnstructuredSimulation2D::initialize() {
                 }
                 initialize_particle_pusher(
                     particle, *electric, charge_to_mass,
-                    Vec3{
-                        config_.magnetic_field_x,
-                        config_.magnetic_field_y,
-                        config_.magnetic_field_z},
+                    magnetic_field(config_, particle.position),
                     config_.dt);
             });
         for (std::size_t worker = 0; worker < workers; ++worker) {
@@ -1482,10 +1503,7 @@ void UnstructuredSimulation2D::process_boundary_impacts(
                 initialize_particle_pusher(
                     particle, *electric,
                     emitted_species.charge() / emitted_species.mass(),
-                    Vec3{
-                        config_.magnetic_field_x,
-                        config_.magnetic_field_y,
-                        config_.magnetic_field_z},
+                    magnetic_field(config_, particle.position),
                     config_.dt);
                 if (emission.emitted_particles ==
                     std::numeric_limits<std::size_t>::max()) {
@@ -1529,10 +1547,7 @@ void UnstructuredSimulation2D::step() {
                 }
                 kick_particle(
                     particle, *electric, charge_to_mass,
-                    Vec3{
-                        config_.magnetic_field_x,
-                        config_.magnetic_field_y,
-                        config_.magnetic_field_z},
+                    magnetic_field(config_, particle.position),
                     config_.dt);
                 const Vec2 previous = particle.position;
                 drift_leapfrog(particle, config_.dt);
@@ -1585,10 +1600,7 @@ void UnstructuredSimulation2D::step() {
                 }
                 synchronize_particle(
                     particle, *electric, charge_to_mass,
-                    Vec3{
-                        config_.magnetic_field_x,
-                        config_.magnetic_field_y,
-                        config_.magnetic_field_z},
+                    magnetic_field(config_, particle.position),
                     config_.dt);
             });
         for (std::size_t worker = 0; worker < workers; ++worker) {
@@ -1683,10 +1695,7 @@ void UnstructuredSimulation2D::apply_collisions() {
         }
         initialize_particle_pusher(
             particle, *electric, charge_to_mass,
-            Vec3{
-                config_.magnetic_field_x,
-                config_.magnetic_field_y,
-                config_.magnetic_field_z},
+            magnetic_field(config_, particle.position),
             config_.dt);
     }
     std::vector<std::size_t> required_products(species_.size(), 0);
@@ -1767,9 +1776,7 @@ void UnstructuredSimulation2D::apply_collisions() {
         initialize_particle_pusher(
             particle, *electric,
             product_species.charge() / product_species.mass(),
-            Vec3{config_.magnetic_field_x,
-                 config_.magnetic_field_y,
-                 config_.magnetic_field_z},
+            magnetic_field(config_, particle.position),
             config_.dt);
     };
     for (const auto& product : ionization_products) {

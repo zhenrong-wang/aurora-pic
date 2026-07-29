@@ -214,10 +214,43 @@ def run_example(cli: Path, config_name: str, output_name: str, temp_root: Path) 
     unit_metadata = require_file(output_dir / "units.txt").read_text(
         encoding="utf-8"
     )
+    config_text = copied_config.read_text(encoding="utf-8")
+    unit_match = re.search(
+        r"^\s*units\s*=\s*([A-Za-z]+)\s*$",
+        config_text, re.MULTILINE,
+    )
+    expected_unit_system = (
+        unit_match.group(1).lower() if unit_match else "normalized"
+    )
+    relative_match = re.search(
+        r"^\s*relative_permittivity\s*=\s*([^\s#;]+)",
+        config_text, re.MULTILINE,
+    )
+    expected_relative_permittivity = (
+        float(relative_match.group(1)) if relative_match else 1.0
+    )
+    metadata_values = dict(
+        line.split(maxsplit=1)
+        for line in unit_metadata.splitlines()
+        if len(line.split(maxsplit=1)) == 2
+    )
+    expected_permittivity = expected_relative_permittivity * (
+        8.8541878128e-12
+        if expected_unit_system == "si"
+        else 1.0
+    )
     require(
-        "unit_system normalized\n" in unit_metadata and
-        "relative_permittivity 1\n" in unit_metadata and
-        "permittivity 1\n" in unit_metadata,
+        metadata_values.get("unit_system") == expected_unit_system and
+        math.isclose(
+            float(metadata_values.get("relative_permittivity", "nan")),
+            expected_relative_permittivity,
+            rel_tol=1e-14,
+        ) and
+        math.isclose(
+            float(metadata_values.get("permittivity", "nan")),
+            expected_permittivity,
+            rel_tol=1e-14,
+        ),
         f"example unit metadata is missing or inconsistent: {output_dir}",
     )
     return output_dir
@@ -431,6 +464,20 @@ def check_plasma_2d(output_dir: Path) -> None:
         expected_header=["species_id", "species", "x", "y", "vx", "vy", "vz", "alive"],
         min_rows=1,
     )
+
+
+def check_hall_field_profile_smoke(output_dir: Path) -> None:
+    _, rows = require_csv(
+        output_dir / "scalars.csv",
+        expected_header=[
+            "step", "time", "kinetic_energy", "field_energy", "total_energy",
+            "charge_l1", "live_particles", "absorbed_left",
+            "absorbed_right", "absorbed_bottom", "absorbed_top",
+            "live_particles_electrons",
+        ],
+        min_rows=3,
+    )
+    require_step(rows, 4, output_dir / "scalars.csv")
 
 
 def check_electrode_2d(output_dir: Path) -> None:
@@ -699,6 +746,8 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("mcc_ionization_1d.cfg", "mcc_ionization_1d", check_mcc_ionization_1d),
         ("rf_electrode_1d.cfg", "rf_electrode_1d", check_rf_electrode_1d),
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
+        ("hall_field_profile_smoke.cfg", "hall_field_profile_smoke",
+         check_hall_field_profile_smoke),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),
         ("imported_mcc_2d.cfg", "imported_mcc_2d", check_imported_mcc_2d),
