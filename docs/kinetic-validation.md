@@ -1,10 +1,10 @@
 # Kinetic verification
 
-AuroraPIC includes a deterministic, quantitative linear Landau-damping
-benchmark. It is the first system-level physics verification case: it checks
-that particle loading, charge deposition, the periodic Poisson solve,
-field interpolation, leapfrog advancement, and diagnostics reproduce a known
-collisionless kinetic response together. This is stronger than a structural
+AuroraPIC includes deterministic, quantitative linear Landau-damping and
+two-stream-instability benchmarks. These system-level physics cases check that
+particle loading, charge deposition, the periodic Poisson solve, field
+interpolation, leapfrog advancement, and diagnostics reproduce known
+collisionless kinetic responses together. This is stronger than a structural
 smoke test, but it is not experimental validation of a device or gas model.
 
 ## Linear Landau-damping case
@@ -54,30 +54,84 @@ Run it after building:
 
 ```sh
 OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py \
-  build/aurorapic_cli --report build/landau-report.json
+  build/aurorapic_cli --benchmark landau \
+  --report build/landau-report.json
 ```
 
 The validator uses only the Python standard library, emits a machine-readable
 JSON report, and removes its temporary state and 241 small field snapshots on
 success. Pass `--keep-output` to retain them after a failure or for inspection.
-Its bounded envelope is 65,536 total particles, 64 cells, 240 steps, one
-AuroraPIC process, and the caller's OpenMP thread limit. The repository's
-`scripts/verify.sh` fixes that limit to one by default.
+The Landau case's bounded envelope is 65,536 total particles, 64 cells, 240
+steps, one AuroraPIC process, and the caller's OpenMP thread limit. The
+repository's `scripts/verify.sh` fixes that limit to one by default.
+
+## Linear two-stream instability and nonlinear turnover
+
+The second benchmark uses the normalized symmetric warm-beam distribution
+
+```text
+f_e(x, v, 0) =
+  (1 + 0.001*cos(0.2*x))
+  * (exp(-(v-2.4)^2/2) + exp(-(v+2.4)^2/2))
+  / (2*sqrt(2*pi))
+```
+
+on `0 <= x < 10*pi`. A spatially uniform ion population of mass `1e6`
+provides the effectively stationary neutralizing background. Each electron
+beam contains 16,384 particles and the ion background contains 32,768, for
+65,536 particles total. Beam particles at each quiet-start position have
+exactly opposite velocities, and bit-reversed normal quantiles represent the
+unit thermal spread without random sampling noise.
+
+For this standard case, the linear Vlasov-Poisson electric-field growth rate
+is `lambda = 0.2258`. It is tabulated by Roberts et al.,
+[Computers & Mathematics with Applications 154 (2024), 103-119](https://doi.org/10.1016/j.camwa.2023.11.014).
+The setup also matches the independently documented symmetric warm-beam
+benchmark in the
+[Sandia DPG report](https://www.osti.gov/servlets/purl/1891588).
+
+AuroraPIC runs 128 periodic cells with `dt = 0.05` through normalized time
+50. The validator fits the logarithm of the `k = 0.2` electric-field mode
+over `14 <= t <= 28`, after the startup transient and before nonlinear
+saturation. It then locates the global mode-amplitude peak and requires a
+subsequent reduction, demonstrating turnover into the nonlinear saturated
+regime. The peak amplitude is a numerical regression observable, not a
+universal theoretical constant.
+
+| Quantity | Reference | Acceptance |
+| --- | ---: | ---: |
+| Initial electric-field mode amplitude | `alpha/k = 0.005` | `0.0048` to `0.0052` |
+| Electric-field growth rate | `0.2258` | `0.19` to `0.26` |
+| Linear-fit coefficient of determination | `1` | at least `0.97` |
+| Nonlinear peak time | numerical regression | `33` to `43` |
+| Peak/initial mode amplification | numerical regression | `80` to `180` |
+| Minimum post-peak/peak amplitude | nonlinear turnover | at most `0.95` |
+| Maximum relative total-energy drift | `0` | at most `1e-3` |
+
+Run only this case with:
+
+```sh
+OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py \
+  build/aurorapic_cli --benchmark two-stream \
+  --report build/two-stream-report.json
+```
+
+The default invocation runs both kinetic benchmarks sequentially. Use
+`--benchmark landau` to select only Landau damping.
 
 ## What remains
 
-Passing this case verifies linear collisionless electrostatic kinetics in the
-current 1D path. It does not validate collision cross sections, material
-boundaries, imported geometry, multidimensional mode propagation, steady-state
-convergence, electromagnetic fields, or a real thruster/discharge.
+Passing these cases verifies damped and unstable collisionless electrostatic
+kinetics in the current 1D path, including nonlinear two-stream turnover. It
+does not validate collision cross sections, material boundaries, imported
+geometry, multidimensional mode propagation, steady-state convergence,
+electromagnetic fields, or a real thruster/discharge.
 
 The next verification and validation ladder is:
 
-1. add a quantitative two-stream growth-rate and saturation benchmark;
-2. add 2D and 3D Langmuir-mode dispersion benchmarks;
-3. reproduce the published Turner helium capacitively coupled plasma
+1. add 2D and 3D Langmuir-mode dispersion benchmarks;
+2. reproduce the published Turner helium capacitively coupled plasma
    benchmark with an authoritative open collision dataset;
-4. add an imported-geometry probe current-voltage comparison;
-5. target the LANDMARK Hall-thruster benchmark after the required
+3. add an imported-geometry probe current-voltage comparison;
+4. target the LANDMARK Hall-thruster benchmark after the required
    magnetic-field, source, collision, and parallel-runtime capabilities exist.
-

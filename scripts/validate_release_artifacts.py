@@ -131,6 +131,7 @@ def validate_performance_doc() -> None:
         "Before using larger runs",
         "Release-engineering envelope",
         "examples/two_stream.cfg",
+        "two-stream",
         "examples/plasma_3d.cfg",
         "self-consistent electromagnetic field update",
         "not a general-purpose plasma production platform",

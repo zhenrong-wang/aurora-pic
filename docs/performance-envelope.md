@@ -31,12 +31,14 @@ a memory-scaling guarantee, not a high-volume I/O throughput claim.
 `scripts/verify.sh` builds the code and runs these examples through `scripts/verify_examples.py`, which checks that scalar histories, field snapshots, VTK files, and sampled particle files are structurally valid. Passing this suite means the documented smoke envelope works; it does not establish convergence for arbitrary plasma regimes.
 
 The same suite runs the quantitative
-[1D linear Landau-damping benchmark](kinetic-validation.md): 64 cells,
-32,768 electrons plus 32,768 effectively stationary ions, and 240 steps. It
-fits the electric-field mode damping rate and angular frequency against
-published Vlasov-Poisson values and gates total-energy drift. This bounded
-case is system-level kinetic verification, not a general convergence or
-experimental-validation claim.
+[1D kinetic benchmarks](kinetic-validation.md). Landau damping uses 64 cells,
+32,768 electrons plus 32,768 effectively stationary ions, and 240 steps. The
+two-stream case uses 128 cells, two 16,384-particle warm electron beams plus
+32,768 ions, and 1,000 steps. They run sequentially, fit electric-field
+damping/frequency and instability growth against published Vlasov-Poisson
+values, check nonlinear turnover, and gate total-energy drift. These bounded
+cases are system-level kinetic verification, not general convergence or
+experimental-validation claims.
 
 The local verification entry point is deliberately resource-conservative:
 one compiler job, one CTest job, and one implicit OpenMP thread by default.

@@ -10,11 +10,11 @@ For the recommended multidimensional expansion strategy, geometry/mesh format ch
 
 The first end-to-end nontrivial geometry case is documented in [`docs/real-case-validation.md`](docs/real-case-validation.md). It includes a Gmsh-authored chamber with an internal circular biased probe, a committed regenerable mesh, mesh-quality gates, tagged-boundary physics, and a deterministic simulation acceptance envelope. It is an integration-grade real geometry case, not yet an experimentally validated device model.
 
-The first quantitative system-level physics case is documented in
-[`docs/kinetic-validation.md`](docs/kinetic-validation.md). A deterministic,
-resource-bounded 1D linear Landau-damping run measures the electric-field
-damping rate and angular frequency against published Vlasov-Poisson values,
-while also bounding initial mode amplitude and total-energy drift.
+The quantitative system-level physics cases are documented in
+[`docs/kinetic-validation.md`](docs/kinetic-validation.md). Deterministic,
+resource-bounded 1D Landau-damping and two-stream runs measure the
+electric-field damping rate, frequency, instability growth, nonlinear
+turnover, and total-energy drift against published Vlasov-Poisson behavior.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI reduced-dimensional runs report per-unit omitted measure (`J/m²` in 1D and `J/m` in planar 2D).
 
@@ -55,8 +55,8 @@ target_link_libraries(your_target PRIVATE AuroraPIC::aurorapic)
 The full smoke suite builds the project, validates milestone and
 release-engineering artifacts, tests local gas import and the homogeneous
 swarm CLI, runs the CTest regression executable, runs the standalone pusher
-validation script (leapfrog plus Boris checks), runs the quantitative
-Landau-damping kinetic benchmark, runs isolated CLI smoke tests
+validation script (leapfrog plus Boris checks), runs the quantitative Landau
+damping and two-stream kinetic benchmarks, runs isolated CLI smoke tests
 for the included 1D/2D/3D examples, and runs the install/package smoke test
 for the installed CLIs, CPack `TGZ`, and downstream
 `find_package(AuroraPIC CONFIG REQUIRED)` consumer:
@@ -449,6 +449,6 @@ leaves both initialization audit files before aborting.
 
 ## Performance and validation envelope
 
-The verified smoke/performance envelope is documented in `docs/performance-envelope.md`, and the quantitative 1D Landau-damping case in `docs/kinetic-validation.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. The checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. The Landau case additionally verifies one published collisionless kinetic response; neither suite proves convergence for arbitrary plasma regimes or validates a real device. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
+The verified smoke/performance envelope is documented in `docs/performance-envelope.md`, and the quantitative 1D Landau-damping and two-stream cases in `docs/kinetic-validation.md`. Imported scalar diagnostics expose cumulative particle, deposition, and field-solve timings plus location-cache hits and spatial searches, and `scripts/benchmark_unstructured.py` reports repeat medians for a chosen imported config. The checked-in examples prove that the documented 1D/2D/3D CLI paths, diagnostics, VTK output, particle samples, prescribed uniform-B Boris activation, and checkpoint-style text outputs remain structurally valid at small CI-friendly sizes. The kinetic cases additionally verify published damped and unstable collisionless responses; neither suite proves convergence for arbitrary plasma regimes or validates a real device. Before using larger runs, document resolution, timestep, particles-per-cell/noise, output cadence, boundary model, and convergence checks against mesh/time/particle refinements.
 
 This is a serious first version, not a final plasma platform. Key known gaps are: no MPI/GPU backend yet, OpenMP remains a shared-memory particle-path implementation rather than a domain-decomposed whole-solver model, external initial-state loading does not yet have a chunked openPMD/HDF5 high-volume backend, MCC thermal neutrals have fixed temperature and zero bulk flow, excitation and ionization omit neutral recoil, charge exchange is limited to the resonant mass-matched case, and there is no neutral depletion, gas heating, or general reaction network; prescribed uniform magnetic fields only (no self-consistent electromagnetic field solve yet), imported field conditions are limited to label-wise constant Dirichlet/Neumann data, and the imported runtime has not been performance-qualified on production-scale meshes. No authoritative He/Ar/Kr/Xe cross-section set is bundled yet. High-volume particle dumps are intentionally deferred to an openPMD/HDF5-style format in a later phase; current `.aps` initial states, text checkpoints, and particle CSV output are for preprocessing, restart, inspection, and regression/debug workflows.

@@ -45,6 +45,22 @@ def main() -> int:
         float(fit["angular_frequency"]), frequency, 0.01,
         "synthetic frequency fit changed",
     )
+    growth = 0.2258
+    growing_amplitudes = [
+        0.001 * math.exp(growth * time)
+        for time in times
+    ]
+    growth_fit = MODULE.analyze_exponential_growth(
+        times, growing_amplitudes, 8.0, 12.0
+    )
+    require_near(
+        float(growth_fit["growth_rate"]), growth, 1e-12,
+        "synthetic growth-rate fit changed",
+    )
+    require_near(
+        float(growth_fit["r_squared"]), 1.0, 1e-12,
+        "synthetic growth fit quality changed",
+    )
     print("kinetic benchmark analyzer tests passed")
     return 0
 
