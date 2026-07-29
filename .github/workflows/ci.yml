@@ -71,6 +71,8 @@ jobs:
         run: python3 scripts/test_normalize_hall_reference.py
       - name: Run bounded Hall micro pilot
         run: python3 scripts/test_hall_pilot.py build/aurorapic_cli
+      - name: Validate bounded Hall runtime qualification
+        run: python3 scripts/test_hall_runtime_qualification.py build/aurorapic_cli
 
       - name: Run CTest
         run: ctest --test-dir build --parallel 1 --output-on-failure

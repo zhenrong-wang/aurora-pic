@@ -150,7 +150,7 @@ the models.
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, and seeded ensemble statistics | Add long-run segment aggregation and qualify the workflow with real reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
-| Scale-out runtime | Serial/OpenMP only | Add MPI domain decomposition before production-size LANDMARK runs |
+| Scale-out runtime | Serial/OpenMP only; a bounded, provenance-pinned runtime qualifier measures a selected host without permitting a production launch | Add MPI domain decomposition before production-size LANDMARK runs |
 | High-volume output | VTK/XML, CSV, and text restart | Add openPMD/HDF5 or equivalent parallel, chunked output before large campaigns |
 | Real HET geometry | Tagged planar Gmsh import exists | Add spatial field maps, axisymmetric/3D geometry, dielectric/material walls, neutral flow, and cathode/facility models |
 
@@ -467,6 +467,45 @@ sources can increase population, while VTK, particle dumps, external data,
 replication, and temporary files are excluded. At an explicitly supplied
 measured rate of 100 million particle updates/s, the lower-bound push time
 alone is 768,000 seconds (8.9 days).
+
+### Runtime qualification before execution
+
+Case 2 is still the smallest suitable first full-PIC HET target with a public
+multi-code axial-azimuthal comparison. Cases 1 and 3 use two and four times the
+Case 2 initial particle population. The radial-azimuthal LANDMARK case reduces
+the initial-population update count to about 26.2 trillion, but it is not an
+immediate substitute: AuroraPIC does not yet implement its virtual-axial
+replacement model. The one-dimensional LANDMARK Hall case is a fluid/hybrid
+benchmark and therefore cannot verify this kinetic PIC path.
+
+Before any longer local pilot, run a bounded workstation-resolution timing
+slice:
+
+```sh
+taskset -c 0 nice -n 19 python3 scripts/qualify_hall_runtime.py \
+  build/aurorapic_cli \
+  examples/hall_landmark_axial_azimuthal.case \
+  --tier workstation \
+  --steps 40 \
+  --max-initial-updates 11000000 \
+  --timeout-seconds 60 \
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_BOUNDED_HALL_PROBE \
+  --report local/hall-runtime-qualification.json
+```
+
+The tool supports only the `micro` and `workstation` tiers, forces the serial
+one-thread backend, refuses more than 25 million initial-particle updates,
+applies a hard timeout, disables resolved/particle/VTK/checkpoint output, and
+never passes the CLI large-run acknowledgement. It records the exact case,
+deck, and executable hashes, CPU affinity, measured wall time, and
+initial-population-only workstation/production projections. Existing reports
+are rejected before a simulation is launched.
+
+The projection is a screening estimate, not a scheduling promise. It includes
+short-run startup overhead but excludes growth from the pair and cathode
+sources. Published Case 2 data show growth from 75 to roughly 290
+particles/cell, so a projection based only on the initial 76.8 trillion
+updates is an optimistic lower bound for a complete discharge.
 
 The preflight distinguishes the paper's 500 by 256 cells from AuroraPIC's
 501 by 256 structured nodes, writes all assumptions and arithmetic to JSON,

@@ -360,6 +360,8 @@ def main() -> int:
             == "external_checksum_pinned"
         and comparison["comparator"] == "scripts/compare_hall.py"
         and comparison["preflight"] == "scripts/preflight_hall.py"
+        and comparison["runtime_qualifier"]
+            == "scripts/qualify_hall_runtime.py"
         and comparison["source_locker"] == "scripts/lock_hall_source.py"
         and comparison["reference_normalizer"]
             == "scripts/normalize_hall_reference.py"

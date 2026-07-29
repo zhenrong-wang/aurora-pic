@@ -26,13 +26,16 @@ statistical-diagnostic gates that prevent a premature validation claim.
 The Hall-effect-thruster verification and validation ladder is defined in
 [`docs/hall-thruster-validation.md`](docs/hall-thruster-validation.md). It pins
 the public LANDMARK axial-azimuthal and radial-azimuthal PIC cases, identifies
-public WarpX reference output and NASA HERMeS measurements, separates
+public WarpX reference output and NASA HERMeS measurements, provides a guarded
+single-thread runtime qualification before costly campaigns, separates
 code-to-code verification from experimental validation, and records the
 physics, diagnostics, parallelism, and resource gates still required. The
 installed `compare_hall.py` tool performs checksum-pinned, uncertainty-aware
 profile and complex-mode comparisons against local reference data;
 `preflight_hall.py` estimates production memory, storage, output rows, and
 particle-update work without launching a simulation.
+`qualify_hall_runtime.py` runs only a capped one-thread micro/workstation slice
+and records binary/deck provenance plus initial-population cost projections.
 `prepare_hall_campaign.py` requires an explicit production-cost
 acknowledgement before it writes—but never launches—a full Case 2 candidate
 deck.

@@ -196,6 +196,10 @@ def smoke_install_tree(
     )
     require_file(
         prefix / "share" / "aurorapic" / "scripts" /
+        "qualify_hall_runtime.py"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
         "prepare_hall_campaign.py"
     )
     require_file(
@@ -279,6 +283,10 @@ def smoke_tgz_package(
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /
         "preflight_hall.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "scripts" /
+        "qualify_hall_runtime.py"
     )
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /

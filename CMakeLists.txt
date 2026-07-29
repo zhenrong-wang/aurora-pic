@@ -77,7 +77,7 @@ install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examp
   PATTERN "*.aps" PATTERN "*.case" PATTERN "*.sources")
 install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/aggregate_hall_ensemble.py scripts/analyze_hall_pilot.py
-  scripts/preflight_hall.py
+  scripts/preflight_hall.py scripts/qualify_hall_runtime.py
   scripts/prepare_hall_campaign.py scripts/lock_hall_source.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py
   scripts/run_swarm_campaign.py

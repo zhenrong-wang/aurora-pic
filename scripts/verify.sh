@@ -30,6 +30,7 @@ python3 scripts/test_hall_ensemble.py
 python3 scripts/test_lock_hall_source.py
 python3 scripts/test_normalize_hall_reference.py
 python3 scripts/test_hall_pilot.py build/aurorapic_cli
+python3 scripts/test_hall_runtime_qualification.py build/aurorapic_cli
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
 python3 scripts/validate_pushers.py
 python3 scripts/test_kinetic_benchmarks.py
