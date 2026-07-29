@@ -86,6 +86,8 @@ void require_checkpoint_samples_close(const pic::DiagnosticSample& a,
     require_near(a.field_energy, b.field_energy, 1e-12, label + ": field-energy mismatch");
     require_near(a.total_energy, b.total_energy, 1e-12, label + ": total-energy mismatch");
     require_near(a.charge_l1, b.charge_l1, 1e-12, label + ": charge-l1 mismatch");
+    require_near(a.phi_left, b.phi_left, 1e-12, label + ": left-potential mismatch");
+    require_near(a.phi_right, b.phi_right, 1e-12, label + ": right-potential mismatch");
 }
 
 void require_checkpoint_samples_close(const pic::DiagnosticSample2D& a,
@@ -2019,6 +2021,15 @@ int main() {
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
+                    << "boundary = dirichlet\n"
+                    << "phi_left = -2\n"
+                    << "phi_left_amplitude = 3\n"
+                    << "phi_left_frequency = 4\n"
+                    << "phi_left_phase = 0.25\n"
+                    << "phi_right = 5\n"
+                    << "phi_right_amplitude = 6\n"
+                    << "phi_right_frequency = 7\n"
+                    << "phi_right_phase = -0.5\n"
                     << "runtime_backend = single\n"
                     << "runtime_threads = 1\n"
                     << "[species]\n"
@@ -2042,6 +2053,30 @@ int main() {
                         2.5 * pic::VACUUM_PERMITTIVITY_SI) <
                         1e-26,
                 "SI unit-system config was not parsed");
+            require_near(
+                cfg.phi_left, -2.0, 1e-15,
+                "1D config did not load left voltage offset");
+            require_near(
+                cfg.phi_left_drive.amplitude, 3.0, 1e-15,
+                "1D config did not load left voltage amplitude");
+            require_near(
+                cfg.phi_left_drive.frequency, 4.0, 1e-15,
+                "1D config did not load left voltage frequency");
+            require_near(
+                cfg.phi_left_drive.phase, 0.25, 1e-15,
+                "1D config did not load left voltage phase");
+            require_near(
+                cfg.phi_right, 5.0, 1e-15,
+                "1D config did not load right voltage offset");
+            require_near(
+                cfg.phi_right_drive.amplitude, 6.0, 1e-15,
+                "1D config did not load right voltage amplitude");
+            require_near(
+                cfg.phi_right_drive.frequency, 7.0, 1e-15,
+                "1D config did not load right voltage frequency");
+            require_near(
+                cfg.phi_right_drive.phase, -0.5, 1e-15,
+                "1D config did not load right voltage phase");
             require(std::abs(cfg.species[0].weight - 0.5) < 1e-15, "density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_path);
 
@@ -2086,6 +2121,26 @@ int main() {
                 "dimension = 2\nnx = 8\nny = 6\nlength_x = 2\nlength_y = 1\ndt = 0.01\nruntime_backend = distributed\n[species.electrons]\ncharge = -1\nmass = 1\nweight = 1\nparticles = 12\n",
                 [](const std::string& path) { return pic::load_config_2d(path); },
                 "M4 invalid runtime_backend config validation did not throw");
+            require_config_rejects(
+                "test_periodic_voltage_drive.ini",
+                "boundary = periodic\nphi_right_amplitude = 1\nphi_right_frequency = 1\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D periodic config accepted a sinusoidal electrode drive");
+            require_config_rejects(
+                "test_invalid_voltage_frequency.ini",
+                "boundary = dirichlet\nphi_right_amplitude = 1\nphi_right_frequency = -1\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D config accepted a negative electrode frequency");
+            require_config_rejects(
+                "test_zero_voltage_frequency.ini",
+                "boundary = dirichlet\nphi_right_amplitude = 1\nphi_right_frequency = 0\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D config accepted a driven electrode without positive frequency");
+            require_config_rejects(
+                "test_steady_voltage_drive.ini",
+                "boundary = dirichlet\nmode = steady_state\nphi_right_amplitude = 1\nphi_right_frequency = 1\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D config accepted an RF drive with instantaneous steady-state convergence");
             require_config_rejects(
                 "test_missing_scale_2d.ini",
                 "dimension = 2\nnx = 8\nny = 6\nlength_x = 2\nlength_y = 1\ndt = 0.01\n[species.electrons]\ncharge = -1\nmass = 1\nparticles = 12\n",
@@ -2417,6 +2472,73 @@ int main() {
             require(s.steps_completed == cfg.steps, "simulation did not complete requested transient steps");
             require(std::filesystem::exists(output_dir / "scalars.csv"), "simulation did not write scalar diagnostics");
             require(std::filesystem::exists(output_dir / "fields_4.csv"), "simulation did not write final field diagnostics");
+        }
+        {
+            const auto output_dir =
+                std::filesystem::path("test_output_1d_rf_drive");
+            const auto checkpoint_path =
+                output_dir / "rf_checkpoint.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Config cfg;
+            cfg.nx = 9;
+            cfg.length = 1.0;
+            cfg.dt = 0.125;
+            cfg.steps = 2;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir.string();
+            cfg.boundary = pic::Boundary::Dirichlet;
+            cfg.phi_left = -0.25;
+            cfg.phi_left_drive = {
+                0.5, 1.0, std::numbers::pi / 2.0};
+            cfg.phi_right = 0.5;
+            cfg.phi_right_drive = {2.0, 1.0, 0.0};
+            cfg.species = {
+                pic::SpeciesConfig{
+                    "neutral", 0.0, 1.0, 1.0, 4, 1.0,
+                    0.0, 0.0, 0.0, -1.0}};
+
+            pic::Simulation sim(cfg);
+            sim.initialize();
+            require_near(
+                sim.grid().phi().front(), 0.25, 1e-14,
+                "1D RF drive applied the wrong initial left potential");
+            require_near(
+                sim.grid().phi().back(), 0.5, 1e-14,
+                "1D RF drive was not zero-phase at time zero");
+            sim.step();
+            const double expected_left =
+                -0.25 + 0.5 * std::sin(3.0 * std::numbers::pi / 4.0);
+            const double expected_right =
+                0.5 + 2.0 * std::sin(std::numbers::pi / 4.0);
+            require_near(
+                sim.grid().phi().front(), expected_left, 1e-14,
+                "1D RF drive used the wrong new-time left potential");
+            require_near(
+                sim.grid().phi().back(), expected_right, 1e-14,
+                "1D RF drive used the wrong new-time right potential");
+            sim.save_checkpoint(checkpoint_path);
+
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            require_near(
+                restarted.grid().phi().front(), expected_left, 1e-14,
+                "1D RF restart did not restore the left drive phase");
+            require_near(
+                restarted.grid().phi().back(), expected_right, 1e-14,
+                "1D RF restart did not restore the right drive phase");
+
+            std::filesystem::remove_all(output_dir);
+            pic::Simulation output_sim(cfg);
+            output_sim.run();
+            const auto scalars =
+                read_file_text(output_dir / "scalars.csv");
+            require(
+                scalars.find(
+                    "step,time,kinetic_energy,field_energy,"
+                    "total_energy,charge_l1,live_particles,"
+                    "phi_left,phi_right\n") == 0,
+                "1D RF scalar diagnostics omitted electrode potentials");
         }
         {
             pic::Simulation2DConfig cfg;

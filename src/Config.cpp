@@ -386,6 +386,48 @@ void validate_config(const Config& cfg) {
     if (cfg.nx < 3) throw std::runtime_error("nx must be at least 3");
     validate_positive(cfg.length, "length");
     validate_positive(cfg.dt, "dt");
+    if (!std::isfinite(cfg.phi_left) ||
+        !std::isfinite(cfg.phi_right)) {
+        throw std::runtime_error(
+            "1D electrode potential offsets must be finite");
+    }
+    const auto validate_voltage_drive =
+        [&](const SinusoidalVoltageConfig& drive,
+            const std::string& name) {
+            if (!std::isfinite(drive.amplitude)) {
+                throw std::runtime_error(
+                    name + " amplitude must be finite");
+            }
+            validate_non_negative(
+                drive.frequency, name + " frequency");
+            if (!std::isfinite(drive.phase)) {
+                throw std::runtime_error(
+                    name + " phase must be finite");
+            }
+            if (drive.amplitude != 0.0 &&
+                !(drive.frequency > 0.0)) {
+                throw std::runtime_error(
+                    name + " nonzero amplitude requires positive "
+                    "frequency");
+            }
+        };
+    validate_voltage_drive(
+        cfg.phi_left_drive, "phi_left sinusoidal drive");
+    validate_voltage_drive(
+        cfg.phi_right_drive, "phi_right sinusoidal drive");
+    const bool driven =
+        cfg.phi_left_drive.amplitude != 0.0 ||
+        cfg.phi_right_drive.amplitude != 0.0;
+    if (cfg.boundary != Boundary::Dirichlet && driven) {
+        throw std::runtime_error(
+            "sinusoidal electrode drives require boundary = "
+            "dirichlet");
+    }
+    if (cfg.mode == RunMode::SteadyState && driven) {
+        throw std::runtime_error(
+            "sinusoidal electrode drives require mode = transient "
+            "until cycle-averaged convergence is implemented");
+    }
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
     validate_positive(cfg.steady_tolerance, "steady_tolerance");
     if (cfg.steady_window == 0) throw std::runtime_error("steady_window must be positive");
@@ -726,6 +768,8 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "dt", "steps", "output_interval", "output_dir", "seed",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
+        "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
+        "phi_right_amplitude", "phi_right_frequency", "phi_right_phase",
         "boundary", "mode", "dimension", "config_version", "checkpoint_output", "checkpoint_interval",
         "checkpoint_path", "restart_path", "initial_state_path",
         "initial_state_signature",
@@ -775,6 +819,22 @@ Config load_config(const std::string& path) {
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.phi_left = as<double>(global, "phi_left", cfg.phi_left);
     cfg.phi_right = as<double>(global, "phi_right", cfg.phi_right);
+    cfg.phi_left_drive.amplitude = as<double>(
+        global, "phi_left_amplitude",
+        cfg.phi_left_drive.amplitude);
+    cfg.phi_left_drive.frequency = as<double>(
+        global, "phi_left_frequency",
+        cfg.phi_left_drive.frequency);
+    cfg.phi_left_drive.phase = as<double>(
+        global, "phi_left_phase", cfg.phi_left_drive.phase);
+    cfg.phi_right_drive.amplitude = as<double>(
+        global, "phi_right_amplitude",
+        cfg.phi_right_drive.amplitude);
+    cfg.phi_right_drive.frequency = as<double>(
+        global, "phi_right_frequency",
+        cfg.phi_right_drive.frequency);
+    cfg.phi_right_drive.phase = as<double>(
+        global, "phi_right_phase", cfg.phi_right_drive.phase);
     cfg.steady_tolerance = as<double>(global, "steady_tolerance", cfg.steady_tolerance);
     cfg.steady_window = as<std::size_t>(global, "steady_window", cfg.steady_window);
     cfg.max_steps = as<std::size_t>(global, "max_steps", cfg.max_steps);

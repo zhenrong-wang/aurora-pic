@@ -35,7 +35,11 @@ public:
     }
 private:
     void apply_collisions(Species& sp, std::size_t species_id);
-    void deposit_and_solve();
+    void deposit_and_solve(double field_time);
+    double electrode_potential(
+        double offset,
+        const SinusoidalVoltageConfig& drive,
+        double field_time) const;
     Config cfg_;
     Grid grid_;
     FieldSolver solver_;

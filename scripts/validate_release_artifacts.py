@@ -51,6 +51,7 @@ def validate_cmake_packaging() -> None:
         "scripts/compare_swarm.py",
         "scripts/run_swarm_campaign.py",
         "scripts/validate_kinetic_benchmarks.py",
+        "docs/ccp-validation.md",
         "docs/kinetic-validation.md",
         "docs/performance-envelope.md",
         "docs/swarm-validation.md",
@@ -131,6 +132,7 @@ def validate_performance_doc() -> None:
         "Before using larger runs",
         "Release-engineering envelope",
         "examples/two_stream.cfg",
+        "examples/rf_electrode_1d.cfg",
         "two-stream",
         "Langmuir",
         "3D Langmuir",
@@ -148,11 +150,13 @@ def validate_cross_references() -> None:
     verify = read(VERIFY)
     require("docs/performance-envelope.md" in readme, "README must link the performance envelope")
     require("docs/kinetic-validation.md" in readme, "README must link kinetic verification")
+    require("docs/ccp-validation.md" in readme, "README must link the CCP validation target")
     require("CI workflow" in readme, "README must document CI workflow coverage")
     require("CPack" in readme, "README must document CPack packaging")
     require("find_package(AuroraPIC CONFIG REQUIRED)" in readme, "README must document downstream CMake package use")
     require("docs/performance-envelope.md" in roadmap, "roadmap must link the performance envelope")
     require("docs/kinetic-validation.md" in roadmap, "roadmap must link kinetic verification")
+    require("docs/ccp-validation.md" in roadmap, "roadmap must link the CCP validation target")
     require("CI matrix" in roadmap and "CPack" in roadmap, "roadmap must document CI matrix and CPack as M6 evidence")
     require("install/package smoke" in roadmap, "roadmap must document install/package smoke evidence")
     require(

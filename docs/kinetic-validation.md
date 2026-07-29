@@ -221,7 +221,8 @@ convergence, electromagnetic fields, or a real thruster/discharge.
 The next verification and validation ladder is:
 
 1. reproduce the published Turner helium capacitively coupled plasma
-   benchmark with an authoritative open collision dataset;
+   benchmark under the staged readiness contract in
+   [ccp-validation.md](ccp-validation.md);
 2. add an imported-geometry probe current-voltage comparison;
 3. target the LANDMARK Hall-thruster benchmark after the required
    magnetic-field, source, collision, and parallel-runtime capabilities exist.

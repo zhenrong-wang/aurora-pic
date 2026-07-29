@@ -19,6 +19,8 @@ struct DiagnosticSample {
     double total_energy{0.0};
     double charge_l1{0.0};
     std::size_t live_particles{0};
+    double phi_left{0.0};
+    double phi_right{0.0};
 };
 
 struct BoundaryLoss2D {

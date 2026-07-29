@@ -19,7 +19,11 @@ Diagnostics::Diagnostics(
     scalar_file_.open(output_dir_ / "scalars.csv");
     if (!scalar_file_) throw std::runtime_error("cannot open diagnostics output");
 }
-void Diagnostics::write_header() { scalar_file_ << "step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles\n"; }
+void Diagnostics::write_header() {
+    scalar_file_
+        << "step,time,kinetic_energy,field_energy,total_energy,"
+           "charge_l1,live_particles,phi_left,phi_right\n";
+}
 DiagnosticSample Diagnostics::sample(std::size_t step, double time, const Grid& grid, const std::vector<Species>& species) {
     DiagnosticSample s; s.step = step; s.time = time;
     for (const auto& sp : species) { s.kinetic_energy += sp.kinetic_energy(); s.live_particles += sp.live_count(); }
@@ -31,11 +35,19 @@ DiagnosticSample Diagnostics::sample(std::size_t step, double time, const Grid& 
         s.charge_l1 += std::abs(grid.rho()[i]) * volume;
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
+    if (grid.boundary() == Boundary::Dirichlet) {
+        s.phi_left = grid.phi().front();
+        s.phi_right = grid.phi().back();
+    }
     history_.push_back(s);
     return s;
 }
 void Diagnostics::write_sample(const DiagnosticSample& s) {
-    scalar_file_ << s.step << ',' << std::setprecision(17) << s.time << ',' << s.kinetic_energy << ',' << s.field_energy << ',' << s.total_energy << ',' << s.charge_l1 << ',' << s.live_particles << '\n';
+    scalar_file_ << s.step << ',' << std::setprecision(17)
+                 << s.time << ',' << s.kinetic_energy << ','
+                 << s.field_energy << ',' << s.total_energy << ','
+                 << s.charge_l1 << ',' << s.live_particles << ','
+                 << s.phi_left << ',' << s.phi_right << '\n';
     scalar_file_.flush();
 }
 void Diagnostics::write_fields(std::size_t step, const Grid& grid) const {

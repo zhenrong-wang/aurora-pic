@@ -110,6 +110,12 @@ struct CollisionConfig {
     std::string license{};
 };
 
+struct SinusoidalVoltageConfig {
+    double amplitude{0.0};
+    double frequency{0.0};
+    double phase{0.0};
+};
+
 struct Config {
     UnitSystemConfig units{};
     std::size_t nx{128};
@@ -121,6 +127,8 @@ struct Config {
     RunMode mode{RunMode::Transient};
     double phi_left{0.0};
     double phi_right{0.0};
+    SinusoidalVoltageConfig phi_left_drive{};
+    SinusoidalVoltageConfig phi_right_drive{};
     unsigned seed{12345};
     std::string output_dir{"output"};
     double steady_tolerance{1e-6};

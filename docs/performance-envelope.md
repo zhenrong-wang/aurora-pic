@@ -19,6 +19,7 @@ a memory-scaling guarantee, not a high-volume I/O throughput claim.
 | `examples/two_stream.cfg` | 1D1V | 128 cells | 12,000 | 300 | Periodic electrostatic transient with multiple species. |
 | `examples/sheath_steady.cfg` | 1D1V | 96 cells | 6,000 | up to 2,000 | Dirichlet boundaries, absorbing-wall loss, collisions, steady-state stop condition. |
 | `examples/mcc_relaxation.cfg` | 1D1V | 32 cells | 1,000 | 50 | Synthetic tabulated elastic/excitation null-collision MCC with channel diagnostics. |
+| `examples/rf_electrode_1d.cfg` | 1D1V | 33 nodes | 128 | 16 | Sinusoidal Dirichlet electrode at exact field time levels, applied-potential diagnostics, and bounded RF CLI integration. |
 | `examples/plasma_2d.cfg` | 2D3V | 32 x 32 nodes | 200 | 20 | Periodic 2D field solve, VTK output, particle samples, prescribed uniform-B Boris activation. |
 | `examples/electrode_2d.cfg` | 2D3V | 32 x 24 nodes | 160 | 10 | Dirichlet electrode fields and mixed particle-boundary policies. |
 | `examples/imported_plasma_2d.cfg` | 2D3V | 6 nodes / 3 mixed cells | 64 initial / 70 final | 3 | Imported Gmsh CLI path, mixed-boundary FEM solve, tagged reflection/injection, VTU, particle samples, checkpoint. |
@@ -43,6 +44,12 @@ and instability growth against published or analytic Vlasov-Poisson values,
 check nonlinear turnover and directional symmetry, and gate total-energy
 drift. These bounded cases are system-level kinetic verification, not
 general convergence or experimental-validation claims.
+
+The RF-electrode smoke is only a waveform/integration check. The full Turner
+helium CCP Case 1 requires 512,000 steps and physics not yet present in the
+1D path, so it is excluded from ordinary CI. Its capability gates and
+production-run envelope are pinned in
+[ccp-validation.md](ccp-validation.md).
 
 The local verification entry point is deliberately resource-conservative:
 one compiler job, one CTest job, and one implicit OpenMP thread by default.

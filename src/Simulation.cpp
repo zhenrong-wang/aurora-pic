@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <numbers>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -26,6 +27,41 @@ void validate_runtime_config(const Config& cfg) {
     if (cfg.output_interval == 0) throw std::invalid_argument("output_interval must be positive");
     if (!std::isfinite(cfg.phi_left) || !std::isfinite(cfg.phi_right)) {
         throw std::invalid_argument("Dirichlet boundary potentials must be finite");
+    }
+    const auto validate_voltage_drive =
+        [](const SinusoidalVoltageConfig& drive,
+           const std::string& name) {
+            if (!std::isfinite(drive.amplitude) ||
+                !std::isfinite(drive.frequency) ||
+                drive.frequency < 0.0 ||
+                !std::isfinite(drive.phase)) {
+                throw std::invalid_argument(
+                    name + " values must be finite and frequency "
+                    "must be non-negative");
+            }
+            if (drive.amplitude != 0.0 &&
+                !(drive.frequency > 0.0)) {
+                throw std::invalid_argument(
+                    name + " nonzero amplitude requires positive "
+                    "frequency");
+            }
+        };
+    validate_voltage_drive(
+        cfg.phi_left_drive, "left sinusoidal electrode drive");
+    validate_voltage_drive(
+        cfg.phi_right_drive, "right sinusoidal electrode drive");
+    const bool driven =
+        cfg.phi_left_drive.amplitude != 0.0 ||
+        cfg.phi_right_drive.amplitude != 0.0;
+    if (cfg.boundary != Boundary::Dirichlet && driven) {
+        throw std::invalid_argument(
+            "sinusoidal electrode drives require a Dirichlet "
+            "boundary");
+    }
+    if (cfg.mode == RunMode::SteadyState && driven) {
+        throw std::invalid_argument(
+            "sinusoidal electrode drives require transient mode "
+            "until cycle-averaged convergence is implemented");
     }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) {
         throw std::invalid_argument("checkpoint_interval must be positive when checkpoint_output is enabled");
@@ -193,10 +229,24 @@ Simulation::Simulation(Config cfg)
     }
 }
 
-void Simulation::deposit_and_solve() {
+double Simulation::electrode_potential(
+    double offset,
+    const SinusoidalVoltageConfig& drive,
+    double field_time) const {
+    return offset + drive.amplitude * std::sin(
+        2.0 * std::numbers::pi * drive.frequency * field_time +
+        drive.phase);
+}
+
+void Simulation::deposit_and_solve(double field_time) {
     grid_.clear_charge();
     for (const auto& sp : species_) sp.deposit_charge(grid_);
-    solver_.solve(grid_, cfg_.phi_left, cfg_.phi_right);
+    solver_.solve(
+        grid_,
+        electrode_potential(
+            cfg_.phi_left, cfg_.phi_left_drive, field_time),
+        electrode_potential(
+            cfg_.phi_right, cfg_.phi_right_drive, field_time));
 }
 
 void Simulation::initialize() {
@@ -250,7 +300,7 @@ void Simulation::initialize() {
                 },
                 cfg_.initial_state_signature);
     }
-    deposit_and_solve();
+    deposit_and_solve(time_);
     for (auto& sp : species_) {
         const double qm = sp.charge() / sp.mass();
         auto& particles = sp.particles();
@@ -322,7 +372,7 @@ void Simulation::step() {
             }
         });
     }
-    deposit_and_solve();
+    deposit_and_solve(time_ + cfg_.dt);
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
         auto& sp = species_[species_id];
@@ -354,6 +404,10 @@ DiagnosticSample Simulation::sample() const {
         s.charge_l1 += std::abs(grid_.rho()[i]) * volume;
     }
     s.total_energy = s.kinetic_energy + s.field_energy;
+    if (grid_.boundary() == Boundary::Dirichlet) {
+        s.phi_left = grid_.phi().front();
+        s.phi_right = grid_.phi().back();
+    }
     return s;
 }
 
@@ -494,7 +548,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
     }
     require_stream(in, "failed while reading checkpoint: " + path.string());
-    deposit_and_solve();
+    deposit_and_solve(time_);
     initialized_ = true;
 }
 

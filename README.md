@@ -12,10 +12,16 @@ The first end-to-end nontrivial geometry case is documented in [`docs/real-case-
 
 The quantitative system-level physics cases are documented in
 [`docs/kinetic-validation.md`](docs/kinetic-validation.md). Deterministic,
-resource-bounded 1D Landau-damping, 1D two-stream, and orthogonal 2D Langmuir
+resource-bounded 1D Landau-damping, 1D two-stream, and orthogonal 2D/3D Langmuir
 runs measure damping rate, frequency, instability growth, nonlinear turnover,
 directional symmetry, and total-energy drift against analytic or published
 Vlasov-Poisson behavior.
+
+The next device-physics benchmark is defined in
+[`docs/ccp-validation.md`](docs/ccp-validation.md). It pins the published
+Turner helium CCP parameters, records completed RF-electrode support, and
+lists the remaining 1D3V, multispecies MCC, ionization, ion-scattering, and
+statistical-diagnostic gates that prevent a premature validation claim.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI reduced-dimensional runs report per-unit omitted measure (`J/m²` in 1D and `J/m` in planar 2D).
 
@@ -183,6 +189,13 @@ length = 1.0
 dt = 0.002
 steps = 300
 boundary = periodic        # periodic or dirichlet
+# For a 1D Dirichlet electrode, phi is the static offset and the
+# optional drive is offset + amplitude*sin(2*pi*frequency*time + phase).
+# phi_left = 0
+# phi_right = 0
+# phi_right_amplitude = 450
+# phi_right_frequency = 13.56e6
+# phi_right_phase = 0
 mode = transient           # transient or steady_state
 output_interval = 25
 output_dir = output/run
@@ -212,6 +225,23 @@ model = bgk
 frequency = 0.0
 neutral_temperature_velocity = 0.0
 ```
+
+The sinusoidal drive keys are currently restricted to transient 1D Dirichlet
+domains. Driven `steady_state` mode is rejected until convergence is evaluated
+over complete RF cycles.
+Frequency is cycles per simulation-time unit (hertz in SI), and phase is in
+radians. Nonzero amplitude requires positive frequency. The post-drift field
+solve evaluates the waveform at the new field time level, and restart
+reconstructs its phase from the checkpoint time. All 1D runs write:
+
+```text
+step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,phi_left,phi_right
+```
+
+The potential columns contain the values actually applied by a Dirichlet
+field solve and are zero for periodic domains, which have no electrodes.
+For driven systems, particle-plus-field energy is not conserved because the
+external electrode supplies or removes energy.
 
 For tabulated MCC, select `model = null_collision`, name the target `species`,
 set `neutral_density` and a conservative `max_frequency`, then add one or more
@@ -428,7 +458,7 @@ Structured particle initialization/synchronization loops and the 1D particle adv
 - 3D supports uniform `magnetic_field_x`, `magnetic_field_y`, and `magnetic_field_z`. They default to `0.0`; any nonzero component activates the Boris pusher for 3D particles.
 - Magnetic-field values must be finite. The current field solve remains electrostatic Poisson; these controls add prescribed uniform magnetic rotation to particle pushes, not a self-consistent electromagnetic field update.
 
-The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
+The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, invalid electrode drive amplitude/frequency/phase combinations, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 
 Optional global initialization gates reject inconsistent generated or restarted
 particle states before time integration:

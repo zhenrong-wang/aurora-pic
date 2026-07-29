@@ -226,7 +226,7 @@ def run_example(cli: Path, config_name: str, output_name: str, temp_root: Path) 
 def check_two_stream(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
-        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles"],
+        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles", "phi_left", "phi_right"],
         min_rows=2,
     )
     require_step(rows, 300, output_dir / "scalars.csv")
@@ -240,6 +240,7 @@ def check_external_state_1d(output_dir: Path) -> None:
         expected_header=[
             "step", "time", "kinetic_energy", "field_energy",
             "total_energy", "charge_l1", "live_particles",
+            "phi_left", "phi_right",
         ],
         min_rows=3,
     )
@@ -268,7 +269,7 @@ def check_external_state_1d(output_dir: Path) -> None:
 def check_sheath_steady(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
-        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles"],
+        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles", "phi_left", "phi_right"],
         min_rows=2,
     )
     final_step = int(float(rows[-1][header.index("step")]))
@@ -285,6 +286,7 @@ def check_mcc_relaxation(output_dir: Path) -> None:
         expected_header=[
             "step", "time", "kinetic_energy", "field_energy",
             "total_energy", "charge_l1", "live_particles",
+            "phi_left", "phi_right",
         ],
         min_rows=6,
     )
@@ -312,6 +314,43 @@ def check_mcc_relaxation(output_dir: Path) -> None:
         final["cumulative_collisions_elastic"] > 0 and
         final["cumulative_collisions_excitation"] > 0,
         "MCC example did not exercise every configured channel",
+    )
+
+
+def check_rf_electrode_1d(output_dir: Path) -> None:
+    header, rows = require_csv(
+        output_dir / "scalars.csv",
+        expected_header=[
+            "step", "time", "kinetic_energy", "field_energy",
+            "total_energy", "charge_l1", "live_particles",
+            "phi_left", "phi_right",
+        ],
+        min_rows=5,
+    )
+    require_step(rows, 16, output_dir / "scalars.csv")
+    by_step = {
+        int(float(row[header.index("step")])): {
+            name: float(value)
+            for name, value in zip(header, row)
+        }
+        for row in rows
+    }
+    require(
+        abs(by_step[0]["phi_right"]) < 1e-14,
+        "RF electrode was not zero-phase at time zero",
+    )
+    require(
+        abs(by_step[8]["phi_right"] - 2.0) < 1e-12,
+        "RF electrode did not reach its configured quarter-cycle amplitude",
+    )
+    require(
+        abs(by_step[16]["phi_right"]) < 1e-12,
+        "RF electrode did not return to zero at half-cycle",
+    )
+    require_csv(
+        output_dir / "fields_8.csv",
+        expected_header=["x", "rho", "phi", "E"],
+        min_rows=33,
     )
 
 
@@ -598,6 +637,7 @@ def run_smokes(cli: Path, temp_root: Path) -> None:
         ("two_stream.cfg", "two_stream", check_two_stream),
         ("sheath_steady.cfg", "sheath_steady", check_sheath_steady),
         ("mcc_relaxation.cfg", "mcc_relaxation", check_mcc_relaxation),
+        ("rf_electrode_1d.cfg", "rf_electrode_1d", check_rf_electrode_1d),
         ("plasma_2d.cfg", "plasma_2d", check_plasma_2d),
         ("electrode_2d.cfg", "electrode_2d", check_electrode_2d),
         ("imported_plasma_2d.cfg", "imported_plasma_2d", check_imported_plasma_2d),

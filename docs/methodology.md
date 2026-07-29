@@ -116,13 +116,16 @@ initial-condition milestones.
 ## Field solvers
 
 - Periodic domains use a direct spectral Poisson solve. The zero mode is removed, enforcing global quasi-neutral compatibility.
-- Dirichlet domains use a tridiagonal finite-difference Poisson solve with prescribed endpoint potentials.
+- Dirichlet domains use a tridiagonal finite-difference Poisson solve with
+  prescribed endpoint potentials. The 1D path supports independent
+  sinusoidal endpoint drives; the solve after particle drift evaluates them
+  at `t^(n+1)`, matching the new charge-density time level.
 - Imported finite-element domains support label-wise constant Dirichlet values and Neumann outward normal derivatives. For `-laplacian(phi) = rho / epsilon_0`, the Neumann term `dphi/dn` enters the weak-form right-hand side with a positive sign; therefore `E dot n = -dphi/dn`. At least one Dirichlet label is required to remove the constant-potential nullspace.
 - Validated imported 2D domains use triangle/bilinear-quadrilateral finite-element stiffness assembly with lumped nodal charge, physical-label Dirichlet constraints, CSR storage, and Jacobi-preconditioned conjugate gradients. The solve reports its residual and iteration count, projects element electric fields back to nodes, and is integrated with the imported-mesh CLI simulation loop.
 
 ## Particle advance and steady state
 
-AuroraPIC advances particles with a time-centered electrostatic leapfrog update. Each step deposits charge at particle positions, solves Poisson's equation for `E^n`, kicks stored half-step velocities, drifts positions to the next time level, reapplies particle boundaries, redeposits charge, resolves fields, and synchronizes the public velocity fields used by diagnostics/output. Reflecting multidimensional particle boundaries reverse the normal half-step velocity so subsequent diagnostics remain consistent after synchronization. All dimensions support transient and steady-state execution. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
+AuroraPIC advances particles with a time-centered electrostatic leapfrog update. Each step deposits charge at particle positions, solves Poisson's equation for `E^n`, kicks stored half-step velocities, drifts positions to the next time level, reapplies particle boundaries, redeposits charge, resolves fields at `t^(n+1)`, and synchronizes the public velocity fields used by diagnostics/output. A time-dependent 1D electrode is evaluated at the same field time level; its realized left/right values are recorded with every scalar sample, and restart recovers phase from the stored time. Reflecting multidimensional particle boundaries reverse the normal half-step velocity so subsequent diagnostics remain consistent after synchronization. All dimensions support transient and steady-state execution. Steady-state mode is an engineering stop condition based on the relative change between adjacent total-energy diagnostic windows, not a proof of physical equilibrium; use conservative tolerances/windows and inspect the emitted diagnostics for oscillatory systems.
 
 The C++ imported-domain runtime follows the same cycle. It samples particles uniformly by decomposing validated cells into area-weighted triangles, tracks the earliest outward intersection of each drift segment with tagged geometry, and applies label-specific absorption or specular reflection. This segment-based check is required for concave domains where an endpoint can lie inside even though its path crossed outside. Absorbed counts are reported by physical label.
 
