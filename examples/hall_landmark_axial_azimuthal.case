@@ -31,6 +31,16 @@ normalized_profile_mean = 0.5
 effective_profile_area_m2 = 4.8e-5
 out_of_plane_depth_m = 1
 derived_represented_pair_rate_s = 2.5104e19
+electron_temperature_ev = 10
+electron_thermal_velocity_std_m_s = 1326205.1154998604
+ion_temperature_ev = 0.5
+ion_thermal_velocity_std_m_s = 606.17061564868
+
+[initial_loading]
+electron_temperature_ev = 10
+electron_thermal_velocity_std_m_s = 1326205.1154998604
+ion_temperature_ev = 0.5
+ion_thermal_velocity_std_m_s = 606.17061564868
 
 [cathode_control]
 emitted_species = electrons
@@ -49,4 +59,4 @@ max_initial_macroparticles = 8
 max_steps = 4
 max_threads = 1
 physics_claim = none
-missing_physics = published_pair_thermal_loading,published_initial_thermal_loading,published_population,published_resolution,long_time_averaging
+missing_physics = published_population,published_resolution,long_time_averaging

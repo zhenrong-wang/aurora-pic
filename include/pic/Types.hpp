@@ -6,6 +6,7 @@
 namespace pic {
 constexpr double NORMALIZED_PERMITTIVITY = 1.0;
 constexpr double VACUUM_PERMITTIVITY_SI = 8.8541878128e-12;
+constexpr double ELEMENTARY_CHARGE_SI = 1.602176634e-19;
 constexpr double EPS0 = NORMALIZED_PERMITTIVITY; // compatibility alias
 
 enum class UnitSystem { Normalized, SI };

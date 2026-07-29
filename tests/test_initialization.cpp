@@ -11,6 +11,7 @@
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
 #include "pic/UnstructuredSimulation2D.hpp"
+#include "pic/Units.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -408,6 +409,159 @@ int main() {
                     config.initial_state_signature.value_or(0) ==
                         42,
                 "2D config did not parse initialization acceptance gates");
+        }
+
+        {
+            const auto config_path =
+                std::filesystem::path(
+                    "test_temperature_ev_2d.cfg");
+            {
+                std::ofstream output(config_path);
+                output
+                    << "config_version = 1\n"
+                    << "dimension = 2\n"
+                    << "units = si\n"
+                    << "nx = 8\nny = 8\n"
+                    << "length_x = 0.025\n"
+                    << "length_y = 0.0128\n"
+                    << "boundary = dirichlet\n"
+                    << "dt = 1e-18\nsteps = 1\n"
+                    << "max_particles_per_species = 2050\n"
+                    << "current_source_species = electrons\n"
+                    << "current_source_temperature_ev = 10\n"
+                    << "[species.electrons]\n"
+                    << "charge = -1.602176634e-19\n"
+                    << "mass = 9.1093837139e-31\n"
+                    << "weight = 1\nparticles = 1\n"
+                    << "temperature_ev = 10\n"
+                    << "loading = quiet\n"
+                    << "[species.ions]\n"
+                    << "charge = 1.602176634e-19\n"
+                    << "mass = 2.1801714e-25\n"
+                    << "weight = 1\nparticles = 1\n"
+                    << "temperature_ev = 0.5\n"
+                    << "loading = quiet\n"
+                    << "[source.thermal_pairs]\n"
+                    << "first_species = electrons\n"
+                    << "second_species = ions\n"
+                    << "pairs_per_step = 2048\n"
+                    << "first_temperature_ev = 10\n"
+                    << "second_temperature_ev = 0.5\n";
+            }
+            const auto config =
+                pic::load_config_2d(config_path.string());
+            std::filesystem::remove(config_path);
+            const double electron_thermal =
+                pic::maxwellian_thermal_velocity_from_ev(
+                    10.0, 9.1093837139e-31);
+            const double ion_thermal =
+                pic::maxwellian_thermal_velocity_from_ev(
+                    0.5, 2.1801714e-25);
+            require_near(
+                electron_thermal, 1326205.1154998604,
+                1e-9,
+                "electron eV-to-thermal-velocity conversion is wrong");
+            require_near(
+                ion_thermal, 606.17061564868, 1e-11,
+                "Xe+ eV-to-thermal-velocity conversion is wrong");
+            require_near(
+                config.species[0].thermal_velocity,
+                electron_thermal, 1e-9,
+                "2D species temperature_ev was not resolved");
+            require_near(
+                config.species[1].thermal_velocity,
+                ion_thermal, 1e-11,
+                "2D ion temperature_ev was not resolved");
+            require_near(
+                config.sources[0].first_thermal_velocity,
+                electron_thermal, 1e-9,
+                "2D source first_temperature_ev was not resolved");
+            require_near(
+                config.sources[0].second_thermal_velocity,
+                ion_thermal, 1e-11,
+                "2D source second_temperature_ev was not resolved");
+            require_near(
+                config.current_regulated_source->thermal_velocity,
+                electron_thermal, 1e-9,
+                "2D current-source temperature_ev was not resolved");
+
+            pic::Simulation2D simulation(config);
+            simulation.initialize();
+            simulation.step();
+            for (std::size_t species_id = 0;
+                 species_id < 2; ++species_id) {
+                const double expected =
+                    species_id == 0
+                        ? electron_thermal
+                        : ion_thermal;
+                std::vector<double> vx;
+                std::vector<double> vy;
+                std::vector<double> vz;
+                const auto& particles =
+                    simulation.species()[species_id].particles();
+                for (std::size_t particle_id = 1;
+                     particle_id < particles.size();
+                     ++particle_id) {
+                    vx.push_back(
+                        particles[particle_id].velocity.x);
+                    vy.push_back(
+                        particles[particle_id].velocity.y);
+                    vz.push_back(
+                        particles[particle_id].velocity_z);
+                }
+                for (const auto& component :
+                     {vx, vy, vz}) {
+                    const double realized =
+                        std::sqrt(variance(component, 0.0));
+                    require(
+                        std::abs(realized / expected - 1.0) <
+                            0.07,
+                        "2D temperature_ev source missed its Maxwellian component moment");
+                }
+            }
+
+            require_throws(
+                [] {
+                    (void)pic::maxwellian_thermal_velocity_from_ev(
+                        -1.0, 1.0);
+                },
+                "negative temperature_ev was accepted");
+
+            const auto invalid_path =
+                std::filesystem::path(
+                    "test_temperature_ev_invalid.cfg");
+            {
+                std::ofstream output(invalid_path);
+                output
+                    << "dimension = 2\nnx = 4\nny = 4\n"
+                    << "units = normalized\n"
+                    << "[species.electrons]\n"
+                    << "mass = 1\nweight = 1\nparticles = 2\n"
+                    << "temperature_ev = 1\n";
+            }
+            require_throws(
+                [&] {
+                    (void)pic::load_config_2d(
+                        invalid_path.string());
+                },
+                "normalized 2D temperature_ev was accepted");
+            {
+                std::ofstream output(invalid_path);
+                output
+                    << "dimension = 2\nnx = 4\nny = 4\n"
+                    << "units = si\n"
+                    << "[species.electrons]\n"
+                    << "mass = 1\nweight = 1\nparticles = 2\n"
+                    << "temperature_ev = 1\n"
+                    << "thermal_velocity = 1\n";
+            }
+            require_throws(
+                [&] {
+                    (void)pic::load_config_2d(
+                        invalid_path.string());
+                },
+                "ambiguous 2D temperature and thermal velocity were accepted");
+            std::filesystem::remove(invalid_path);
         }
 
         {

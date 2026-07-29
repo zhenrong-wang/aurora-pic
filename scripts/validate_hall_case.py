@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "examples" / "hall_landmark_axial_azimuthal.case"
+ELECTRON_VOLT_J = 1.602176634e-19
 
 
 def require(condition: bool, message: str) -> None:
@@ -79,9 +80,12 @@ def main() -> int:
     runtime_global = runtime["global"]
     runtime_source = runtime["source.channel_pair_seed"]
     cathode = manifest["cathode_control"]
+    initial = manifest["initial_loading"]
     emitted_species = runtime[
         "species." + cathode["emitted_species"]
     ]
+    runtime_electrons = runtime["species.electrons"]
+    runtime_ions = runtime["species.ions"]
     require(
         math.isclose(
             runtime_global.getfloat("length_x"),
@@ -135,19 +139,15 @@ def main() -> int:
         )
         and math.isclose(
             runtime_global.getfloat(
-                "current_source_thermal_velocity"
+                "current_source_temperature_ev"
             ),
-            number(
-                cathode,
-                "emission_thermal_velocity_std_m_s",
-            ),
-            rel_tol=1e-14,
+            number(cathode, "emission_temperature_ev"),
         ),
         "Hall runtime cathode current-control linkage drifted",
     )
     expected_cathode_thermal_velocity = math.sqrt(
         number(cathode, "emission_temperature_ev")
-        * abs(emitted_species.getfloat("charge"))
+        * ELECTRON_VOLT_J
         / emitted_species.getfloat("mass")
     )
     require(
@@ -161,6 +161,63 @@ def main() -> int:
         ),
         "Hall cathode temperature-to-velocity conversion drifted",
     )
+    for runtime_species, prefix in (
+        (runtime_electrons, "electron"),
+        (runtime_ions, "ion"),
+    ):
+        temperature = number(
+            initial, f"{prefix}_temperature_ev")
+        velocity = math.sqrt(
+            temperature
+            * ELECTRON_VOLT_J
+            / runtime_species.getfloat("mass")
+        )
+        require(
+            math.isclose(
+                runtime_species.getfloat("temperature_ev"),
+                temperature,
+            )
+            and math.isclose(
+                velocity,
+                number(
+                    initial,
+                    f"{prefix}_thermal_velocity_std_m_s",
+                ),
+                rel_tol=1e-14,
+            ),
+            f"Hall initial {prefix} thermal contract drifted",
+        )
+    require(
+        math.isclose(
+            runtime_source.getfloat("first_temperature_ev"),
+            number(source, "electron_temperature_ev"),
+        )
+        and math.isclose(
+            runtime_source.getfloat("second_temperature_ev"),
+            number(source, "ion_temperature_ev"),
+        ),
+        "Hall pair-source temperature contract drifted",
+    )
+    for runtime_species, prefix in (
+        (runtime_electrons, "electron"),
+        (runtime_ions, "ion"),
+    ):
+        velocity = math.sqrt(
+            number(source, f"{prefix}_temperature_ev")
+            * ELECTRON_VOLT_J
+            / runtime_species.getfloat("mass")
+        )
+        require(
+            math.isclose(
+                velocity,
+                number(
+                    source,
+                    f"{prefix}_thermal_velocity_std_m_s",
+                ),
+                rel_tol=1e-14,
+            ),
+            f"Hall pair-source {prefix} temperature conversion drifted",
+        )
     require(
         runtime_global["potential_reference_axis"]
             == cathode["potential_reference_axis"]
@@ -231,6 +288,10 @@ def main() -> int:
         and "cathode_current_control"
             not in reduced["missing_physics"]
         and "potential_correction"
+            not in reduced["missing_physics"]
+        and "published_pair_thermal_loading"
+            not in reduced["missing_physics"]
+        and "published_initial_thermal_loading"
             not in reduced["missing_physics"],
         "Hall reduced manifest must retain its no-claim limitations",
     )

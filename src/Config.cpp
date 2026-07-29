@@ -2,6 +2,7 @@
 #include "pic/Runtime.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
+#include "pic/Units.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -1552,6 +1553,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "current_source_drift_velocity_y",
         "current_source_drift_velocity_z",
         "current_source_thermal_velocity",
+        "current_source_temperature_ev",
         "potential_reference_axis", "potential_reference_coordinate",
         "potential_reference_target",
         "initialization_max_relative_charge_imbalance",
@@ -1562,6 +1564,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "density", "particles", "drift_velocity_x",
         "drift_velocity_y", "drift_velocity_z", "thermal_velocity",
+        "temperature_ev",
         "thermal_velocity_x", "thermal_velocity_y", "thermal_velocity_z",
         "initialization_version", "loading",
         "density_profile", "profile_center_x", "profile_center_y",
@@ -1579,6 +1582,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "first_drift_velocity_z", "second_drift_velocity_x",
         "second_drift_velocity_y", "second_drift_velocity_z",
         "first_thermal_velocity", "second_thermal_velocity",
+        "first_temperature_ev", "second_temperature_ev",
         "density_profile", "profile_center_x", "profile_center_y",
         "profile_scale_x", "profile_scale_y", "profile_amplitude",
         "profile_phase", "profile_mode_x", "profile_mode_y",
@@ -1667,6 +1671,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.boundary_config.right.tag = as<std::string>(global, "boundary_right_tag", cfg.boundary_config.right.tag);
     cfg.boundary_config.bottom.tag = as<std::string>(global, "boundary_bottom_tag", cfg.boundary_config.bottom.tag);
     cfg.boundary_config.top.tag = as<std::string>(global, "boundary_top_tag", cfg.boundary_config.top.tag);
+    std::optional<double> current_source_temperature_ev;
     const bool has_current_source = std::any_of(
         global.begin(), global.end(), [](const auto& entry) {
             return entry.first.starts_with("current_source_");
@@ -1694,8 +1699,21 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             global, "current_source_drift_velocity_y", 0.0);
         source.drift.z = as<double>(
             global, "current_source_drift_velocity_z", 0.0);
-        source.thermal_velocity = as<double>(
-            global, "current_source_thermal_velocity", 0.0);
+        if (global.count("current_source_temperature_ev")) {
+            if (global.count("current_source_thermal_velocity")) {
+                throw std::runtime_error(
+                    "2D current source temperature_ev and thermal_velocity are mutually exclusive");
+            }
+            if (cfg.units.system != UnitSystem::SI) {
+                throw std::runtime_error(
+                    "2D current_source_temperature_ev requires units = si");
+            }
+            current_source_temperature_ev = as<double>(
+                global, "current_source_temperature_ev", 0.0);
+        } else {
+            source.thermal_velocity = as<double>(
+                global, "current_source_thermal_velocity", 0.0);
+        }
         cfg.current_regulated_source = std::move(source);
     }
     const bool has_potential_reference = std::any_of(
@@ -1732,7 +1750,28 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             as<double>(
                 block, "drift_velocity_z",
                 s.drift_velocity_z);
-        s.thermal_velocity = as<double>(block, "thermal_velocity", s.thermal_velocity);
+        if (block.count("temperature_ev")) {
+            if (block.count("thermal_velocity") ||
+                block.count("thermal_velocity_x") ||
+                block.count("thermal_velocity_y") ||
+                block.count("thermal_velocity_z")) {
+                throw std::runtime_error(
+                    "2D species '" + s.name +
+                    "' temperature_ev and thermal_velocity controls are mutually exclusive");
+            }
+            if (cfg.units.system != UnitSystem::SI) {
+                throw std::runtime_error(
+                    "2D species '" + s.name +
+                    "' temperature_ev requires units = si");
+            }
+            s.thermal_velocity =
+                maxwellian_thermal_velocity_from_ev(
+                    as<double>(block, "temperature_ev", 0.0),
+                    s.mass);
+        } else {
+            s.thermal_velocity = as<double>(
+                block, "thermal_velocity", s.thermal_velocity);
+        }
         s.initialization.version = as<std::size_t>(
             block, "initialization_version", s.initialization.version);
         if (block.count("loading")) {
@@ -1773,6 +1812,22 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         cfg.species.push_back(s);
     }
     if (cfg.species.empty()) cfg.species.push_back(Species2DConfig{});
+    if (current_source_temperature_ev) {
+        const auto& source = *cfg.current_regulated_source;
+        const auto species = std::find_if(
+            cfg.species.begin(), cfg.species.end(),
+            [&](const Species2DConfig& candidate) {
+                return candidate.name == source.species;
+            });
+        if (species == cfg.species.end()) {
+            throw std::runtime_error(
+                "2D current source temperature references unknown species '" +
+                source.species + "'");
+        }
+        cfg.current_regulated_source->thermal_velocity =
+            maxwellian_thermal_velocity_from_ev(
+                *current_source_temperature_ev, species->mass);
+    }
     for (const auto& block : blocks.source_blocks) {
         VolumetricPairSource2DConfig source;
         source.name = block.name;
@@ -1814,10 +1869,63 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             block.values, "second_drift_velocity_y", 0.0);
         source.second_drift.z = as<double>(
             block.values, "second_drift_velocity_z", 0.0);
-        source.first_thermal_velocity = as<double>(
-            block.values, "first_thermal_velocity", 0.0);
-        source.second_thermal_velocity = as<double>(
-            block.values, "second_thermal_velocity", 0.0);
+        const auto species_mass =
+            [&](const std::string& name) {
+                const auto species = std::find_if(
+                    cfg.species.begin(), cfg.species.end(),
+                    [&](const Species2DConfig& candidate) {
+                        return candidate.name == name;
+                    });
+                if (species == cfg.species.end()) {
+                    throw std::runtime_error(
+                        "2D source '" + source.name +
+                        "' temperature references unknown species '" +
+                        name + "'");
+                }
+                return species->mass;
+            };
+        if (block.values.count("first_temperature_ev")) {
+            if (block.values.count("first_thermal_velocity")) {
+                throw std::runtime_error(
+                    "2D source '" + source.name +
+                    "' first_temperature_ev and first_thermal_velocity are mutually exclusive");
+            }
+            if (cfg.units.system != UnitSystem::SI) {
+                throw std::runtime_error(
+                    "2D source '" + source.name +
+                    "' first_temperature_ev requires units = si");
+            }
+            source.first_thermal_velocity =
+                maxwellian_thermal_velocity_from_ev(
+                    as<double>(
+                        block.values,
+                        "first_temperature_ev", 0.0),
+                    species_mass(source.first_species));
+        } else {
+            source.first_thermal_velocity = as<double>(
+                block.values, "first_thermal_velocity", 0.0);
+        }
+        if (block.values.count("second_temperature_ev")) {
+            if (block.values.count("second_thermal_velocity")) {
+                throw std::runtime_error(
+                    "2D source '" + source.name +
+                    "' second_temperature_ev and second_thermal_velocity are mutually exclusive");
+            }
+            if (cfg.units.system != UnitSystem::SI) {
+                throw std::runtime_error(
+                    "2D source '" + source.name +
+                    "' second_temperature_ev requires units = si");
+            }
+            source.second_thermal_velocity =
+                maxwellian_thermal_velocity_from_ev(
+                    as<double>(
+                        block.values,
+                        "second_temperature_ev", 0.0),
+                    species_mass(source.second_species));
+        } else {
+            source.second_thermal_velocity = as<double>(
+                block.values, "second_thermal_velocity", 0.0);
+        }
         parse_density_profile(
             block.values, source.spatial_profile, 2);
         cfg.sources.push_back(std::move(source));

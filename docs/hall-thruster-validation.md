@@ -145,8 +145,8 @@ the models.
 | Electrostatic 2D3V PIC and Boris push | Available on structured and imported 2D meshes | Preserve analytic Larmor and E x B drift gates |
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D supports independent periodic/Dirichlet axes with matching spacing, CIC, Poisson, gather, gradient, initialization, and default particle policies | Replace the correctness-first mixed SOR solve with a production FFT-periodic/direct-axial solver before full LANDMARK campaigns |
-| Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Add the exact published thermal-loading convention to the full H1 contract |
-| Cathode/current control | Structured 2D has species-weighted anode-loss current regulation, internal-plane Maxwellian emission, line-average potential referencing, diagnostics, and checkpoint v7 | Qualify the full-resolution, long-duration benchmark response and sensitivity to cathode temperature |
+| Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
+| Cathode/current control | Structured 2D has species-weighted anode-loss current regulation, internal-plane SI eV Maxwellian emission, line-average potential referencing, diagnostics, and checkpoint v7 | Qualify the full-resolution, long-duration benchmark response and sensitivity to cathode temperature |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Scalar and field snapshots exist | Add transverse/time averages, species moments, current components, Fourier spectra, and ensemble statistics |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
@@ -228,5 +228,8 @@ The same manifest now pins charge-regulated electron emission at `x = 2.4 cm`,
 the published `10 eV` velocity scale, and the zero-mean potential reference at
 that plane. Focused regressions verify unequal-weight charge conversion,
 potential-gauge correction, and deterministic checkpoint continuation. The
-next H1 slice is published thermal loading for the initial plasma and pair
-source, followed by production diagnostics and solver scaling.
+manifest also pins the published `10 eV` electron and `0.5 eV` Xe+
+temperatures for both initial loading and pair creation; strict SI conversion
+and sampled three-component moment regressions guard the contract. The next H1
+slice is production time/azimuth averaging and current/mode diagnostics,
+followed by solver scaling.

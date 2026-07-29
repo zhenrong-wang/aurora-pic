@@ -62,6 +62,14 @@ positive SI MCC `neutral_temperature` is in kelvin and the collision kernel
 derives its one-component neutral standard deviation as
 `sqrt(k_B * neutral_temperature / neutral_mass)`.
 
+Structured 2D provides a strict SI convenience form: species
+`temperature_ev`, pair-source `first_temperature_ev` /
+`second_temperature_ev`, and `current_source_temperature_ev` are converted to
+the one-component Maxwellian standard deviation
+`sqrt(ELEMENTARY_CHARGE_SI * temperature_ev / mass_kg)`. These keys are
+mutually exclusive with their velocity forms and are rejected under
+`units = normalized`.
+
 Reduced-dimensional electrostatic PIC represents the omitted dimensions per
 unit measure:
 

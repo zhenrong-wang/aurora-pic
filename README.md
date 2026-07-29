@@ -535,7 +535,7 @@ current_source_species = electrons
 current_source_monitor_boundary = left
 current_source_emission_boundary = right
 current_source_emission_inset = 0.001
-current_source_thermal_velocity = 1326205.1154998604
+current_source_temperature_ev = 10
 potential_reference_axis = x
 potential_reference_coordinate = 0.024
 potential_reference_target = 0
@@ -544,6 +544,15 @@ potential_reference_target = 0
 The controller sums `absorbed_count * charge * macro_weight` over every species at the monitored boundary. It converts the newly observed charge to the emitted species’ macro weight, creates the non-negative integer part at a uniformly sampled emission plane, and retains signed fractional surplus or debt. This makes unequal species weights safe and restart deterministic. `current_source.csv` reports the charge-balance residual and injected energy.
 
 The optional potential reference subtracts the interpolated transverse mean potential at the configured x or y coordinate and applies the requested target. This is a spatially constant gauge shift, so the electric field is unchanged. `potential_reference.csv` records the unshifted mean, applied offset, and corrected mean. The Hall smoke uses these generic controls for the published anode-current continuity and internal emission-plane reference, but remains far below production resolution and duration.
+
+For SI structured-2D configurations, species may use `temperature_ev` instead
+of scalar or component `thermal_velocity` keys. Pair sources similarly accept
+`first_temperature_ev` and `second_temperature_ev`, while the regulated source
+accepts `current_source_temperature_ev`. AuroraPIC converts each value to the
+one-component Maxwellian standard deviation `sqrt(e * temperature_ev / mass)`.
+Temperature and velocity forms are mutually exclusive, and eV inputs are
+rejected in normalized mode because normalized particle mass has no implicit
+kilogram scale.
 
 The parser is intentionally strict: unsupported `config_version` or species `initialization_version` values, unknown sections/keys, invalid initial loading models, density profiles, sampling budgets, component thermal velocities, or external particle-state metadata/records, invalid unit systems or relative permittivities, invalid enum values, invalid particle-boundary values, invalid booleans, non-finite numbers, non-positive `dt`/`output_interval`, invalid checkpoint intervals when checkpoint output is enabled, invalid electrode drive amplitude/frequency/phase combinations, non-positive particle limits/output strides, malformed collision channels/tables or unsafe collision-rate bounds, empty 2D boundary tags, nonzero electrode potentials on a periodic coordinate axis, non-finite magnetic-field values, invalid source schedules/velocities/references, invalid emission yields/limits/references, and invalid species initialization intervals are rejected instead of silently falling back to defaults. Emission rules must target an absorbing boundary, and unsafe macro-particle expansion is rejected during construction. For structured species definitions, provide either an explicit positive `weight` or omit `weight` and provide a positive `density`; the loader converts density to macro-particle weight over the configured initialization interval or area. With a nonuniform profile, this density fixes the total represented population (equivalently the volume-average density); the profile fixes its normalized relative spatial shape.
 

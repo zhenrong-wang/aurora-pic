@@ -7,6 +7,26 @@
 
 namespace pic {
 
+double maxwellian_thermal_velocity_from_ev(
+    double temperature_ev, double mass_kg) {
+    if (!std::isfinite(temperature_ev) ||
+        temperature_ev < 0.0) {
+        throw std::invalid_argument(
+            "temperature_ev must be non-negative and finite");
+    }
+    if (!std::isfinite(mass_kg) || !(mass_kg > 0.0)) {
+        throw std::invalid_argument(
+            "SI particle mass must be positive and finite");
+    }
+    const double velocity = std::sqrt(
+        temperature_ev * ELEMENTARY_CHARGE_SI / mass_kg);
+    if (!std::isfinite(velocity)) {
+        throw std::overflow_error(
+            "temperature_ev to thermal-velocity conversion overflow");
+    }
+    return velocity;
+}
+
 void write_unit_metadata(
     const std::filesystem::path& output_dir,
     const UnitSystemConfig& units,

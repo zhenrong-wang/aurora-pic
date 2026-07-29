@@ -8,6 +8,9 @@
 
 namespace pic {
 
+double maxwellian_thermal_velocity_from_ev(
+    double temperature_ev, double mass_kg);
+
 void write_unit_metadata(
     const std::filesystem::path& output_dir,
     const UnitSystemConfig& units,

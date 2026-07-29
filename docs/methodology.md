@@ -100,6 +100,13 @@ velocities in the configured unit system, not temperatures. Converting a
 physical temperature requires the species mass and the documented unit
 contract.
 
+As a strict SI convenience, structured 2D species and its pair/current source
+controls may specify temperatures in electron-volts. The loader resolves each
+to the isotropic one-component Maxwellian standard deviation
+`sqrt(e*T_eV/m)` using the configured species mass. It rejects component
+overrides combined with a species temperature, velocity/temperature pairs on
+a source, and all eV forms in normalized units.
+
 Every run emits `initialization.csv` after generated initialization, external
 particle-state loading, or checkpoint restoration. Its versioned rows report
 the state source, species, loading and density-profile models or
