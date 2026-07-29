@@ -224,5 +224,6 @@ The next verification and validation ladder is:
    benchmark under the staged readiness contract in
    [ccp-validation.md](ccp-validation.md);
 2. add an imported-geometry probe current-voltage comparison;
-3. target the LANDMARK Hall-thruster benchmark after the required
-   magnetic-field, source, collision, and parallel-runtime capabilities exist.
+3. follow the pinned LANDMARK and experimental Hall-thruster ladder in
+   [hall-thruster-validation.md](hall-thruster-validation.md), beginning with
+   analytic magnetized-particle and spatial prescribed-field verification.
