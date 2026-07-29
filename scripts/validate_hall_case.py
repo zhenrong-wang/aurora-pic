@@ -218,6 +218,8 @@ def main() -> int:
     require(
         runtime_global["current_source_species"]
             == cathode["emitted_species"]
+        and runtime_global["current_source_control_mode"]
+            == cathode["control_mode"]
         and runtime_global["current_source_monitor_boundary"]
             == cathode["monitor_boundary"]
         and runtime_global["current_source_emission_boundary"]
@@ -314,6 +316,8 @@ def main() -> int:
     require(
         runtime_global["potential_reference_axis"]
             == cathode["potential_reference_axis"]
+        and runtime_global["potential_reference_correction"]
+            == cathode["potential_reference_correction"]
         and math.isclose(
             runtime_global.getfloat(
                 "potential_reference_coordinate"
@@ -419,9 +423,9 @@ def main() -> int:
         reduced["physics_claim"] == "none"
         and "published_resolution" in reduced["missing_physics"]
         and "timestep_local_cathode_control"
-            in reduced["missing_physics"]
+            not in reduced["missing_physics"]
         and "affine_potential_correction"
-            in reduced["missing_physics"]
+            not in reduced["missing_physics"]
         and "published_pair_thermal_loading"
             not in reduced["missing_physics"]
         and "published_initial_thermal_loading"

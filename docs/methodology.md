@@ -178,7 +178,7 @@ the integer part, and carries the remainder. Capacity is checked for both
 species before storage changes; dead slots are reused deterministically.
 Diagnostics report cumulative macro/represented pairs, the fractional
 remainder, sampled full-3V kinetic energy, and configured rate. Structured
-checkpoint v7 fingerprints extrusion depth and the complete source definition and preserves the
+checkpoint v8 fingerprints extrusion depth and the complete source definition and preserves the
 accumulator, diagnostics, particle state, and RNG. This is a prescribed
 source, not a collision, neutral-depletion, recoil, or reaction-network model.
 
@@ -186,14 +186,19 @@ Structured 2D current regulation accumulates represented charge crossing one
 absorbing boundary, resolved by species rather than by macro-particle count.
 The new charge since the previous control update is divided by the configured
 emitted species charge and macro weight. A positive integer count is emitted
-uniformly along an inset plane; signed fractional surplus or debt is carried
-to later steps. The controller therefore remains correct for unequal species
-weights. An optional x/y line-average potential reference applies only a
-constant potential offset after each Poisson solve and leaves the electric
-field invariant. Checkpoint v7 preserves boundary counters, controller
-accumulator, diagnostics, RNG state, and both control definitions. These are
-generic controls; they do not implement LANDMARK's timestep-local cathode
-injection or affine axial potential/field correction.
+uniformly along an inset plane. Cumulative mode carries signed fractional
+surplus or debt for generic unequal-weight regulation. Timestep-local mode
+clears reverse demand every step and carries only positive fractional
+remainder; with equal species macro weights this is the LANDMARK
+electron-minus-ion anode-loss rule.
+
+An optional x/y line-average potential reference has two modes. Gauge mode
+applies a constant potential offset after each Poisson solve and leaves the
+electric field invariant. Affine mode preserves the zero-coordinate
+electrode, linearly reaches the requested internal-plane target, and adds the
+exact constant correction to the corresponding electric-field component.
+Checkpoint v8 preserves both mode choices, boundary counters, controller
+accumulator, diagnostics, and RNG state.
 
 Opt-in structured-2D resolved diagnostics reduce fields along one profile axis
 using nodal control-width quadrature and deposit species number plus first and

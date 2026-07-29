@@ -57,6 +57,7 @@ ion_thermal_velocity_std_m_s = 606.17061564868
 
 [cathode_control]
 emitted_species = electrons
+control_mode = timestep_local
 monitor_boundary = left
 emission_boundary = right
 emission_plane_x_m = 0.024
@@ -65,6 +66,7 @@ emission_thermal_velocity_std_m_s = 1326205.1154998604
 potential_reference_axis = x
 potential_reference_coordinate_m = 0.024
 potential_reference_target_v = 0
+potential_reference_correction = affine
 
 [reduced_contract]
 max_cells = 128
@@ -72,7 +74,7 @@ max_initial_macroparticles = 8
 max_steps = 4
 max_threads = 1
 physics_claim = none
-missing_physics = published_population,published_resolution,long_time_averaging,timestep_local_cathode_control,affine_potential_correction
+missing_physics = published_population,published_resolution,long_time_averaging
 
 [campaign.micro]
 purpose = bounded_local_integration

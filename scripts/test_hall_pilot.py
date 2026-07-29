@@ -111,6 +111,8 @@ def main() -> int:
         macro_weight = 5e16 * 0.025 * 0.0128 / 2048
         macro_charge = 1.602176634e-19 * macro_weight
         final_current = current_rows[-1]
+        if "control_mode" in final_current:
+            final_current["control_mode"] = "cumulative"
         emitted_charge = float(
             final_current["cumulative_emitted_charge"]
         )
@@ -119,6 +121,10 @@ def main() -> int:
             emitted_charge + 2 * macro_charge
         )
         final_current["charge_balance_residual"] = str(2 * macro_charge)
+        if "raw_charge_balance_residual" in final_current:
+            final_current["raw_charge_balance_residual"] = str(2 * macro_charge)
+        if "unserved_reverse_charge" in final_current:
+            final_current["unserved_reverse_charge"] = "0"
         with current_path.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.DictWriter(stream, fieldnames=current_fields)
             writer.writeheader()

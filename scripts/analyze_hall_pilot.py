@@ -190,6 +190,27 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
         residual = number(
             row, "charge_balance_residual", "current_source.csv"
         )
+        raw_residual = (
+            number(
+                row, "raw_charge_balance_residual",
+                "current_source.csv"
+            )
+            if "raw_charge_balance_residual" in row
+            else residual
+        )
+        unserved_reverse_charge = (
+            number(
+                row, "unserved_reverse_charge",
+                "current_source.csv"
+            )
+            if "unserved_reverse_charge" in row
+            else 0.0
+        )
+        control_mode = row.get("control_mode", "cumulative")
+        if control_mode not in {"cumulative", "timestep_local"}:
+            raise PilotError(
+                "current_source.csv contains an invalid control mode"
+            )
         # The pinned emitted species is electrons, so its represented
         # macrocharge is negative. A negative remainder is valid actuator
         # debt: electron emission cannot retract particles already emitted.
@@ -205,11 +226,11 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 "cathode emitted-charge accounting is inconsistent"
             )
         if not math.isclose(
-            residual, processed_charge - emitted_charge,
+            raw_residual, processed_charge - emitted_charge,
             rel_tol=1e-12, abs_tol=tolerance,
         ):
             raise PilotError(
-                "cathode charge-balance residual is inconsistent"
+                "cathode raw charge-balance residual is inconsistent"
             )
         if not math.isclose(
             residual, remainder * emitted_macrocharge,
@@ -218,14 +239,35 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
             raise PilotError(
                 "cathode control remainder is inconsistent with its residual"
             )
+        if not math.isclose(
+            raw_residual,
+            unserved_reverse_charge + residual,
+            rel_tol=1e-12,
+            abs_tol=tolerance,
+        ):
+            raise PilotError(
+                "cathode unserved reverse charge is inconsistent"
+            )
         if remainder >= 1.0 + 1e-12:
             raise PilotError(
                 "cathode positive control remainder exceeds one macro charge"
             )
-        if remainder < -1e-12:
+        if (
+            control_mode == "timestep_local"
+            and remainder < -1e-12
+        ):
+            raise PilotError(
+                "timestep-local cathode control retained negative debt"
+            )
+        if (
+            remainder < -1e-12
+            or abs(unserved_reverse_charge) > tolerance
+        ):
             controller_saturation_samples += 1
             maximum_controller_debt = max(
-                maximum_controller_debt, -remainder
+                maximum_controller_debt,
+                -remainder,
+                abs(unserved_reverse_charge) / macro_charge,
             )
         maximum_charge_residual = max(
             maximum_charge_residual, abs(residual)
@@ -235,8 +277,18 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
         output / "potential_reference.csv",
         {"step", "target", "corrected_line_mean"},
     )
+    expected_correction = manifest["cathode_control"].get(
+        "potential_reference_correction", "gauge"
+    )
     maximum_reference_error = 0.0
     for row in potential:
+        if (
+            "correction" in row
+            and row["correction"] != expected_correction
+        ):
+            raise PilotError(
+                "potential-reference correction mode drifted from the manifest"
+            )
         error = abs(
             number(row, "corrected_line_mean", "potential_reference.csv")
             - number(row, "target", "potential_reference.csv")

@@ -409,6 +409,38 @@ BoundarySide2DName parse_boundary_side_2d(
         value + "'");
 }
 
+CurrentSourceControlMode parse_current_source_control_mode(
+    const KeyValue& values, const std::string& key,
+    CurrentSourceControlMode default_value) {
+    const auto value = lower(trim(as<std::string>(
+        values, key, to_string(default_value))));
+    if (value == "cumulative") {
+        return CurrentSourceControlMode::Cumulative;
+    }
+    if (value == "timestep_local" || value == "timestep-local") {
+        return CurrentSourceControlMode::TimestepLocal;
+    }
+    throw std::runtime_error(
+        "invalid current-source control mode for '" + key + "': '" +
+        value + "'");
+}
+
+PotentialReferenceCorrection parse_potential_reference_correction(
+    const KeyValue& values, const std::string& key,
+    PotentialReferenceCorrection default_value) {
+    const auto value = lower(trim(as<std::string>(
+        values, key, to_string(default_value))));
+    if (value == "gauge") {
+        return PotentialReferenceCorrection::Gauge;
+    }
+    if (value == "affine") {
+        return PotentialReferenceCorrection::Affine;
+    }
+    throw std::runtime_error(
+        "invalid potential-reference correction for '" + key + "': '" +
+        value + "'");
+}
+
 void validate_positive(double value, const std::string& name) {
     if (!std::isfinite(value) || !(value > 0.0)) throw std::runtime_error(name + " must be positive and finite");
 }
@@ -1551,6 +1583,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "boundary_left_tag", "boundary_right_tag", "boundary_bottom_tag",
         "boundary_top_tag", "units", "relative_permittivity",
         "current_source_species", "current_source_monitor_boundary",
+        "current_source_control_mode",
         "current_source_emission_boundary", "current_source_emission_inset",
         "current_source_drift_velocity_x",
         "current_source_drift_velocity_y",
@@ -1558,7 +1591,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         "current_source_thermal_velocity",
         "current_source_temperature_ev",
         "potential_reference_axis", "potential_reference_coordinate",
-        "potential_reference_target",
+        "potential_reference_target", "potential_reference_correction",
         "initialization_max_relative_charge_imbalance",
         "initialization_max_relative_current_imbalance",
         "initialization_max_relative_pair_imbalance",
@@ -1709,6 +1742,9 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         CurrentRegulatedSource2DConfig source;
         source.species = as<std::string>(
             global, "current_source_species", "");
+        source.control_mode = parse_current_source_control_mode(
+            global, "current_source_control_mode",
+            source.control_mode);
         source.monitor_boundary = parse_boundary_side_2d(
             global, "current_source_monitor_boundary",
             source.monitor_boundary);
@@ -1759,6 +1795,9 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             global, "potential_reference_coordinate", 0.0);
         reference.target = as<double>(
             global, "potential_reference_target", 0.0);
+        reference.correction = parse_potential_reference_correction(
+            global, "potential_reference_correction",
+            reference.correction);
         cfg.potential_reference = reference;
     }
 

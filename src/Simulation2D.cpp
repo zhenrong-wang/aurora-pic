@@ -26,6 +26,7 @@ constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
+constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -299,6 +300,26 @@ std::string to_string(BoundarySide2DName side) {
     return "unknown";
 }
 
+std::string to_string(CurrentSourceControlMode mode) {
+    switch (mode) {
+        case CurrentSourceControlMode::Cumulative:
+            return "cumulative";
+        case CurrentSourceControlMode::TimestepLocal:
+            return "timestep_local";
+    }
+    return "unknown";
+}
+
+std::string to_string(PotentialReferenceCorrection correction) {
+    switch (correction) {
+        case PotentialReferenceCorrection::Gauge:
+            return "gauge";
+        case PotentialReferenceCorrection::Affine:
+            return "affine";
+    }
+    return "unknown";
+}
+
 Simulation2D::Simulation2D(Simulation2DConfig cfg)
     : cfg_(std::move(cfg)),
       mesh_(cfg_.nx, cfg_.ny, cfg_.length_x, cfg_.length_y,
@@ -500,6 +521,12 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
             reference.coordinate > length) {
             throw std::invalid_argument(
                 "2D potential reference coordinate lies outside the domain");
+        }
+        if (reference.correction ==
+                PotentialReferenceCorrection::Affine &&
+            reference.coordinate == 0.0) {
+            throw std::invalid_argument(
+                "2D affine potential reference coordinate must be positive");
         }
     }
     for (const auto& source : cfg_.sources) {
@@ -771,8 +798,31 @@ void Simulation2D::apply_potential_reference() {
         throw std::runtime_error(
             "2D potential-reference offset is not finite");
     }
-    for (double& potential : mesh_.phi()) {
-        potential -= potential_reference_offset_;
+    if (reference.correction ==
+        PotentialReferenceCorrection::Gauge) {
+        for (double& potential : mesh_.phi()) {
+            potential -= potential_reference_offset_;
+        }
+        return;
+    }
+    const double field_correction =
+        potential_reference_offset_ / reference.coordinate;
+    for (std::size_t j = 0; j < mesh_.ny(); ++j) {
+        for (std::size_t i = 0; i < mesh_.nx(); ++i) {
+            const double coordinate =
+                reference.axis == CoordinateAxis::X
+                    ? static_cast<double>(i) * mesh_.dx()
+                    : static_cast<double>(j) * mesh_.dy();
+            mesh_.phi()[mesh_.index(i, j)] -=
+                coordinate * field_correction;
+        }
+    }
+    auto& corrected_field =
+        reference.axis == CoordinateAxis::X
+            ? mesh_.electric_x()
+            : mesh_.electric_y();
+    for (double& field : corrected_field) {
+        field += field_correction;
     }
 }
 
@@ -1036,13 +1086,18 @@ void Simulation2D::inject_current_regulated_source() {
         diagnostics.processed_monitored_charge;
     const double macro_charge =
         emitted_species.charge() * emitted_species.weight();
-    const double accumulated =
+    const double requested =
         diagnostics.control_macro_remainder +
         delta_charge / macro_charge;
-    if (!std::isfinite(accumulated)) {
+    if (!std::isfinite(requested)) {
         throw std::runtime_error(
             "2D current-regulated source accumulator overflow");
     }
+    const double accumulated =
+        config.control_mode ==
+                CurrentSourceControlMode::TimestepLocal
+            ? std::max(0.0, requested)
+            : requested;
     if (accumulated >=
         static_cast<double>(
             std::numeric_limits<std::size_t>::max())) {
@@ -1225,7 +1280,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV7 << '\n';
+    out << kCheckpointMagicV8 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1254,6 +1309,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
         const auto& diagnostics =
             *current_regulated_source_diagnostics_;
         out << ' ' << config.species
+            << ' ' << to_string(config.control_mode)
             << ' ' << to_string(config.monitor_boundary)
             << ' ' << to_string(config.emission_boundary)
             << ' ' << config.emission_inset
@@ -1273,7 +1329,9 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     if (cfg_.potential_reference) {
         out << ' ' << to_string(cfg_.potential_reference->axis)
             << ' ' << cfg_.potential_reference->coordinate
-            << ' ' << cfg_.potential_reference->target;
+            << ' ' << cfg_.potential_reference->target
+            << ' ' << to_string(
+                   cfg_.potential_reference->correction);
     }
     out << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -1364,9 +1422,10 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v5 = magic == kCheckpointMagicV5;
     const bool checkpoint_v6 = magic == kCheckpointMagicV6;
     const bool checkpoint_v7 = magic == kCheckpointMagicV7;
+    const bool checkpoint_v8 = magic == kCheckpointMagicV8;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
         !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6 &&
-        !checkpoint_v7) {
+        !checkpoint_v7 && !checkpoint_v8) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1381,9 +1440,12 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
         double out_of_plane_depth = 1.0;
-        if (checkpoint_v6 || checkpoint_v7) in >> out_of_plane_depth;
+        if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8) {
+            in >> out_of_plane_depth;
+        }
         if ((!checkpoint_v2 && !checkpoint_v3 && !checkpoint_v4 &&
-             !checkpoint_v5 && !checkpoint_v6 && !checkpoint_v7) ||
+             !checkpoint_v5 && !checkpoint_v6 && !checkpoint_v7 &&
+             !checkpoint_v8) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity() ||
@@ -1396,6 +1458,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                checkpoint_v5 ||
                checkpoint_v6 ||
                checkpoint_v7 ||
+               checkpoint_v8 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1408,7 +1471,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     in >> key >> boundary_losses_.absorbed_left >> boundary_losses_.absorbed_right
        >> boundary_losses_.absorbed_bottom >> boundary_losses_.absorbed_top;
     if (key != "boundary_losses") throw std::runtime_error("checkpoint missing 2D boundary loss counters");
-    if (checkpoint_v7) {
+    if (checkpoint_v7 || checkpoint_v8) {
         std::size_t loss_species_count = 0;
         in >> key >> loss_species_count;
         if (key != "species_boundary_losses" ||
@@ -1440,11 +1503,26 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         }
         if (has_current_source != 0) {
             CurrentRegulatedSource2DConfig stored;
+            std::string control_mode;
             std::string monitor_boundary;
             std::string emission_boundary;
             auto& diagnostics =
                 *current_regulated_source_diagnostics_;
-            in >> stored.species >> monitor_boundary >>
+            in >> stored.species;
+            if (checkpoint_v8) {
+                in >> control_mode;
+                if (control_mode == "cumulative") {
+                    stored.control_mode =
+                        CurrentSourceControlMode::Cumulative;
+                } else if (control_mode == "timestep_local") {
+                    stored.control_mode =
+                        CurrentSourceControlMode::TimestepLocal;
+                } else {
+                    throw std::runtime_error(
+                        "invalid current-source control mode in checkpoint");
+                }
+            }
+            in >> monitor_boundary >>
                 emission_boundary >> stored.emission_inset >>
                 stored.drift.x >> stored.drift.y >>
                 stored.drift.z >> stored.thermal_velocity >>
@@ -1460,6 +1538,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             const auto& expected =
                 *cfg_.current_regulated_source;
             if (stored.species != expected.species ||
+                stored.control_mode != expected.control_mode ||
                 stored.monitor_boundary != expected.monitor_boundary ||
                 stored.emission_boundary != expected.emission_boundary ||
                 stored.emission_inset != expected.emission_inset ||
@@ -1494,13 +1573,28 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         }
         if (has_potential_reference != 0) {
             std::string axis;
+            std::string correction;
             PotentialReference2DConfig stored;
             in >> axis >> stored.coordinate >> stored.target;
             stored.axis = parse_coordinate_axis(axis);
+            if (checkpoint_v8) {
+                in >> correction;
+                if (correction == "gauge") {
+                    stored.correction =
+                        PotentialReferenceCorrection::Gauge;
+                } else if (correction == "affine") {
+                    stored.correction =
+                        PotentialReferenceCorrection::Affine;
+                } else {
+                    throw std::runtime_error(
+                        "invalid potential-reference correction in checkpoint");
+                }
+            }
             const auto& expected = *cfg_.potential_reference;
             if (stored.axis != expected.axis ||
                 stored.coordinate != expected.coordinate ||
-                stored.target != expected.target) {
+                stored.target != expected.target ||
+                stored.correction != expected.correction) {
                 throw std::runtime_error(
                     "checkpoint potential-reference metadata does not match 2D config");
             }
@@ -1523,7 +1617,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
     in >> rng_;
     if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7) {
+        checkpoint_v7 || checkpoint_v8) {
         std::size_t source_count = 0;
         in >> key >> source_count;
         if (key != "source_count" ||
@@ -1537,7 +1631,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             auto& diagnostics = source_diagnostics_[source_id];
             in >> key >> stored.name >> stored.first_species >>
                 stored.second_species >> stored.pairs_per_step;
-            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7) {
+            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
+                checkpoint_v8) {
                 int has_rate = 0;
                 double rate = 0.0;
                 in >> has_rate >> rate;
@@ -1548,7 +1643,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 if (has_rate != 0) {
                     stored.represented_pair_rate = rate;
                 }
-                if (checkpoint_v6 || checkpoint_v7) {
+                if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8) {
                     int has_peak_rate = 0;
                     double peak_rate = 0.0;
                     in >> has_peak_rate >> peak_rate;
@@ -1571,7 +1666,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 stored.second_drift.y >> stored.second_drift.z >>
                 stored.first_thermal_velocity >>
                 stored.second_thermal_velocity;
-            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7) {
+            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
+                checkpoint_v8) {
                 std::string profile;
                 in >> profile;
                 stored.spatial_profile.density_profile =
@@ -1619,7 +1715,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             }
             in >> diagnostics.macro_pairs_created >>
                 diagnostics.represented_pairs_created;
-            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7) {
+            if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
+                checkpoint_v8) {
                 in >> diagnostics
                           .fractional_macro_pair_remainder >>
                     diagnostics.injected_kinetic_energy;
@@ -1719,7 +1816,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                >> p.velocity.x >> p.velocity.y;
             if (checkpoint_v3 || checkpoint_v4 ||
                 checkpoint_v5 || checkpoint_v6 ||
-                checkpoint_v7) {
+                checkpoint_v7 || checkpoint_v8) {
                 in >> p.velocity_z;
             } else {
                 p.velocity_z = 0.0;
@@ -1727,7 +1824,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> p.velocity_half.x >> p.velocity_half.y;
             if (checkpoint_v3 || checkpoint_v4 ||
                 checkpoint_v5 || checkpoint_v6 ||
-                checkpoint_v7) {
+                checkpoint_v7 || checkpoint_v8) {
                 in >> p.velocity_half_z;
             } else {
                 p.velocity_half_z = 0.0;
@@ -1862,12 +1959,14 @@ RunSummary2D Simulation2D::run() {
                 "cannot open 2D current-source diagnostics output");
         }
         current_source_output
-            << "step,time,species,monitor_boundary,"
+            << "step,time,species,control_mode,monitor_boundary,"
                "emission_boundary,macro_particles_created,"
                "represented_particles_created,"
                "control_macro_remainder,"
                "cumulative_processed_monitored_charge,"
                "cumulative_emitted_charge,"
+               "raw_charge_balance_residual,"
+               "unserved_reverse_charge,"
                "charge_balance_residual,"
                "injected_kinetic_energy\n";
     }
@@ -1881,9 +1980,16 @@ RunSummary2D Simulation2D::run() {
         const double emitted_charge =
             diagnostics.represented_particles_created *
             emitted.charge();
+        const double raw_residual =
+            diagnostics.processed_monitored_charge -
+            emitted_charge;
+        const double control_residual =
+            diagnostics.control_macro_remainder *
+            emitted.charge() * emitted.weight();
         current_source_output
             << step_ << ',' << std::setprecision(17) << time_
             << ',' << config.species
+            << ',' << to_string(config.control_mode)
             << ',' << to_string(config.monitor_boundary)
             << ',' << to_string(config.emission_boundary)
             << ',' << diagnostics.macro_particles_created
@@ -1891,8 +1997,9 @@ RunSummary2D Simulation2D::run() {
             << ',' << diagnostics.control_macro_remainder
             << ',' << diagnostics.processed_monitored_charge
             << ',' << emitted_charge
-            << ',' << diagnostics.processed_monitored_charge -
-                           emitted_charge
+            << ',' << raw_residual
+            << ',' << raw_residual - control_residual
+            << ',' << control_residual
             << ',' << diagnostics.injected_kinetic_energy
             << '\n';
         current_source_output.flush();
@@ -1906,7 +2013,7 @@ RunSummary2D Simulation2D::run() {
                 "cannot open 2D potential-reference diagnostics output");
         }
         potential_reference_output
-            << "step,time,axis,coordinate,target,"
+            << "step,time,axis,correction,coordinate,target,"
                "unshifted_line_mean,applied_offset,"
                "corrected_line_mean\n";
     }
@@ -1916,6 +2023,7 @@ RunSummary2D Simulation2D::run() {
         potential_reference_output
             << step_ << ',' << std::setprecision(17) << time_
             << ',' << to_string(reference.axis)
+            << ',' << to_string(reference.correction)
             << ',' << reference.coordinate
             << ',' << reference.target
             << ',' << reference.target +

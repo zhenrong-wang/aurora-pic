@@ -146,8 +146,8 @@ the models.
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D automatically uses a direct spectral-tridiagonal Poisson solve for either periodic/Dirichlet orientation; mixed-radix FFT and Bluestein paths cover composite and prime periodic sizes | Measure the serial production grid, then distribute the transform and axial mode solves with MPI before full LANDMARK campaigns |
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
-| Cathode/current control | Generic structured 2D regulation accumulates species-weighted anode losses and carries signed emission debt; the workstation pilot exposed and now audits one-way saturation | Implement the published timestep-local electron-minus-ion loss rule, then qualify long-duration response and cathode-temperature sensitivity |
-| Cathode potential correction | Generic line referencing currently applies a constant gauge offset and leaves the electric field unchanged | Implement the published affine axial correction that preserves anode voltage, zeros the internal cathode plane, and changes axial electric field |
+| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit diagnostics and checkpoint v8 | Repeat the workstation pilot, then qualify long-duration response and cathode-temperature sensitivity |
+| Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically | Repeat the workstation pilot and verify the full published correction response |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, and seeded ensemble statistics | Add long-run segment aggregation and qualify the workflow with real reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
@@ -512,8 +512,8 @@ The first complete 5,000-step workstation pilot is recorded in
 `benchmarks/hall/landmark-workstation-20260729-seed24680.json`. It completed
 on one low-priority CPU core in 267.56 seconds with 32.2 MiB peak resident
 memory and 121.5 MiB of artifacts. All integration checks passed, but the run
-exposed the timestep-local cathode and affine-potential differences now listed
-as explicit blockers. The committed record pins the executable, deck,
+exposed timestep-local cathode and affine-potential differences that motivated
+the selectable exact modes implemented afterward. The committed record pins the executable, deck,
 manifest, analyzer, scalar, resolved-diagnostic, and checkpoint hashes while
 retaining `physics_claim = none`.
 
@@ -595,14 +595,13 @@ The versioned `examples/hall_landmark_axial_azimuthal.case` now derives
 `2.5104e19 s^-1` from the published peak, normalized profile integral, and an
 explicit `1 m` reduced extrusion depth. Its checksum, budgets, runtime linkage,
 and no-claim limitations are enforced by `scripts/validate_hall_case.py`.
-The same manifest pins generic charge-regulated electron emission at
-`x = 2.4 cm`, the published `10 eV` velocity scale, and a zero-mean generic
-potential reference at that plane. Focused regressions verify unequal-weight
-charge conversion, potential-gauge correction, and deterministic checkpoint
-continuation. These controls are useful integration precursors but are not the
-exact benchmark contract: LANDMARK uses timestep-local cathode injection and
-an affine axial potential/field correction.
-manifest also pins the published `10 eV` electron and `0.5 eV` Xe+
+The same manifest pins timestep-local charge-regulated electron emission at
+`x = 2.4 cm`, the published `10 eV` velocity scale, and the affine zero-mean
+potential/field correction at that plane. Focused regressions preserve the
+generic unequal-weight cumulative and gauge modes while independently
+verifying the LANDMARK timestep-local and affine modes plus deterministic
+checkpoint continuation.
+The manifest also pins the published `10 eV` electron and `0.5 eV` Xe+
 temperatures for both initial loading and pair creation; strict SI conversion
 and sampled three-component moment regressions guard the contract. The reduced
 runtime now emits five bounded axial profile/moment/current samples,

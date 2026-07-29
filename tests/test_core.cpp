@@ -3747,8 +3747,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v7\n") == 0,
-                "2D current regulation checkpoint did not use v7");
+                    "AuroraPIC-checkpoint-v8\n") == 0,
+                "2D current regulation checkpoint did not use v8");
             continuous.step();
             const auto& regulated =
                 *continuous
@@ -3791,6 +3791,19 @@ int main() {
                 },
                 "current-regulated source metadata",
                 "2D checkpoint accepted changed current-controller physics");
+            changed_controller = cfg;
+            changed_controller.current_regulated_source
+                ->control_mode =
+                    pic::CurrentSourceControlMode::TimestepLocal;
+            require_throws_contains(
+                [&] {
+                    pic::Simulation2D incompatible(
+                        changed_controller);
+                    incompatible.load_checkpoint(
+                        checkpoint_path);
+                },
+                "current-regulated source metadata",
+                "2D checkpoint accepted changed current-controller mode");
             auto changed_reference = cfg;
             changed_reference.potential_reference->target = 1.0;
             require_throws_contains(
@@ -3802,6 +3815,89 @@ int main() {
                 },
                 "potential-reference metadata",
                 "2D checkpoint accepted changed potential-reference physics");
+
+            auto reverse_electrons = electrons;
+            reverse_electrons.particles = 1;
+            auto reverse_ions = ions;
+            reverse_ions.particles = 1;
+            auto reverse_cfg = cfg;
+            reverse_cfg.species = {
+                reverse_electrons, reverse_ions};
+            reverse_cfg.potential_reference.reset();
+            reverse_cfg.current_regulated_source
+                ->control_mode =
+                    pic::CurrentSourceControlMode::Cumulative;
+            pic::Simulation2D cumulative_reverse(reverse_cfg);
+            cumulative_reverse.initialize();
+            cumulative_reverse.step();
+            cumulative_reverse.step();
+            require_near(
+                cumulative_reverse
+                    .current_regulated_source_diagnostics()
+                    ->control_macro_remainder,
+                -1.0, 1e-14,
+                "2D cumulative current control lost signed debt");
+
+            reverse_cfg.current_regulated_source
+                ->control_mode =
+                    pic::CurrentSourceControlMode::TimestepLocal;
+            pic::Simulation2D timestep_local_reverse(reverse_cfg);
+            timestep_local_reverse.initialize();
+            timestep_local_reverse.step();
+            timestep_local_reverse.step();
+            require(
+                timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->macro_particles_created == 0,
+                "2D timestep-local current control emitted reverse demand");
+            require_near(
+                timestep_local_reverse
+                    .current_regulated_source_diagnostics()
+                    ->control_macro_remainder,
+                0.0, 1e-14,
+                "2D timestep-local current control retained signed debt");
+
+            auto affine_cfg = cfg;
+            affine_cfg.boundary_x = pic::Boundary::Dirichlet;
+            affine_cfg.boundary_y = pic::Boundary::Periodic;
+            affine_cfg.current_regulated_source.reset();
+            affine_cfg.potential_reference.reset();
+            affine_cfg.species = {reverse_electrons};
+            pic::Simulation2D unreferenced(affine_cfg);
+            unreferenced.initialize();
+            double unreferenced_mean = 0.0;
+            for (std::size_t j = 0; j < affine_cfg.ny; ++j) {
+                unreferenced_mean +=
+                    unreferenced.mesh().phi()[
+                        unreferenced.mesh().index(4, j)];
+            }
+            unreferenced_mean /= static_cast<double>(affine_cfg.ny);
+            const double affine_offset = unreferenced_mean - 2.0;
+            affine_cfg.potential_reference =
+                pic::PotentialReference2DConfig{
+                    pic::CoordinateAxis::X, 0.8, 2.0,
+                    pic::PotentialReferenceCorrection::Affine};
+            pic::Simulation2D affine(affine_cfg);
+            affine.initialize();
+            double corrected_mean = 0.0;
+            for (std::size_t j = 0; j < affine_cfg.ny; ++j) {
+                const auto left = affine.mesh().index(0, j);
+                const auto reference = affine.mesh().index(4, j);
+                corrected_mean += affine.mesh().phi()[reference];
+                require_near(
+                    affine.mesh().phi()[left],
+                    unreferenced.mesh().phi()[left], 1e-12,
+                    "2D affine correction changed the preserved electrode");
+                require_near(
+                    affine.mesh().electric_x()[reference] -
+                        unreferenced.mesh().electric_x()[reference],
+                    affine_offset / 0.8, 1e-12,
+                    "2D affine correction applied the wrong electric field");
+            }
+            corrected_mean /= static_cast<double>(affine_cfg.ny);
+            require_near(
+                corrected_mean, 2.0, 1e-12,
+                "2D affine potential correction missed its target");
             std::filesystem::remove_all(output_dir);
         }
         {
@@ -4079,8 +4175,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v7\n") == 0,
-                "2D pair source checkpoint did not use v7");
+                    "AuroraPIC-checkpoint-v8\n") == 0,
+                "2D pair source checkpoint did not use v8");
             for (std::size_t step = continuous.step_count();
                  step < cfg.steps; ++step) {
                 continuous.step();

@@ -59,6 +59,13 @@ enum class BoundarySide2DName { Left, Right, Bottom, Top };
 
 std::string to_string(BoundarySide2DName side);
 
+enum class CurrentSourceControlMode {
+    Cumulative,
+    TimestepLocal
+};
+
+std::string to_string(CurrentSourceControlMode mode);
+
 struct CurrentRegulatedSource2DConfig {
     std::string species{};
     BoundarySide2DName monitor_boundary{BoundarySide2DName::Left};
@@ -66,6 +73,8 @@ struct CurrentRegulatedSource2DConfig {
     double emission_inset{0.0};
     Vec3 drift{};
     double thermal_velocity{0.0};
+    CurrentSourceControlMode control_mode{
+        CurrentSourceControlMode::Cumulative};
 };
 
 struct CurrentRegulatedSource2DDiagnostics {
@@ -76,10 +85,19 @@ struct CurrentRegulatedSource2DDiagnostics {
     double injected_kinetic_energy{0.0};
 };
 
+enum class PotentialReferenceCorrection {
+    Gauge,
+    Affine
+};
+
+std::string to_string(PotentialReferenceCorrection correction);
+
 struct PotentialReference2DConfig {
     CoordinateAxis axis{CoordinateAxis::X};
     double coordinate{0.0};
     double target{0.0};
+    PotentialReferenceCorrection correction{
+        PotentialReferenceCorrection::Gauge};
 };
 
 struct Simulation2DConfig {

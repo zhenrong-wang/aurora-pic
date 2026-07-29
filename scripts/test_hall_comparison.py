@@ -407,6 +407,10 @@ def main() -> int:
             and generated_global.getint("steps") == 4_000_000
             and generated_global.getint("runtime_threads") == 1
             and generated_global["runtime_backend"] == "serial"
+            and generated_global["current_source_control_mode"]
+                == "timestep_local"
+            and generated_global["potential_reference_correction"]
+                == "affine"
             and generated_global.getint("resolved_diagnostic_start_step")
                 == 3_200_000
             and generated_config["species.electrons"].getint("particles")
@@ -451,6 +455,10 @@ def main() -> int:
             and micro_config["global"].getint("nx") == 33
             and micro_config["global"].getint("ny") == 16
             and micro_config["global"].getint("steps") == 200
+            and micro_config["global"]["current_source_control_mode"]
+                == "timestep_local"
+            and micro_config["global"]["potential_reference_correction"]
+                == "affine"
             and not micro_config["global"].getboolean("checkpoint_output")
             and micro_config["species.electrons"].getint("particles")
                 == 32 * 16 * 4,
