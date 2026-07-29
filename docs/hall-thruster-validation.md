@@ -145,7 +145,7 @@ the models.
 | Electrostatic 2D3V PIC and Boris push | Available on structured and imported 2D meshes | Preserve analytic Larmor and E x B drift gates |
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D supports independent periodic/Dirichlet axes with matching spacing, CIC, Poisson, gather, gradient, initialization, and default particle policies | Replace the correctness-first mixed SOR solve with a production FFT-periodic/direct-axial solver before full LANDMARK campaigns |
-| Volumetric pair source | Structured 2D has bounded scheduled pair creation, normalized uniform/Gaussian/sinusoidal profiles, total physical-rate fractional accumulation, equal positions, exact charge balance, energy/rate diagnostics, and restart | Pin the published peak-to-integral normalization and thermal source contract in a full LANDMARK manifest |
+| Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Add the exact published thermal-loading convention to the full H1 contract |
 | Cathode/current control | Not available | Implement the exact emission-plane current balance and potential correction |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Scalar and field snapshots exist | Add transverse/time averages, species moments, current components, Fourier spectra, and ensemble statistics |
@@ -214,11 +214,14 @@ baseline, not the FFT-periodic/direct-axial algorithm needed for millions of
 production steps. A generic structured-2D volumetric source layer is now also
 complete: named scheduled sources create equal-weight, opposite-charge pairs
 at shared positions drawn from normalized uniform, Gaussian, or sinusoidal
-profiles; fixed macro rates and total represented physical rates are mutually
-exclusive; fractional production is deterministic across steps and restart;
-and diagnostics include rate, remainder, and injected energy. The Hall smoke
-exercises the centered cosine-family profile and physical-rate path without
-claiming that its deliberately tiny rate is the published volumetric source.
-The next H1 slice is a versioned LANDMARK case manifest that derives the total
-2D represented rate from the published peak volumetric rate, source envelope,
-and declared out-of-plane measure, followed by cathode current control.
+profiles; fixed macro rates, total represented physical rates, and peak
+volumetric rates are mutually exclusive; fractional production is
+deterministic across steps and restart; and diagnostics include rate,
+remainder, effective area, extrusion depth, and injected energy. The Hall
+smoke exercises the centered cosine-family profile and pinned peak
+volumetric-rate path without claiming to be a resolved discharge.
+The versioned `examples/hall_landmark_axial_azimuthal.case` now derives
+`2.5104e19 s^-1` from the published peak, normalized profile integral, and an
+explicit `1 m` reduced extrusion depth. Its checksum, budgets, runtime linkage,
+and no-claim limitations are enforced by `scripts/validate_hall_case.py`.
+Cathode current control and potential correction are the next H1 physics slice.

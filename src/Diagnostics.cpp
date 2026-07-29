@@ -60,12 +60,19 @@ void Diagnostics::write_fields(std::size_t step, const Grid& grid) const {
 Diagnostics2D::Diagnostics2D(
     std::filesystem::path output_dir,
     const std::vector<Species2D>& species,
-    double permittivity)
+    double permittivity,
+    double out_of_plane_depth)
     : output_dir_(std::move(output_dir)),
-      permittivity_(permittivity) {
+      permittivity_(permittivity),
+      out_of_plane_depth_(out_of_plane_depth) {
     if (!std::isfinite(permittivity_) || !(permittivity_ > 0.0)) {
         throw std::invalid_argument(
             "2D diagnostic permittivity must be positive and finite");
+    }
+    if (!std::isfinite(out_of_plane_depth_) ||
+        !(out_of_plane_depth_ > 0.0)) {
+        throw std::invalid_argument(
+            "2D diagnostic depth must be positive and finite");
     }
     std::filesystem::create_directories(output_dir_);
     scalar_file_.open(output_dir_ / "scalars.csv");
@@ -101,9 +108,10 @@ DiagnosticSample2D Diagnostics2D::sample(std::size_t step,
         for (std::size_t i = 0; i < mesh.nx(); ++i) {
             const auto idx = mesh.index(i, j);
             const double e2 = mesh.electric_x()[idx] * mesh.electric_x()[idx] + mesh.electric_y()[idx] * mesh.electric_y()[idx];
-            const double area = mesh.node_area(i, j);
-            s.field_energy += 0.5 * permittivity_ * e2 * area;
-            s.charge_l1 += std::abs(mesh.rho()[idx]) * area;
+            const double volume =
+                mesh.node_area(i, j) * out_of_plane_depth_;
+            s.field_energy += 0.5 * permittivity_ * e2 * volume;
+            s.charge_l1 += std::abs(mesh.rho()[idx]) * volume;
         }
     }
     s.total_energy = s.kinetic_energy + s.field_energy;

@@ -68,12 +68,14 @@ unit measure:
 | Runtime | Macro-particle weight | Charge density | Energy diagnostic |
 | --- | --- | --- | --- |
 | 1D | particles/m² | C/m³ | J/m² |
-| 2D planar/imported | particles/m | C/m³ | J/m |
+| Structured 2D planar | particles over configured depth | C/m³ | J |
+| Imported 2D planar | particles/m | C/m³ | J/m |
 | 3D | particles | C/m³ | J |
 
 Accordingly, density-derived weights remain dimensionally consistent:
 `density * initialization_length / particles` in 1D,
-`density * initialization_area / particles` in 2D, and
+`density * initialization_area * out_of_plane_depth / particles` in
+structured 2D, `density * initialization_area / particles` in imported 2D, and
 `density * initialization_volume / particles` in 3D.
 
 ## Solver, diagnostics, and restart behavior
@@ -87,7 +89,7 @@ Each run writes `units.txt` beside `scalars.csv`. It records the unit system,
 relative and effective permittivity, spatial dimension, and the dimensional
 basis of macro-particle weight and energy.
 
-Current 1D checkpoint v4, structured 2D checkpoint v5, structured 3D
+Current 1D checkpoint v4, structured 2D checkpoint v6, structured 3D
 checkpoint v2, and imported checkpoint v6 record and validate the unit
 contract. The 1D v4 format also records velocity dimensionality; 1D v1-v3
 can initialize only 1D1V. Historical structured v1
@@ -98,8 +100,8 @@ and imported v1–v3 checkpoints remain readable only with normalized units and
 
 - No automatic normalized-to-SI conversion is performed.
 - Permittivity is homogeneous and scalar.
-- Planar 2D reports per-unit-depth values; it does not apply an arbitrary
-  device depth.
+- Planar structured 2D uses an explicit positive extrusion depth, defaulting
+  to one. It is not an axisymmetric metric.
 - Axisymmetric metric factors are not implemented.
 - Configuration cannot prove that user-provided charge, mass, voltage,
   density, and velocity values are mutually realistic; validation studies

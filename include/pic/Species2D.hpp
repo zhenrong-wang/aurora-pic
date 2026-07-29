@@ -34,7 +34,9 @@ public:
     std::vector<Particle2D>& particles() { return particles_; }
     const std::vector<Particle2D>& particles() const { return particles_; }
     void initialize(const Mesh2D& mesh, std::mt19937_64& rng);
-    void deposit_charge(Mesh2D& mesh) const;
+    void deposit_charge(
+        Mesh2D& mesh,
+        double out_of_plane_depth = 1.0) const;
     double kinetic_energy() const;
     std::size_t live_count() const;
 private:

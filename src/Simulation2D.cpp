@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -23,6 +24,7 @@ constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
+constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -163,6 +165,41 @@ void write_vtk_outputs(const Mesh2D& mesh, const std::filesystem::path& output_d
         write_vtk_xml(mesh, stem.string() + ".vts");
     }
 }
+
+double source_profile_integral(
+    const VolumetricPairSource2DConfig& source,
+    double xmax, double ymax) {
+    const double width = xmax - source.x_min;
+    const double height = ymax - source.y_min;
+    if (source.spatial_profile.density_profile ==
+        DensityProfileKind::Uniform) {
+        return width * height;
+    }
+    if (source.spatial_profile.density_profile ==
+        DensityProfileKind::Sinusoidal) {
+        return width * height /
+            (1.0 + std::abs(
+                *source.spatial_profile.profile_amplitude));
+    }
+    const auto gaussian_integral =
+        [](double minimum, double maximum,
+           double center, double scale) {
+            const double denominator =
+                std::numbers::sqrt2 * scale;
+            return scale *
+                std::sqrt(std::numbers::pi / 2.0) *
+                (std::erf((maximum - center) / denominator) -
+                 std::erf((minimum - center) / denominator));
+        };
+    return gaussian_integral(
+               source.x_min, xmax,
+               *source.spatial_profile.profile_center_x,
+               *source.spatial_profile.profile_scale_x) *
+           gaussian_integral(
+               source.y_min, ymax,
+               *source.spatial_profile.profile_center_y,
+               *source.spatial_profile.profile_scale_y);
+}
 } // namespace
 
 Simulation2D::Simulation2D(Simulation2DConfig cfg)
@@ -188,6 +225,11 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
         cfg_.initialization_acceptance,
         "2D initialization acceptance config");
     if (!std::isfinite(cfg_.dt) || cfg_.dt <= 0.0) throw std::invalid_argument("2D simulation dt must be positive and finite");
+    if (!std::isfinite(cfg_.out_of_plane_depth) ||
+        !(cfg_.out_of_plane_depth > 0.0)) {
+        throw std::invalid_argument(
+            "2D out_of_plane_depth must be positive and finite");
+    }
     if (cfg_.output_interval == 0) throw std::invalid_argument("2D output_interval must be positive");
     if (cfg_.particle_output_stride == 0) throw std::invalid_argument("2D particle_output_stride must be positive");
     if (!std::isfinite(cfg_.magnetic_field_x) ||
@@ -261,7 +303,13 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
         const bool fixed_rate = source.pairs_per_step != 0;
         const bool physical_rate =
             source.represented_pair_rate.has_value();
-        if (source.name.empty() || fixed_rate == physical_rate) {
+        const bool volumetric_rate =
+            source.peak_volumetric_pair_rate.has_value();
+        if (source.name.empty() ||
+            static_cast<unsigned>(fixed_rate) +
+                    static_cast<unsigned>(physical_rate) +
+                    static_cast<unsigned>(volumetric_rate) !=
+                1U) {
             throw std::invalid_argument(
                 "2D volumetric pair source requires a name and exactly one rate specification");
         }
@@ -342,15 +390,25 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
                 "2D source '" + source.name +
                 "' requires equal macro-particle weights");
         }
-        if (source.represented_pair_rate) {
-            if (!std::isfinite(*source.represented_pair_rate) ||
-                !(*source.represented_pair_rate > 0.0)) {
+        if ((source.represented_pair_rate &&
+             (!std::isfinite(*source.represented_pair_rate) ||
+              !(*source.represented_pair_rate > 0.0))) ||
+            (source.peak_volumetric_pair_rate &&
+             (!std::isfinite(*source.peak_volumetric_pair_rate) ||
+              !(*source.peak_volumetric_pair_rate > 0.0)))) {
                 throw std::invalid_argument(
                     "2D source '" + source.name +
-                    "' represented_pair_rate must be positive and finite");
-            }
+                    "' configured rate must be positive and finite");
+        }
+        const double effective_area =
+            source_profile_integral(source, xmax, ymax);
+        const double resolved_rate =
+            source.represented_pair_rate.value_or(
+                source.peak_volumetric_pair_rate.value_or(0.0) *
+                effective_area * cfg_.out_of_plane_depth);
+        if (physical_rate || volumetric_rate) {
             const double macro_pairs_per_step =
-                *source.represented_pair_rate * cfg_.dt /
+                resolved_rate * cfg_.dt /
                 first_species.weight();
             if (!std::isfinite(macro_pairs_per_step) ||
                 macro_pairs_per_step >
@@ -376,7 +434,8 @@ Simulation2D::Simulation2D(Simulation2DConfig cfg)
                 "2D source '" + source.name +
                 "' requires opposite equal species charges");
         }
-        sources_.push_back({source, first, second});
+        sources_.push_back(
+            {source, first, second, resolved_rate, effective_area});
         source_diagnostics_.push_back(
             {source.name, 0, 0.0, 0.0, 0.0});
     }
@@ -475,7 +534,9 @@ void Simulation2D::initialize() {
 
 void Simulation2D::deposit_and_solve() {
     mesh_.clear_charge();
-    for (const auto& sp : species_) sp.deposit_charge(mesh_);
+    for (const auto& sp : species_) {
+        sp.deposit_charge(mesh_, cfg_.out_of_plane_depth);
+    }
     solver_.solve(mesh_);
 }
 
@@ -524,9 +585,10 @@ void Simulation2D::inject_volumetric_pair_sources() {
             source.config.pairs_per_step;
         double next_fractional_remainder =
             diagnostics.fractional_macro_pair_remainder;
-        if (source.config.represented_pair_rate) {
+        if (source.config.represented_pair_rate ||
+            source.config.peak_volumetric_pair_rate) {
             const double increment =
-                *source.config.represented_pair_rate * cfg_.dt /
+                source.represented_pair_rate * cfg_.dt /
                 first.weight();
             const double accumulated =
                 diagnostics.fractional_macro_pair_remainder +
@@ -762,11 +824,12 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV5 << '\n';
+    out << kCheckpointMagicV6 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
-        << cfg_.units.permittivity() << "\n";
+        << cfg_.units.permittivity() << ' '
+        << cfg_.out_of_plane_depth << "\n";
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "boundary_losses " << boundary_losses_.absorbed_left << ' ' << boundary_losses_.absorbed_right << ' '
@@ -784,6 +847,8 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
             << config.pairs_per_step << ' '
             << (config.represented_pair_rate ? 1 : 0) << ' '
             << config.represented_pair_rate.value_or(0.0) << ' '
+            << (config.peak_volumetric_pair_rate ? 1 : 0) << ' '
+            << config.peak_volumetric_pair_rate.value_or(0.0) << ' '
             << config.start_step << ' ' << config.end_step << ' '
             << config.x_min << ' ' << config.x_max << ' '
             << config.y_min << ' ' << config.y_max << ' '
@@ -855,8 +920,9 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v3 = magic == kCheckpointMagicV3;
     const bool checkpoint_v4 = magic == kCheckpointMagicV4;
     const bool checkpoint_v5 = magic == kCheckpointMagicV5;
+    const bool checkpoint_v6 = magic == kCheckpointMagicV6;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
-        !checkpoint_v4 && !checkpoint_v5) {
+        !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -870,17 +936,21 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         double relative_permittivity = 0.0;
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
+        double out_of_plane_depth = 1.0;
+        if (checkpoint_v6) in >> out_of_plane_depth;
         if ((!checkpoint_v2 && !checkpoint_v3 && !checkpoint_v4 &&
-             !checkpoint_v5) ||
+             !checkpoint_v5 && !checkpoint_v6) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
-            permittivity != cfg_.units.permittivity()) {
+            permittivity != cfg_.units.permittivity() ||
+            out_of_plane_depth != cfg_.out_of_plane_depth) {
             throw std::runtime_error(
                 "checkpoint unit system does not match 2D config");
         }
         in >> key;
     } else if (checkpoint_v2 || checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 ||
+               checkpoint_v6 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -899,7 +969,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     in >> key;
     if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
     in >> rng_;
-    if (checkpoint_v4 || checkpoint_v5) {
+    if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6) {
         std::size_t source_count = 0;
         in >> key >> source_count;
         if (key != "source_count" ||
@@ -913,7 +983,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             auto& diagnostics = source_diagnostics_[source_id];
             in >> key >> stored.name >> stored.first_species >>
                 stored.second_species >> stored.pairs_per_step;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 int has_rate = 0;
                 double rate = 0.0;
                 in >> has_rate >> rate;
@@ -924,6 +994,20 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 if (has_rate != 0) {
                     stored.represented_pair_rate = rate;
                 }
+                if (checkpoint_v6) {
+                    int has_peak_rate = 0;
+                    double peak_rate = 0.0;
+                    in >> has_peak_rate >> peak_rate;
+                    if (has_peak_rate != 0 &&
+                        has_peak_rate != 1) {
+                        throw std::runtime_error(
+                            "checkpoint source peak-rate-presence flag is invalid");
+                    }
+                    if (has_peak_rate != 0) {
+                        stored.peak_volumetric_pair_rate =
+                            peak_rate;
+                    }
+                }
             }
             in >> stored.start_step >> stored.end_step >>
                 stored.x_min >> stored.x_max >>
@@ -933,7 +1017,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 stored.second_drift.y >> stored.second_drift.z >>
                 stored.first_thermal_velocity >>
                 stored.second_thermal_velocity;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 std::string profile;
                 in >> profile;
                 stored.spatial_profile.density_profile =
@@ -981,7 +1065,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             }
             in >> diagnostics.macro_pairs_created >>
                 diagnostics.represented_pairs_created;
-            if (checkpoint_v5) {
+            if (checkpoint_v5 || checkpoint_v6) {
                 in >> diagnostics
                           .fractional_macro_pair_remainder >>
                     diagnostics.injected_kinetic_energy;
@@ -1012,6 +1096,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 stored.pairs_per_step != expected.pairs_per_step ||
                 stored.represented_pair_rate !=
                     expected.represented_pair_rate ||
+                stored.peak_volumetric_pair_rate !=
+                    expected.peak_volumetric_pair_rate ||
                 stored.start_step != expected.start_step ||
                 stored.end_step != expected.end_step ||
                 stored.x_min != expected.x_min ||
@@ -1078,14 +1164,14 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> p.position.x >> p.position.y
                >> p.velocity.x >> p.velocity.y;
             if (checkpoint_v3 || checkpoint_v4 ||
-                checkpoint_v5) {
+                checkpoint_v5 || checkpoint_v6) {
                 in >> p.velocity_z;
             } else {
                 p.velocity_z = 0.0;
             }
             in >> p.velocity_half.x >> p.velocity_half.y;
             if (checkpoint_v3 || checkpoint_v4 ||
-                checkpoint_v5) {
+                checkpoint_v5 || checkpoint_v6) {
                 in >> p.velocity_half_z;
             } else {
                 p.velocity_half_z = 0.0;
@@ -1103,7 +1189,9 @@ RunSummary2D Simulation2D::run() {
     if (!cfg_.restart_path.empty()) load_checkpoint(cfg_.restart_path);
     else initialize();
 
-    write_unit_metadata(cfg_.output_dir, cfg_.units, 2);
+    write_unit_metadata(
+        cfg_.output_dir, cfg_.units, 2,
+        cfg_.out_of_plane_depth);
     if (!cfg_.initial_state_path.empty()) {
         write_external_particle_state_metadata(
             cfg_.output_dir /
@@ -1136,7 +1224,8 @@ RunSummary2D Simulation2D::run() {
     enforce_initialization_acceptance(
         initialization_acceptance);
     Diagnostics2D diag(
-        cfg_.output_dir, species_, cfg_.units.permittivity());
+        cfg_.output_dir, species_, cfg_.units.permittivity(),
+        cfg_.out_of_plane_depth);
     std::ofstream source_output;
     if (!sources_.empty()) {
         source_output.open(cfg_.output_dir / "sources.csv");
@@ -1149,7 +1238,9 @@ RunSummary2D Simulation2D::run() {
                "represented_pairs_created,"
                "fractional_macro_pair_remainder,"
                "injected_kinetic_energy,"
-               "configured_represented_pair_rate\n";
+               "effective_profile_area,out_of_plane_depth,"
+               "configured_peak_volumetric_pair_rate,"
+               "resolved_represented_pair_rate\n";
     }
     const auto write_source_sample = [&]() {
         for (std::size_t source_id = 0;
@@ -1158,11 +1249,14 @@ RunSummary2D Simulation2D::run() {
             const auto& diagnostics =
                 source_diagnostics_[source_id];
             const double rate =
-                source.config.represented_pair_rate.value_or(
+                (source.config.represented_pair_rate ||
+                 source.config.peak_volumetric_pair_rate)
+                    ? source.represented_pair_rate
+                    :
                     static_cast<double>(
                         source.config.pairs_per_step) *
                     species_[source.first_species].weight() /
-                    cfg_.dt);
+                    cfg_.dt;
             source_output << step_ << ',' << std::setprecision(17)
                           << time_ << ',' << diagnostics.name
                           << ',' << diagnostics.macro_pairs_created
@@ -1172,6 +1266,12 @@ RunSummary2D Simulation2D::run() {
                                  .fractional_macro_pair_remainder
                           << ','
                           << diagnostics.injected_kinetic_energy
+                          << ',' << source.effective_profile_area
+                          << ',' << cfg_.out_of_plane_depth
+                          << ','
+                          << source.config
+                                 .peak_volumetric_pair_rate
+                                 .value_or(0.0)
                           << ',' << rate << '\n';
         }
         if (source_output) source_output.flush();
@@ -1236,10 +1336,12 @@ DiagnosticSample2D Simulation2D::sample() const {
         for (std::size_t i = 0; i < mesh_.nx(); ++i) {
             const auto idx = mesh_.index(i, j);
             const double e2 = mesh_.electric_x()[idx] * mesh_.electric_x()[idx] + mesh_.electric_y()[idx] * mesh_.electric_y()[idx];
-            const double area = mesh_.node_area(i, j);
+            const double volume =
+                mesh_.node_area(i, j) *
+                cfg_.out_of_plane_depth;
             s.field_energy +=
-                0.5 * cfg_.units.permittivity() * e2 * area;
-            s.charge_l1 += std::abs(mesh_.rho()[idx]) * area;
+                0.5 * cfg_.units.permittivity() * e2 * volume;
+            s.charge_l1 += std::abs(mesh_.rho()[idx]) * volume;
         }
     }
     s.total_energy = s.kinetic_energy + s.field_energy;

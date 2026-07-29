@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <cmath>
 #include <stdexcept>
 
 namespace pic {
@@ -9,10 +10,17 @@ namespace pic {
 void write_unit_metadata(
     const std::filesystem::path& output_dir,
     const UnitSystemConfig& units,
-    std::size_t spatial_dimension) {
+    std::size_t spatial_dimension,
+    std::optional<double> out_of_plane_depth) {
     if (spatial_dimension < 1 || spatial_dimension > 3) {
         throw std::invalid_argument(
             "unit metadata spatial dimension must be 1, 2, or 3");
+    }
+    if (out_of_plane_depth &&
+        (!std::isfinite(*out_of_plane_depth) ||
+         !(*out_of_plane_depth > 0.0))) {
+        throw std::invalid_argument(
+            "unit metadata extrusion depth must be positive and finite");
     }
     std::filesystem::create_directories(output_dir);
     std::ofstream output(output_dir / "units.txt");
@@ -25,6 +33,10 @@ void write_unit_metadata(
            << units.relative_permittivity << '\n'
            << "permittivity " << units.permittivity() << '\n'
            << "spatial_dimension " << spatial_dimension << '\n';
+    if (spatial_dimension == 2 && out_of_plane_depth) {
+        output << "out_of_plane_depth "
+               << *out_of_plane_depth << '\n';
+    }
     if (units.system == UnitSystem::SI) {
         output << "length m\n"
                << "time s\n"
@@ -38,8 +50,13 @@ void write_unit_metadata(
             output << "macro_weight particles/m^2\n"
                    << "energy J/m^2\n";
         } else if (spatial_dimension == 2) {
-            output << "macro_weight particles/m\n"
-                   << "energy J/m\n";
+            if (out_of_plane_depth) {
+                output << "macro_weight particles\n"
+                       << "energy J\n";
+            } else {
+                output << "macro_weight particles/m\n"
+                       << "energy J/m\n";
+            }
         } else {
             output << "macro_weight particles\n"
                    << "energy J\n";

@@ -46,6 +46,7 @@ jobs:
       - name: Validate milestone and release metadata
         run: |
           python3 scripts/validate_milestones.py
+          python3 scripts/validate_hall_case.py
           python3 scripts/validate_release_artifacts.py
 
       - name: Validate LXCat importer

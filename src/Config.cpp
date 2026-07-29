@@ -762,6 +762,8 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
     if (cfg.ny < 3) throw std::runtime_error("2D ny must be at least 3");
     validate_positive(cfg.length_x, "length_x");
     validate_positive(cfg.length_y, "length_y");
+    validate_positive(
+        cfg.out_of_plane_depth, "out_of_plane_depth");
     validate_positive(cfg.dt, "dt");
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
     validate_positive(cfg.steady_tolerance, "steady_tolerance");
@@ -867,14 +869,24 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         const bool fixed_rate = source.pairs_per_step != 0;
         const bool physical_rate =
             source.represented_pair_rate.has_value();
-        if (fixed_rate == physical_rate) {
+        const bool volumetric_rate =
+            source.peak_volumetric_pair_rate.has_value();
+        if (static_cast<unsigned>(fixed_rate) +
+                static_cast<unsigned>(physical_rate) +
+                static_cast<unsigned>(volumetric_rate) !=
+            1U) {
             throw std::runtime_error(
-                label + " requires exactly one of positive pairs_per_step or represented_pair_rate");
+                label + " requires exactly one of positive pairs_per_step, represented_pair_rate, or peak_volumetric_pair_rate");
         }
         if (source.represented_pair_rate) {
             validate_positive(
                 *source.represented_pair_rate,
                 label + " represented_pair_rate");
+        }
+        if (source.peak_volumetric_pair_rate) {
+            validate_positive(
+                *source.peak_volumetric_pair_rate,
+                label + " peak_volumetric_pair_rate");
         }
         if (source.end_step != 0 &&
             source.end_step <= source.start_step) {
@@ -1456,7 +1468,8 @@ unsigned detect_config_dimension(const std::string& path) {
 
 Simulation2DConfig load_config_2d(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
-        "dimension", "config_version", "nx", "ny", "length_x", "length_y", "dt", "steps",
+        "dimension", "config_version", "nx", "ny", "length_x", "length_y",
+        "out_of_plane_depth", "dt", "steps",
         "mode", "steady_tolerance", "steady_window", "max_steps",
         "output_interval", "output_dir", "seed", "boundary",
         "boundary_x", "boundary_y", "vtk_output", "vtk_format",
@@ -1492,7 +1505,7 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     };
     static const std::unordered_set<std::string> source_keys{
         "first_species", "second_species", "pairs_per_step",
-        "represented_pair_rate",
+        "represented_pair_rate", "peak_volumetric_pair_rate",
         "start_step", "end_step", "x_min", "x_max", "y_min", "y_max",
         "first_drift_velocity_x", "first_drift_velocity_y",
         "first_drift_velocity_z", "second_drift_velocity_x",
@@ -1520,6 +1533,9 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     cfg.ny = as<std::size_t>(global, "ny", cfg.ny);
     cfg.length_x = as<double>(global, "length_x", cfg.length_x);
     cfg.length_y = as<double>(global, "length_y", cfg.length_y);
+    cfg.out_of_plane_depth = as<double>(
+        global, "out_of_plane_depth",
+        cfg.out_of_plane_depth);
     cfg.dt = as<double>(global, "dt", cfg.dt);
     cfg.steps = as<std::size_t>(global, "steps", cfg.steps);
     cfg.mode = parse_mode(global, cfg.mode);
@@ -1628,7 +1644,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             if (!block.count("weight")) {
                 const double xmax = s.init_x_max < 0.0 ? cfg.length_x : s.init_x_max;
                 const double ymax = s.init_y_max < 0.0 ? cfg.length_y : s.init_y_max;
-                s.weight = density * (xmax - s.init_x_min) * (ymax - s.init_y_min) / static_cast<double>(s.particles);
+                s.weight = density * (xmax - s.init_x_min) *
+                    (ymax - s.init_y_min) *
+                    cfg.out_of_plane_depth /
+                    static_cast<double>(s.particles);
             }
         }
         if (block.count("weight")) s.weight = as<double>(block, "weight", s.weight);
@@ -1647,6 +1666,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
         if (block.values.count("represented_pair_rate")) {
             source.represented_pair_rate = as<double>(
                 block.values, "represented_pair_rate", 0.0);
+        }
+        if (block.values.count("peak_volumetric_pair_rate")) {
+            source.peak_volumetric_pair_rate = as<double>(
+                block.values, "peak_volumetric_pair_rate", 0.0);
         }
         source.start_step = as<std::size_t>(
             block.values, "start_step", source.start_step);

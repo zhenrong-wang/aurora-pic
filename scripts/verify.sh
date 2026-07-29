@@ -20,6 +20,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel "$BUILD_JOBS"
 python3 scripts/validate_milestones.py
 python3 scripts/validate_release_artifacts.py
+python3 scripts/validate_hall_case.py
 python3 scripts/test_import_lxcat.py
 python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 python3 scripts/test_compare_swarm.py

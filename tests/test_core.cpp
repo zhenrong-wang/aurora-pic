@@ -3664,8 +3664,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v5\n") == 0,
-                "2D pair source checkpoint did not use v5");
+                    "AuroraPIC-checkpoint-v6\n") == 0,
+                "2D pair source checkpoint did not use v6");
             for (std::size_t step = continuous.step_count();
                  step < cfg.steps; ++step) {
                 continuous.step();
@@ -3747,6 +3747,45 @@ int main() {
             second.name = "positive";
             second.charge = 1.0;
             second.mass = 4.0;
+
+            pic::Species2DConfig deposition_config = first;
+            deposition_config.particles = 1;
+            pic::Species2D deposition_species(deposition_config);
+            deposition_species.particles() = {
+                pic::Particle2D{{0.35, 0.45}, {}, true, {}}};
+            pic::Mesh2D unit_depth_mesh(
+                8, 8, 1.0, 1.0, pic::Boundary::Periodic);
+            pic::Mesh2D double_depth_mesh(
+                8, 8, 1.0, 1.0, pic::Boundary::Periodic);
+            deposition_species.deposit_charge(
+                unit_depth_mesh, 1.0);
+            deposition_species.deposit_charge(
+                double_depth_mesh, 2.0);
+            double unit_depth_charge = 0.0;
+            double double_depth_charge = 0.0;
+            for (std::size_t j = 0; j < 8; ++j) {
+                for (std::size_t i = 0; i < 8; ++i) {
+                    const auto index =
+                        unit_depth_mesh.index(i, j);
+                    require_near(
+                        unit_depth_mesh.rho()[index],
+                        2.0 * double_depth_mesh.rho()[index],
+                        1e-14,
+                        "2D extrusion depth did not scale volume charge density");
+                    unit_depth_charge +=
+                        unit_depth_mesh.rho()[index] *
+                        unit_depth_mesh.node_area(i, j);
+                    double_depth_charge +=
+                        double_depth_mesh.rho()[index] *
+                        double_depth_mesh.node_area(i, j) * 2.0;
+                }
+            }
+            require_near(
+                unit_depth_charge, -2.0, 1e-14,
+                "unit-depth deposition lost represented charge");
+            require_near(
+                double_depth_charge, -2.0, 1e-14,
+                "explicit-depth deposition lost represented charge");
 
             pic::VolumetricPairSource2DConfig source;
             source.name = "physical_rate";
@@ -3849,6 +3888,33 @@ int main() {
                     .represented_pairs_created,
                 1e-14,
                 "2D physical represented rate is not timestep invariant");
+
+            auto volumetric_cfg = cfg;
+            volumetric_cfg.out_of_plane_depth = 2.0;
+            volumetric_cfg.sources[0].represented_pair_rate.reset();
+            volumetric_cfg.sources[0].peak_volumetric_pair_rate =
+                5.0;
+            volumetric_cfg.sources[0].spatial_profile
+                .density_profile =
+                pic::DensityProfileKind::Sinusoidal;
+            volumetric_cfg.sources[0].spatial_profile
+                .profile_amplitude = -1.0;
+            volumetric_cfg.sources[0].spatial_profile
+                .profile_mode_x = 1;
+            pic::Simulation2D volumetric(volumetric_cfg);
+            volumetric.initialize();
+            for (std::size_t step = 0; step < 10; ++step) {
+                volumetric.step();
+            }
+            require(
+                volumetric.source_diagnostics()[0]
+                        .macro_pairs_created == 2,
+                "2D peak volumetric source used the wrong profile integral");
+            require_near(
+                volumetric.source_diagnostics()[0]
+                    .fractional_macro_pair_remainder,
+                0.5, 1e-14,
+                "2D peak volumetric conversion has the wrong remainder");
 
             auto both_rates = cfg;
             both_rates.sources[0].pairs_per_step = 1;

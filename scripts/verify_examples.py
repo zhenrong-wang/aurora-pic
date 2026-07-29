@@ -486,7 +486,9 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
             "represented_pairs_created",
             "fractional_macro_pair_remainder",
             "injected_kinetic_energy",
-            "configured_represented_pair_rate",
+            "effective_profile_area", "out_of_plane_depth",
+            "configured_peak_volumetric_pair_rate",
+            "resolved_represented_pair_rate",
         ],
         f"unexpected header in {output_dir / 'sources.csv'}",
     )
@@ -496,7 +498,9 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
     require(
         final_source[2] == "channel_pair_seed" and
         int(final_source[3]) == 4 and
-        abs(float(final_source[5]) - 0.2) < 1e-12,
+        abs(float(final_source[5]) - 0.2) < 1e-12 and
+        abs(float(final_source[7]) - 4.8e-5) < 1e-16 and
+        abs(float(final_source[10]) - 2.5104e19) < 1e6,
         "Hall smoke did not create its configured source pairs",
     )
 

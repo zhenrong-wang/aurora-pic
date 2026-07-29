@@ -73,10 +73,10 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examples
   FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh" PATTERN "*.geo"
   PATTERN "*.dat" PATTERN "*.gas" PATTERN "*.swarm"
-  PATTERN "*.aps")
+  PATTERN "*.aps" PATTERN "*.case")
 install(PROGRAMS scripts/compare_swarm.py scripts/run_swarm_campaign.py
   scripts/generate_real_case_mesh.py scripts/import_lxcat.py
-  scripts/validate_kinetic_benchmarks.py
+  scripts/validate_kinetic_benchmarks.py scripts/validate_hall_case.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
 install(FILES README.md docs/ccp-validation.md docs/collisions.md docs/external-particle-state.md docs/gas-data-workflow.md docs/hall-thruster-validation.md docs/kinetic-validation.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md docs/swarm-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 install(EXPORT AuroraPICTargets

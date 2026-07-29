@@ -157,8 +157,16 @@ void Species2D::initialize(const Mesh2D& mesh, std::mt19937_64& rng) {
     }
 }
 
-void Species2D::deposit_charge(Mesh2D& mesh) const {
-    deposit_charge_cic(mesh, particles_, cfg_.charge, cfg_.weight);
+void Species2D::deposit_charge(
+    Mesh2D& mesh, double out_of_plane_depth) const {
+    if (!std::isfinite(out_of_plane_depth) ||
+        !(out_of_plane_depth > 0.0)) {
+        throw std::invalid_argument(
+            "2D deposition depth must be positive and finite");
+    }
+    deposit_charge_cic(
+        mesh, particles_, cfg_.charge,
+        cfg_.weight / out_of_plane_depth);
 }
 
 double Species2D::kinetic_energy() const {

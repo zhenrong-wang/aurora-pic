@@ -156,14 +156,16 @@ isotropic thermal velocities, but must carry opposite equal charge and equal
 macro weight. Thus deposited source charge cancels exactly at creation and
 one macro-pair has one well-defined represented physical-pair count.
 
-A source selects either an integer macro-pair count per active step or a total
-represented-pair rate. For the latter, each active step adds
+A source selects an integer macro-pair count, a total represented-pair rate,
+or a peak volumetric rate. The peak form is multiplied by the analytic
+normalized-profile area and global extrusion depth. For rate forms, each
+active step adds
 `rate * dt / macro_weight` to a deterministic fractional accumulator, creates
 the integer part, and carries the remainder. Capacity is checked for both
 species before storage changes; dead slots are reused deterministically.
 Diagnostics report cumulative macro/represented pairs, the fractional
 remainder, sampled full-3V kinetic energy, and configured rate. Structured
-checkpoint v5 fingerprints the complete source definition and preserves the
+checkpoint v6 fingerprints extrusion depth and the complete source definition and preserves the
 accumulator, diagnostics, particle state, and RNG. This is a prescribed
 source, not a collision, neutral-depletion, recoil, or reaction-network model.
 

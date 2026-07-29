@@ -32,6 +32,7 @@ struct VolumetricPairSource2DConfig {
     std::string second_species{};
     std::size_t pairs_per_step{0};
     std::optional<double> represented_pair_rate{};
+    std::optional<double> peak_volumetric_pair_rate{};
     std::size_t start_step{0};
     std::size_t end_step{0}; // zero keeps the source active indefinitely
     double x_min{0.0};
@@ -59,6 +60,7 @@ struct Simulation2DConfig {
     std::size_t ny{64};
     double length_x{1.0};
     double length_y{1.0};
+    double out_of_plane_depth{1.0};
     double dt{0.02};
     std::size_t steps{100};
     RunMode mode{RunMode::Transient};
@@ -121,6 +123,8 @@ private:
         VolumetricPairSource2DConfig config{};
         std::size_t first_species{0};
         std::size_t second_species{0};
+        double represented_pair_rate{0.0};
+        double effective_profile_area{0.0};
     };
     void deposit_and_solve();
     void inject_volumetric_pair_sources();

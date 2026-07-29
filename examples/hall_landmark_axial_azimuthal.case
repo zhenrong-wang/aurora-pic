@@ -1,0 +1,41 @@
+case_manifest_version = 1
+case_id = landmark-axial-azimuthal-2019
+case_class = verification_benchmark
+runtime_config = hall_field_profile_smoke.cfg
+status = reduced_integration_only
+
+[reference]
+doi = 10.1088/1361-6595/ab46c5
+domain_x_m = 0.025
+domain_y_m = 0.0128
+production_nx = 500
+production_ny = 256
+production_dt_s = 5e-12
+production_steps = 4000000
+discharge_voltage_v = 200
+initial_density_m3 = 5e16
+
+[magnetic_field]
+file = hall_landmark_b_profile.dat
+sha256 = d813ea74a7c098f51349cb58242c91707eaca9bfa278a69155d86cb9683b1d3a
+axis = x
+
+[pair_source]
+profile = centered_sine_squared
+x_min_m = 0.0025
+x_max_m = 0.010
+y_min_m = 0
+y_max_m = 0.0128
+peak_volumetric_pair_rate_m3_s = 5.23e23
+normalized_profile_mean = 0.5
+effective_profile_area_m2 = 4.8e-5
+out_of_plane_depth_m = 1
+derived_represented_pair_rate_s = 2.5104e19
+
+[reduced_contract]
+max_cells = 128
+max_initial_macroparticles = 8
+max_steps = 4
+max_threads = 1
+physics_claim = none
+missing_physics = cathode_current_control,potential_correction,published_thermal_loading,published_population,published_resolution,long_time_averaging

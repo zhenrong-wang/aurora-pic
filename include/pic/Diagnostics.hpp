@@ -85,7 +85,8 @@ public:
     Diagnostics2D(
         std::filesystem::path output_dir,
         const std::vector<Species2D>& species,
-        double permittivity = EPS0);
+        double permittivity = EPS0,
+        double out_of_plane_depth = 1.0);
     void write_header();
     DiagnosticSample2D sample(std::size_t step,
                               double time,
@@ -103,6 +104,7 @@ private:
     std::ofstream scalar_file_;
     std::vector<std::string> species_names_;
     double permittivity_{EPS0};
+    double out_of_plane_depth_{1.0};
     std::vector<DiagnosticSample2D> history_;
 };
 

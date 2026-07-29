@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
             auto cfg = pic::load_config_2d(argv[1]);
             std::cout << "AuroraPIC 2D: nx=" << cfg.nx << " ny=" << cfg.ny
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
+                      << " out_of_plane_depth=" << cfg.out_of_plane_depth
                       << " dt=" << cfg.dt << " mode=" << pic::to_string(cfg.mode)
                       << " units=" << pic::to_string(cfg.units.system)
                       << " permittivity=" << cfg.units.permittivity()
