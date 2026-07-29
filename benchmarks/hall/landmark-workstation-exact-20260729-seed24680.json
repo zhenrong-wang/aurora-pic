@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "workstation",
+  "physics_claim": "none",
+  "passed_integration_checks": true,
+  "simulation": {
+    "source_commit": "a6d1cae",
+    "date_utc": "2026-07-29",
+    "seed": 24680,
+    "cells_x": 125,
+    "cells_y": 64,
+    "initial_macroparticles": 256000,
+    "steps": 5000,
+    "timestep_s": 5e-12,
+    "final_time_s": 2.4999999999999016e-08,
+    "current_source_control_mode": "timestep_local",
+    "potential_reference_correction": "affine",
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "wall_seconds": 270.37,
+    "user_seconds": 269.92,
+    "system_seconds": 0.15,
+    "maximum_resident_kib": 32828,
+    "artifact_bytes": 126915243
+  },
+  "analysis": {
+    "source_commit": "5b2456b",
+    "passed": true,
+    "final_live_particles": 260675,
+    "maximum_live_particles": 260675,
+    "macro_pairs_created": 5020,
+    "cathode_macro_particles_created": 12615,
+    "controller_saturation_samples": 44,
+    "maximum_retained_negative_debt_macroparticles": 0.0,
+    "maximum_control_remainder_macroparticles": 0.9999999999997042,
+    "maximum_unserved_reverse_charge_c": 3.1642988521500248e-09,
+    "maximum_unserved_reverse_macroparticles": 158.00000000000125,
+    "maximum_charge_balance_residual_c": 2.0027207924994078e-11,
+    "maximum_potential_reference_error_v": 8.526512829121202e-14,
+    "resolved_samples": 11,
+    "resolved_modes": 33
+  },
+  "comparison_to_generic_control_pilot": {
+    "record": "landmark-workstation-20260729-seed24680.json",
+    "same_seed_grid_population_steps_and_timestep": true,
+    "cathode_macroparticle_delta": 3408,
+    "final_live_macroparticle_delta": -248,
+    "controllable_residual_reduction_fraction": 0.985075,
+    "retained_negative_debt_before_macroparticles": 66.9999999999993,
+    "retained_negative_debt_after_macroparticles": 0.0,
+    "time_averaged_axial_field_rms_difference_v_m": 13559.123338171272,
+    "generic_time_averaged_axial_field_mean_v_m": 8225.486482405127,
+    "exact_time_averaged_axial_field_mean_v_m": 14538.688271593364,
+    "generic_final_potential_offset_v": 122.46877491901644,
+    "exact_final_potential_offset_v": 180.79121298555165
+  },
+  "sha256": {
+    "executable": "f0d9a58b871c42b864bd5dc39ce1b8695b4e5b0a019a8236f23349fd0c26db8b",
+    "case_manifest": "02b5d69da90f70f36d68bc4317b1699b5babb64e888dd49d47ff53338ce0b831",
+    "runtime_config": "ed4aab631fe32e498840c7a1d66ac42da570c87fb2350a0242c6948d40661cba",
+    "preflight_report": "a745d64abe8372a84b397682f86c308d177db667b694f99057683109f06fbfde",
+    "analysis_report": "a1117d49f56653027c8db815c4b4abd0229304e0e2f0fa5fb52c1a7c44c57a15",
+    "analyzer": "a93eb37e871d849d5476c29d7e8c51e2de060b23fe7c8155eafb39d17c572d05",
+    "runtime_measurement": "b635d54b791d4d4f1d6acd351c8cc2a130258b8b6b1381e671ffb1ac817c3999",
+    "scalars": "8fa8d22d6e4e164c6d97441cf10075440e5a1ee337384eb16387085d37ebe8dd",
+    "current_source": "6d5397f17ec468dbefb2a2416f4be914603d5ee101fe1f2c65a4b14ec85ed7e2",
+    "potential_reference": "3345c0a2a7037c2dbcc82305c22b7117989f1f74a53f4be01776b5185d7ec236",
+    "field_time_average": "36b95b9b61a123e6bdcf00f30749e1eb4f6a11c4ceda07c37a3aa04fc0e64ed6",
+    "species_time_average": "b9b2ccf8386a779096445df61dbd78e2aaec3eb4d3d33695dba0c6aae5b3f036",
+    "resolved_modes": "49d50ea8bf9f38df6d0f1fe4e8ff45f76e083854a6e12e1659578d122c35a7ad",
+    "checkpoint_0": "0cba63ed26cbbeb36057779467cd6921a9500073b6f886654661ba23d05aeae1",
+    "checkpoint_2500": "b10ab5d3b41edb61c0c3320950e8c3b3ec2f5bf7f6468f98382281b21652bcb6",
+    "checkpoint_5000": "ac00d3b2a1ac5c3137055a6508820d32834abb9a0a64ea48bda3301ec4eb33da"
+  },
+  "findings": [
+    "This is a complete exact-control workstation integration pilot, not a published-resolution or physics-agreement result.",
+    "The timestep-local cathode controller retained no negative debt; reverse demand that a one-way electron source cannot serve is reported separately.",
+    "The affine correction materially changed the axial electric-field profile while holding the internal reference plane to its target.",
+    "Published population, resolution, and long-time averaging remain open before side-by-side physics validation."
+  ],
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}

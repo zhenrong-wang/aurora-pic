@@ -146,8 +146,8 @@ the models.
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D automatically uses a direct spectral-tridiagonal Poisson solve for either periodic/Dirichlet orientation; mixed-radix FFT and Bluestein paths cover composite and prime periodic sizes | Measure the serial production grid, then distribute the transform and axial mode solves with MPI before full LANDMARK campaigns |
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
-| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit diagnostics and checkpoint v8 | Repeat the workstation pilot, then qualify long-duration response and cathode-temperature sensitivity |
-| Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically | Repeat the workstation pilot and verify the full published correction response |
+| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit diagnostics and checkpoint v8; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
+| Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically; the exact-control workstation pilot passed | Compare converged profiles against checksum-pinned published data |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, and seeded ensemble statistics | Add long-run segment aggregation and qualify the workflow with real reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
@@ -516,6 +516,17 @@ exposed timestep-local cathode and affine-potential differences that motivated
 the selectable exact modes implemented afterward. The committed record pins the executable, deck,
 manifest, analyzer, scalar, resolved-diagnostic, and checkpoint hashes while
 retaining `physics_claim = none`.
+
+The exact-control rerun is recorded in
+`benchmarks/hall/landmark-workstation-exact-20260729-seed24680.json`. With the
+same seed, grid, initial population, timestep, and duration, it completed in
+270.37 seconds on one low-priority CPU core with 32.1 MiB peak resident
+memory. The timestep-local controller retained zero negative debt and reduced
+the controllable charge residual by 98.5%; its one-way unserved reverse demand
+is reported separately. The affine correction changed the averaged axial-field
+profile by 13.6 kV/m RMS relative to the earlier gauge run. This is still an
+integration comparison with `physics_claim = none`, not published-case
+agreement.
 
 The preflight distinguishes the paper's 500 by 256 cells from AuroraPIC's
 501 by 256 structured nodes, writes all assumptions and arithmetic to JSON,
