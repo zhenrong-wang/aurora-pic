@@ -80,6 +80,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/preflight_hall.py scripts/qualify_hall_runtime.py
   scripts/prepare_hall_campaign.py scripts/lock_hall_source.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py
+  scripts/prepare_hall_convergence.py scripts/analyze_hall_convergence.py
   scripts/run_swarm_campaign.py
   scripts/generate_real_case_mesh.py scripts/import_lxcat.py
   scripts/validate_kinetic_benchmarks.py scripts/validate_hall_case.py

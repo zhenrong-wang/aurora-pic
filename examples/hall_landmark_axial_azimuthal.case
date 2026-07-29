@@ -124,6 +124,21 @@ memory_budget_gib = 32
 storage_budget_gib = 32
 physics_claim = candidate_for_reference_comparison
 
+[convergence.workstation]
+convergence_contract_version = 1
+base_tier = workstation
+authorization = explicit_cost_acknowledgement
+population_factors = 0.5,1,2
+duration_factors = 0.5,1,2
+averaging_fraction = 0.2
+diagnostic_samples = 11
+maximum_stages = 5
+maximum_aggregate_initial_particle_updates = 7680000000
+relative_l2_tolerance = 0.25
+relative_linf_tolerance = 0.5
+maximum_fine_to_coarse_change_ratio = 1
+physics_claim = none
+
 [diagnostics]
 profile_axis = x
 mode_axis = y
@@ -146,3 +161,5 @@ source_locker = scripts/lock_hall_source.py
 reference_normalizer = scripts/normalize_hall_reference.py
 ensemble_preparer = scripts/prepare_hall_ensemble.py
 ensemble_aggregator = scripts/aggregate_hall_ensemble.py
+convergence_preparer = scripts/prepare_hall_convergence.py
+convergence_analyzer = scripts/analyze_hall_convergence.py

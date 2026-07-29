@@ -105,6 +105,40 @@ def main() -> int:
             "Hall campaign tiers must increase monotonically in work",
         )
         previous_updates = updates
+    convergence = manifest["convergence.workstation"]
+    population_factors = [
+        float(item) for item in convergence["population_factors"].split(",")
+    ]
+    duration_factors = [
+        float(item) for item in convergence["duration_factors"].split(",")
+    ]
+    workstation = manifest["campaign.workstation"]
+    workstation_particles = (
+        workstation.getint("cells_x")
+        * workstation.getint("cells_y")
+        * workstation.getint("particles_per_cell_per_species")
+    )
+    aggregate_updates = int(sum(
+        2 * workstation_particles * workstation.getint("steps") * factor
+        for factor in population_factors
+    ) + sum(
+        2 * workstation_particles * workstation.getint("steps") * factor
+        for factor in duration_factors if factor != 1.0
+    ))
+    require(
+        convergence.getint("convergence_contract_version") == 1
+        and convergence["base_tier"] == "workstation"
+        and population_factors == [0.5, 1.0, 2.0]
+        and duration_factors == [0.5, 1.0, 2.0]
+        and convergence.getint("maximum_stages") == 5
+        and aggregate_updates == 7_680_000_000
+        and aggregate_updates
+            <= convergence.getint(
+                "maximum_aggregate_initial_particle_updates"
+            )
+        and convergence["physics_claim"] == "none",
+        "Hall workstation convergence contract drifted",
+    )
     source = manifest["pair_source"]
     width = number(source, "x_max_m") - number(source, "x_min_m")
     height = number(source, "y_max_m") - number(source, "y_min_m")
@@ -372,7 +406,11 @@ def main() -> int:
         and comparison["ensemble_preparer"]
             == "scripts/prepare_hall_ensemble.py"
         and comparison["ensemble_aggregator"]
-            == "scripts/aggregate_hall_ensemble.py",
+            == "scripts/aggregate_hall_ensemble.py"
+        and comparison["convergence_preparer"]
+            == "scripts/prepare_hall_convergence.py"
+        and comparison["convergence_analyzer"]
+            == "scripts/analyze_hall_convergence.py",
         "Hall comparison/preflight contract drifted",
     )
     for key, manifest_key in (

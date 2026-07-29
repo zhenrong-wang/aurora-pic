@@ -40,7 +40,7 @@ and records binary/deck provenance plus initial-population cost projections.
 acknowledgement before it writes—but never launches—a full Case 2 candidate
 deck.
 `analyze_hall_pilot.py` checks bounded-tier diagnostic integrity, including
-one-way cathode-controller saturation debt, and always reports
+controllable cathode remainder and separately unserved reverse demand, and always reports
 `physics_claim = none`.
 `lock_hall_source.py` plans external acquisition from the committed source
 registry and stream-hashes local artifacts without downloading them.
@@ -50,6 +50,9 @@ produces comparator-ready reference artifacts without interpolation.
 `prepare_hall_ensemble.py` writes three or more independent seeded decks
 atomically; `aggregate_hall_ensemble.py` applies a conservative 95% Student-t
 acceptance test to their checksum-bound comparison reports.
+`prepare_hall_convergence.py` writes a cost-gated, five-stage workstation
+population/duration ladder without launching it; `analyze_hall_convergence.py`
+checks axial profiles and azimuthal spectra for decreasing three-level change.
 Use `aurorapic_cli --validate-only <config.cfg>` to parse and validate any
 deck without constructing a simulation or taking a timestep.
 The CLI also blocks configurations exceeding 100 million estimated initial

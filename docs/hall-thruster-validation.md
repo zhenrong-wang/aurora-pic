@@ -149,7 +149,7 @@ the models.
 | Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit diagnostics and checkpoint v8; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
 | Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically; the exact-control workstation pilot passed | Compare converged profiles against checksum-pinned published data |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
-| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, and seeded ensemble statistics | Add long-run segment aggregation and qualify the workflow with real reference data |
+| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, and a guarded population/duration convergence workflow | Execute the convergence ladder, add long-run segment aggregation, and qualify with real reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
 | Scale-out runtime | Serial/OpenMP only; a bounded, provenance-pinned runtime qualifier measures a selected host without permitting a production launch | Add MPI domain decomposition before production-size LANDMARK runs |
 | High-volume output | VTK/XML, CSV, and text restart | Add openPMD/HDF5 or equivalent parallel, chunked output before large campaigns |
@@ -424,6 +424,47 @@ original comparison threshold, and at least two thirds of individual reports
 must pass by default. A passing reduced tier records
 `physics_claim_eligible = false`; production eligibility still does not by
 itself constitute experimental validation.
+
+## Workstation convergence campaign
+
+The same-seed workstation convergence contract separates population and
+duration sensitivity while holding geometry, timestep, fields, sources, and
+control models fixed. Its five unique stages are:
+
+| Axis | Coarse | Baseline | Fine |
+|---|---:|---:|---:|
+| particles/cell/species | 8 | 16 | 32 |
+| steps | 2,500 | 5,000 | 10,000 |
+
+The shared baseline is run once, so the complete plan contains five runs and
+7.68 billion lower-bound initial-particle updates. Each stage retains 11
+samples over its final 20% and scales particle capacity with population.
+Planning requires an explicit acknowledgement and never launches a solver:
+
+```sh
+python3 scripts/prepare_hall_convergence.py \
+  examples/hall_landmark_axial_azimuthal.case \
+  --output-dir campaign/case2-convergence \
+  --acknowledge-cost \
+  I_UNDERSTAND_THIS_IS_AN_OPT_IN_HALL_CONVERGENCE_PLAN
+```
+
+Every generated deck remains independently protected by the CLI large-run
+acknowledgement. After separately executing all five decks, analyze their
+time-averaged axial field/species profiles and time-averaged azimuthal spectra:
+
+```sh
+python3 scripts/analyze_hall_convergence.py \
+  campaign/case2-convergence/convergence.json \
+  --report campaign/case2-convergence/convergence-report.json
+```
+
+For each observable, the report records absolute and baseline-normalized L2
+and Linf changes from coarse to baseline and fine to baseline. Acceptance
+requires the fine change to satisfy the pinned tolerances and not exceed the
+coarse change. This is a fixed-grid, same-seed sensitivity gate with
+`physics_claim = none`; grid, timestep, seed-ensemble, and external-reference
+agreement remain separate requirements.
 
 ## Resource policy
 
