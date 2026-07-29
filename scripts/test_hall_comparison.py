@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import configparser
 import hashlib
 import json
 from pathlib import Path
@@ -14,6 +15,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 COMPARATOR = ROOT / "scripts" / "compare_hall.py"
 PREFLIGHT = ROOT / "scripts" / "preflight_hall.py"
+PREPARE = ROOT / "scripts" / "prepare_hall_campaign.py"
 PRODUCTION_CASE = (
     ROOT / "examples" / "hall_landmark_axial_azimuthal.case"
 )
@@ -35,6 +37,12 @@ def run(command: list[str]) -> subprocess.CompletedProcess[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
+
+
+def load_with_global(path: Path) -> configparser.ConfigParser:
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.read_string("[global]\n" + path.read_text(encoding="utf-8"))
+    return parser
 
 
 def write_fixture(work: Path) -> tuple[Path, Path, Path]:
@@ -95,8 +103,10 @@ def write_fixture(work: Path) -> tuple[Path, Path, Path]:
         "case_id = landmark-synthetic\n"
         "status = reduced_integration_only\n"
         "\n[reference]\n"
-        "production_nx = 500\n"
-        "production_ny = 256\n"
+        "production_cells_x = 500\n"
+        "production_cells_y = 256\n"
+        "aurorapic_nodes_x = 501\n"
+        "aurorapic_nodes_y = 256\n"
         "production_steps = 4000000\n"
         "production_dt_s = 5e-12\n"
         "\n[reduced_contract]\n"
@@ -285,6 +295,14 @@ def main() -> int:
             estimate["production_scale"]
             and estimate["within_declared_budgets"]
             and not estimate["launch_authorized"]
+            and estimate["published_contract"]["cells_x"] == 500
+            and estimate["published_contract"]["cells_y"] == 256
+            and estimate["published_contract"]["aurorapic_nodes_x"]
+                == 501
+            and estimate["published_contract"]["aurorapic_nodes_y"]
+                == 256
+            and estimate["published_contract"]["mesh_points"]
+                == 501 * 256
             and estimate["estimates"]["initial_macroparticles"]
                 == 500 * 256 * 75 * 2
             and estimate["estimates"]["particle_updates_lower_bound"]
@@ -308,6 +326,53 @@ def main() -> int:
             and "exceeded declared resource budgets"
                 in budget_failure.stderr,
             "Hall preflight ignored a memory budget failure",
+        )
+
+        generated_deck = work / "campaign" / "case2.cfg"
+        unacknowledged = run(
+            [
+                sys.executable,
+                str(PREPARE),
+                str(PRODUCTION_CASE),
+                "--output",
+                str(generated_deck),
+            ]
+        )
+        require(
+            unacknowledged.returncode == 2
+            and not generated_deck.exists(),
+            "Hall campaign generator bypassed its production-cost guard",
+        )
+        generated = run(
+            [
+                sys.executable,
+                str(PREPARE),
+                str(PRODUCTION_CASE),
+                "--output",
+                str(generated_deck),
+                "--acknowledge-production-cost",
+                "I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_RUN",
+            ]
+        )
+        require(
+            generated.returncode == 0 and generated_deck.exists(),
+            f"Hall campaign deck generation failed: {generated.stderr}",
+        )
+        generated_config = load_with_global(generated_deck)
+        generated_global = generated_config["global"]
+        require(
+            generated_global.getint("nx") == 501
+            and generated_global.getint("ny") == 256
+            and generated_global.getint("steps") == 4_000_000
+            and generated_global.getint("runtime_threads") == 1
+            and generated_global["runtime_backend"] == "serial"
+            and generated_global.getint("resolved_diagnostic_start_step")
+                == 3_200_000
+            and generated_config["species.electrons"].getint("particles")
+                == 500 * 256 * 75
+            and generated_config["species.ions"].getint("particles")
+                == 500 * 256 * 75,
+            "generated Hall production deck drifted from its campaign contract",
         )
 
     print("Hall comparison and preflight validation passed")

@@ -44,6 +44,31 @@ def main() -> int:
     )
 
     reference = manifest["reference"]
+    require(
+        reference.getint("production_cells_x") == 500
+        and reference.getint("production_cells_y") == 256
+        and reference.getint("aurorapic_nodes_x") == 501
+        and reference.getint("aurorapic_nodes_y") == 256,
+        "Hall production cell/node topology drifted from LANDMARK Case 2",
+    )
+    require(
+        reference.getint("aurorapic_nodes_x")
+            == reference.getint("production_cells_x") + 1
+        and reference.getint("aurorapic_nodes_y")
+            == reference.getint("production_cells_y"),
+        "Hall Dirichlet/periodic cell-to-node mapping is inconsistent",
+    )
+    provenance = manifest["provenance"]
+    require(
+        provenance["article_url"]
+            == "https://doi.org/10.1088/1361-6595/ab46c5"
+        and provenance["public_dataset_doi"] == "10.7302/5mfm-as86"
+        and provenance["public_dataset_file_set_id"] == "m900nv362"
+        and "512 axial by 256 azimuthal cells"
+            in provenance["public_dataset_variant"]
+        and provenance["public_dataset_license"] == "CC0 1.0",
+        "Hall article/public-dataset provenance drifted",
+    )
     source = manifest["pair_source"]
     width = number(source, "x_max_m") - number(source, "x_min_m")
     height = number(source, "y_max_m") - number(source, "y_min_m")

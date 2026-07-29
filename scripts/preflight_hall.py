@@ -152,11 +152,18 @@ def write_json_atomic(
 def estimate(args: argparse.Namespace) -> dict[str, object]:
     parser, global_section, reference = load_case(args.case_manifest)
     case_id = required(global_section, "case_id")
-    nx = checked_int(reference, "production_nx")
-    ny = checked_int(reference, "production_ny")
+    cells_x = checked_int(reference, "production_cells_x")
+    cells_y = checked_int(reference, "production_cells_y")
+    nodes_x = checked_int(reference, "aurorapic_nodes_x")
+    nodes_y = checked_int(reference, "aurorapic_nodes_y")
+    if nodes_x != cells_x + 1 or nodes_y != cells_y:
+        raise HallPreflightError(
+            "published Case 2 requires one more AuroraPIC node than cell "
+            "on Dirichlet x and equal node/cell counts on periodic y"
+        )
     steps = checked_int(reference, "production_steps")
     timestep = checked_float(reference, "production_dt_s")
-    if args.max_mode > ny // 2:
+    if args.max_mode > cells_y // 2:
         raise HallPreflightError(
             "max_mode exceeds the production azimuthal Nyquist limit"
         )
@@ -173,7 +180,7 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
             "species exceeds the bounded preflight limit"
         )
 
-    cells = nx * ny
+    cells = cells_x * cells_y
     initial_particles = (
         cells * args.particles_per_cell * args.species
     )
@@ -181,13 +188,13 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
         initial_particles * args.particle_capacity_factor
     )
     particle_memory = particle_capacity * args.particle_bytes
-    mesh_points = cells
+    mesh_points = nodes_x * nodes_y
     field_memory = (
         mesh_points * args.field_arrays * 8
     )
     diagnostic_grid_memory = (
-        (nx * (5 + 16 * args.species))
-        + (ny * 4 * args.species)
+        (nodes_x * (5 + 16 * args.species))
+        + (nodes_y * 4 * args.species)
         + ((args.max_mode + 1) * (3 + 4 * args.species) * 3)
     ) * 8
     estimated_memory = (
@@ -197,13 +204,13 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
     snapshots = (
         (steps - args.start_step) // args.diagnostic_interval + 1
     )
-    field_profile_rows = snapshots * nx
-    species_profile_rows = snapshots * nx * args.species
+    field_profile_rows = snapshots * nodes_x
+    species_profile_rows = snapshots * nodes_x * args.species
     mode_quantities = 3 + 4 * args.species
     mode_rows = (
         snapshots * (args.max_mode + 1) * mode_quantities
     )
-    average_rows = nx * (1 + args.species)
+    average_rows = nodes_x * (1 + args.species)
     diagnostic_storage = (
         field_profile_rows * args.profile_row_bytes
         + species_profile_rows * args.species_row_bytes
@@ -226,7 +233,7 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
     checks = {
         "memory_budget": estimated_memory <= memory_budget,
         "storage_budget": estimated_storage <= storage_budget,
-        "mode_nyquist": args.max_mode <= ny // 2,
+        "mode_nyquist": args.max_mode <= cells_y // 2,
         "bounded_inputs": True,
     }
     within_budgets = all(checks.values())
@@ -281,9 +288,12 @@ def estimate(args: argparse.Namespace) -> dict[str, object]:
         "launch_authorized": False,
         "checks": checks,
         "published_contract": {
-            "nx": nx,
-            "ny": ny,
+            "cells_x": cells_x,
+            "cells_y": cells_y,
             "cells": cells,
+            "aurorapic_nodes_x": nodes_x,
+            "aurorapic_nodes_y": nodes_y,
+            "mesh_points": mesh_points,
             "steps": steps,
             "timestep_s": timestep,
             "final_time_s": steps * timestep,

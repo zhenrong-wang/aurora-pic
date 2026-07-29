@@ -319,12 +319,36 @@ VTK, particle dumps, external data, replication, and temporary files are
 excluded. At an explicitly supplied measured rate of 100 million particle
 updates/s, the lower-bound push time alone is 768,000 seconds (8.9 days).
 
-The preflight writes all assumptions and arithmetic to JSON, returns one when
+The preflight distinguishes the paper's 500 by 256 cells from AuroraPIC's
+501 by 256 structured nodes, writes all assumptions and arithmetic to JSON,
+returns one when
 a declared memory or storage budget is exceeded, never launches AuroraPIC, and
 always records `launch_authorized = false`. The current case remains
-`reduced_integration_only`; a production deck, measured solver throughput,
-MPI decomposition, convergence tiers, and explicit execution authorization
+`reduced_integration_only`. A production-candidate deck can only be generated
+after spelling out an explicit cost acknowledgement:
+
+```sh
+python3 scripts/prepare_hall_campaign.py \
+  examples/hall_landmark_axial_azimuthal.case \
+  --output campaign/case2.cfg \
+  --acknowledge-production-cost I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_RUN
+```
+
+This copies the checksum-verified magnetic profile beside the deck and writes
+the original 500 by 256 cell, 75-particle-per-cell-per-species, 4-million-step
+contract. It starts resolved averaging at step 3.2 million (16 microseconds),
+uses one serial thread, disables VTK and particle dumps, and sets an explicit
+particle capacity. The tool never runs the generated deck. Measured solver
+throughput, adequate capacity from a pilot campaign, MPI decomposition,
+convergence tiers, scheduler quotas, and explicit execution authorization
 remain separate gates.
+
+The generated deck can be parsed and semantically validated without allocating
+its particles or starting a timestep:
+
+```sh
+aurorapic_cli --validate-only campaign/case2.cfg
+```
 
 The first H0 field slice is complete: a shared strict `coordinate Bx By Bz`
 profile supports linear interpolation and full-domain coverage checks across
@@ -339,7 +363,8 @@ complex tridiagonal Dirichlet system per Fourier mode. Composite sizes use a
 mixed-radix FFT and prime sizes use Bluestein convolution, avoiding the former
 quadratic transform fallback; manufactured discrete-Poisson regressions cover
 both axis orientations and non-power-of-two sizes. A field-only regression
-also solves the published 320 by 400 Case 2a grid with vacuum charge and
+also solves the original published 500 axial by 256 azimuthal cell Case 2
+grid (501 by 256 AuroraPIC nodes) with vacuum charge and
 nonzero axial electrodes; it contains no particles or timesteps and is not a
 throughput claim. The implementation remains single-rank and requires measured
 production-grid qualification. A generic

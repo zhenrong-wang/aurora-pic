@@ -6,18 +6,23 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <string_view>
 #include <utility>
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cerr << "usage: aurorapic_cli <config.cfg>\n";
+    const bool validate_only =
+        argc == 3 && std::string_view(argv[1]) == "--validate-only";
+    if ((!validate_only && argc != 2) || (validate_only && argc != 3)) {
+        std::cerr
+            << "usage: aurorapic_cli [--validate-only] <config.cfg>\n";
         return 2;
     }
+    const char* config_path = argv[validate_only ? 2 : 1];
     try {
-        const unsigned dimension = pic::detect_config_dimension(argv[1]);
+        const unsigned dimension = pic::detect_config_dimension(config_path);
         if (dimension == 2) {
-            if (pic::config_uses_unstructured_mesh_2d(argv[1])) {
-                auto cfg = pic::load_unstructured_config_2d(argv[1]);
+            if (pic::config_uses_unstructured_mesh_2d(config_path)) {
+                auto cfg = pic::load_unstructured_config_2d(config_path);
                 std::cout << "AuroraPIC imported 2D: mesh=" << cfg.mesh_path.string()
                           << " dt=" << cfg.dt
                           << " mode=" << pic::to_string(cfg.mode)
@@ -25,6 +30,10 @@ int main(int argc, char** argv) {
                           << " permittivity=" << cfg.units.permittivity()
                           << " vtk_output=" << (cfg.vtk_output ? "yes" : "no")
                           << "\n";
+                if (validate_only) {
+                    std::cout << "configuration valid; simulation not launched\n";
+                    return 0;
+                }
                 pic::UnstructuredSimulation2D sim(std::move(cfg));
                 const auto quality = sim.mesh().topology().quality();
                 std::cout << "mesh nodes=" << sim.mesh().topology().nodes().size()
@@ -50,7 +59,7 @@ int main(int argc, char** argv) {
                            ? 0
                            : 1;
             }
-            auto cfg = pic::load_config_2d(argv[1]);
+            auto cfg = pic::load_config_2d(config_path);
             const pic::Boundary boundary_x =
                 cfg.boundary_x.value_or(cfg.boundary);
             const pic::Boundary boundary_y =
@@ -78,6 +87,10 @@ int main(int argc, char** argv) {
                       << " potential_reference="
                       << (cfg.potential_reference ? "yes" : "no")
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
+            if (validate_only) {
+                std::cout << "configuration valid; simulation not launched\n";
+                return 0;
+            }
             pic::Simulation2D sim(std::move(cfg));
             auto summary = sim.run();
             std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
@@ -87,7 +100,7 @@ int main(int argc, char** argv) {
             return summary.steps_completed > 0 ? 0 : 1;
         }
         if (dimension == 3) {
-            auto cfg = pic::load_config_3d(argv[1]);
+            auto cfg = pic::load_config_3d(config_path);
             std::cout << "AuroraPIC 3D: nx=" << cfg.nx << " ny=" << cfg.ny << " nz=" << cfg.nz
                       << " length_x=" << cfg.length_x << " length_y=" << cfg.length_y
                       << " length_z=" << cfg.length_z << " dt=" << cfg.dt
@@ -96,6 +109,10 @@ int main(int argc, char** argv) {
                       << " permittivity=" << cfg.units.permittivity()
                       << " boundary=" << pic::to_string(cfg.boundary)
                       << " vtk_output=" << (cfg.vtk_output ? "yes" : "no") << "\n";
+            if (validate_only) {
+                std::cout << "configuration valid; simulation not launched\n";
+                return 0;
+            }
             pic::Simulation3D sim(std::move(cfg));
             auto summary = sim.run();
             std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time
@@ -105,7 +122,7 @@ int main(int argc, char** argv) {
             return summary.steps_completed > 0 ? 0 : 1;
         }
 
-        auto cfg = pic::load_config(argv[1]);
+        auto cfg = pic::load_config(config_path);
         std::cout << "AuroraPIC 1D"
                   << cfg.velocity_dimensions << "V: nx=" << cfg.nx
                   << " length=" << cfg.length << " dt=" << cfg.dt
@@ -129,6 +146,10 @@ int main(int argc, char** argv) {
                                        cfg.collisions.model)
                                  : "off"))
                   << "\n";
+        if (validate_only) {
+            std::cout << "configuration valid; simulation not launched\n";
+            return 0;
+        }
         pic::Simulation sim(std::move(cfg));
         auto summary = sim.run();
         std::cout << "completed steps=" << summary.steps_completed << " time=" << summary.final_time

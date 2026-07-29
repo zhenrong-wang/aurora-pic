@@ -33,6 +33,11 @@ installed `compare_hall.py` tool performs checksum-pinned, uncertainty-aware
 profile and complex-mode comparisons against local reference data;
 `preflight_hall.py` estimates production memory, storage, output rows, and
 particle-update work without launching a simulation.
+`prepare_hall_campaign.py` requires an explicit production-cost
+acknowledgement before it writes—but never launches—a full Case 2 candidate
+deck.
+Use `aurorapic_cli --validate-only <config.cfg>` to parse and validate any
+deck without constructing a simulation or taking a timestep.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI 1D and imported 2D retain per-unit omitted measures; structured planar 2D uses an explicit extrusion depth and reports total particle/field energy over that volume.
 

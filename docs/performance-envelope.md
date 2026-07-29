@@ -83,8 +83,9 @@ The current implementation is aimed at correctness and regression coverage befor
   line and solves one tridiagonal system per periodic mode, giving
   `O(Ndirect * Nperiodic * log(Nperiodic))` arithmetic. Composite periodic
   extents use mixed-radix FFTs and prime extents use Bluestein convolution.
-  The core regression includes one field-only 320 by 400 LANDMARK-grid vacuum
-  solve, but that bounded correctness check is not a campaign benchmark;
+  The core regression includes one field-only 500 axial by 256 azimuthal cell
+  LANDMARK-grid vacuum solve (501 by 256 AuroraPIC nodes), but that bounded
+  correctness check is not a campaign benchmark;
 - imported-mesh particle lookup depending on spatial-bin occupancy; the FEM quadrature, mixed-boundary contributions, constrained CSR operator, and Jacobi diagonal are assembled once per simulation, while charge right-hand-side formation, preconditioned-CG iterations, and field recovery remain per-step costs;
 - output volume proportional to written field nodes, particle sample count, and output frequency.
 

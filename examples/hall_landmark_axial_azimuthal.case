@@ -8,12 +8,25 @@ status = reduced_integration_only
 doi = 10.1088/1361-6595/ab46c5
 domain_x_m = 0.025
 domain_y_m = 0.0128
-production_nx = 500
-production_ny = 256
+production_cells_x = 500
+production_cells_y = 256
+aurorapic_nodes_x = 501
+aurorapic_nodes_y = 256
 production_dt_s = 5e-12
 production_steps = 4000000
 discharge_voltage_v = 200
 initial_density_m3 = 5e16
+
+[provenance]
+article_title = 2D axial-azimuthal particle-in-cell benchmark for low-temperature partially magnetized plasmas
+article_url = https://doi.org/10.1088/1361-6595/ab46c5
+public_dataset_doi = 10.7302/5mfm-as86
+public_dataset_url = https://deepblue.lib.umich.edu/data/concern/data_sets/vq27zp39n
+public_dataset_variant = WarpX Case 2, 512 axial by 256 azimuthal cells
+public_dataset_license = CC0 1.0
+public_dataset_archive_name = baseline_20us.tar
+public_dataset_display_size = 29 GB
+public_dataset_file_set_id = m900nv362
 
 [magnetic_field]
 file = hall_landmark_b_profile.dat

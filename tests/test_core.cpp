@@ -1578,7 +1578,7 @@ int main() {
             electrodes.left.potential = 200.0;
             electrodes.right.potential = 0.0;
             pic::Mesh2D mesh(
-                320, 400, 0.025, 0.0128,
+                501, 256, 0.025, 0.0128,
                 pic::Boundary::Dirichlet,
                 pic::Boundary::Periodic,
                 electrodes);
@@ -1599,7 +1599,7 @@ int main() {
             }
             require(
                 maximum_phi_error < 1e-10,
-                "LANDMARK-grid mixed spectral-tridiagonal vacuum solve exceeded tolerance");
+                "500-by-256-cell LANDMARK mixed spectral-tridiagonal vacuum solve exceeded tolerance");
         }
         {
             pic::Mesh2D mesh(
