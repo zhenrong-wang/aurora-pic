@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -40,6 +41,11 @@ struct ExternalSpeciesExpectation {
     std::size_t particle_count{0};
 };
 
+using ExternalParticleRecordConsumer = std::function<void(
+    std::size_t species_index,
+    std::size_t record_index,
+    const ExternalParticleRecord& record)>;
+
 ExternalParticleState load_external_particle_state(
     const std::filesystem::path& path,
     std::size_t max_particles);
@@ -57,6 +63,16 @@ ExternalParticleState load_validated_external_particle_state(
     UnitSystem unit_system,
     const std::vector<ExternalSpeciesExpectation>& expected_species,
     const std::string& context,
+    std::optional<std::uint64_t> expected_signature = {});
+
+ExternalParticleStateMetadata
+load_validated_external_particle_state_bounded(
+    const std::filesystem::path& path,
+    std::size_t spatial_dimension,
+    UnitSystem unit_system,
+    const std::vector<ExternalSpeciesExpectation>& expected_species,
+    const std::string& context,
+    const ExternalParticleRecordConsumer& consumer,
     std::optional<std::uint64_t> expected_signature = {});
 
 std::uint64_t external_particle_state_signature(

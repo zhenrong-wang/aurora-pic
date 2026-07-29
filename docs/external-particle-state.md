@@ -83,10 +83,25 @@ same semantic signature before writing a run configuration.
 
 ## Scope and high-volume path
 
-The text backend is deliberately bounded by the exact configured population
-and is intended for auditable small/medium preprocessing and interoperability
-tests. The in-memory loader separates record validation from the storage
-backend so a future optional openPMD/HDF5 implementation can map particle
-position and velocity records onto the same runtime contract. Version 1 is not
-an openPMD file and should not be presented as one. Large production
-populations still require the planned chunked HDF5/openPMD backend.
+The public API supports both an in-memory state object for preprocessors and
+`load_validated_external_particle_state_bounded` for runtime ingestion. The
+bounded path verifies metadata, species counts, the canonical signature, and
+file stability before delivering any records. Its consumer receives the
+configured species index, the record index within that species, and one
+time-centered record. Structured and imported simulation paths use this API
+to populate their own particle arrays directly, avoiding a second
+particle-sized record container.
+
+Canonical signatures group records by sorted species name, while version 1
+permits interleaved records. The bounded text reader therefore scans the file
+once per configured species to reproduce the canonical signature, then once
+to deliver validated records. Auxiliary reader memory is proportional to the
+species count, at the cost of repeated text parsing. This tradeoff is
+appropriate for portable preprocessing and moderate data sets, not
+high-volume production I/O.
+
+The consumer boundary is deliberate: a future optional openPMD/HDF5 reader
+can deliver chunks into the same simulation-owned arrays without changing
+geometry validation or particle conversion. Version 1 is not an openPMD file
+and should not be presented as one. Large production populations still
+require the planned chunked HDF5/openPMD backend.

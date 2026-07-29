@@ -1011,8 +1011,19 @@ void UnstructuredSimulation2D::initialize() {
             flux = {};
         }
     }
-    std::optional<ExternalParticleState> external_state;
-    if (!config_.initial_state_path.empty()) {
+    const bool external_state =
+        !config_.initial_state_path.empty();
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        const auto particle_count =
+            species_configs_[species_id].particles;
+        species_[species_id].particles().assign(
+            particle_count, Particle2D{});
+        particle_locations_[species_id].assign(
+            particle_count,
+            UnstructuredParticleLocation2D{});
+    }
+    if (external_state) {
         std::vector<ExternalSpeciesExpectation> expected;
         expected.reserve(species_.size());
         for (const auto& species : species_) {
@@ -1020,78 +1031,78 @@ void UnstructuredSimulation2D::initialize() {
                 species.name(),
                 species.config().particles});
         }
-        external_state =
-            load_validated_external_particle_state(
+        initial_state_metadata_ =
+            load_validated_external_particle_state_bounded(
                 config_.initial_state_path, 2,
                 config_.units.system, expected,
                 "unstructured 2D simulation",
-                config_.initial_state_signature);
-        initial_state_metadata_ =
-            external_particle_state_metadata(*external_state);
-    }
-    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
-        auto& particles = species_[species_id].particles();
-        auto& locations = particle_locations_[species_id];
-        const auto& species_config = species_configs_[species_id];
-        particles.assign(species_config.particles, Particle2D{});
-        locations.assign(species_config.particles, UnstructuredParticleLocation2D{});
-        if (external_state) {
-            const auto& records =
-                external_state->species.at(
-                    species_config.name);
-            for (std::size_t particle_index = 0;
-                 particle_index < records.size();
-                 ++particle_index) {
-                const auto& record = records[particle_index];
-                const Vec2 position{
-                    record.position.x,
-                    record.position.y};
-                const auto location =
-                    mesh_.locate_point(position);
-                if (!location) {
-                    throw std::runtime_error(
-                        "external particle for species '" +
-                        species_config.name +
-                        "' lies outside the imported mesh");
-                }
-                if (species_config.initialization_minimum) {
-                    const Vec2 minimum =
-                        *species_config.initialization_minimum;
-                    const Vec2 maximum =
-                        *species_config.initialization_maximum;
-                    if (position.x < minimum.x ||
-                        position.x > maximum.x ||
-                        position.y < minimum.y ||
-                        position.y > maximum.y) {
+                [&](std::size_t species_id,
+                    std::size_t particle_index,
+                    const ExternalParticleRecord& record) {
+                    auto& particles =
+                        species_[species_id].particles();
+                    auto& locations =
+                        particle_locations_[species_id];
+                    const auto& species_config =
+                        species_configs_[species_id];
+                    const Vec2 position{
+                        record.position.x,
+                        record.position.y};
+                    const auto location =
+                        mesh_.locate_point(position);
+                    if (!location) {
                         throw std::runtime_error(
                             "external particle for species '" +
                             species_config.name +
-                            "' lies outside its configured initialization bounds");
+                            "' lies outside the imported mesh");
                     }
-                }
-                if (!species_config.initialization_region.empty() &&
-                    mesh_.topology()
-                            .cell_by_id(location->cell_id)
-                            .label !=
-                        species_config.initialization_region) {
-                    throw std::runtime_error(
-                        "external particle for species '" +
-                        species_config.name +
-                        "' lies outside its configured initialization region");
-                }
-                auto& particle = particles[particle_index];
-                particle.position = position;
-                particle.velocity = {
-                    record.velocity.x,
-                    record.velocity.y};
-                particle.velocity_z =
-                    record.velocity.z;
-                particle.velocity_half =
-                    particle.velocity;
-                particle.velocity_half_z =
-                    particle.velocity_z;
-                particle.alive = true;
-            }
+                    if (species_config.initialization_minimum) {
+                        const Vec2 minimum =
+                            *species_config.initialization_minimum;
+                        const Vec2 maximum =
+                            *species_config.initialization_maximum;
+                        if (position.x < minimum.x ||
+                            position.x > maximum.x ||
+                            position.y < minimum.y ||
+                            position.y > maximum.y) {
+                            throw std::runtime_error(
+                                "external particle for species '" +
+                                species_config.name +
+                                "' lies outside its configured initialization bounds");
+                        }
+                    }
+                    if (!species_config.initialization_region.empty() &&
+                        mesh_.topology()
+                                .cell_by_id(location->cell_id)
+                                .label !=
+                            species_config.initialization_region) {
+                        throw std::runtime_error(
+                            "external particle for species '" +
+                            species_config.name +
+                            "' lies outside its configured initialization region");
+                    }
+                    auto& particle =
+                        particles.at(particle_index);
+                    particle.position = position;
+                    particle.velocity = {
+                        record.velocity.x,
+                        record.velocity.y};
+                    particle.velocity_z =
+                        record.velocity.z;
+                    particle.velocity_half =
+                        particle.velocity;
+                    particle.velocity_half_z =
+                        particle.velocity_z;
+                    particle.alive = true;
+                    locations.at(particle_index) = {
+                        *location, true};
+                },
+                config_.initial_state_signature);
+    }
+    for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+        auto& particles = species_[species_id].particles();
+        const auto& species_config = species_configs_[species_id];
+        if (external_state) {
             continue;
         }
         std::size_t profile_attempts = 0;

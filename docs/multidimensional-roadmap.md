@@ -129,8 +129,11 @@ time-centered records across structured 1D/2D/3D and imported 2D, validates
 units/species/counts/geometry, rebuilds the self-consistent half step, and
 feeds the same audits and acceptance gates. Deterministic writing, canonical
 semantic signatures, optional signature pinning, and explicit source
-provenance now harden that interchange contract. Chunked openPMD/HDF5 storage
-is the next scalability extension to this backend-neutral contract.
+provenance now harden that interchange contract. A validated record-consumer
+path now populates simulation-owned arrays without retaining a second
+particle-sized state, establishing the bounded-memory adapter boundary for a
+future chunked openPMD/HDF5 backend. Native chunked storage remains the next
+I/O scalability extension to this contract.
 The collision baseline now includes strict tabulated cross-section ingestion,
 elastic/excitation null-collision sampling, conservative rate-bound
 enforcement, channel diagnostics, and checkpoint fingerprints while retaining

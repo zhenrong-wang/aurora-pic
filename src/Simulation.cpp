@@ -212,43 +212,43 @@ void Simulation::initialize() {
                 species.name(),
                 species.config().particles});
         }
-        const auto state =
-            load_validated_external_particle_state(
+        for (auto& species : species_) {
+            species.particles().resize(
+                species.config().particles);
+        }
+        initial_state_metadata_ =
+            load_validated_external_particle_state_bounded(
                 cfg_.initial_state_path, 1,
                 cfg_.units.system, expected,
                 "1D simulation",
+                [&](std::size_t species_index,
+                    std::size_t record_index,
+                    const ExternalParticleRecord& record) {
+                    auto& species =
+                        species_.at(species_index);
+                    const double minimum =
+                        species.config().init_x_min;
+                    const double maximum =
+                        species.config().init_x_max < 0.0
+                            ? grid_.length()
+                            : species.config().init_x_max;
+                    if (record.position.x < minimum ||
+                        record.position.x > maximum ||
+                        (grid_.boundary() == Boundary::Periodic &&
+                         record.position.x == grid_.length())) {
+                        throw std::runtime_error(
+                            "external particle for species '" +
+                            species.name() +
+                            "' lies outside its 1D initialization interval");
+                    }
+                    auto& particle =
+                        species.particles().at(record_index);
+                    particle.x = record.position.x;
+                    particle.v = record.velocity.x;
+                    particle.v_half = record.velocity.x;
+                    particle.alive = true;
+                },
                 cfg_.initial_state_signature);
-        initial_state_metadata_ =
-            external_particle_state_metadata(state);
-        for (auto& species : species_) {
-            const auto& records =
-                state.species.at(species.name());
-            auto& particles = species.particles();
-            particles.resize(records.size());
-            for (std::size_t index = 0;
-                 index < records.size(); ++index) {
-                const auto& record = records[index];
-                const double minimum =
-                    species.config().init_x_min;
-                const double maximum =
-                    species.config().init_x_max < 0.0
-                        ? grid_.length()
-                        : species.config().init_x_max;
-                if (record.position.x < minimum ||
-                    record.position.x > maximum ||
-                    (grid_.boundary() == Boundary::Periodic &&
-                     record.position.x == grid_.length())) {
-                    throw std::runtime_error(
-                        "external particle for species '" +
-                        species.name() +
-                        "' lies outside its 1D initialization interval");
-                }
-                particles[index].x = record.position.x;
-                particles[index].v = record.velocity.x;
-                particles[index].v_half = record.velocity.x;
-                particles[index].alive = true;
-            }
-        }
     }
     deposit_and_solve();
     for (auto& sp : species_) {

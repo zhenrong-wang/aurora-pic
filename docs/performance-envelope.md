@@ -6,6 +6,13 @@ AuroraPIC is currently a bounded electrostatic PIC prototype, not a general-purp
 
 The checked-in examples are intentionally small so they run in CI and on developer laptops. They validate integration paths and file structure, not high-resolution physics fidelity.
 
+External `.aps` initialization has bounded reader-side auxiliary memory:
+records are validated and delivered directly into simulation-owned arrays
+without retaining a second particle population. Because the canonical
+signature is species-sorted while text records may be interleaved, the
+portable reader performs one scan per species plus one delivery scan. This is
+a memory-scaling guarantee, not a high-volume I/O throughput claim.
+
 | Example | Dimension | Mesh | Particles | Steps | Main coverage |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `examples/external_state_1d.cfg` | 1D1V | 32 cells | 4 | 2 | Versioned external `.aps` state, pinned semantic signature, provenance audit, rebuilt half step, and charge/current/pair acceptance gates. |

@@ -109,11 +109,17 @@ void hash_double(std::uint64_t& hash, double value) {
         hash, std::bit_cast<std::uint64_t>(value));
 }
 
-} // namespace
+struct ParticleStateScan {
+    ExternalParticleStateMetadata metadata;
+    std::map<std::string, std::size_t> species_counts;
+    std::uint64_t file_order_fingerprint{0};
+};
 
-ExternalParticleState load_external_particle_state(
+template <typename Consumer>
+ParticleStateScan scan_external_particle_state(
     const std::filesystem::path& path,
-    std::size_t max_particles) {
+    std::size_t max_particles,
+    Consumer&& consumer) {
     if (max_particles == 0) {
         throw std::invalid_argument(
             "external particle-state limit must be positive");
@@ -132,11 +138,11 @@ ExternalParticleState load_external_particle_state(
             path.string());
     }
 
-    ExternalParticleState state;
+    ParticleStateScan scan;
     require_key(input, "dimension", path);
-    input >> state.spatial_dimension;
-    if (!input || state.spatial_dimension == 0 ||
-        state.spatial_dimension > 3) {
+    input >> scan.metadata.spatial_dimension;
+    if (!input || scan.metadata.spatial_dimension == 0 ||
+        scan.metadata.spatial_dimension > 3) {
         throw std::runtime_error(
             "external particle state has invalid dimension");
     }
@@ -144,7 +150,8 @@ ExternalParticleState load_external_particle_state(
     require_key(input, "units", path);
     std::string units;
     input >> units;
-    state.unit_system = parse_unit_system(units, path);
+    scan.metadata.unit_system =
+        parse_unit_system(units, path);
 
     require_key(input, "weighting", path);
     std::string weighting;
@@ -163,16 +170,27 @@ ExternalParticleState load_external_particle_state(
     }
 
     require_key(input, "particle_count", path);
-    input >> state.particle_count;
-    if (!input || state.particle_count == 0 ||
-        state.particle_count > max_particles) {
+    input >> scan.metadata.particle_count;
+    if (!input || scan.metadata.particle_count == 0 ||
+        scan.metadata.particle_count > max_particles) {
         throw std::runtime_error(
             "external particle-state count is zero, invalid, or exceeds the configured limit");
     }
 
+    std::uint64_t fingerprint =
+        14695981039346656037ULL;
+    hash_string(fingerprint, particle_state_magic);
+    hash_uint64(fingerprint, scan.metadata.version);
+    hash_uint64(
+        fingerprint, scan.metadata.spatial_dimension);
+    hash_string(
+        fingerprint, to_string(scan.metadata.unit_system));
+    hash_uint64(
+        fingerprint, scan.metadata.particle_count);
+
     require_key(input, "records", path);
     for (std::size_t index = 0;
-         index < state.particle_count; ++index) {
+         index < scan.metadata.particle_count; ++index) {
         require_key(input, "particle", path);
         std::string species;
         ExternalParticleRecord record;
@@ -186,19 +204,29 @@ ExternalParticleState load_external_particle_state(
                 std::to_string(index) + " in: " +
                 path.string());
         }
-        if (state.spatial_dimension < 3 &&
+        if (scan.metadata.spatial_dimension < 3 &&
             record.position.z != 0.0) {
             throw std::runtime_error(
                 "external particle state has nonzero inactive z position");
         }
-        if (state.spatial_dimension == 1 &&
+        if (scan.metadata.spatial_dimension == 1 &&
             (record.position.y != 0.0 ||
              record.velocity.y != 0.0 ||
              record.velocity.z != 0.0)) {
             throw std::runtime_error(
                 "1D1V external particle state has nonzero inactive components");
         }
-        state.species[species].push_back(record);
+        auto& species_count =
+            scan.species_counts[species];
+        const auto species_index = species_count++;
+        hash_string(fingerprint, species);
+        hash_double(fingerprint, record.position.x);
+        hash_double(fingerprint, record.position.y);
+        hash_double(fingerprint, record.position.z);
+        hash_double(fingerprint, record.velocity.x);
+        hash_double(fingerprint, record.velocity.y);
+        hash_double(fingerprint, record.velocity.z);
+        consumer(species, species_index, record);
     }
     require_key(input, "end", path);
     std::string trailing;
@@ -207,6 +235,29 @@ ExternalParticleState load_external_particle_state(
             "external particle state contains trailing data: " +
             path.string());
     }
+    scan.file_order_fingerprint = fingerprint;
+    return scan;
+}
+
+} // namespace
+
+ExternalParticleState load_external_particle_state(
+    const std::filesystem::path& path,
+    std::size_t max_particles) {
+    ExternalParticleState state;
+    const auto scan = scan_external_particle_state(
+        path, max_particles,
+        [&](const std::string& species,
+            std::size_t,
+            const ExternalParticleRecord& record) {
+            state.species[species].push_back(record);
+        });
+    state.version = scan.metadata.version;
+    state.spatial_dimension =
+        scan.metadata.spatial_dimension;
+    state.unit_system = scan.metadata.unit_system;
+    state.particle_count =
+        scan.metadata.particle_count;
     state.signature =
         external_particle_state_signature(state);
     return state;
@@ -310,6 +361,181 @@ ExternalParticleState load_validated_external_particle_state(
             std::to_string(state.signature));
     }
     return state;
+}
+
+ExternalParticleStateMetadata
+load_validated_external_particle_state_bounded(
+    const std::filesystem::path& path,
+    std::size_t spatial_dimension,
+    UnitSystem unit_system,
+    const std::vector<ExternalSpeciesExpectation>& expected_species,
+    const std::string& context,
+    const ExternalParticleRecordConsumer& consumer,
+    std::optional<std::uint64_t> expected_signature) {
+    if (!consumer) {
+        throw std::invalid_argument(
+            context +
+            " external particle-state consumer is empty");
+    }
+
+    struct ExpectedSpecies {
+        std::size_t configured_index{0};
+        std::size_t particle_count{0};
+    };
+    std::map<std::string, ExpectedSpecies> canonical_species;
+    std::size_t expected_total = 0;
+    for (std::size_t index = 0;
+         index < expected_species.size(); ++index) {
+        const auto& species = expected_species[index];
+        if (species.name.empty() ||
+            !canonical_species.emplace(
+                species.name,
+                ExpectedSpecies{
+                    index, species.particle_count}).second) {
+            throw std::invalid_argument(
+                context +
+                " requires unique non-empty configured species names");
+        }
+        if (species.particle_count >
+            std::numeric_limits<std::size_t>::max() -
+                expected_total) {
+            throw std::overflow_error(
+                context +
+                " configured particle count overflow");
+        }
+        expected_total += species.particle_count;
+    }
+    if (expected_total == 0) {
+        throw std::invalid_argument(
+            context +
+            " external state requires configured particles");
+    }
+
+    std::uint64_t signature =
+        14695981039346656037ULL;
+    hash_string(signature, particle_state_magic);
+    hash_uint64(signature, 1);
+    hash_uint64(signature, spatial_dimension);
+    hash_string(signature, to_string(unit_system));
+    hash_uint64(signature, expected_total);
+    hash_uint64(signature, canonical_species.size());
+
+    std::optional<ParticleStateScan> baseline;
+    for (const auto& [species_name, expectation] :
+         canonical_species) {
+        hash_string(signature, species_name);
+        hash_uint64(
+            signature, expectation.particle_count);
+        const auto scan = scan_external_particle_state(
+            path, expected_total,
+            [&](const std::string& record_species,
+                std::size_t,
+                const ExternalParticleRecord& record) {
+                if (record_species != species_name) return;
+                hash_double(signature, record.position.x);
+                hash_double(signature, record.position.y);
+                hash_double(signature, record.position.z);
+                hash_double(signature, record.velocity.x);
+                hash_double(signature, record.velocity.y);
+                hash_double(signature, record.velocity.z);
+            });
+        if (!baseline) {
+            if (scan.metadata.version != 1 ||
+                scan.metadata.spatial_dimension !=
+                    spatial_dimension) {
+                throw std::invalid_argument(
+                    context +
+                    " external particle-state dimension or version does not match");
+            }
+            if (scan.metadata.unit_system != unit_system) {
+                throw std::invalid_argument(
+                    context +
+                    " external particle-state unit system does not match");
+            }
+            if (scan.metadata.particle_count !=
+                expected_total) {
+                throw std::invalid_argument(
+                    context +
+                    " external total particle count does not match config");
+            }
+            for (const auto& [name, count] :
+                 scan.species_counts) {
+                const auto expected =
+                    canonical_species.find(name);
+                if (expected == canonical_species.end()) {
+                    throw std::invalid_argument(
+                        context +
+                        " external particle state contains unknown species '" +
+                        name + "'");
+                }
+                if (count !=
+                    expected->second.particle_count) {
+                    throw std::invalid_argument(
+                        context +
+                        " external particle count for species '" +
+                        name + "' does not match config");
+                }
+            }
+            for (const auto& [name, expectation] :
+                 canonical_species) {
+                (void)expectation;
+                if (!scan.species_counts.contains(name)) {
+                    throw std::invalid_argument(
+                        context +
+                        " external particle state is missing species '" +
+                        name + "'");
+                }
+            }
+            baseline = scan;
+        } else if (
+            scan.file_order_fingerprint !=
+                baseline->file_order_fingerprint ||
+            scan.species_counts !=
+                baseline->species_counts) {
+            throw std::runtime_error(
+                context +
+                " external particle state changed while it was being read");
+        }
+    }
+
+    if (expected_signature &&
+        signature != *expected_signature) {
+        throw std::invalid_argument(
+            context +
+            " external particle-state signature mismatch: expected " +
+            std::to_string(*expected_signature) + ", got " +
+            std::to_string(signature));
+    }
+
+    const auto final_scan = scan_external_particle_state(
+        path, expected_total,
+        [&](const std::string& species_name,
+            std::size_t record_index,
+            const ExternalParticleRecord& record) {
+            const auto expected =
+                canonical_species.find(species_name);
+            if (expected == canonical_species.end()) {
+                throw std::runtime_error(
+                    context +
+                    " external particle state changed while it was being read");
+            }
+            consumer(
+                expected->second.configured_index,
+                record_index, record);
+        });
+    if (!baseline ||
+        final_scan.file_order_fingerprint !=
+            baseline->file_order_fingerprint ||
+        final_scan.species_counts !=
+            baseline->species_counts) {
+        throw std::runtime_error(
+            context +
+            " external particle state changed while it was being read");
+    }
+
+    auto metadata = baseline->metadata;
+    metadata.signature = signature;
+    return metadata;
 }
 
 std::uint64_t external_particle_state_signature(

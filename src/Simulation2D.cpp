@@ -215,64 +215,63 @@ void Simulation2D::initialize() {
                 species.name(),
                 species.config().particles});
         }
-        const auto state =
-            load_validated_external_particle_state(
+        for (auto& species : species_) {
+            species.particles().resize(
+                species.config().particles);
+        }
+        initial_state_metadata_ =
+            load_validated_external_particle_state_bounded(
                 cfg_.initial_state_path, 2,
                 cfg_.units.system, expected,
                 "2D simulation",
+                [&](std::size_t species_index,
+                    std::size_t record_index,
+                    const ExternalParticleRecord& record) {
+                    auto& species =
+                        species_.at(species_index);
+                    const auto& species_config =
+                        species.config();
+                    const double maximum_x =
+                        species_config.init_x_max < 0.0
+                            ? mesh_.length_x()
+                            : species_config.init_x_max;
+                    const double maximum_y =
+                        species_config.init_y_max < 0.0
+                            ? mesh_.length_y()
+                            : species_config.init_y_max;
+                    const bool outside =
+                        record.position.x <
+                            species_config.init_x_min ||
+                        record.position.x > maximum_x ||
+                        record.position.y <
+                            species_config.init_y_min ||
+                        record.position.y > maximum_y ||
+                        (mesh_.boundary() == Boundary::Periodic &&
+                         (record.position.x == mesh_.length_x() ||
+                          record.position.y == mesh_.length_y()));
+                    if (outside) {
+                        throw std::runtime_error(
+                            "external particle for species '" +
+                            species.name() +
+                            "' lies outside the 2D domain");
+                    }
+                    auto& particle =
+                        species.particles().at(record_index);
+                    particle.position = {
+                        record.position.x,
+                        record.position.y};
+                    particle.velocity = {
+                        record.velocity.x,
+                        record.velocity.y};
+                    particle.velocity_z =
+                        record.velocity.z;
+                    particle.velocity_half =
+                        particle.velocity;
+                    particle.velocity_half_z =
+                        particle.velocity_z;
+                    particle.alive = true;
+                },
                 cfg_.initial_state_signature);
-        initial_state_metadata_ =
-            external_particle_state_metadata(state);
-        for (auto& species : species_) {
-            const auto& records =
-                state.species.at(species.name());
-            auto& particles = species.particles();
-            particles.resize(records.size());
-            for (std::size_t index = 0;
-                 index < records.size(); ++index) {
-                const auto& record = records[index];
-                const auto& species_config =
-                    species.config();
-                const double maximum_x =
-                    species_config.init_x_max < 0.0
-                        ? mesh_.length_x()
-                        : species_config.init_x_max;
-                const double maximum_y =
-                    species_config.init_y_max < 0.0
-                        ? mesh_.length_y()
-                        : species_config.init_y_max;
-                const bool outside =
-                    record.position.x <
-                        species_config.init_x_min ||
-                    record.position.x > maximum_x ||
-                    record.position.y <
-                        species_config.init_y_min ||
-                    record.position.y > maximum_y ||
-                    (mesh_.boundary() == Boundary::Periodic &&
-                     (record.position.x == mesh_.length_x() ||
-                      record.position.y == mesh_.length_y()));
-                if (outside) {
-                    throw std::runtime_error(
-                        "external particle for species '" +
-                        species.name() +
-                        "' lies outside the 2D domain");
-                }
-                auto& particle = particles[index];
-                particle.position = {
-                    record.position.x,
-                    record.position.y};
-                particle.velocity = {
-                    record.velocity.x,
-                    record.velocity.y};
-                particle.velocity_z =
-                    record.velocity.z;
-                particle.velocity_half =
-                    particle.velocity;
-                particle.velocity_half_z =
-                    particle.velocity_z;
-                particle.alive = true;
-            }
-        }
     }
     deposit_and_solve();
     for (auto& sp : species_) {

@@ -645,6 +645,90 @@ int main() {
                     state.species.at("electrons").size() == 2 &&
                     state.signature != 0,
                 "external particle-state loader lost metadata or records");
+            std::vector<pic::ExternalParticleRecord>
+                bounded_records(2);
+            const auto bounded_metadata =
+                pic::load_validated_external_particle_state_bounded(
+                    state_path, 1,
+                    pic::UnitSystem::Normalized,
+                    {{"electrons", 2}}, "test",
+                    [&](std::size_t species_index,
+                        std::size_t record_index,
+                        const pic::ExternalParticleRecord& record) {
+                        require(
+                            species_index == 0,
+                            "bounded external reader changed configured species indexing");
+                        bounded_records.at(record_index) =
+                            record;
+                    },
+                    state.signature);
+            require(
+                bounded_metadata.signature ==
+                    state.signature &&
+                    bounded_metadata.particle_count == 2,
+                "bounded external reader changed state metadata");
+            require_near(
+                bounded_records[1].velocity.x, -0.5,
+                1e-15,
+                "bounded external reader changed record ordering");
+            std::size_t rejected_consumer_calls = 0;
+            require_throws(
+                [&] {
+                    (void)pic::load_validated_external_particle_state_bounded(
+                        state_path, 1,
+                        pic::UnitSystem::Normalized,
+                        {{"electrons", 2}}, "test",
+                        [&](std::size_t,
+                            std::size_t,
+                            const pic::ExternalParticleRecord&) {
+                            ++rejected_consumer_calls;
+                        },
+                        state.signature + 1);
+                },
+                "bounded external reader accepted a signature mismatch");
+            require(
+                rejected_consumer_calls == 0,
+                "bounded external reader consumed records before integrity validation");
+            const auto interleaved_path =
+                std::filesystem::path(
+                    "test_external_particle_state_interleaved.aps");
+            write_particle_state(
+                interleaved_path, 1, 4,
+                "particle electrons 0.1 0 0 1 0 0\n"
+                "particle ions 0.2 0 0 2 0 0\n"
+                "particle electrons 0.3 0 0 3 0 0\n"
+                "particle ions 0.4 0 0 4 0 0\n");
+            const auto interleaved =
+                pic::load_external_particle_state(
+                    interleaved_path, 4);
+            std::vector<std::vector<double>>
+                delivered_positions(2);
+            const auto interleaved_metadata =
+                pic::load_validated_external_particle_state_bounded(
+                    interleaved_path, 1,
+                    pic::UnitSystem::Normalized,
+                    {{"ions", 2}, {"electrons", 2}},
+                    "interleaved test",
+                    [&](std::size_t species_index,
+                        std::size_t record_index,
+                        const pic::ExternalParticleRecord& record) {
+                        auto& positions =
+                            delivered_positions.at(species_index);
+                        require(
+                            record_index == positions.size(),
+                            "bounded reader changed per-species record indexing");
+                        positions.push_back(record.position.x);
+                    },
+                    interleaved.signature);
+            require(
+                interleaved_metadata.signature ==
+                    interleaved.signature &&
+                    delivered_positions[0] ==
+                        std::vector<double>({0.2, 0.4}) &&
+                    delivered_positions[1] ==
+                        std::vector<double>({0.1, 0.3}),
+                "bounded reader changed interleaved species delivery");
+            std::filesystem::remove(interleaved_path);
             const auto roundtrip_path =
                 std::filesystem::path(
                     "test_external_particle_state_roundtrip.aps");
