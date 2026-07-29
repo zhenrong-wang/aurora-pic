@@ -31,6 +31,7 @@ struct VolumetricPairSource2DConfig {
     std::string first_species{};
     std::string second_species{};
     std::size_t pairs_per_step{0};
+    std::optional<double> represented_pair_rate{};
     std::size_t start_step{0};
     std::size_t end_step{0}; // zero keeps the source active indefinitely
     double x_min{0.0};
@@ -41,12 +42,15 @@ struct VolumetricPairSource2DConfig {
     Vec3 second_drift{};
     double first_thermal_velocity{0.0};
     double second_thermal_velocity{0.0};
+    ParticleInitializationConfig spatial_profile{};
 };
 
 struct VolumetricPairSource2DDiagnostics {
     std::string name{};
     std::size_t macro_pairs_created{0};
     double represented_pairs_created{0.0};
+    double fractional_macro_pair_remainder{0.0};
+    double injected_kinetic_energy{0.0};
 };
 
 struct Simulation2DConfig {

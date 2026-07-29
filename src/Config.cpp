@@ -864,9 +864,17 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
             throw std::runtime_error(
                 label + " source species must be distinct");
         }
-        if (source.pairs_per_step == 0) {
+        const bool fixed_rate = source.pairs_per_step != 0;
+        const bool physical_rate =
+            source.represented_pair_rate.has_value();
+        if (fixed_rate == physical_rate) {
             throw std::runtime_error(
-                label + " pairs_per_step must be positive");
+                label + " requires exactly one of positive pairs_per_step or represented_pair_rate");
+        }
+        if (source.represented_pair_rate) {
+            validate_positive(
+                *source.represented_pair_rate,
+                label + " represented_pair_rate");
         }
         if (source.end_step != 0 &&
             source.end_step <= source.start_step) {
@@ -899,6 +907,9 @@ void validate_config_2d(const Simulation2DConfig& cfg) {
         validate_non_negative(
             source.second_thermal_velocity,
             label + " second_thermal_velocity");
+        validate_density_profile(
+            source.spatial_profile, 2, 1,
+            label + " spatial profile");
     }
 }
 
@@ -1481,11 +1492,16 @@ Simulation2DConfig load_config_2d(const std::string& path) {
     };
     static const std::unordered_set<std::string> source_keys{
         "first_species", "second_species", "pairs_per_step",
+        "represented_pair_rate",
         "start_step", "end_step", "x_min", "x_max", "y_min", "y_max",
         "first_drift_velocity_x", "first_drift_velocity_y",
         "first_drift_velocity_z", "second_drift_velocity_x",
         "second_drift_velocity_y", "second_drift_velocity_z",
-        "first_thermal_velocity", "second_thermal_velocity"
+        "first_thermal_velocity", "second_thermal_velocity",
+        "density_profile", "profile_center_x", "profile_center_y",
+        "profile_scale_x", "profile_scale_y", "profile_amplitude",
+        "profile_phase", "profile_mode_x", "profile_mode_y",
+        "max_profile_sampling_attempts"
     };
 
     auto blocks = parse_config_blocks(
@@ -1628,6 +1644,10 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             block.values, "second_species", "");
         source.pairs_per_step = as<std::size_t>(
             block.values, "pairs_per_step", 0);
+        if (block.values.count("represented_pair_rate")) {
+            source.represented_pair_rate = as<double>(
+                block.values, "represented_pair_rate", 0.0);
+        }
         source.start_step = as<std::size_t>(
             block.values, "start_step", source.start_step);
         source.end_step = as<std::size_t>(
@@ -1656,6 +1676,8 @@ Simulation2DConfig load_config_2d(const std::string& path) {
             block.values, "first_thermal_velocity", 0.0);
         source.second_thermal_velocity = as<double>(
             block.values, "second_thermal_velocity", 0.0);
+        parse_density_profile(
+            block.values, source.spatial_profile, 2);
         cfg.sources.push_back(std::move(source));
     }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) cfg.checkpoint_interval = cfg.output_interval;

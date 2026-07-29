@@ -147,17 +147,25 @@ Imported runs are reachable from the CLI with `mesh = imported`. Their checkpoin
 Imported boundary sources inject a configured integer number of macro-particles at the beginning of each active timestep. Boundary faces sharing a physical label are selected by length, then sampled uniformly along the selected face and inset into the adjacent domain. The configured normal velocity is inward; thermal normal speed uses an inward half-range Gaussian magnitude, while tangential and out-of-plane thermal velocities remain signed Gaussian. New particles are initialized into the same leapfrog/Boris time staggering as initial particles before joining the push. Dead storage slots are reused deterministically. Imported checkpoint v6 records the source identity, schedule, three-component velocity parameters, cumulative counts, dynamic particle state, RNG state, and unit contract so continuation reproduces uninterrupted injection.
 
 Structured 2D volumetric pair sources run at the same beginning-of-step point.
-Every event samples a single position uniformly inside its configured
-rectangle and creates both configured species there. The species have
-independent three-component drift and isotropic thermal velocities, but must
-carry opposite equal charge and equal macro weight. Thus deposited source
-charge cancels exactly at creation and one macro-pair has one well-defined
-represented physical-pair count. Capacity is checked for both species before
-an event batch is changed; dead slots are reused deterministically. Separate
-source diagnostics report cumulative macro/represented pairs and the
-configured rate, while structured checkpoint v4 preserves source counters and
-RNG state. This is a prescribed uniform-box source, not a collision,
-neutral-depletion, or arbitrary spatial-rate model.
+Every event samples one position inside its configured rectangle and creates
+both species there. Uniform, Gaussian, and sinusoidal profile envelopes reuse
+the bounded rejection sampler used by initialization; these profiles are
+normalized probability shapes and therefore do not change the configured
+integral source rate. The species have independent three-component drift and
+isotropic thermal velocities, but must carry opposite equal charge and equal
+macro weight. Thus deposited source charge cancels exactly at creation and
+one macro-pair has one well-defined represented physical-pair count.
+
+A source selects either an integer macro-pair count per active step or a total
+represented-pair rate. For the latter, each active step adds
+`rate * dt / macro_weight` to a deterministic fractional accumulator, creates
+the integer part, and carries the remainder. Capacity is checked for both
+species before storage changes; dead slots are reused deterministically.
+Diagnostics report cumulative macro/represented pairs, the fractional
+remainder, sampled full-3V kinetic energy, and configured rate. Structured
+checkpoint v5 fingerprints the complete source definition and preserves the
+accumulator, diagnostics, particle state, and RNG. This is a prescribed
+source, not a collision, neutral-depletion, recoil, or reaction-network model.
 
 Absorbing impacts are recorded in parallel and then sorted by incident species and particle ID. This deterministic reduction accumulates species/tag-resolved macro-particle count, represented physical-particle count, charge, full three-velocity incident kinetic energy, last-step rate, and rate per tagged-boundary length. Configured secondary-emission rules are then evaluated serially. Their physical yield is converted through the incident/emitted macro weights, with stochastic rounding for fractional macro-particles and explicit per-impact/storage limits. Emitted velocities use the same inward half-range normal and signed tangential/out-of-plane distributions as sources, and emitted particles enter the pusher at the boundary-hit position inset into the domain. Imported checkpoint v6 preserves emission definitions, cumulative emitted counts, flux state, particle state, RNG state, unit metadata, and optional MCC state.
 

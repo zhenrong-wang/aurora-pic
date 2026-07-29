@@ -3664,8 +3664,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v4\n") == 0,
-                "2D pair source checkpoint did not use v4");
+                    "AuroraPIC-checkpoint-v5\n") == 0,
+                "2D pair source checkpoint did not use v5");
             for (std::size_t step = continuous.step_count();
                  step < cfg.steps; ++step) {
                 continuous.step();
@@ -3726,6 +3726,211 @@ int main() {
                 "2D pair source accepted unequal macro weights");
 
             std::filesystem::remove_all(output_dir);
+        }
+        {
+            const auto output_dir = std::filesystem::path(
+                "test_output_2d_physical_rate_source");
+            const auto checkpoint_path =
+                output_dir / "physical_rate.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Species2DConfig first;
+            first.name = "negative";
+            first.charge = -1.0;
+            first.mass = 1.0;
+            first.weight = 2.0;
+            first.particles = 4;
+            first.thermal_velocity = 0.0;
+            first.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            pic::Species2DConfig second = first;
+            second.name = "positive";
+            second.charge = 1.0;
+            second.mass = 4.0;
+
+            pic::VolumetricPairSource2DConfig source;
+            source.name = "physical_rate";
+            source.first_species = first.name;
+            source.second_species = second.name;
+            source.represented_pair_rate = 5.0;
+            source.first_drift.z = 2.0;
+            source.second_drift.z = 3.0;
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 8;
+            cfg.ny = 8;
+            cfg.dt = 0.1;
+            cfg.steps = 10;
+            cfg.output_interval = 10;
+            cfg.output_dir = output_dir;
+            cfg.max_particles_per_species = 16;
+            cfg.species = {first, second};
+            cfg.sources = {source};
+
+            pic::Simulation2D continuous(cfg);
+            continuous.initialize();
+            for (std::size_t step = 0; step < 5; ++step) {
+                continuous.step();
+            }
+            require(
+                continuous.source_diagnostics()[0]
+                        .macro_pairs_created == 1,
+                "2D physical-rate source rounded instead of accumulating");
+            require_near(
+                continuous.source_diagnostics()[0]
+                    .fractional_macro_pair_remainder,
+                0.25, 1e-14,
+                "2D physical-rate source has the wrong fractional remainder");
+            continuous.save_checkpoint(checkpoint_path);
+            for (std::size_t step = 5; step < 10; ++step) {
+                continuous.step();
+            }
+            require(
+                continuous.source_diagnostics()[0]
+                        .macro_pairs_created == 2,
+                "2D physical-rate source produced the wrong ten-step count");
+            require_near(
+                continuous.source_diagnostics()[0]
+                    .fractional_macro_pair_remainder,
+                0.5, 1e-14,
+                "2D physical-rate source lost its ten-step remainder");
+            require_near(
+                continuous.source_diagnostics()[0]
+                    .represented_pairs_created,
+                4.0, 1e-14,
+                "2D physical-rate represented-pair accounting is wrong");
+            require_near(
+                continuous.source_diagnostics()[0]
+                    .injected_kinetic_energy,
+                80.0, 1e-12,
+                "2D source-energy accounting is wrong");
+
+            pic::Simulation2D restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            for (std::size_t step = restarted.step_count();
+                 step < 10; ++step) {
+                restarted.step();
+            }
+            require_species_close(
+                continuous.species(), restarted.species(),
+                "2D physical-rate source restart");
+            require_near(
+                restarted.source_diagnostics()[0]
+                    .fractional_macro_pair_remainder,
+                0.5, 1e-14,
+                "2D source restart lost its fractional accumulator");
+            require_near(
+                restarted.source_diagnostics()[0]
+                    .injected_kinetic_energy,
+                80.0, 1e-12,
+                "2D source restart lost energy accounting");
+
+            auto refined_cfg = cfg;
+            refined_cfg.dt = 0.05;
+            refined_cfg.steps = 20;
+            pic::Simulation2D refined(refined_cfg);
+            refined.initialize();
+            for (std::size_t step = 0; step < 20; ++step) {
+                refined.step();
+            }
+            require(
+                refined.source_diagnostics()[0]
+                        .macro_pairs_created == 2,
+                "2D physical source changed production under timestep refinement");
+            require_near(
+                refined.source_diagnostics()[0]
+                    .fractional_macro_pair_remainder,
+                0.5, 1e-14,
+                "2D physical source remainder changed under timestep refinement");
+            require_near(
+                refined.source_diagnostics()[0]
+                    .represented_pairs_created,
+                continuous.source_diagnostics()[0]
+                    .represented_pairs_created,
+                1e-14,
+                "2D physical represented rate is not timestep invariant");
+
+            auto both_rates = cfg;
+            both_rates.sources[0].pairs_per_step = 1;
+            require_throws_contains(
+                [&] { pic::Simulation2D invalid(both_rates); },
+                "exactly one rate",
+                "2D source accepted two rate specifications");
+            auto no_rate = cfg;
+            no_rate.sources[0].represented_pair_rate.reset();
+            require_throws_contains(
+                [&] { pic::Simulation2D invalid(no_rate); },
+                "exactly one rate",
+                "2D source accepted no rate specification");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
+            pic::Species2DConfig negative;
+            negative.name = "negative";
+            negative.charge = -1.0;
+            negative.mass = 1.0;
+            negative.weight = 1.0;
+            negative.particles = 4;
+            negative.thermal_velocity = 0.0;
+            negative.initialization.loading =
+                pic::ParticleLoading::QuietStart;
+            auto positive = negative;
+            positive.name = "positive";
+            positive.charge = 1.0;
+
+            pic::VolumetricPairSource2DConfig source;
+            source.name = "sinusoidal_profile";
+            source.first_species = negative.name;
+            source.second_species = positive.name;
+            source.pairs_per_step = 2000;
+            source.x_min = 0.2;
+            source.x_max = 0.8;
+            source.spatial_profile.density_profile =
+                pic::DensityProfileKind::Sinusoidal;
+            source.spatial_profile.profile_amplitude = -1.0;
+            source.spatial_profile.profile_mode_x = 1;
+            source.spatial_profile
+                .max_profile_sampling_attempts = 10000;
+
+            pic::Simulation2DConfig cfg;
+            cfg.nx = 8;
+            cfg.ny = 8;
+            cfg.dt = 0.01;
+            cfg.max_particles_per_species = 2100;
+            cfg.species = {negative, positive};
+            cfg.sources = {source};
+            cfg.seed = 90817;
+
+            pic::Simulation2D simulation(cfg);
+            simulation.initialize();
+            simulation.step();
+            double cosine_moment = 0.0;
+            for (std::size_t particle = 4;
+                 particle < simulation.species()[0]
+                                .particles().size();
+                 ++particle) {
+                const auto& first_particle =
+                    simulation.species()[0].particles()[particle];
+                const auto& second_particle =
+                    simulation.species()[1].particles()[particle];
+                require_near(
+                    first_particle.position.x,
+                    second_particle.position.x, 1e-14,
+                    "profiled source separated a colocated pair");
+                const double normalized =
+                    (first_particle.position.x - source.x_min) /
+                    (source.x_max - source.x_min);
+                cosine_moment += std::cos(
+                    2.0 * std::numbers::pi * normalized);
+            }
+            cosine_moment /= 2000.0;
+            require(
+                cosine_moment > -0.56 &&
+                    cosine_moment < -0.44,
+                "2D sinusoidal source does not follow its normalized profile");
+            require_near(
+                simulation.sample().charge_l1, 0.0, 1e-12,
+                "profiled pair source introduced net deposited charge");
         }
         {
             const auto output_dir = std::filesystem::path("test_output_checkpoint_3d");

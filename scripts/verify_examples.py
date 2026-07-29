@@ -484,6 +484,8 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
         source_header == [
             "step", "time", "source", "macro_pairs_created",
             "represented_pairs_created",
+            "fractional_macro_pair_remainder",
+            "injected_kinetic_energy",
             "configured_represented_pair_rate",
         ],
         f"unexpected header in {output_dir / 'sources.csv'}",
@@ -493,7 +495,8 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
         row for row in source_rows if int(float(row[0])) == 4)
     require(
         final_source[2] == "channel_pair_seed" and
-        int(final_source[3]) == 4,
+        int(final_source[3]) == 4 and
+        abs(float(final_source[5]) - 0.2) < 1e-12,
         "Hall smoke did not create its configured source pairs",
     )
 
