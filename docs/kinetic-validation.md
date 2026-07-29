@@ -1,7 +1,7 @@
 # Kinetic verification
 
 AuroraPIC includes deterministic, quantitative linear Landau-damping,
-two-stream-instability, and orthogonal 2D Langmuir benchmarks. These
+two-stream-instability, and orthogonal 2D and 3D Langmuir benchmarks. These
 system-level physics cases check that particle loading, charge deposition, the
 periodic Poisson solve, field interpolation, leapfrog advancement, and
 diagnostics reproduce known collisionless kinetic responses together. This is
@@ -167,24 +167,61 @@ OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py \
   --report build/langmuir-2d-report.json
 ```
 
-The default invocation runs all three kinetic benchmarks sequentially. Use
-`--benchmark landau`, `--benchmark two-stream`, or
-`--benchmark langmuir-2d` to select one.
+## Orthogonal 3D Langmuir oscillations
+
+The structured 3D3V case extends the same cold, normalized Langmuir problem
+to separate x-, y-, and z-directed perturbations in a periodic
+`(2*pi)^3` domain. It therefore exercises trilinear charge deposition, the
+3D periodic Poisson solve, vector-field interpolation, 3D particle
+advancement, and scalar diagnostics along every coordinate axis.
+
+Each direction uses a 16 by 16 by 16 mesh and deterministic particle lattice
+with 4,096 electrons plus 4,096 effectively stationary ions. The timestep is
+`0.05`, and each direction runs for 320 steps with field and particle files
+disabled. The deliberately bounded mesh keeps the full default regression
+safe on developer machines. For a sinusoidal field of amplitude
+`alpha/k = 0.01`, the analytic initial field energy is
+`alpha^2*(2*pi)^3/4`.
+
+The acceptance envelope records the accuracy expected from this coarse
+regression rather than claiming a converged 3D solution. In particular, its
+2% energy-drift gate is looser than the 2D case and must not be reused as a
+production-study convergence criterion.
+
+| Quantity | Reference | Acceptance |
+| --- | ---: | ---: |
+| Angular frequency, each direction | `1` | `0.97` to `1.03` |
+| Maximum relative directional frequency spread | `0` | at most `1e-6` |
+| Maximum relative directional initial-field spread | `0` | at most `1e-6` |
+| Initial field energy, each direction | `alpha^2*(2*pi)^3/4` | `0.0059` to `0.0063` |
+| Last/first field-amplitude peak, each direction | `1` | `0.98` to `1.02` |
+| Maximum relative total-energy drift, each direction | `0` | at most `0.02` |
+
+Run only this case with:
+
+```sh
+OMP_NUM_THREADS=1 python3 scripts/validate_kinetic_benchmarks.py \
+  build/aurorapic_cli --benchmark langmuir-3d \
+  --report build/langmuir-3d-report.json
+```
+
+The default invocation runs all four kinetic benchmarks sequentially. Use
+`--benchmark landau`, `--benchmark two-stream`, `--benchmark langmuir-2d`,
+or `--benchmark langmuir-3d` to select one.
 
 ## What remains
 
 Passing these cases verifies damped and unstable collisionless electrostatic
 kinetics in the current 1D path, including nonlinear two-stream turnover, and
-cold directional plasma oscillations in structured 2D3V. It does not validate
-collision cross sections, material boundaries, imported geometry, warm
-multidimensional dispersion or damping, steady-state convergence,
-electromagnetic fields, or a real thruster/discharge.
+cold directional plasma oscillations in structured 2D3V and 3D3V. It does
+not validate collision cross sections, material boundaries, imported
+geometry, warm multidimensional dispersion or damping, steady-state
+convergence, electromagnetic fields, or a real thruster/discharge.
 
 The next verification and validation ladder is:
 
-1. add the orthogonal 3D Langmuir-mode benchmark;
-2. reproduce the published Turner helium capacitively coupled plasma
+1. reproduce the published Turner helium capacitively coupled plasma
    benchmark with an authoritative open collision dataset;
-3. add an imported-geometry probe current-voltage comparison;
-4. target the LANDMARK Hall-thruster benchmark after the required
+2. add an imported-geometry probe current-voltage comparison;
+3. target the LANDMARK Hall-thruster benchmark after the required
    magnetic-field, source, collision, and parallel-runtime capabilities exist.

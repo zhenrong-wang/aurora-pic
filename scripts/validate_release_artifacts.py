@@ -133,6 +133,7 @@ def validate_performance_doc() -> None:
         "examples/two_stream.cfg",
         "two-stream",
         "Langmuir",
+        "3D Langmuir",
         "examples/plasma_3d.cfg",
         "self-consistent electromagnetic field update",
         "not a general-purpose plasma production platform",

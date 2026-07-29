@@ -372,6 +372,153 @@ def write_langmuir_2d_config(
     )
 
 
+def write_langmuir_3d_state(
+    path: Path,
+    particles_per_axis: int,
+    length: float,
+    perturbation: float,
+    direction: str,
+) -> None:
+    require(
+        direction in ("x", "y", "z"),
+        "3D Langmuir direction must be x, y, or z",
+    )
+    particle_count = particles_per_axis ** 3
+    wavenumber = 2.0 * math.pi / length
+    with path.open("w", encoding="utf-8") as output:
+        output.write(
+            "AuroraPIC-particle-state-v1\n"
+            "dimension 3\n"
+            "units normalized\n"
+            "weighting species_constant\n"
+            "velocity_staggering time_centered\n"
+            f"particle_count {2 * particle_count}\n"
+            "records\n"
+        )
+        for z_index in range(particles_per_axis):
+            base_z = length * (
+                z_index + 0.5
+            ) / particles_per_axis
+            for y_index in range(particles_per_axis):
+                base_y = length * (
+                    y_index + 0.5
+                ) / particles_per_axis
+                for x_index in range(particles_per_axis):
+                    base_x = length * (
+                        x_index + 0.5
+                    ) / particles_per_axis
+                    position = {
+                        "x": base_x,
+                        "y": base_y,
+                        "z": base_z,
+                    }
+                    direction_index = {
+                        "x": x_index,
+                        "y": y_index,
+                        "z": z_index,
+                    }[direction]
+                    position[direction] = perturbed_position(
+                        (direction_index + 0.5) /
+                        particles_per_axis,
+                        length,
+                        perturbation,
+                        wavenumber,
+                    )
+                    output.write(
+                        "particle electrons "
+                        f"{position['x']:.17g} "
+                        f"{position['y']:.17g} "
+                        f"{position['z']:.17g} 0 0 0\n"
+                    )
+        for z_index in range(particles_per_axis):
+            z_position = length * (
+                z_index + 0.5
+            ) / particles_per_axis
+            for y_index in range(particles_per_axis):
+                y_position = length * (
+                    y_index + 0.5
+                ) / particles_per_axis
+                for x_index in range(particles_per_axis):
+                    x_position = length * (
+                        x_index + 0.5
+                    ) / particles_per_axis
+                    output.write(
+                        "particle ions "
+                        f"{x_position:.17g} "
+                        f"{y_position:.17g} "
+                        f"{z_position:.17g} 0 0 0\n"
+                    )
+        output.write("end\n")
+
+
+def write_langmuir_3d_config(
+    path: Path,
+    state_path: Path,
+    output_dir: Path,
+    particle_count: int,
+    length: float,
+) -> None:
+    weight = length ** 3 / particle_count
+    path.write_text(
+        "\n".join(
+            [
+                "config_version = 1",
+                "units = normalized",
+                "dimension = 3",
+                "nx = 16",
+                "ny = 16",
+                "nz = 16",
+                f"length_x = {length:.17g}",
+                f"length_y = {length:.17g}",
+                f"length_z = {length:.17g}",
+                "dt = 0.05",
+                "steps = 320",
+                "output_interval = 1",
+                "boundary = periodic",
+                "mode = transient",
+                "seed = 141421",
+                "runtime_backend = serial",
+                "runtime_threads = 1",
+                "vtk_output = false",
+                "particle_output = false",
+                f"output_dir = {output_dir.as_posix()}",
+                f"initial_state_path = {state_path.as_posix()}",
+                "initialization_max_relative_charge_imbalance = 1e-12",
+                "initialization_max_relative_pair_imbalance = 1e-12",
+                "initialization_charge_pairs = electrons:ions",
+                "",
+                "[species.electrons]",
+                "charge = -1",
+                "mass = 1",
+                f"weight = {weight:.17g}",
+                f"particles = {particle_count}",
+                "thermal_velocity = 0",
+                "init_x_min = 0",
+                f"init_x_max = {length:.17g}",
+                "init_y_min = 0",
+                f"init_y_max = {length:.17g}",
+                "init_z_min = 0",
+                f"init_z_max = {length:.17g}",
+                "",
+                "[species.ions]",
+                "charge = 1",
+                "mass = 1000000",
+                f"weight = {weight:.17g}",
+                f"particles = {particle_count}",
+                "thermal_velocity = 0",
+                "init_x_min = 0",
+                f"init_x_max = {length:.17g}",
+                "init_y_min = 0",
+                f"init_y_max = {length:.17g}",
+                "init_z_min = 0",
+                f"init_z_max = {length:.17g}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def field_mode_amplitude(path: Path, wavenumber: float) -> float:
     cosine = 0.0
     sine = 0.0
@@ -1036,6 +1183,176 @@ def run_langmuir_2d(cli: Path, work: Path) -> dict[str, object]:
     }
 
 
+def run_langmuir_3d(cli: Path, work: Path) -> dict[str, object]:
+    particles_per_axis = 16
+    particle_count = particles_per_axis ** 3
+    length = 2.0 * math.pi
+    perturbation = 0.01
+    direction_reports: dict[str, dict[str, object]] = {}
+    for direction in ("x", "y", "z"):
+        state_path = work / f"langmuir_3d_{direction}.aps"
+        config_path = work / f"langmuir_3d_{direction}.cfg"
+        output_dir = work / f"langmuir_3d_{direction}_output"
+        write_langmuir_3d_state(
+            state_path,
+            particles_per_axis,
+            length,
+            perturbation,
+            direction,
+        )
+        write_langmuir_3d_config(
+            config_path,
+            state_path,
+            output_dir,
+            particle_count,
+            length,
+        )
+        subprocess.run([str(cli), str(config_path)], check=True)
+        scalar_path = output_dir / "scalars.csv"
+        times, amplitudes = read_scalar_field_history(
+            scalar_path
+        )
+        oscillation = analyze_oscillation_frequency(
+            times,
+            amplitudes,
+            2.0,
+            15.8,
+            2.0,
+        )
+        initial_energy, max_energy_drift = read_scalar_energy(
+            scalar_path
+        )
+        with scalar_path.open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            first_row = next(csv.DictReader(handle))
+        direction_reports[direction] = {
+            "fit": oscillation,
+            "initial_field_energy": float(
+                first_row["field_energy"]
+            ),
+            "initial_total_energy": initial_energy,
+            "max_relative_total_energy_drift": max_energy_drift,
+        }
+
+    frequencies = {
+        direction: float(
+            direction_reports[direction]["fit"][
+                "angular_frequency"
+            ]
+        )
+        for direction in ("x", "y", "z")
+    }
+    initial_fields = {
+        direction: float(
+            direction_reports[direction][
+                "initial_field_energy"
+            ]
+        )
+        for direction in ("x", "y", "z")
+    }
+    mean_frequency = sum(frequencies.values()) / 3.0
+    mean_initial_field = sum(initial_fields.values()) / 3.0
+    maximum_frequency_spread = (
+        max(frequencies.values()) -
+        min(frequencies.values())
+    ) / mean_frequency
+    maximum_initial_field_spread = (
+        max(initial_fields.values()) -
+        min(initial_fields.values())
+    ) / mean_initial_field
+    expected_initial_field_energy = (
+        perturbation * perturbation * length ** 3 / 4.0
+    )
+
+    checks: dict[str, dict[str, float | bool]] = {}
+    for direction in ("x", "y", "z"):
+        checks[f"{direction}_angular_frequency"] = {
+            "value": frequencies[direction],
+            "reference": 1.0,
+            "minimum": 0.97,
+            "maximum": 1.03,
+        }
+        checks[f"{direction}_initial_field_energy"] = {
+            "value": initial_fields[direction],
+            "reference": expected_initial_field_energy,
+            "minimum": 0.0059,
+            "maximum": 0.0063,
+        }
+        checks[
+            f"{direction}_last_to_first_peak_ratio"
+        ] = {
+            "value": float(
+                direction_reports[direction]["fit"][
+                    "last_to_first_peak_ratio"
+                ]
+            ),
+            "minimum": 0.98,
+            "maximum": 1.02,
+        }
+        checks[
+            f"{direction}_max_relative_total_energy_drift"
+        ] = {
+            "value": float(
+                direction_reports[direction][
+                    "max_relative_total_energy_drift"
+                ]
+            ),
+            "minimum": 0.0,
+            "maximum": 0.02,
+        }
+    checks["maximum_directional_frequency_spread"] = {
+        "value": maximum_frequency_spread,
+        "minimum": 0.0,
+        "maximum": 1.0e-6,
+    }
+    checks["maximum_directional_initial_field_spread"] = {
+        "value": maximum_initial_field_spread,
+        "minimum": 0.0,
+        "maximum": 1.0e-6,
+    }
+    passed = True
+    for check in checks.values():
+        value = float(check["value"])
+        check["passed"] = (
+            float(check["minimum"]) <= value <=
+            float(check["maximum"])
+        )
+        passed = passed and bool(check["passed"])
+
+    return {
+        "schema_version": 1,
+        "benchmark": "langmuir_oscillation_3d",
+        "model": "electrostatic_3D3V_cold_plasma",
+        "reference": {
+            "description": (
+                "orthogonal cold Langmuir modes with normalized "
+                "electron plasma frequency"
+            ),
+            "angular_frequency": 1.0,
+            "citation": (
+                "WarpX multidimensional Langmuir wave examples; "
+                "PICLas plasma-wave tutorial"
+            ),
+        },
+        "numerics": {
+            "mesh": [16, 16, 16],
+            "particles_per_species": particle_count,
+            "particles_per_axis": particles_per_axis,
+            "timestep": 0.05,
+            "steps_per_direction": 320,
+            "length_x": length,
+            "length_y": length,
+            "length_z": length,
+            "wavenumber": 1.0,
+            "density_perturbation": perturbation,
+        },
+        "directions": direction_reports,
+        "checks": checks,
+        "passed": passed,
+    }
+
+
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -1058,6 +1375,7 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
             "landau",
             "two-stream",
             "langmuir-2d",
+            "langmuir-3d",
         ),
         default="all",
         help="benchmark to run (default: all)",
@@ -1082,11 +1400,14 @@ def main(argv: Iterable[str] = sys.argv[1:]) -> int:
             report = run_two_stream(cli, work)
         elif args.benchmark == "langmuir-2d":
             report = run_langmuir_2d(cli, work)
+        elif args.benchmark == "langmuir-3d":
+            report = run_langmuir_3d(cli, work)
         else:
             benchmarks = [
                 run_landau(cli, work),
                 run_two_stream(cli, work),
                 run_langmuir_2d(cli, work),
+                run_langmuir_3d(cli, work),
             ]
             report = {
                 "schema_version": 1,
@@ -1104,7 +1425,8 @@ def main(argv: Iterable[str] = sys.argv[1:]) -> int:
         print(rendered, end="")
         require(
             bool(report["passed"]),
-            "Landau benchmark missed one or more acceptance gates",
+            "selected kinetic benchmark missed one or more "
+            "acceptance gates",
         )
         print("kinetic benchmark validation passed")
         return 0
