@@ -82,6 +82,7 @@ def main() -> int:
     cathode = manifest["cathode_control"]
     initial = manifest["initial_loading"]
     diagnostics = manifest["diagnostics"]
+    comparison = manifest["comparison"]
     emitted_species = runtime[
         "species." + cathode["emitted_species"]
     ]
@@ -261,6 +262,14 @@ def main() -> int:
         and diagnostics["species_time_average"]
             == "resolved_species_time_average.csv",
         "Hall resolved-diagnostic artifact contract drifted",
+    )
+    require(
+        comparison.getint("reference_contract_version") == 1
+        and comparison["reference_data_policy"]
+            == "external_checksum_pinned"
+        and comparison["comparator"] == "scripts/compare_hall.py"
+        and comparison["preflight"] == "scripts/preflight_hall.py",
+        "Hall comparison/preflight contract drifted",
     )
     for key, manifest_key in (
         ("x_min", "x_min_m"),

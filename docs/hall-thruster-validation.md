@@ -191,6 +191,101 @@ cell, averaging interval, convergence results, and diagnostic scripts. A fixed
 seed is required for restart regression; multiple seeds are required for a
 turbulent physics claim.
 
+## External reference comparison
+
+AuroraPIC does not redistribute the approximately 32 GB WarpX corpus or
+derived paper data. A local `.hall-reference` manifest instead pins the exact
+profile and mode CSV bytes:
+
+```ini
+[reference]
+hall_reference_version = 1
+case_id = landmark-axial-azimuthal-2019
+case_variant = case-2a-warpx
+case_manifest_sha256 = <lowercase SHA-256>
+profile_data_file = landmark-case2a-profiles.csv
+profile_data_sha256 = <lowercase SHA-256>
+mode_data_file = landmark-case2a-modes.csv
+mode_data_sha256 = <lowercase SHA-256>
+profile_axis = x
+mode_axis = y
+coordinate_column = coordinate_m
+coordinate_absolute_tolerance = 1e-12
+provenance = conversion procedure and source artifact identity
+citation = Charoy et al. 2019 and public WarpX dataset
+retrieved = YYYY-MM-DD
+license = terms applying to the local reference files
+
+[profile.axial_field]
+simulation_source = field
+simulation_column = electric_x
+reference_column = electric_x_v_m
+reference_uncertainty_column = electric_x_uncertainty_v_m
+relative_tolerance = 0.05
+absolute_tolerance = 0
+uncertainty_multiplier = 2
+
+[profile.ion_density]
+simulation_source = species
+simulation_species = ions
+simulation_column = number_density
+reference_column = ion_density_m3
+relative_tolerance = 0.05
+
+[profile.electron_temperature]
+simulation_source = species
+simulation_species = electrons
+simulation_column = temperature_ev
+reference_column = electron_temperature_ev
+relative_tolerance = 0.05
+
+[mode.dominant_frequency]
+simulation_quantity = electric_y
+# Omit simulation_species for a mesh-field quantity.
+mode = 16
+metric = frequency_hz
+reference_column = frequency_hz
+reference_uncertainty_column = frequency_uncertainty_hz
+relative_tolerance = 0.05
+uncertainty_multiplier = 2
+```
+
+The reference profile CSV has exactly one row per reference coordinate.
+Coordinates must match exactly one AuroraPIC profile point within the declared
+absolute tolerance; the comparator never silently interpolates or
+extrapolates. The mode reference CSV has exactly one row per integer `mode`.
+Each `[profile.*]` or `[mode.*]` section declares its own acceptance rule:
+
+```text
+abs(simulation - reference)
+<= absolute_tolerance
+ + relative_tolerance * abs(reference)
+ + uncertainty_multiplier * reference_uncertainty
+```
+
+`scripts/compare_hall.py` verifies both reference hashes and the simulation
+case ID, verifies that field and species files share one nonzero averaging
+window, and writes an atomic JSON report containing every input hash and
+residual. For mode histories it unwraps the complex coefficient phase and
+supports `frequency_hz`, `signed_frequency_hz`, `phase_velocity_m_s`,
+`growth_rate_s`, and `rms_amplitude`. At least three unique samples with
+nonzero amplitude are required. Sampling must be frequent enough that the
+phase advance between samples remains below pi; the comparator cannot recover
+a frequency already aliased by the output cadence.
+
+```sh
+python3 scripts/compare_hall.py production-output \
+  local/case2a.hall-reference \
+  --case-manifest examples/hall_landmark_axial_azimuthal.case \
+  --output production-output/hall-comparison.json
+```
+
+Exit status is zero for agreement, one for a valid comparison outside its
+criteria, and two for malformed, ambiguous, unpinned, or mismatched inputs.
+Existing reports are never overwritten without `--overwrite`. The bounded
+regression uses synthetic data only; it tests the comparison machinery, not a
+LANDMARK result.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.
@@ -200,6 +295,36 @@ campaigns with a preflight resource estimate, explicit output directory,
 checkpoint cadence, storage quota, and wall-time limit. Reference datasets
 remain external and checksum-pinned; they are never vendored into the Git
 repository.
+
+Run the non-launching resource gate before creating a production deck:
+
+```sh
+python3 scripts/preflight_hall.py \
+  examples/hall_landmark_axial_azimuthal.case \
+  --particles-per-cell 75 \
+  --diagnostic-interval 5000 \
+  --max-mode 128 \
+  --memory-budget-gib 8 \
+  --storage-budget-gib 16 \
+  --report hall-case2a-preflight.json
+```
+
+With its documented conservative defaults, Case 2a contains 128,000 cells,
+19.2 million initial macro-particles, and at least 76.8 trillion particle
+updates. A 1.5 capacity factor, 96-byte particle assumption, two retained
+checkpoints, 801 resolved samples, and modes 0–128 estimate about 2.59 GiB of
+resident memory and 5.75 GiB of diagnostics plus checkpoints. Both figures are
+planning estimates, not measurements; sources can increase the population and
+VTK, particle dumps, external data, replication, and temporary files are
+excluded. At an explicitly supplied measured rate of 100 million particle
+updates/s, the lower-bound push time alone is 768,000 seconds (8.9 days).
+
+The preflight writes all assumptions and arithmetic to JSON, returns one when
+a declared memory or storage budget is exceeded, never launches AuroraPIC, and
+always records `launch_authorized = false`. The current case remains
+`reduced_integration_only`; a production deck, scalable mixed-topology
+Poisson solver, MPI decomposition, convergence tiers, and explicit execution
+authorization remain separate gates.
 
 The first H0 field slice is complete: a shared strict `coordinate Bx By Bz`
 profile supports linear interpolation and full-domain coverage checks across
@@ -236,6 +361,10 @@ trapezoidal field and density-weighted species averages, and complex azimuthal
 mode histories through mode three. Manufactured regressions pin the
 normalization and complex Fourier convention, while the manifest and example
 smoke pin the artifact schema. These diagnostics enable comparison but do not
-constitute one: the next H2-enabling slice is a checksum-pinned external
-reference comparator and resource/convergence campaign preflight, followed by
-the scalable mixed-topology solver and MPI required for the published run.
+constitute one. The external comparator now pins reference/profile/mode/case
+hashes, performs uncertainty-aware residual checks, and derives modal
+frequency or growth from complex histories; the non-launching preflight pins
+resource arithmetic and refuses exceeded budgets. Both are guarded with
+synthetic data only. The next H2-enabling slice is the scalable
+FFT-periodic/direct-axial solver and production-deck/convergence campaign
+contract, followed by MPI decomposition required for the published run.

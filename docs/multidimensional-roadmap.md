@@ -125,11 +125,17 @@ normalized profiles, mutually exclusive fixed-macro, total represented, and
 peak volumetric rates, explicit extrusion depth, deterministic fractional
 accumulation, injected-energy diagnostics, storage caps, and restart. A
 machine-validated LANDMARK manifest now pins its peak-to-integral conversion
-and reduced-run limits. Full
-LANDMARK runs require exact source/current-control contracts,
-statistical spectral diagnostics, MPI and scalable output; real HET validation
-additionally requires measured geometry/field inputs, neutral and wall
-physics, cathode/facility conditions, and uncertainty-aware comparison.
+and reduced-run limits, SI thermal loading, current-regulated cathode, and
+potential reference. Structured resolved diagnostics now emit transverse field
+and species profiles, density-weighted moments, currents, trapezoidal time
+averages, and complex periodic-axis modes. A checksum-pinned external
+reference comparator and non-launching resource preflight provide the
+uncertainty/residual and campaign-estimate contracts without claiming that
+synthetic regressions are LANDMARK results. Full LANDMARK runs still require
+the production mixed-topology solver, a production/convergence deck, MPI, and
+scalable output; real HET validation additionally requires measured
+geometry/field inputs, neutral and wall physics, cathode/facility conditions,
+and uncertainty-aware experimental comparison.
 The first initial-value-problem hardening slice now adds a shared,
 species-versioned loading contract to structured 1D/2D/3D and imported 2D.
 It preserves historical random loading, adds deterministic stratified

@@ -53,6 +53,18 @@ helium CCP Case 1 requires 512,000 steps and physics not yet present in the
 production-run envelope are pinned in
 [ccp-validation.md](ccp-validation.md).
 
+The LANDMARK Hall Case 2a production contract is likewise excluded from CI.
+`scripts/preflight_hall.py` estimates its initial population, capacity-based
+particle memory, field/diagnostic working memory, resolved CSV rows,
+checkpoint/output storage, and lower-bound particle updates without launching
+the CLI. Under the documented default assumptions it reports 19.2 million
+initial macro-particles, 76.8 trillion lower-bound particle updates, about
+2.59 GiB of resident memory, and about 5.75 GiB of retained checkpoints plus
+resolved CSVs. These are arithmetic planning values rather than measured
+performance or complete disk quotas; see
+[hall-thruster-validation.md](hall-thruster-validation.md) for exclusions and
+the launch-readiness blockers.
+
 The local verification entry point is deliberately resource-conservative:
 one compiler job, one CTest job, and one implicit OpenMP thread by default.
 Use `AURORA_BUILD_JOBS`, `AURORA_TEST_JOBS`, or

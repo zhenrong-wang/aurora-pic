@@ -28,7 +28,11 @@ The Hall-effect-thruster verification and validation ladder is defined in
 the public LANDMARK axial-azimuthal and radial-azimuthal PIC cases, identifies
 public WarpX reference output and NASA HERMeS measurements, separates
 code-to-code verification from experimental validation, and records the
-physics, diagnostics, parallelism, and resource gates still required.
+physics, diagnostics, parallelism, and resource gates still required. The
+installed `compare_hall.py` tool performs checksum-pinned, uncertainty-aware
+profile and complex-mode comparisons against local reference data;
+`preflight_hall.py` estimates production memory, storage, output rows, and
+particle-update work without launching a simulation.
 
 The dimensional contract is defined in [`docs/units.md`](docs/units.md). Configurations may select `units = normalized` or `units = si` plus a positive homogeneous `relative_permittivity`. Legacy omission remains normalized; maintained examples are explicit. SI 1D and imported 2D retain per-unit omitted measures; structured planar 2D uses an explicit extrusion depth and reports total particle/field energy over that volume.
 
@@ -68,7 +72,8 @@ target_link_libraries(your_target PRIVATE AuroraPIC::aurorapic)
 
 The full smoke suite builds the project, validates milestone and
 release-engineering artifacts, tests local gas import and the homogeneous
-swarm CLI, runs the CTest regression executable, runs the standalone pusher
+swarm CLI, validates the synthetic Hall comparison/preflight workflow, runs
+the CTest regression executable, runs the standalone pusher
 validation script (leapfrog plus Boris checks), runs the quantitative Landau
 damping, two-stream, and 2D/3D Langmuir kinetic benchmarks, runs isolated CLI smoke tests
 for the included 1D/2D/3D examples, and runs the install/package smoke test

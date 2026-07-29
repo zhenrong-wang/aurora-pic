@@ -70,3 +70,9 @@ species_profiles = resolved_species_profiles.csv
 mode_history = resolved_modes.csv
 field_time_average = resolved_field_time_average.csv
 species_time_average = resolved_species_time_average.csv
+
+[comparison]
+reference_contract_version = 1
+reference_data_policy = external_checksum_pinned
+comparator = scripts/compare_hall.py
+preflight = scripts/preflight_hall.py

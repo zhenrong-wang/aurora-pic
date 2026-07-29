@@ -75,7 +75,8 @@ install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/examp
   FILES_MATCHING PATTERN "*.cfg" PATTERN "*.msh" PATTERN "*.geo"
   PATTERN "*.dat" PATTERN "*.gas" PATTERN "*.swarm"
   PATTERN "*.aps" PATTERN "*.case")
-install(PROGRAMS scripts/compare_swarm.py scripts/run_swarm_campaign.py
+install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
+  scripts/preflight_hall.py scripts/run_swarm_campaign.py
   scripts/generate_real_case_mesh.py scripts/import_lxcat.py
   scripts/validate_kinetic_benchmarks.py scripts/validate_hall_case.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
