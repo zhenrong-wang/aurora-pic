@@ -152,7 +152,9 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
         output / "current_source.csv",
         {
             "step", "charge_balance_residual",
+            "cumulative_processed_monitored_charge",
             "cumulative_emitted_charge", "macro_particles_created",
+            "control_macro_remainder",
         },
     )
     initial_particles_per_species = (
@@ -169,17 +171,65 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     )
     macro_charge = 1.602176634e-19 * macro_weight
     maximum_charge_residual = 0.0
+    maximum_controller_debt = 0.0
+    controller_saturation_samples = 0
     for row in current:
-        number(row, "cumulative_emitted_charge", "current_source.csv")
-        integer(row, "macro_particles_created", "current_source.csv")
-        residual = abs(number(
+        processed_charge = number(
+            row, "cumulative_processed_monitored_charge",
+            "current_source.csv"
+        )
+        emitted_charge = number(
+            row, "cumulative_emitted_charge", "current_source.csv"
+        )
+        emitted_macroparticles = integer(
+            row, "macro_particles_created", "current_source.csv"
+        )
+        remainder = number(
+            row, "control_macro_remainder", "current_source.csv"
+        )
+        residual = number(
             row, "charge_balance_residual", "current_source.csv"
-        ))
-        maximum_charge_residual = max(maximum_charge_residual, residual)
-        if residual > macro_charge * (1.0 + 1e-12):
+        )
+        # The pinned emitted species is electrons, so its represented
+        # macrocharge is negative. A negative remainder is valid actuator
+        # debt: electron emission cannot retract particles already emitted.
+        emitted_macrocharge = -macro_charge
+        tolerance = macro_charge * 1e-9
+        if not math.isclose(
+            emitted_charge,
+            emitted_macroparticles * emitted_macrocharge,
+            rel_tol=1e-12,
+            abs_tol=tolerance,
+        ):
             raise PilotError(
-                "cathode charge-balance residual exceeds one macro charge"
+                "cathode emitted-charge accounting is inconsistent"
             )
+        if not math.isclose(
+            residual, processed_charge - emitted_charge,
+            rel_tol=1e-12, abs_tol=tolerance,
+        ):
+            raise PilotError(
+                "cathode charge-balance residual is inconsistent"
+            )
+        if not math.isclose(
+            residual, remainder * emitted_macrocharge,
+            rel_tol=1e-12, abs_tol=tolerance,
+        ):
+            raise PilotError(
+                "cathode control remainder is inconsistent with its residual"
+            )
+        if remainder >= 1.0 + 1e-12:
+            raise PilotError(
+                "cathode positive control remainder exceeds one macro charge"
+            )
+        if remainder < -1e-12:
+            controller_saturation_samples += 1
+            maximum_controller_debt = max(
+                maximum_controller_debt, -remainder
+            )
+        maximum_charge_residual = max(
+            maximum_charge_residual, abs(residual)
+        )
 
     potential = read_rows(
         output / "potential_reference.csv",
@@ -280,6 +330,10 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 current[-1], "macro_particles_created", "current_source.csv"
             ),
             "maximum_charge_balance_residual_c": maximum_charge_residual,
+            "controller_saturation_samples":
+                controller_saturation_samples,
+            "maximum_controller_debt_macroparticles":
+                maximum_controller_debt,
             "maximum_potential_reference_error_v": maximum_reference_error,
             "resolved_modes": len(observed_modes),
         },

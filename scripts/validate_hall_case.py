@@ -418,10 +418,10 @@ def main() -> int:
     require(
         reduced["physics_claim"] == "none"
         and "published_resolution" in reduced["missing_physics"]
-        and "cathode_current_control"
-            not in reduced["missing_physics"]
-        and "potential_correction"
-            not in reduced["missing_physics"]
+        and "timestep_local_cathode_control"
+            in reduced["missing_physics"]
+        and "affine_potential_correction"
+            in reduced["missing_physics"]
         and "published_pair_thermal_loading"
             not in reduced["missing_physics"]
         and "published_initial_thermal_loading"

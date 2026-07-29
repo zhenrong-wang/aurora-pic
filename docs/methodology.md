@@ -191,7 +191,9 @@ to later steps. The controller therefore remains correct for unequal species
 weights. An optional x/y line-average potential reference applies only a
 constant potential offset after each Poisson solve and leaves the electric
 field invariant. Checkpoint v7 preserves boundary counters, controller
-accumulator, diagnostics, RNG state, and both control definitions.
+accumulator, diagnostics, RNG state, and both control definitions. These are
+generic controls; they do not implement LANDMARK's timestep-local cathode
+injection or affine axial potential/field correction.
 
 Opt-in structured-2D resolved diagnostics reduce fields along one profile axis
 using nodal control-width quadrature and deposit species number plus first and

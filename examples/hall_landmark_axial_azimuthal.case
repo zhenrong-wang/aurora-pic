@@ -72,7 +72,7 @@ max_initial_macroparticles = 8
 max_steps = 4
 max_threads = 1
 physics_claim = none
-missing_physics = published_population,published_resolution,long_time_averaging
+missing_physics = published_population,published_resolution,long_time_averaging,timestep_local_cathode_control,affine_potential_correction
 
 [campaign.micro]
 purpose = bounded_local_integration

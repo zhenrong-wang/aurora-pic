@@ -39,8 +39,9 @@ and records binary/deck provenance plus initial-population cost projections.
 `prepare_hall_campaign.py` requires an explicit production-cost
 acknowledgement before it writes—but never launches—a full Case 2 candidate
 deck.
-`analyze_hall_pilot.py` checks bounded-tier diagnostic integrity and always
-reports `physics_claim = none`.
+`analyze_hall_pilot.py` checks bounded-tier diagnostic integrity, including
+one-way cathode-controller saturation debt, and always reports
+`physics_claim = none`.
 `lock_hall_source.py` plans external acquisition from the committed source
 registry and stream-hashes local artifacts without downloading them.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
@@ -612,7 +613,7 @@ potential_reference_target = 0
 
 The controller sums `absorbed_count * charge * macro_weight` over every species at the monitored boundary. It converts the newly observed charge to the emitted species’ macro weight, creates the non-negative integer part at a uniformly sampled emission plane, and retains signed fractional surplus or debt. This makes unequal species weights safe and restart deterministic. `current_source.csv` reports the charge-balance residual and injected energy.
 
-The optional potential reference subtracts the interpolated transverse mean potential at the configured x or y coordinate and applies the requested target. This is a spatially constant gauge shift, so the electric field is unchanged. `potential_reference.csv` records the unshifted mean, applied offset, and corrected mean. The Hall smoke uses these generic controls for the published anode-current continuity and internal emission-plane reference, but remains far below production resolution and duration.
+The optional potential reference subtracts the interpolated transverse mean potential at the configured x or y coordinate and applies the requested target. This is a spatially constant gauge shift, so the electric field is unchanged. `potential_reference.csv` records the unshifted mean, applied offset, and corrected mean. The Hall smoke uses these generic controls as integration precursors, but they are not the exact LANDMARK contract: the published case uses timestep-local cathode injection and an affine axial correction that changes the axial electric field.
 
 For SI structured-2D configurations, species may use `temperature_ev` instead
 of scalar or component `thermal_velocity` keys. Pair sources similarly accept

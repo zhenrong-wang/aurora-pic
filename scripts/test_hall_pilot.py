@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -98,6 +100,55 @@ def main() -> int:
             and result["metrics"]["resolved_samples"] == 11
             and result["metrics"]["resolved_modes"] == 9,
             f"Hall pilot analysis failed: {analyzed.stderr}",
+        )
+
+        saturated_output = work / "saturated_output"
+        shutil.copytree(output, saturated_output)
+        current_path = saturated_output / "current_source.csv"
+        with current_path.open(newline="", encoding="utf-8") as stream:
+            current_rows = list(csv.DictReader(stream))
+            current_fields = list(current_rows[0])
+        macro_weight = 5e16 * 0.025 * 0.0128 / 2048
+        macro_charge = 1.602176634e-19 * macro_weight
+        final_current = current_rows[-1]
+        emitted_charge = float(
+            final_current["cumulative_emitted_charge"]
+        )
+        final_current["control_macro_remainder"] = "-2"
+        final_current["cumulative_processed_monitored_charge"] = str(
+            emitted_charge + 2 * macro_charge
+        )
+        final_current["charge_balance_residual"] = str(2 * macro_charge)
+        with current_path.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=current_fields)
+            writer.writeheader()
+            writer.writerows(current_rows)
+        saturated_report = work / "saturated_analysis.json"
+        saturated = run(
+            [
+                sys.executable,
+                str(ANALYZE),
+                str(saturated_output),
+                str(CASE),
+                "--tier",
+                "micro",
+                "--report",
+                str(saturated_report),
+            ]
+        )
+        saturated_result = json.loads(
+            saturated_report.read_text(encoding="utf-8")
+        )
+        require(
+            saturated.returncode == 0
+            and saturated_result["passed"]
+            and saturated_result["metrics"][
+                "controller_saturation_samples"
+            ] == 1
+            and saturated_result["metrics"][
+                "maximum_controller_debt_macroparticles"
+            ] == 2,
+            "Hall pilot analyzer rejected consistent one-way actuator debt",
         )
 
         workstation_deck = work / "workstation.cfg"
