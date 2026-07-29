@@ -68,13 +68,15 @@ class ModeObservable:
 @dataclass(frozen=True)
 class HallReference:
     path: Path
+    contract_version: int
+    comparison_scope: str
     case_id: str
     case_variant: str
     case_manifest_sha256: str
     profile_data: Path
     profile_sha256: str
-    mode_data: Path
-    mode_sha256: str
+    mode_data: Path | None
+    mode_sha256: str | None
     profile_axis: str
     mode_axis: str
     coordinate_column: str
@@ -83,6 +85,8 @@ class HallReference:
     citation: str
     retrieved: str
     license: str
+    reference_start_time: float | None
+    reference_end_time: float | None
     profile_observables: tuple[ProfileObservable, ...]
     mode_observables: tuple[ModeObservable, ...]
 
@@ -178,6 +182,7 @@ def load_reference(path: Path) -> HallReference:
     reference = parser["reference"]
     allowed = {
         "hall_reference_version",
+        "comparison_scope",
         "case_id",
         "case_variant",
         "case_manifest_sha256",
@@ -193,6 +198,8 @@ def load_reference(path: Path) -> HallReference:
         "citation",
         "retrieved",
         "license",
+        "reference_start_time_s",
+        "reference_end_time_s",
     }
     unknown = sorted(set(reference) - allowed)
     if unknown:
@@ -200,9 +207,30 @@ def load_reference(path: Path) -> HallReference:
             f"{path} [reference]: unknown keys {unknown}"
         )
     context = f"{path} [reference]"
-    if required(reference, "hall_reference_version", context) != "1":
+    version_text = required(
+        reference, "hall_reference_version", context
+    )
+    if version_text not in {"1", "2"}:
         raise HallComparisonInputError(
-            f"{path} supports hall_reference_version = 1"
+            f"{path} supports hall_reference_version = 1 or 2"
+        )
+    contract_version = int(version_text)
+    comparison_scope = reference.get(
+        "comparison_scope",
+        "profile_and_mode_validation" if contract_version == 1 else "",
+    ).strip()
+    if contract_version == 1:
+        if comparison_scope != "profile_and_mode_validation":
+            raise HallComparisonInputError(
+                f"{context}: version 1 requires "
+                "comparison_scope = profile_and_mode_validation"
+            )
+    elif comparison_scope not in {
+        "profile_and_mode_validation",
+        "digitized_profile_screening",
+    }:
+        raise HallComparisonInputError(
+            f"{context}: version 2 requires a supported comparison_scope"
         )
     case_id = required(reference, "case_id", context)
     case_variant = required(reference, "case_variant", context)
@@ -223,26 +251,51 @@ def load_reference(path: Path) -> HallReference:
     profile_hash = required(
         reference, "profile_data_sha256", context
     )
-    mode_hash = required(reference, "mode_data_sha256", context)
+    has_modes = comparison_scope == "profile_and_mode_validation"
+    mode_hash = (
+        required(reference, "mode_data_sha256", context)
+        if has_modes else None
+    )
     case_hash = required(reference, "case_manifest_sha256", context)
     if (
         not SHA256.fullmatch(profile_hash)
-        or not SHA256.fullmatch(mode_hash)
+        or (mode_hash is not None and not SHA256.fullmatch(mode_hash))
         or not SHA256.fullmatch(case_hash)
     ):
         raise HallComparisonInputError(
             f"{context}: data hashes must be lowercase SHA-256"
         )
     profile_axis = required(reference, "profile_axis", context)
-    mode_axis = required(reference, "mode_axis", context)
-    if (
-        profile_axis not in {"x", "y"}
-        or mode_axis not in {"x", "y"}
-        or profile_axis == mode_axis
+    mode_axis = reference.get("mode_axis", "").strip()
+    if profile_axis not in {"x", "y"}:
+        raise HallComparisonInputError(
+            f"{context}: profile_axis must be x or y"
+        )
+    if has_modes and (
+        mode_axis not in {"x", "y"} or profile_axis == mode_axis
     ):
         raise HallComparisonInputError(
             f"{context}: profile_axis and mode_axis must be distinct x/y"
         )
+    if not has_modes and mode_axis:
+        raise HallComparisonInputError(
+            f"{context}: profile-only screening cannot declare mode_axis"
+        )
+    reference_start_time: float | None = None
+    reference_end_time: float | None = None
+    if contract_version == 2:
+        reference_start_time = nonnegative_number(
+            required(reference, "reference_start_time_s", context),
+            f"{context} reference_start_time_s",
+        )
+        reference_end_time = nonnegative_number(
+            required(reference, "reference_end_time_s", context),
+            f"{context} reference_end_time_s",
+        )
+        if reference_end_time <= reference_start_time:
+            raise HallComparisonInputError(
+                f"{context}: reference time window must increase"
+            )
 
     common_allowed = {
         "reference_column",
@@ -389,12 +442,18 @@ def load_reference(path: Path) -> HallReference:
         raise HallComparisonInputError(
             f"{path}: at least one [profile.<name>] is required"
         )
-    if not mode_observables:
+    if has_modes and not mode_observables:
         raise HallComparisonInputError(
             f"{path}: at least one [mode.<name>] is required"
         )
+    if not has_modes and mode_observables:
+        raise HallComparisonInputError(
+            f"{path}: profile-only screening cannot contain mode sections"
+        )
     return HallReference(
         path=path.resolve(),
+        contract_version=contract_version,
+        comparison_scope=comparison_scope,
         case_id=case_id,
         case_variant=case_variant,
         case_manifest_sha256=case_hash,
@@ -402,8 +461,12 @@ def load_reference(path: Path) -> HallReference:
             path.parent, required(reference, "profile_data_file", context)
         ),
         profile_sha256=profile_hash,
-        mode_data=resolved_path(
-            path.parent, required(reference, "mode_data_file", context)
+        mode_data=(
+            resolved_path(
+                path.parent,
+                required(reference, "mode_data_file", context),
+            )
+            if has_modes else None
         ),
         mode_sha256=mode_hash,
         profile_axis=profile_axis,
@@ -419,6 +482,8 @@ def load_reference(path: Path) -> HallReference:
         citation=required(reference, "citation", context),
         retrieved=retrieved,
         license=required(reference, "license", context),
+        reference_start_time=reference_start_time,
+        reference_end_time=reference_end_time,
         profile_observables=tuple(profile_observables),
         mode_observables=tuple(mode_observables),
     )
@@ -645,6 +710,63 @@ def accepted_result(
     }
 
 
+def profile_summary(
+    rows: list[dict[str, object]],
+    observables: tuple[ProfileObservable, ...],
+) -> list[dict[str, object]]:
+    summary: list[dict[str, object]] = []
+    for observable in observables:
+        values = [
+            item
+            for row in rows
+            for item in row["observables"]  # type: ignore[union-attr]
+            if item["name"] == observable.name
+        ]
+        residual_square = sum(
+            float(item["residual"]) ** 2 for item in values
+        )
+        reference_square = sum(
+            float(item["reference"]) ** 2 for item in values
+        )
+        maximum_reference = max(
+            abs(float(item["reference"])) for item in values
+        )
+        positive_thresholds = [
+            float(item["absolute_residual"])
+            / float(item["acceptance_threshold"])
+            for item in values
+            if float(item["acceptance_threshold"]) > 0.0
+        ]
+        summary.append(
+            {
+                "name": observable.name,
+                "points": len(values),
+                "passed_points": sum(
+                    bool(item["passed"]) for item in values
+                ),
+                "relative_l2": (
+                    math.sqrt(residual_square / reference_square)
+                    if reference_square > 0.0 else None
+                ),
+                "relative_linf": (
+                    max(float(item["absolute_residual"]) for item in values)
+                    / maximum_reference
+                    if maximum_reference > 0.0 else None
+                ),
+                "maximum_acceptance_ratio": (
+                    max(positive_thresholds)
+                    if positive_thresholds else None
+                ),
+                "zero_threshold_failures": sum(
+                    float(item["acceptance_threshold"]) == 0.0
+                    and not bool(item["passed"])
+                    for item in values
+                ),
+            }
+        )
+    return summary
+
+
 def linear_slope(times: list[float], values: list[float]) -> float:
     mean_time = sum(times) / len(times)
     mean_value = sum(values) / len(values)
@@ -755,7 +877,10 @@ def compare(
             "Hall simulation case-manifest SHA-256 mismatch"
         )
     actual_profile_hash = sha256(reference.profile_data)
-    actual_mode_hash = sha256(reference.mode_data)
+    actual_mode_hash = (
+        sha256(reference.mode_data)
+        if reference.mode_data is not None else None
+    )
     if actual_profile_hash != reference.profile_sha256:
         raise HallComparisonInputError(
             "Hall reference profile SHA-256 mismatch"
@@ -772,7 +897,10 @@ def compare(
     species_fields, species_rows = load_csv(
         species_path, "species time average"
     )
-    mode_fields, mode_rows = load_csv(mode_path, "mode history")
+    mode_fields: list[str] = []
+    mode_rows: list[dict[str, str]] = []
+    if reference.mode_observables:
+        mode_fields, mode_rows = load_csv(mode_path, "mode history")
     require_columns(
         field_fields,
         {
@@ -793,15 +921,16 @@ def compare(
         },
         "species time average",
     )
-    require_columns(
-        mode_fields,
-        {
-            "time", "mode_axis", "mode", "wavenumber",
-            "quantity", "species",
-            "real", "imaginary", "amplitude",
-        },
-        "mode history",
-    )
+    if reference.mode_observables:
+        require_columns(
+            mode_fields,
+            {
+                "time", "mode_axis", "mode", "wavenumber",
+                "quantity", "species",
+                "real", "imaginary", "amplitude",
+            },
+            "mode history",
+        )
     field_window = averaging_identity(field_rows, "field time average")
     species_window = averaging_identity(
         species_rows, "species time average"
@@ -814,7 +943,9 @@ def compare(
         raise HallComparisonInputError(
             "simulation profile axis does not match the reference contract"
         )
-    if any(row["mode_axis"] != reference.mode_axis for row in mode_rows):
+    if reference.mode_observables and any(
+        row["mode_axis"] != reference.mode_axis for row in mode_rows
+    ):
         raise HallComparisonInputError(
             "simulation mode axis does not match the reference contract"
         )
@@ -822,9 +953,12 @@ def compare(
     profile_fields, profile_rows = load_csv(
         reference.profile_data, "Hall reference profile"
     )
-    mode_reference_fields, mode_reference_rows = load_csv(
-        reference.mode_data, "Hall reference mode"
-    )
+    mode_reference_fields: list[str] = []
+    mode_reference_rows: list[dict[str, str]] = []
+    if reference.mode_data is not None:
+        mode_reference_fields, mode_reference_rows = load_csv(
+            reference.mode_data, "Hall reference mode"
+        )
     require_columns(
         profile_fields,
         {
@@ -837,18 +971,19 @@ def compare(
         },
         "Hall reference profile",
     )
-    require_columns(
-        mode_reference_fields,
-        {
-            "mode",
-            *(item.reference_column
-              for item in reference.mode_observables),
-            *(item.reference_uncertainty_column
-              for item in reference.mode_observables
-              if item.reference_uncertainty_column is not None),
-        },
-        "Hall reference mode",
-    )
+    if reference.mode_observables:
+        require_columns(
+            mode_reference_fields,
+            {
+                "mode",
+                *(item.reference_column
+                  for item in reference.mode_observables),
+                *(item.reference_uncertainty_column
+                  for item in reference.mode_observables
+                  if item.reference_uncertainty_column is not None),
+            },
+            "Hall reference mode",
+        )
 
     reference_profile = unique_coordinate_rows(
         profile_rows, reference.coordinate_column,
@@ -993,17 +1128,49 @@ def compare(
     return {
         "schema_version": 1,
         "passed": passed,
+        "comparison_scope": reference.comparison_scope,
+        "physics_claim": (
+            "none"
+            if reference.comparison_scope == "digitized_profile_screening"
+            else "reference_contract"
+        ),
         "case_id": reference.case_id,
         "case_variant": reference.case_variant,
         "profile_axis": reference.profile_axis,
         "mode_axis": reference.mode_axis,
         "averaging_window": field_window,
+        "reference_averaging_window": (
+            {
+                "start_time": reference.reference_start_time,
+                "end_time": reference.reference_end_time,
+                "duration": (
+                    reference.reference_end_time
+                    - reference.reference_start_time
+                ),
+                "matches_simulation": (
+                    math.isclose(
+                        float(field_window["start_time"]),
+                        reference.reference_start_time,
+                    )
+                    and math.isclose(
+                        float(field_window["end_time"]),
+                        reference.reference_end_time,
+                    )
+                ),
+            }
+            if reference.reference_start_time is not None
+            and reference.reference_end_time is not None
+            else None
+        ),
         "reference": {
             "manifest": str(reference.path),
             "manifest_sha256": sha256(reference.path),
             "profile_data": str(reference.profile_data),
             "profile_sha256": actual_profile_hash,
-            "mode_data": str(reference.mode_data),
+            "mode_data": (
+                str(reference.mode_data)
+                if reference.mode_data is not None else None
+            ),
             "mode_sha256": actual_mode_hash,
             "provenance": reference.provenance,
             "citation": reference.citation,
@@ -1016,9 +1183,14 @@ def compare(
             "case_manifest_sha256": actual_case_hash,
             "field_average_sha256": sha256(field_path),
             "species_average_sha256": sha256(species_path),
-            "mode_history_sha256": sha256(mode_path),
+            "mode_history_sha256": (
+                sha256(mode_path) if reference.mode_observables else None
+            ),
         },
         "profile_comparisons": profile_results,
+        "profile_summary": profile_summary(
+            profile_results, reference.profile_observables
+        ),
         "mode_comparisons": mode_results,
     }
 

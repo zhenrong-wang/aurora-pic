@@ -376,6 +376,48 @@ Existing reports are never overwritten without `--overwrite`. The bounded
 regression uses synthetic data only; it tests the comparison machinery, not a
 LANDMARK result.
 
+### Published Figure 6 profile screening
+
+The public accepted manuscript contains the seven-code axial-profile envelope
+for Case 2 in Figure 6. It is averaged from 16 to 20 microseconds and covers
+axial electric field, ion density, and electron temperature. This is useful
+before the native supplement or the 29 GB WarpX archive is available, but a
+digitized plot is not native validation data.
+
+AuroraPIC therefore treats this source as a version 2
+`digitized_profile_screening` contract. Its report always records
+`physics_claim = none`, both averaging windows, and whether those windows
+match. It contains no fabricated mode reference. Version 1 profile-plus-mode
+validation contracts remain strict and unchanged.
+
+Keep the manuscript and derived tables outside the repository. After obtaining
+the public accepted manuscript, reproduce the checksum-pinned screening data:
+
+```sh
+python3 scripts/digitize_charoy_figure6.py \
+  /external/reference/charoy-2019-accepted-manuscript.pdf \
+  --case-manifest examples/hall_landmark_axial_azimuthal.case \
+  --output-dir /external/reference/charoy-figure6-screening
+```
+
+Then compare an existing resolved run:
+
+```sh
+python3 scripts/compare_hall.py \
+  /external/run/output \
+  /external/reference/charoy-figure6-screening/reference.hall-reference \
+  --case-manifest examples/hall_landmark_axial_azimuthal.case \
+  --output /external/reference/charoy-figure6-screening/comparison.json
+```
+
+The digitizer verifies the source PDF hash, page-vector structure, curve count,
+and color ordering before emitting profiles. It samples the seven curves on
+the diagnostic 0.2 mm grid and records their midpoint and half-range. That
+half-range measures inter-code spread; it is not experimental uncertainty.
+Use the original authors' numerical supplement, or the checksum-pinned WarpX
+archive, for a validation claim. Screening-only reports are not accepted by
+the seeded ensemble aggregator.
+
 ## Seeded ensemble comparison
 
 A turbulent Hall result cannot be accepted from one favorable seed.

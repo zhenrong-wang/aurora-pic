@@ -170,6 +170,12 @@ def aggregate(args: argparse.Namespace) -> dict[str, object]:
         report = load_json(report_path, f"seed {seed} comparison report")
         if report.get("schema_version") != 1:
             raise EnsembleError(f"seed {seed} comparison schema must be 1")
+        if report.get(
+            "comparison_scope", "profile_and_mode_validation"
+        ) != "profile_and_mode_validation":
+            raise EnsembleError(
+                f"seed {seed} uses a screening-only comparison contract"
+            )
         if (
             report.get("case_id") != campaign.get("case_id")
             or not isinstance(report.get("passed"), bool)

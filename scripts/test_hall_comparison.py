@@ -208,6 +208,62 @@ def main() -> int:
                 == digest(runtime_config),
             "passing Hall comparison report is incomplete",
         )
+        profile_only_manifest = work / "profile-only.hall-reference"
+        profile_only_manifest.write_text(
+            manifest.read_text(encoding="utf-8")
+            .replace(
+                "hall_reference_version = 1\n",
+                "hall_reference_version = 2\n"
+                "comparison_scope = digitized_profile_screening\n",
+            )
+            .replace(
+                f"mode_data_file = {work.joinpath('modes.csv').name}\n"
+                f"mode_data_sha256 = {digest(work / 'modes.csv')}\n",
+                "",
+            )
+            .replace("mode_axis = y\n", "")
+            .replace(
+                "coordinate_absolute_tolerance = 1e-12\n",
+                "coordinate_absolute_tolerance = 1e-12\n"
+                "reference_start_time_s = 0\n"
+                "reference_end_time_s = 0.5\n",
+            )
+            .split("\n[mode.dominant_frequency]\n", 1)[0]
+            + "\n",
+            encoding="utf-8",
+        )
+        profile_only_report = work / "profile-only.json"
+        profile_only = run(
+            [
+                sys.executable,
+                str(COMPARATOR),
+                str(output),
+                str(profile_only_manifest),
+                "--case-manifest",
+                str(case),
+                "--output",
+                str(profile_only_report),
+            ]
+        )
+        profile_only_result = json.loads(
+            profile_only_report.read_text(encoding="utf-8")
+        )
+        require(
+            profile_only.returncode == 0
+            and profile_only_result["passed"]
+            and profile_only_result["comparison_scope"]
+                == "digitized_profile_screening"
+            and profile_only_result["physics_claim"] == "none"
+            and profile_only_result["reference_averaging_window"][
+                "matches_simulation"
+            ]
+            and profile_only_result["mode_comparisons"] == []
+            and profile_only_result["reference"]["mode_data"] is None
+            and profile_only_result["simulation"][
+                "mode_history_sha256"
+            ] is None,
+            "profile-only Hall screening contract is incomplete",
+        )
         existing = run(command)
         require(
             existing.returncode == 2

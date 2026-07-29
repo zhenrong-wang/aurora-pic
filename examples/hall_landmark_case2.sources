@@ -13,6 +13,22 @@ acquisition = manual_from_publisher_record
 artifact_name = externally_supplied
 display_size = unknown
 
+[source.accepted_manuscript_figure6]
+variant = charoy-2019-figure6-seven-code-envelope
+kind = digitized_published_profile_screening
+cells_x = figure_coordinates
+cells_y = seven_code_envelope
+landing_url = https://www.osti.gov/servlets/purl/1572876
+doi = 10.1088/1361-6595/ab46c5
+license = CC-BY-NC-ND-3.0-after-embargo
+acquisition = public_accepted_manuscript
+artifact_name = charoy-2019-accepted-manuscript.pdf
+display_size = 1754660 bytes
+sha256 = 3bd8999a50217450f4ce233ebd468a652b4f94250f2dca00a1903256c7598b96
+figure = 6
+averaging_window_s = 1.6e-5,2.0e-5
+comparison_scope = digitized_profile_screening
+
 [source.warpx_deepblue]
 variant = warpx-case2-512x256
 kind = amrex_plotfile_archive
