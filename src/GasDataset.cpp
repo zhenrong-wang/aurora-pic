@@ -165,6 +165,7 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         "energy_scale", "cross_section_scale",
         "angular_model", "mean_cosine_file",
         "mean_cosine_energy_scale",
+        "energy_frame",
     };
 
     Values global;
@@ -315,6 +316,32 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         value.cross_section_scale = number<double>(
             channel.values, "cross_section_scale",
             value.cross_section_scale, channel_context);
+        const std::string energy_frame = lower(
+            channel.values.contains("energy_frame")
+                ? channel.values.at("energy_frame")
+                : "projectile");
+        if (energy_frame == "projectile") {
+            value.energy_frame =
+                CollisionEnergyFrame::Projectile;
+        } else if (
+            energy_frame == "center_of_mass" ||
+            energy_frame == "center-of-mass" ||
+            energy_frame == "centre_of_mass" ||
+            energy_frame == "centre-of-mass") {
+            value.energy_frame =
+                CollisionEnergyFrame::CenterOfMass;
+        } else {
+            throw std::runtime_error(
+                channel_context +
+                " energy_frame must be projectile or center_of_mass");
+        }
+        if (value.energy_frame ==
+                CollisionEnergyFrame::CenterOfMass &&
+            format_version != 2) {
+            throw std::runtime_error(
+                channel_context +
+                " center-of-mass energy requires gas_data_version = 2");
+        }
         const bool has_angular_data =
             channel.values.contains("angular_model") ||
             channel.values.contains("mean_cosine_file") ||
@@ -331,6 +358,9 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         if (angular_model == "isotropic") {
             value.angular_scattering =
                 AngularScatteringKind::Isotropic;
+        } else if (angular_model == "backward") {
+            value.angular_scattering =
+                AngularScatteringKind::Backward;
         } else if (
             angular_model == "henyey_greenstein" ||
             angular_model == "henyey-greenstein") {
@@ -339,7 +369,7 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         } else {
             throw std::runtime_error(
                 channel_context +
-                " angular_model must be isotropic or "
+                " angular_model must be isotropic, backward, or "
                 "henyey_greenstein");
         }
         if (channel.values.contains("mean_cosine_file")) {
@@ -365,6 +395,16 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
             throw std::runtime_error(
                 channel_context +
                 " inelastic threshold_energy must be positive");
+        }
+        if (value.energy_frame ==
+                CollisionEnergyFrame::CenterOfMass &&
+            value.process != CollisionProcessKind::Elastic &&
+            value.process !=
+                CollisionProcessKind::ChargeExchange) {
+            throw std::runtime_error(
+                channel_context +
+                " center_of_mass energy is supported only for elastic "
+                "and charge-exchange channels");
         }
         if (value.angular_scattering !=
                 AngularScatteringKind::Isotropic &&

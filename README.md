@@ -396,7 +396,11 @@ of steady signed electron flux across interior planes and writes the complete
 profile, block uncertainty, fit R², and bounded-work evidence.
 Elastic 3V channels may additionally provide a validated energy-dependent
 mean-cosine table for Henyey-Greenstein anisotropic scattering; isotropic
-behavior remains the explicit default.
+behavior remains the explicit default. Elastic and resonant charge-exchange
+tables can explicitly use projectile or center-of-mass lookup energy, and a
+3V elastic channel can select exact backward center-of-mass scattering. These
+generic controls cover the two-component He+-He collision law required by the
+Turner CCP benchmark without changing the default collision contract.
 
 2D configs must set `dimension = 2` and use `nx`/`ny`, `length_x`/`length_y`, 2D velocity keys, and 2D initialization bounds. `boundary = dirichlet` may also provide side electrode potentials (`phi_left`, `phi_right`, `phi_bottom`, `phi_top`) and side tags (`boundary_left_tag`, `boundary_right_tag`, `boundary_bottom_tag`, `boundary_top_tag`):
 

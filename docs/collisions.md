@@ -95,12 +95,17 @@ run. In SI mode, `neutral_density` is in `m^-3`, cross section is in `m^2`,
 particle mass is in kg, and velocity is in `m/s`, producing a rate in `s^-1`.
 Normalized inputs must form the corresponding self-consistent normalized rate.
 
-For relative speed `g = abs(v - u_n)` and the existing projectile-energy
-cross-section convention `E = m g^2 / 2`, the instantaneous channel frequency
-is `nu_i = neutral_density * sigma_i(E) * g`. Candidate times are sampled
-from an exponential distribution with `max_frequency`; a candidate is
-accepted into a channel in proportion to `nu_i / max_frequency`, otherwise it
-is a null collision. Multiple candidates per timestep are supported.
+For relative speed `g = abs(v - u_n)`, the default cross-section lookup uses
+projectile-frame energy `E = m g^2 / 2`. An elastic or charge-exchange
+channel may instead declare `energy_frame = center_of_mass`, which uses
+`E = mu g^2 / 2` and reduced mass
+`mu = m_projectile*m_neutral/(m_projectile + m_neutral)`. This distinction is
+material for ion-neutral tables and is a factor of two for equal masses. The
+instantaneous channel frequency is
+`nu_i = neutral_density * sigma_i(E) * g`. Candidate times are sampled from
+an exponential distribution with `max_frequency`; a candidate is accepted
+into a channel in proportion to `nu_i / max_frequency`, otherwise it is a
+null collision. Multiple candidates per timestep are supported.
 
 `max_frequency` is a user-supplied conservative bound on the sum of channel
 frequencies. For thermal neutrals the kernel also bounds every channel over
@@ -303,7 +308,7 @@ The public
 embedding applications.
 
 Elastic channels are isotropic by default. A version-2 manifest or inline
-imported-2D channel may instead set
+3V channel may instead set
 `angular_model = henyey_greenstein` and provide a strict two-column
 `mean_cosine_file` containing energy and `g(E) = <cos(theta)>`, with
 `-1 < g < 1`. `mean_cosine_energy_scale` converts its energy column into the
@@ -313,6 +318,14 @@ configured neutral mass for recoil exactly as in isotropic elastic events.
 Angular tables must cover the full cross-section energy range; they are
 validated, included in restart fingerprints and collision metadata, and
 rejected by the 1V interface.
+
+An elastic 3V channel may also set `angular_model = backward`. It reverses
+the relative velocity in the center-of-mass frame while preserving total
+momentum and kinetic energy. For equal projectile and neutral masses this
+exactly exchanges their velocities, matching the backward He+-He component
+used by the Turner capacitively coupled discharge benchmark. Separate
+isotropic and backward cross-section channels can use
+`energy_frame = center_of_mass`; both choices are fingerprinted.
 
 For an anisotropic channel, `cross_section_file` must represent the total
 elastic collision cross section used to set event frequency. A
@@ -373,9 +386,10 @@ enabling finite-mass recoil.
 ## Current limitations
 
 - Collision sampling is currently serial to preserve deterministic RNG order.
-- 1D named models support one model per target plus elastic, excitation, and
-  equal-sharing ionization. Attachment and charge exchange remain
-  imported-2D-only.
+- 1D named 3V models support one model per target plus isotropic,
+  Henyey-Greenstein, or backward elastic scattering, excitation,
+  equal-sharing ionization, and resonant charge exchange. The 1V interface
+  remains isotropic and non-reactive apart from excitation.
 - SI neutrals have a bounded Maxwellian at fixed configured temperature.
   Neutral bulk flow, excitation/ionization recoil, depletion, and gas heating
   are absent; normalized-unit neutrals remain stationary.

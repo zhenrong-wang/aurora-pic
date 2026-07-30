@@ -117,6 +117,8 @@ private:
     };
 
     std::vector<double> rates_for_speed(double speed) const;
+    double collision_energy(
+        const Channel& channel, double relative_speed) const;
     void validate_frequency_bound(double projectile_speed) const;
     double sample_neutral_velocity(std::mt19937_64& rng) const;
     Vec3 sample_neutral_velocity_3v(std::mt19937_64& rng) const;

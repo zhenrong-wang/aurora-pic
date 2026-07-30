@@ -508,6 +508,12 @@ void validate_config(
                 "electron swarm benchmark does not support "
                 "charge-exchange channels");
         }
+        if (channel.energy_frame !=
+            CollisionEnergyFrame::Projectile) {
+            throw std::runtime_error(
+                "electron swarm benchmark requires projectile-frame "
+                "cross-section energy");
+        }
         const CrossSectionTable table(
             channel.cross_section_file,
             channel.energy_scale,

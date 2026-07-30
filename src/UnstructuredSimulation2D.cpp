@@ -254,6 +254,8 @@ void write_collision_metadata(
                << channel.threshold_energy << ' '
                << channel.energy_scale << ' '
                << channel.cross_section_scale << ' '
+               << std::quoted(
+                      to_string(channel.energy_frame)) << ' '
                << std::quoted(channel.cross_section_file.string()) << ' '
                << std::quoted(channel.secondary_species) << ' '
                << std::quoted(channel.ion_species) << ' '

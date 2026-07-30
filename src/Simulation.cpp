@@ -263,12 +263,9 @@ Simulation::Simulation(Config cfg)
             const auto& channel_config =
                 collision.channels[channel];
             if (channel_config.process ==
-                    CollisionProcessKind::Attachment ||
-                channel_config.process ==
-                    CollisionProcessKind::ChargeExchange) {
+                CollisionProcessKind::Attachment) {
                 throw std::invalid_argument(
-                    "1D MCC does not support attachment or "
-                    "charge exchange");
+                    "1D MCC does not support attachment");
             }
             if (channel_config.process !=
                 CollisionProcessKind::Ionization) {

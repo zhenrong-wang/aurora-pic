@@ -332,9 +332,48 @@ CollisionProcessKind parse_collision_process(
     if (value == "ionization") {
         return CollisionProcessKind::Ionization;
     }
+    if (value == "charge_exchange" || value == "charge-exchange") {
+        return CollisionProcessKind::ChargeExchange;
+    }
     throw std::runtime_error(
         "invalid collision channel type: '" + value +
-        "'; expected elastic, excitation, or ionization");
+        "'; expected elastic, excitation, ionization, or "
+        "charge_exchange");
+}
+
+AngularScatteringKind parse_angular_scattering(
+    const KeyValue& kv, AngularScatteringKind def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "angular_model", to_string(def))));
+    if (value == "isotropic") {
+        return AngularScatteringKind::Isotropic;
+    }
+    if (value == "backward") {
+        return AngularScatteringKind::Backward;
+    }
+    if (value == "henyey_greenstein" ||
+        value == "henyey-greenstein") {
+        return AngularScatteringKind::HenyeyGreenstein;
+    }
+    throw std::runtime_error(
+        "invalid angular_model: '" + value +
+        "'; expected isotropic, backward, or henyey_greenstein");
+}
+
+CollisionEnergyFrame parse_collision_energy_frame(
+    const KeyValue& kv, CollisionEnergyFrame def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "energy_frame", to_string(def))));
+    if (value == "projectile") {
+        return CollisionEnergyFrame::Projectile;
+    }
+    if (value == "center_of_mass" || value == "center-of-mass" ||
+        value == "centre_of_mass" || value == "centre-of-mass") {
+        return CollisionEnergyFrame::CenterOfMass;
+    }
+    throw std::runtime_error(
+        "invalid energy_frame: '" + value +
+        "'; expected projectile or center_of_mass");
 }
 
 UnitSystemConfig parse_units(
@@ -634,20 +673,59 @@ void validate_config(const Config& cfg) {
                 channel.cross_section_scale,
                 channel_context + " cross_section_scale");
             if (channel.angular_scattering !=
-                    AngularScatteringKind::Isotropic ||
-                !channel.mean_cosine_file.empty() ||
-                channel.mean_cosine_energy_scale != 1.0) {
+                    AngularScatteringKind::Isotropic &&
+                cfg.velocity_dimensions != 3) {
                 throw std::runtime_error(
                     channel_context +
-                    " does not support anisotropic scattering");
+                    " anisotropic scattering requires "
+                    "velocity_dimensions = 3");
+            }
+            if (channel.angular_scattering ==
+                AngularScatteringKind::HenyeyGreenstein) {
+                if (channel.mean_cosine_file.empty()) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " Henyey-Greenstein scattering requires "
+                        "mean_cosine_file");
+                }
+            } else if (!channel.mean_cosine_file.empty() ||
+                       channel.mean_cosine_energy_scale != 1.0) {
+                throw std::runtime_error(
+                    channel_context +
+                    " mean-cosine data requires angular_model = "
+                    "henyey_greenstein");
             }
             if (channel.process ==
-                    CollisionProcessKind::Attachment ||
-                channel.process ==
-                    CollisionProcessKind::ChargeExchange) {
+                CollisionProcessKind::Attachment) {
                 throw std::runtime_error(
                     channel_context +
                     " process is not supported in 1D");
+            }
+            if (channel.process ==
+                    CollisionProcessKind::ChargeExchange &&
+                cfg.velocity_dimensions != 3) {
+                throw std::runtime_error(
+                    channel_context +
+                    " charge exchange requires "
+                    "velocity_dimensions = 3");
+            }
+            if (channel.energy_frame ==
+                    CollisionEnergyFrame::CenterOfMass &&
+                !(collision.neutral_mass > 0.0)) {
+                throw std::runtime_error(
+                    channel_context +
+                    " center_of_mass energy requires positive "
+                    "neutral_mass");
+            }
+            if (channel.energy_frame ==
+                    CollisionEnergyFrame::CenterOfMass &&
+                channel.process != CollisionProcessKind::Elastic &&
+                channel.process !=
+                    CollisionProcessKind::ChargeExchange) {
+                throw std::runtime_error(
+                    channel_context +
+                    " center_of_mass energy is supported only for "
+                    "elastic and charge-exchange channels");
             }
             if (channel.process ==
                 CollisionProcessKind::Elastic) {
@@ -1286,12 +1364,15 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> collision_keys{
         "enabled", "model", "frequency", "neutral_temperature_velocity",
         "neutral_density", "species", "max_frequency",
-        "max_candidates_per_particle"
+        "max_candidates_per_particle", "neutral_mass",
+        "neutral_temperature"
     };
     static const std::unordered_set<std::string> collision_channel_keys{
         "name", "type", "cross_section_file", "threshold_energy",
         "energy_scale", "cross_section_scale",
-        "secondary_species", "ion_species"
+        "secondary_species", "ion_species", "angular_model",
+        "mean_cosine_file", "mean_cosine_energy_scale",
+        "energy_frame"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density",
@@ -1372,6 +1453,15 @@ Config load_config(const std::string& path) {
         as<std::size_t>(
             collision, "max_candidates_per_particle",
             cfg.collisions.max_candidates_per_particle);
+    cfg.collisions.neutral_mass =
+        as<double>(
+            collision, "neutral_mass",
+            cfg.collisions.neutral_mass);
+    cfg.collisions.neutral_temperature =
+        as<double>(
+            collision, "neutral_temperature",
+            cfg.collisions.neutral_temperature);
+    cfg.collisions.gas_data_units = cfg.units.system;
     cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
     cfg.checkpoint_path = as<std::string>(global, "checkpoint_path", cfg.checkpoint_path);
@@ -1464,6 +1554,26 @@ Config load_config(const std::string& path) {
             as<double>(
                 block, "cross_section_scale",
                 channel.cross_section_scale);
+        channel.angular_scattering =
+            parse_angular_scattering(
+                block, channel.angular_scattering);
+        channel.energy_frame =
+            parse_collision_energy_frame(
+                block, channel.energy_frame);
+        const auto mean_cosine_file =
+            as<std::string>(block, "mean_cosine_file", "");
+        if (!mean_cosine_file.empty()) {
+            const std::filesystem::path configured(mean_cosine_file);
+            channel.mean_cosine_file =
+                (configured.is_absolute()
+                     ? configured
+                     : config_directory / configured)
+                    .lexically_normal();
+        }
+        channel.mean_cosine_energy_scale =
+            as<double>(
+                block, "mean_cosine_energy_scale",
+                channel.mean_cosine_energy_scale);
         channel.secondary_species =
             as<std::string>(
                 block, "secondary_species",
@@ -1519,6 +1629,15 @@ Config load_config(const std::string& path) {
             as<std::size_t>(
                 block.values, "max_candidates_per_particle",
                 named.config.max_candidates_per_particle);
+        named.config.neutral_mass =
+            as<double>(
+                block.values, "neutral_mass",
+                named.config.neutral_mass);
+        named.config.neutral_temperature =
+            as<double>(
+                block.values, "neutral_temperature",
+                named.config.neutral_temperature);
+        named.config.gas_data_units = cfg.units.system;
         for (const auto& channel : block.channel_blocks) {
             named.config.channels.push_back(
                 parse_channel(channel));

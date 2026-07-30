@@ -512,6 +512,67 @@ int main() {
                 observed_recoil,
                 "finite-mass elastic collision was not sampled");
 
+            auto center_of_mass_config = elastic_config;
+            center_of_mass_config.neutral_mass = 1.0;
+            center_of_mass_config.channels.front().energy_frame =
+                pic::CollisionEnergyFrame::CenterOfMass;
+            pic::NullCollisionModel center_of_mass_elastic(
+                center_of_mass_config, 1.0);
+            std::mt19937_64 center_of_mass_rng(141421);
+            std::uint64_t center_of_mass_accepted = 0;
+            for (std::size_t sample = 0; sample < 10000; ++sample) {
+                pic::Vec3 projectile{std::sqrt(2.0), 0.0, 0.0};
+                const auto stats = center_of_mass_elastic.collide(
+                    projectile, 0.1, center_of_mass_rng);
+                center_of_mass_accepted +=
+                    stats.channel_collisions[0];
+            }
+            require(
+                center_of_mass_accepted > 280 &&
+                    center_of_mass_accepted < 440,
+                "center-of-mass energy did not select the expected "
+                "cross section");
+            auto projectile_frame_config = center_of_mass_config;
+            projectile_frame_config.channels.front().energy_frame =
+                pic::CollisionEnergyFrame::Projectile;
+            pic::NullCollisionModel projectile_frame_elastic(
+                projectile_frame_config, 1.0);
+            require(
+                center_of_mass_elastic.signature() !=
+                    projectile_frame_elastic.signature(),
+                "MCC signature ignored the collision energy frame");
+
+            auto backward_config = center_of_mass_config;
+            backward_config.channels.front().angular_scattering =
+                pic::AngularScatteringKind::Backward;
+            pic::NullCollisionModel backward_elastic(
+                backward_config, 1.0);
+            std::mt19937_64 backward_rng(173205);
+            bool observed_backward = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !observed_backward; ++attempt) {
+                pic::Vec3 projectile{std::sqrt(2.0), 0.0, 0.0};
+                const auto stats = backward_elastic.collide(
+                    projectile, 0.1, backward_rng);
+                if (stats.channel_collisions[0] != 1) continue;
+                require_near(
+                    norm(projectile), 0.0, 1e-14,
+                    "equal-mass backward scattering did not exchange "
+                    "the projectile and neutral velocities");
+                observed_backward = true;
+            }
+            require(
+                observed_backward,
+                "backward elastic collision was not sampled");
+            require_throws_contains(
+                [&] {
+                    double projectile = std::sqrt(2.0);
+                    (void)backward_elastic.collide(
+                        projectile, 0.1, backward_rng);
+                },
+                "3V collision interface",
+                "scalar MCC accepted backward scattering");
+
             auto excitation_config = elastic_config;
             excitation_config.max_frequency = 4.0;
             excitation_config.channels = {
@@ -3357,6 +3418,79 @@ int main() {
                 "named 1D MCC configuration did not preserve model "
                 "and ionization product mappings");
 
+            const auto turner_config_path =
+                std::filesystem::path(
+                    "test_turner_ion_collision.cfg");
+            const auto turner_table_path =
+                std::filesystem::path("ion_backward.dat");
+            const auto turner_output_dir =
+                std::filesystem::path(
+                    "test_output_turner_collision");
+            std::filesystem::remove_all(turner_output_dir);
+            {
+                std::ofstream table(turner_table_path);
+                table << "0 1e-19\n10 1e-19\n";
+            }
+            {
+                std::ofstream config(turner_config_path);
+                config
+                    << "config_version = 1\n"
+                    << "units = si\n"
+                    << "dimension = 1\n"
+                    << "velocity_dimensions = 3\n"
+                    << "nx = 3\n"
+                    << "length = 0.067\n"
+                    << "dt = 1e-12\n"
+                    << "steps = 1\n"
+                    << "boundary = dirichlet\n"
+                    << "output_interval = 1\n"
+                    << "output_dir = "
+                    << turner_output_dir.string() << "\n"
+                    << "[collisions.ion_mcc]\n"
+                    << "model = null_collision\n"
+                    << "species = ions\n"
+                    << "neutral_density = 9.64e20\n"
+                    << "neutral_mass = 6.67e-27\n"
+                    << "neutral_temperature = 300\n"
+                    << "max_frequency = 1e8\n"
+                    << "[collisions.ion_mcc.channel.backward]\n"
+                    << "type = elastic\n"
+                    << "cross_section_file = ion_backward.dat\n"
+                    << "energy_scale = 1.602176634e-19\n"
+                    << "angular_model = backward\n"
+                    << "energy_frame = center_of_mass\n"
+                    << "[species.ions]\n"
+                    << "charge = 1.602176634e-19\n"
+                    << "mass = 6.67e-27\n"
+                    << "density = 1e14\n"
+                    << "particles = 2\n";
+            }
+            const auto turner_config =
+                pic::load_config(turner_config_path.string());
+            require(
+                turner_config.collision_models.size() == 1 &&
+                    turner_config.collision_models[0].config
+                            .neutral_mass == 6.67e-27 &&
+                    turner_config.collision_models[0].config
+                            .neutral_temperature == 300.0 &&
+                    turner_config.collision_models[0].config
+                            .gas_data_units ==
+                        pic::UnitSystem::SI &&
+                    turner_config.collision_models[0].config.channels[0]
+                            .angular_scattering ==
+                        pic::AngularScatteringKind::Backward &&
+                    turner_config.collision_models[0].config.channels[0]
+                            .energy_frame ==
+                        pic::CollisionEnergyFrame::CenterOfMass,
+                "Turner ion-collision frame and scattering contract "
+                "did not survive 1D config parsing");
+            pic::Simulation turner_collision_smoke(turner_config);
+            turner_collision_smoke.initialize();
+            turner_collision_smoke.step();
+            std::filesystem::remove(turner_config_path);
+            std::filesystem::remove(turner_table_path);
+            std::filesystem::remove_all(turner_output_dir);
+
             const auto table_path =
                 std::filesystem::path(
                     "test_mcc_1d_multi_reactive.dat");
@@ -5156,6 +5290,54 @@ int main() {
                                 .mean_cosine_file.filename() ==
                             "synthetic_swarm_mean_cosine.dat",
                     "gas dataset loader lost angular scattering data");
+
+                const auto turner_table_path =
+                    std::filesystem::path(
+                        "test_turner_ion_cross_section.dat");
+                const auto turner_gas_path =
+                    std::filesystem::path(
+                        "test_turner_ion.gas");
+                {
+                    std::ofstream table(turner_table_path);
+                    table << "0 1e-19\n10 1e-19\n";
+                    std::ofstream manifest(turner_gas_path);
+                    manifest
+                        << "gas_data_version = 2\n"
+                        << "units = si\n"
+                        << "gas = helium\n"
+                        << "neutral_mass = 6.67e-27\n"
+                        << "dataset_id = test.turner.he-ion\n"
+                        << "dataset_version = 1\n"
+                        << "data_provenance = unit test\n"
+                        << "citation = Turner et al. 2013\n"
+                        << "retrieved = 2026-07-30\n"
+                        << "license = test data\n"
+                        << "[collision.isotropic]\n"
+                        << "type = elastic\n"
+                        << "cross_section_file = "
+                        << turner_table_path.string() << "\n"
+                        << "energy_scale = 1.602176634e-19\n"
+                        << "energy_frame = center_of_mass\n"
+                        << "[collision.backward]\n"
+                        << "type = elastic\n"
+                        << "cross_section_file = "
+                        << turner_table_path.string() << "\n"
+                        << "energy_scale = 1.602176634e-19\n"
+                        << "energy_frame = center_of_mass\n"
+                        << "angular_model = backward\n";
+                }
+                const auto turner_gas =
+                    pic::load_gas_dataset(turner_gas_path);
+                require(
+                    turner_gas.channels.size() == 2 &&
+                        turner_gas.channels[0].energy_frame ==
+                            pic::CollisionEnergyFrame::CenterOfMass &&
+                        turner_gas.channels[1].angular_scattering ==
+                            pic::AngularScatteringKind::Backward,
+                    "gas dataset loader lost Turner ion energy-frame "
+                    "or backward-scattering data");
+                std::filesystem::remove(turner_gas_path);
+                std::filesystem::remove(turner_table_path);
 
                 const auto invalid_dataset =
                     std::filesystem::path(

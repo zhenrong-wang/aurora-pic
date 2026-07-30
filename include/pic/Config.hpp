@@ -32,7 +32,12 @@ struct SpeciesConfig {
 enum class CollisionModelKind { BGK, NullCollision };
 enum class AngularScatteringKind {
     Isotropic,
+    Backward,
     HenyeyGreenstein
+};
+enum class CollisionEnergyFrame {
+    Projectile,
+    CenterOfMass
 };
 enum class CollisionProcessKind {
     Elastic,
@@ -66,6 +71,8 @@ inline std::string to_string(AngularScatteringKind model) {
     switch (model) {
         case AngularScatteringKind::Isotropic:
             return "isotropic";
+        case AngularScatteringKind::Backward:
+            return "backward";
         case AngularScatteringKind::HenyeyGreenstein:
             return "henyey_greenstein";
     }
@@ -86,7 +93,19 @@ struct CollisionChannelConfig {
         AngularScatteringKind::Isotropic};
     std::filesystem::path mean_cosine_file{};
     double mean_cosine_energy_scale{1.0};
+    CollisionEnergyFrame energy_frame{
+        CollisionEnergyFrame::Projectile};
 };
+
+inline std::string to_string(CollisionEnergyFrame frame) {
+    switch (frame) {
+        case CollisionEnergyFrame::Projectile:
+            return "projectile";
+        case CollisionEnergyFrame::CenterOfMass:
+            return "center_of_mass";
+    }
+    return "unknown";
+}
 
 struct CollisionConfig {
     bool enabled{false};

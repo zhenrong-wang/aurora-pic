@@ -478,6 +478,22 @@ NullCollisionModel::NullCollisionModel(
                 "mean-cosine data requires angular_model = "
                 "henyey_greenstein");
         }
+        if (channel_config.energy_frame ==
+                CollisionEnergyFrame::CenterOfMass &&
+            !(config_.neutral_mass > 0.0)) {
+            throw std::invalid_argument(
+                "center-of-mass collision energy requires positive "
+                "neutral_mass");
+        }
+        if (channel_config.energy_frame ==
+                CollisionEnergyFrame::CenterOfMass &&
+            channel_config.process != CollisionProcessKind::Elastic &&
+            channel_config.process !=
+                CollisionProcessKind::ChargeExchange) {
+            throw std::invalid_argument(
+                "center-of-mass collision energy is supported only for "
+                "elastic and charge-exchange channels");
+        }
         if (channel_config.process == CollisionProcessKind::Ionization &&
             (channel_config.secondary_species.empty() ||
              channel_config.ion_species.empty())) {
@@ -525,6 +541,11 @@ NullCollisionModel::NullCollisionModel(
         hash_string(
             signature_,
             to_string(channel_config.angular_scattering));
+        if (channel_config.energy_frame !=
+            CollisionEnergyFrame::Projectile) {
+            hash_string(
+                signature_, to_string(channel_config.energy_frame));
+        }
         hash_double(signature_, channel_config.threshold_energy);
         if (channel_config.process ==
             CollisionProcessKind::Ionization) {
@@ -555,19 +576,33 @@ NullCollisionModel::NullCollisionModel(
     }
 }
 
+double NullCollisionModel::collision_energy(
+    const Channel& channel, double relative_speed) const {
+    double energy_mass = particle_mass_;
+    if (channel.config.energy_frame ==
+        CollisionEnergyFrame::CenterOfMass) {
+        energy_mass =
+            particle_mass_ * config_.neutral_mass /
+            (particle_mass_ + config_.neutral_mass);
+    }
+    const double energy =
+        0.5 * energy_mass * relative_speed * relative_speed;
+    if (!std::isfinite(energy)) {
+        throw std::overflow_error("MCC collision energy overflow");
+    }
+    return energy;
+}
+
 std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
     if (!std::isfinite(speed) || speed < 0.0) {
         throw std::invalid_argument(
             "MCC particle speed must be finite and non-negative");
     }
-    const double energy = 0.5 * particle_mass_ * speed * speed;
-    if (!std::isfinite(energy)) {
-        throw std::overflow_error("MCC particle energy overflow");
-    }
     std::vector<double> result;
     result.reserve(channels_.size());
     double total = 0.0;
     for (const auto& channel : channels_) {
+        const double energy = collision_energy(channel, speed);
         double rate = 0.0;
         if (energy >= channel.config.threshold_energy) {
             rate = config_.neutral_density *
@@ -603,28 +638,21 @@ void NullCollisionModel::validate_frequency_bound(
         throw std::overflow_error(
             "thermal-neutral relative speed overflow");
     }
-    const double maximum_energy =
-        0.5 * particle_mass_ *
-        maximum_relative_speed * maximum_relative_speed;
-    if (!std::isfinite(maximum_energy)) {
-        throw std::overflow_error(
-            "thermal-neutral relative energy overflow");
-    }
     double frequency_bound = 0.0;
     for (const auto& channel : channels_) {
+        const double maximum_energy =
+            collision_energy(channel, maximum_relative_speed);
         if (maximum_energy < channel.config.threshold_energy) {
             continue;
         }
+        const double minimum_relative_speed =
+            std::max(
+                0.0,
+                projectile_speed - thermal_speed_limit);
         const double minimum_energy =
             std::max(
                 channel.config.threshold_energy,
-                0.5 * particle_mass_ *
-                    std::max(
-                        0.0,
-                        projectile_speed - thermal_speed_limit) *
-                    std::max(
-                        0.0,
-                        projectile_speed - thermal_speed_limit));
+                collision_energy(channel, minimum_relative_speed));
         double maximum_cross_section = std::max(
             channel.table.evaluate(minimum_energy),
             channel.table.evaluate(maximum_energy));
@@ -763,11 +791,16 @@ void NullCollisionModel::apply_channel(
     const double mean_cosine =
         channel.mean_cosine.has_value()
             ? channel.mean_cosine->evaluate(
-                  0.5 * particle_mass_ *
-                  initial_speed * initial_speed)
+                  collision_energy(channel, initial_speed))
             : 0.0;
     const Vec3 scattered_relative =
-        channel.mean_cosine.has_value()
+        channel.config.angular_scattering ==
+                AngularScatteringKind::Backward
+            ? Vec3{
+                  -initial_relative.x,
+                  -initial_relative.y,
+                  -initial_relative.z}
+            : channel.mean_cosine.has_value()
             ? angular_velocity(
                   initial_relative, speed, mean_cosine, rng)
             : isotropic_velocity(speed, rng);
