@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "workstation_population_flux_diagnostic",
+  "physics_claim": "none",
+  "passed": false,
+  "simulation_source_commit": "974ead541f4d6731b49a5b6410bd42d27d4df77c",
+  "analysis_source_commit": "033034cbf52d56929164364e70bd503e3e220a3e",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "averaging_window": {
+    "start_step": 4000,
+    "end_step": 5000,
+    "duration_s": 5e-09,
+    "samples": 11,
+    "intervals": 10
+  },
+  "stages": {
+    "population_0p5": {
+      "particles_per_cell_per_species": 8,
+      "electron_loss_current_a": 3.5968865433306716,
+      "ion_loss_current_a": 0.31242444363005917,
+      "net_charge_loss_current_a": -3.284462099700612,
+      "ion_to_electron_loss_current_ratio": 0.08685968819599132,
+      "electron_interval_current_stddev_a": 1.0545499342149731,
+      "ion_interval_current_stddev_a": 0.19108937116957167,
+      "net_interval_current_stddev_a": 0.971267966475879,
+      "positive_net_interval_fraction": 0.0
+    },
+    "population_1": {
+      "particles_per_cell_per_species": 16,
+      "electron_loss_current_a": 1.3258011646352483,
+      "ion_loss_current_a": 0.3244407683850614,
+      "net_charge_loss_current_a": -1.001360396250187,
+      "ion_to_electron_loss_current_ratio": 0.24471299093655638,
+      "electron_interval_current_stddev_a": 1.5741385429052934,
+      "ion_interval_current_stddev_a": 0.18394529858468708,
+      "net_interval_current_stddev_a": 1.6586591155615775,
+      "positive_net_interval_fraction": 0.5
+    },
+    "population_2": {
+      "particles_per_cell_per_species": 32,
+      "electron_loss_current_a": 1.2176542418402276,
+      "ion_loss_current_a": 0.3825196713675726,
+      "net_charge_loss_current_a": -0.835134570472655,
+      "ion_to_electron_loss_current_ratio": 0.31414473684210614,
+      "electron_interval_current_stddev_a": 1.251173268163809,
+      "ion_interval_current_stddev_a": 0.08750308625019944,
+      "net_interval_current_stddev_a": 1.241817707349749,
+      "positive_net_interval_fraction": 0.4
+    }
+  },
+  "fine_to_baseline": {
+    "electron_loss_current_relative_change": 0.0815709969788523,
+    "ion_loss_current_relative_change": 0.1790123456790129,
+    "net_charge_loss_current_relative_change": 0.16600000000000084,
+    "ion_to_electron_loss_current_ratio_relative_change": 0.28372725795971515,
+    "positive_net_interval_fraction_relative_change": 0.19999999999999996
+  },
+  "assessment": {
+    "boundary_flux_is_electron_loss_dominated_on_average": true,
+    "persistent_mean_ion_surplus_observed": false,
+    "short_positive_net_intervals_observed": true,
+    "boundary_flux_population_scaling_established": false,
+    "ready_for_physics_claim": false,
+    "interpretation": "The fine run loses 1.218 A of electron charge and 0.383 A of ion charge over the 20-25 ns averaging window, for a net -0.835 A charge-loss current. Fine-to-baseline electron, ion, and net-current changes are 8.2%, 17.9%, and 16.6%, while electron and net interval standard deviations are comparable to or larger than their means. Reverse demand is caused by short ion-dominant excursions within an electron-dominant mean, not by a persistent mean sign error.",
+    "next_gate": "Compare the same physical boundary-flux metrics across longer disjoint time windows before defining a v3 acceptance threshold."
+  },
+  "sha256": {
+    "convergence_manifest": "f02016a96232d49cf9bf4fbb749ce195d67fa561258b7dcce332c0cd2549c7ad",
+    "population_flux_report": "8a836c506a86ff42d8e451de66df8343352dbfc1681935a9e9d73fd56185e620",
+    "analyzer": "ece9384f820dc61fad299d479ce15fa99857149a1779104492d4ebca4810f897"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}

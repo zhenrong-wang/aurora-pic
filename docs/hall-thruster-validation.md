@@ -635,6 +635,19 @@ bookkeeping defect. It does not establish population convergence. The next
 gate is time-windowed, species-resolved boundary-flux scaling; only then
 should the raw maximum criterion be reconsidered.
 
+That population-flux analysis is recorded in
+`benchmarks/hall/landmark-population-flux-20260730-seed24680.json` and reuses
+the pinned 20–25 ns outputs. At 32 particles/cell/species, averaged electron
+and ion loss currents are 1.218 A and 0.383 A, respectively, giving a net
+charge-loss current of -0.835 A. Fine-to-baseline changes are 8.2% for
+electron current, 17.9% for ion current, and 16.6% for net current. The mean
+therefore remains electron-loss dominated; reverse demand comes from short
+ion-dominant excursions, not a persistent mean ion surplus. Ten-sample
+electron and net-current standard deviations remain comparable to or larger
+than their means, so this is not yet a boundary-flux convergence claim. A v3
+criterion must be based on longer, disjoint time windows rather than fitted
+to this observation.
+
 That matched flux study is recorded in
 `benchmarks/hall/landmark-boundary-flux-scaling-v10-20260730-seed24680.json`.
 The 8, 16, and 32 particle/cell checkpoints were each continued over the same
