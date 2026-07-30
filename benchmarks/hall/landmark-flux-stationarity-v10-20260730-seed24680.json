@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "flux_stationarity_diagnostic",
+  "physics_claim": "none",
+  "stationarity_claim": "none",
+  "simulation_source_commit": "c6c7e264efa3a9c9020c88055d6b4b5e925c5321",
+  "analysis_source_commit": "67dd612dec629d21baad43ece93e510568588b28",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "simulation": {
+    "particles_per_cell_per_species": 32,
+    "cells_x": 125,
+    "cells_y": 64,
+    "timestep_s": 5e-12,
+    "restart_step": 6000,
+    "final_step": 9000,
+    "window_steps": 1000,
+    "window_duration_s": 5e-09,
+    "windows": 3,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "wall_seconds": 345.88,
+    "user_seconds": 345.47,
+    "system_seconds": 0.22,
+    "maximum_resident_kib": 61620,
+    "artifact_bytes": 175721376,
+    "final_live_particles": 534936,
+    "final_live_electrons": 264141,
+    "final_live_ions": 270795
+  },
+  "windows": [
+    {
+      "start_step": 6000,
+      "end_step": 7000,
+      "left_electron_charge_rate_a": -1.0354066497226964,
+      "left_ion_charge_rate_a": 0.44460401593508425,
+      "left_net_charge_rate_a": -0.5908026337876121,
+      "left_positive_net_interval_fraction": 0.5,
+      "reverse_step_fraction": 0.154,
+      "reverse_mean_demand_macroparticles": 1.0129870129870395,
+      "reverse_multi_macro_steps": 1
+    },
+    {
+      "start_step": 7000,
+      "end_step": 8000,
+      "left_electron_charge_rate_a": -0.6709114654876271,
+      "left_ion_charge_rate_a": 0.47865026940759076,
+      "left_net_charge_rate_a": -0.1922611960800364,
+      "left_positive_net_interval_fraction": 0.6,
+      "reverse_step_fraction": 0.164,
+      "reverse_mean_demand_macroparticles": 1.0548780487804328,
+      "reverse_multi_macro_steps": 2
+    },
+    {
+      "start_step": 8000,
+      "end_step": 9000,
+      "left_electron_charge_rate_a": -1.0574365784402004,
+      "left_ion_charge_rate_a": 0.5287182892201002,
+      "left_net_charge_rate_a": -0.5287182892201002,
+      "left_positive_net_interval_fraction": 0.4,
+      "reverse_step_fraction": 0.165,
+      "reverse_mean_demand_macroparticles": 0.9818181818181853,
+      "reverse_multi_macro_steps": 0
+    }
+  ],
+  "cross_window_summary": {
+    "left_electron_charge_rate_mean_a": -0.9212515645501748,
+    "left_electron_charge_rate_coefficient_of_variation": 0.19239642177751498,
+    "left_ion_charge_rate_mean_a": 0.48399085818759174,
+    "left_ion_charge_rate_coefficient_of_variation": 0.07137847742309304,
+    "left_net_charge_rate_mean_a": -0.4372607063625829,
+    "left_net_charge_rate_coefficient_of_variation": 0.40041351506030154,
+    "reverse_step_fraction_mean": 0.161,
+    "reverse_step_fraction_coefficient_of_variation": 0.030848166512942757,
+    "reverse_mean_demand_macroparticles": 1.016561081195219,
+    "reverse_mean_demand_coefficient_of_variation": 0.029445788877838632
+  },
+  "assessment": {
+    "controller_reverse_statistics_stable_across_observed_windows": true,
+    "ion_flux_stable_across_observed_windows": true,
+    "electron_flux_stationarity_established": false,
+    "net_flux_stationarity_established": false,
+    "ready_for_independent_seed": false,
+    "ready_for_physics_claim": false,
+    "interpretation": "Reverse-event fraction and mean demand vary by only about 3% across three adjacent 5 ns windows, and left ion-current window means have 7.1% coefficient of variation. Left electron-current means retain 19.2% variation and net-current means retain 40.0% variation; 100-step electron-current fluctuations remain comparable to the mean. The controller statistics appear stable, but electron and net boundary fluxes are not yet stationary.",
+    "next_gate": "Compare this 15 ns block with a second adjacent 15 ns block at the same population and seed before launching an independent seed."
+  },
+  "sha256": {
+    "executable": "02681aa933b6c9fa6bdddd984d59f9ff496222e016229d661acc34603b0e77fc",
+    "runtime_config": "72035a6164f941130a64a5dd362d5aa78c8597e74bb3f38795a6b7139fc20bbc",
+    "runtime_measurement": "16e2266aa6039e575e748863761963a218edbb74e7ba3826c1e52eadff418ecc",
+    "magnetic_profile": "d813ea74a7c098f51349cb58242c91707eaca9bfa278a69155d86cb9683b1d3a",
+    "checkpoint_6000": "e38aa564d7f4d3b6e6cd7edb4c19ae568e334ac4f0eea940aeb8d159764789ac",
+    "boundary_flux": "baaee48ffb1d337da52548007a1412a6eb2aceadfcf8a31c4b52e68690dbfe81",
+    "current_source": "74b215420b750005cd6f7deb1d69a3851549174d4cd71fe3d8345a41415ea5c7",
+    "scalars": "4b48b6c1533f012a07414b31662ec6500c801e7d351bd0b0210234b7fd940d73",
+    "checkpoint_9000": "6e50e34e665c1af00116271f31da5898b75f95ae2247e510a03db5445b5f7132",
+    "stationarity_report": "bbfb6be9d731e4ee186b3e53bd5ea5d370671e481754cad35a5e6ff38517a2ce",
+    "stationarity_analyzer": "3a6d2a25c6e3a8e69ff52b189efeaba0482733bcd7fd1c32ec8452af65a40b9e"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}

@@ -665,6 +665,19 @@ each window edge. It reports window means, interval variability, and
 cross-window coefficients of variation, pins both source CSV hashes, and
 deliberately applies no post-hoc stationarity threshold.
 
+The first three-window result is recorded in
+`benchmarks/hall/landmark-flux-stationarity-v10-20260730-seed24680.json`.
+The 32-particle/cell checkpoint was continued from step 6,000 to 9,000 in
+345.88 seconds on one pinned low-priority core. Across the three adjacent
+5 ns windows, reverse-step fraction is 15.4%, 16.4%, and 16.5%, while mean
+reverse demand is 1.013, 1.055, and 0.982 macroparticles. Both have about 3%
+cross-window coefficient of variation. Left ion-current window means have
+7.1% variation, but electron-current means retain 19.2% variation and net
+current retains 40.0%. Controller reverse statistics therefore appear stable
+over the observed block; electron and net boundary fluxes do not yet establish
+stationarity. The independent-seed gate remains held pending comparison with
+a second adjacent 15 ns block.
+
 That matched flux study is recorded in
 `benchmarks/hall/landmark-boundary-flux-scaling-v10-20260730-seed24680.json`.
 The 8, 16, and 32 particle/cell checkpoints were each continued over the same
