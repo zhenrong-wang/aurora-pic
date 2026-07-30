@@ -193,6 +193,29 @@ must first receive a bounded, single-core runtime qualification. Use
 `aurorapic_cli --validate-only` to parse the generated deck without allocating
 or advancing its particles.
 
+Run that qualification explicitly with:
+
+```sh
+python3 scripts/qualify_turner_runtime.py \
+  build/aurorapic_cli \
+  examples/turner_helium_ccp_case1.case \
+  tmp/turner-normalized-v1 \
+  --steps 4 \
+  --max-initial-updates 1000000 \
+  --timeout-seconds 60 \
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_BOUNDED_TURNER_PROBE \
+  --report tmp/turner-case1-runtime-qualification.json
+```
+
+The qualifier regenerates and audits the exact production deck, changes only
+duration, output, checkpoint, averaging, and serial-runtime controls for the
+probe, then requests lower process priority and one CPU. It will not exceed
+its built-in two-million-initial-update ceiling, refuses to overwrite a
+report, and never forwards the CLI's large-run authorization. Its projection
+is an initial-population-only planning estimate, not a promise: ionization,
+electrode losses, checkpoints, storage, and long-run hardware behavior can
+all change the production cost.
+
 ## Restart-safe density averaging
 
 The primary Turner observable is now produced by a generic 1D post-step
@@ -273,7 +296,9 @@ reduced run as a pass:
    particle weight, waveform, and collision model for a small declared number
    of RF periods. Check invariants, collision balance, sheath formation,
    restart, and resource behavior. This cannot use the steady-state
-   chi-squared acceptance range.
+   chi-squared acceptance range. The exact-population, few-step runtime
+   qualification and its hard resource gates are complete; whole-RF-period
+   startup diagnostics remain.
 4. **C3, checkpointed steady-state comparison:** continue only through
    explicit low-priority blocks, establish whole-cycle stationarity, average
    the final 32 periods, and apply the published chi-squared test.

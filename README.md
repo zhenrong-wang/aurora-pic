@@ -401,6 +401,9 @@ non-launching production Case 1 preparer. It locks the exact grid, initial
 population, RF duration, restart-safe averaging window, and guarded collision
 majorants while keeping the publisher tables under ignored `tmp/`; see
 [`docs/ccp-validation.md`](docs/ccp-validation.md).
+An explicitly acknowledged bounded qualifier measures the exact initial
+population for only a few serial steps under hard work and timeout limits
+before any longer CCP execution is considered.
 The runner also offers an explicit bounded branching mode: ionization and
 attachment respectively increase and decrease represented electron weight
 while systematic resampling holds computational population fixed, enabling

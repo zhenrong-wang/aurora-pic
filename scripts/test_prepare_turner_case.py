@@ -38,19 +38,13 @@ def run(command: list[str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-def main() -> int:
-    project_tmp = ROOT / "tmp"
-    project_tmp.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(
-        prefix="aurorapic_turner_prepare_", dir=project_tmp
-    ) as temporary:
-        work = Path(temporary)
-        normalized = work / "normalized"
-        normalized.mkdir()
-        table = "# synthetic regression input\n0 1e-20\n10000 1e-22\n"
-        (normalized / "electron.dat").write_text(table, encoding="utf-8")
-        (normalized / "ion.dat").write_text(table, encoding="utf-8")
-        electron_gas = """gas_data_version = 2
+def create_fixture(work: Path) -> tuple[Path, Path, str]:
+    normalized = work / "normalized"
+    normalized.mkdir()
+    table = "# synthetic regression input\n0 1e-21\n10000 1e-23\n"
+    (normalized / "electron.dat").write_text(table, encoding="utf-8")
+    (normalized / "ion.dat").write_text(table, encoding="utf-8")
+    electron_gas = """gas_data_version = 2
 units = si
 gas = He
 neutral_mass = 6.67e-27
@@ -66,52 +60,81 @@ type = elastic
 cross_section_file = electron.dat
 energy_scale = 1.602176634e-19
 angular_model = isotropic
+
+[collision.ionization]
+type = ionization
+cross_section_file = electron.dat
+energy_scale = 1.602176634e-19
+threshold_energy = 3.9e-18
+angular_model = isotropic
 """
-        ion_gas = electron_gas.replace(
-            "synthetic.turner.electron", "synthetic.turner.ion"
-        ).replace(
-            "cross_section_file = electron.dat",
-            "cross_section_file = ion.dat\n"
-            "energy_frame = center_of_mass",
-        )
-        (normalized / "turner_he_electron.gas").write_text(
-            electron_gas, encoding="utf-8"
-        )
-        (normalized / "turner_he_ion.gas").write_text(
-            ion_gas, encoding="utf-8"
-        )
-        (normalized / "turner_case1_benchmark.csv").write_text(
-            "case,node,x_m,ion_mean_m3,ion_population_stddev_m3\n"
-            "1,0,0,1,1\n",
-            encoding="utf-8",
-        )
-        names = (
-            "electron.dat", "ion.dat", "turner_he_electron.gas",
-            "turner_he_ion.gas", "turner_case1_benchmark.csv",
-        )
-        audit = {
-            "turner_normalization_version": 1,
-            "case_id": "turner-helium-ccp-2013",
-            "source_artifact": {
-                "sha256":
-                    "a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661"
-            },
-            "normalized_files": {
-                name: identity(normalized / name) for name in names
-            },
-        }
-        audit_path = normalized / "audit.json"
-        audit_path.write_text(
-            json.dumps(audit, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        case_text = CASE.read_text(encoding="utf-8")
-        case_text = case_text.replace(
-            "cca4818f05691a8f81930f8183d3bf18533412f974ae0351e67af91ee59d3159",
-            hashlib.sha256(audit_path.read_bytes()).hexdigest(),
-        )
-        case_path = work / "case.case"
-        case_path.write_text(case_text, encoding="utf-8")
+    ion_gas = """gas_data_version = 2
+units = si
+gas = He
+neutral_mass = 6.67e-27
+dataset_id = synthetic.turner.ion
+dataset_version = test
+data_provenance = synthetic regression
+citation = none
+retrieved = 2026-07-30
+license = synthetic
+
+[collision.elastic]
+type = elastic
+cross_section_file = ion.dat
+energy_scale = 1.602176634e-19
+energy_frame = center_of_mass
+angular_model = isotropic
+"""
+    (normalized / "turner_he_electron.gas").write_text(
+        electron_gas, encoding="utf-8"
+    )
+    (normalized / "turner_he_ion.gas").write_text(
+        ion_gas, encoding="utf-8"
+    )
+    (normalized / "turner_case1_benchmark.csv").write_text(
+        "case,node,x_m,ion_mean_m3,ion_population_stddev_m3\n"
+        "1,0,0,1,1\n",
+        encoding="utf-8",
+    )
+    names = (
+        "electron.dat", "ion.dat", "turner_he_electron.gas",
+        "turner_he_ion.gas", "turner_case1_benchmark.csv",
+    )
+    audit = {
+        "turner_normalization_version": 1,
+        "case_id": "turner-helium-ccp-2013",
+        "source_artifact": {
+            "sha256":
+                "a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661"
+        },
+        "normalized_files": {
+            name: identity(normalized / name) for name in names
+        },
+    }
+    audit_path = normalized / "audit.json"
+    audit_path.write_text(
+        json.dumps(audit, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    case_text = CASE.read_text(encoding="utf-8")
+    case_text = case_text.replace(
+        "cca4818f05691a8f81930f8183d3bf18533412f974ae0351e67af91ee59d3159",
+        hashlib.sha256(audit_path.read_bytes()).hexdigest(),
+    )
+    case_path = work / "case.case"
+    case_path.write_text(case_text, encoding="utf-8")
+    return normalized, case_path, table
+
+
+def main() -> int:
+    project_tmp = ROOT / "tmp"
+    project_tmp.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix="aurorapic_turner_prepare_", dir=project_tmp
+    ) as temporary:
+        work = Path(temporary)
+        normalized, case_path, table = create_fixture(work)
         output = work / "campaign" / "turner.cfg"
 
         rejected = run([
