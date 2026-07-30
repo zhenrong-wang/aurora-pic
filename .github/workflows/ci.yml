@@ -69,6 +69,8 @@ jobs:
         run: python3 scripts/test_hall_convergence.py build/aurorapic_cli
       - name: Validate Hall flux stationarity analysis
         run: python3 scripts/test_hall_flux_stationarity.py
+      - name: Validate Hall flux block comparison
+        run: python3 scripts/test_hall_flux_block_comparison.py
       - name: Validate Hall horizon workflow
         run: python3 scripts/test_hall_horizon_stage.py build/aurorapic_cli
       - name: Validate Hall external source lock

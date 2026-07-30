@@ -665,6 +665,27 @@ each window edge. It reports window means, interval variability, and
 cross-window coefficients of variation, pins both source CSV hashes, and
 deliberately applies no post-hoc stationarity threshold.
 
+Before launching a new block, declare its convergence screen. The current
+readiness gate requires every electron, ion, net-current, reverse-frequency,
+and reverse-demand metric to have no more than `10%` mean change from the
+immediately preceding block and no more than `10%` coefficient of variation
+inside the new block:
+
+```sh
+python3 scripts/compare_hall_flux_blocks.py \
+  /external/campaign/previous-stationarity.json \
+  /external/campaign/current-stationarity.json \
+  --max-mean-relative-change 0.10 \
+  --max-window-cv 0.10 \
+  --report /external/campaign/block-comparison.json
+```
+
+The comparator rejects non-adjacent blocks, mismatched window sizes, missing
+or non-finite metrics, and existing output paths. It hashes both input
+reports and returns failure unless every metric meets both thresholds.
+Passing is only a same-seed stationarity screen; independent seeds,
+refinement, and reference agreement remain separate gates.
+
 The first three-window result is recorded in
 `benchmarks/hall/landmark-flux-stationarity-v10-20260730-seed24680.json`.
 The 32-particle/cell checkpoint was continued from step 6,000 to 9,000 in

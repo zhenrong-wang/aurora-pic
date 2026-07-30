@@ -188,6 +188,10 @@ def smoke_install_tree(
     )
     require_file(
         prefix / "share" / "aurorapic" / "scripts" /
+        "compare_hall_flux_blocks.py"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
         "analyze_hall_pilot.py"
     )
     require_file(
@@ -299,6 +303,10 @@ def smoke_tgz_package(
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /
         "analyze_hall_flux_stationarity.py"
+    )
+    require_file(
+        packaged_prefix / "share" / "aurorapic" / "scripts" /
+        "compare_hall_flux_blocks.py"
     )
     require_file(
         packaged_prefix / "share" / "aurorapic" / "scripts" /

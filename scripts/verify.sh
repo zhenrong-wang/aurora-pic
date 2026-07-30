@@ -29,6 +29,7 @@ python3 scripts/test_hall_comparison.py
 python3 scripts/test_hall_ensemble.py
 python3 scripts/test_hall_convergence.py build/aurorapic_cli
 python3 scripts/test_hall_flux_stationarity.py
+python3 scripts/test_hall_flux_block_comparison.py
 python3 scripts/test_hall_horizon_stage.py build/aurorapic_cli
 python3 scripts/test_lock_hall_source.py
 python3 scripts/test_normalize_hall_reference.py
