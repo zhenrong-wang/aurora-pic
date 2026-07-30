@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "workstation_population_convergence",
+  "physics_claim": "none",
+  "passed": false,
+  "simulation_source_commit": "974ead541f4d6731b49a5b6410bd42d27d4df77c",
+  "analysis_source_commit": "f97fac80445bf0326f7bbfe022782deb25a22012",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "fixed_contract": {
+    "cells_x": 125,
+    "cells_y": 64,
+    "timestep_s": 5e-12,
+    "steps": 5000,
+    "final_time_s": 2.5e-08,
+    "averaging_start_step": 4000,
+    "averaging_end_step": 5000,
+    "diagnostic_samples": 11,
+    "population_particles_per_cell_per_species": [
+      8,
+      16,
+      32
+    ],
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19
+  },
+  "runs": [
+    {
+      "stage": "population_0p5",
+      "particles_per_cell_per_species": 8,
+      "final_live_particles": 130456,
+      "final_live_electrons": 64205,
+      "final_live_ions": 66251,
+      "wall_seconds": 134.97,
+      "user_seconds": 134.79,
+      "system_seconds": 0.06,
+      "maximum_resident_kib": 19868,
+      "artifact_bytes": 64327324
+    },
+    {
+      "stage": "population_1",
+      "particles_per_cell_per_species": 16,
+      "final_live_particles": 260675,
+      "final_live_electrons": 128245,
+      "final_live_ions": 132430,
+      "wall_seconds": 271.18,
+      "user_seconds": 269.92,
+      "system_seconds": 0.13,
+      "maximum_resident_kib": 32920,
+      "artifact_bytes": 126912112
+    },
+    {
+      "stage": "population_2",
+      "particles_per_cell_per_species": 32,
+      "final_live_particles": 521375,
+      "final_live_electrons": 256406,
+      "final_live_ions": 264969,
+      "wall_seconds": 543.97,
+      "user_seconds": 543.48,
+      "system_seconds": 0.28,
+      "maximum_resident_kib": 59804,
+      "artifact_bytes": 252066861
+    }
+  ],
+  "controller_population": {
+    "passed": false,
+    "physical_reverse_charge_scaling_passed": true,
+    "maximum_macro_request_passed": false,
+    "fine_to_baseline_reverse_charge_per_update_ratio": 0.9683544303797283,
+    "fine_to_baseline_reverse_impulse_ratio": 0.7499999999986291,
+    "stages": {
+      "population_0p5": {
+        "reverse_demand_steps": 77,
+        "reverse_demand_step_fraction": 0.0154,
+        "cumulative_reverse_demand_macroparticles": 46.00000000000025,
+        "maximum_reverse_demand_macroparticles": 1.0000000000001974,
+        "reverse_demand_charge_per_update_c": 3.6850062582000196e-13,
+        "maximum_reverse_demand_charge_c": 4.00544158500079e-11
+      },
+      "population_1": {
+        "reverse_demand_steps": 177,
+        "reverse_demand_step_fraction": 0.0354,
+        "cumulative_reverse_demand_macroparticles": 158.0000000000004,
+        "maximum_reverse_demand_macroparticles": 2.000000000000395,
+        "reverse_demand_charge_per_update_c": 6.328597704300015e-13,
+        "maximum_reverse_demand_charge_c": 4.00544158500079e-11
+      },
+      "population_2": {
+        "reverse_demand_steps": 319,
+        "reverse_demand_step_fraction": 0.0638,
+        "cumulative_reverse_demand_macroparticles": 305.99999999999494,
+        "maximum_reverse_demand_macroparticles": 2.999999999995108,
+        "reverse_demand_charge_per_update_c": 6.128325625049897e-13,
+        "maximum_reverse_demand_charge_c": 3.004081188745101e-11
+      }
+    }
+  },
+  "resolved_population_comparison": {
+    "passed": false,
+    "observables": 17,
+    "passed_observables": 7,
+    "failed_observables": 10,
+    "passed_observable_names": [
+      "charge_density",
+      "electrons.number_density",
+      "electrons.temperature_ev",
+      "ions.current_density_x",
+      "ions.number_density",
+      "ions.temperature_ev",
+      "modes.electric_x"
+    ],
+    "failed_observable_names": [
+      "electric_x",
+      "electrons.current_density_x",
+      "electrons.current_density_y",
+      "electrons.mean_velocity_x",
+      "electrons.mean_velocity_y",
+      "ions.current_density_y",
+      "ions.mean_velocity_x",
+      "ions.mean_velocity_y",
+      "modes.electrons.number_density",
+      "potential"
+    ]
+  },
+  "assessment": {
+    "ready_for_physics_claim": false,
+    "ready_for_400ns_extension": false,
+    "interpretation": "The 25 ns reduced case is not population-converged. Represented reverse charge per update and maximum represented reverse impulse satisfy their predeclared fine-to-baseline limits, but the fine run reaches a three-macroparticle reverse request and fails the v2 quantization criterion. Ten of seventeen resolved profile and mode observables also fail population acceptance.",
+    "next_gate": "Inspect the timestep distribution and boundary-flux composition of reverse requests before revising any controller criterion; extend averaging only after the population sensitivity is understood."
+  },
+  "sha256": {
+    "executable": "42c58a55050d2242bad1e7aeebeafe5a18a5e8f7bcbbf958ac687175f4086878",
+    "case_manifest": "9ec8e3ff14bedee98fc010a242541c0c35902d170271e8cfdc33d3cb5e4e967a",
+    "convergence_manifest": "f02016a96232d49cf9bf4fbb749ce195d67fa561258b7dcce332c0cd2549c7ad",
+    "population_report": "bc10a646139477ce94d07e9b87e3186f800589578d7f363c9f6094be0a46ae17",
+    "population_artifact_manifest": "b723549945240f4c3c6e1e6ad7216112fd80674073d2cb60fc4525f5c398017b",
+    "analyzer": "7da092a116821774ade02195432f0853c38abd5da087711b62830fc234da68a1",
+    "population_0p5_runtime_config": "ba30f3a358bf18be83681414d632f8c038035a0786f8705a526a44e0fb227c79",
+    "population_1_runtime_config": "41c92c01ea5365720b789ae6344681a7acfb39cc5bebc488690024762e6c4517",
+    "population_2_runtime_config": "4779394fabd9b65f82fd00b21f68c9376fa0b3c719dd2e0a6a72eca05c27fe3e",
+    "population_0p5_checkpoint": "fe07d9ef8876766513951e7ed0c7b748a5d9edb60a9578c0c33a49d54e592bab",
+    "population_1_checkpoint": "5bb75fa5630bae067a9d165d83440d45825e69ccabe37b58b0ee699ce678bb6e",
+    "population_2_checkpoint": "7965497b3d71888cb1ca84fb8809f0e2d471c380edbfa3aa6f747d24bc4f477c"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}

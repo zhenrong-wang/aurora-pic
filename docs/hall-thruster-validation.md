@@ -149,7 +149,7 @@ the models.
 | Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit flux/reverse-demand diagnostics and checkpoint v9; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
 | Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically; the exact-control workstation pilot passed | Compare converged profiles against checksum-pinned published data |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
-| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, a guarded population/duration convergence workflow, and checkpoint-chained horizon stages | Execute the guarded horizon ladder, add long-run segment aggregation, and qualify with native reference data |
+| HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, a guarded population/duration convergence workflow, and checkpoint-chained horizon stages | Resolve the measured early-time population/controller failures, add long-run segment aggregation, and qualify with native reference data |
 | Xenon material data | No authoritative bundled package | Keep LANDMARK collisionless; separately provenance and validate Xe collision/wall data for real devices |
 | Scale-out runtime | Serial/OpenMP only; a bounded, provenance-pinned runtime qualifier measures a selected host without permitting a production launch | Add MPI domain decomposition before production-size LANDMARK runs |
 | High-volume output | VTK/XML, CSV, and text restart | Add openPMD/HDF5 or equivalent parallel, chunked output before large campaigns |
@@ -599,6 +599,20 @@ All five runs require complete v9 diagnostics; a legacy restart with partial
 coverage is rejected. This is a fixed-grid, same-seed sensitivity gate with
 `physics_claim = none`; grid, timestep, seed-ensemble, and external-reference
 agreement remain separate requirements.
+
+The completed population axis is recorded in
+`benchmarks/hall/landmark-population-v2-20260730-seed24680.json`. The three
+guarded 25 ns runs used 8, 16, and 32 particles/cell/species and completed
+sequentially on one pinned low-priority CPU core in 134.97, 271.18, and
+543.97 seconds. The highest-population run used 58.4 MiB peak resident memory.
+This first real population report fails: only 7 of 17 resolved observables
+pass, with transverse currents/velocities and the electron-density mode among
+the failures. The controller's represented reverse charge per update and
+maximum represented impulse pass their fine-to-baseline limits at 0.968 and
+0.750, respectively, but the fine run's largest reverse request is three
+macroparticles and fails the predeclared v2 quantization criterion. No
+threshold was changed after observing the result. The two duration stages
+remain unlaunched because they cannot resolve this population-axis failure.
 
 ## Resource policy
 
