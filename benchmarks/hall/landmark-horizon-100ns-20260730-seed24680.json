@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "workstation_horizon",
+  "physics_claim": "none",
+  "numerical_integrity_passed": true,
+  "profile_trend_passed": true,
+  "ready_for_next_stage": false,
+  "simulation": {
+    "source_commit": "e9ca2a8",
+    "date_utc": "2026-07-30",
+    "seed": 24680,
+    "cells_x": 125,
+    "cells_y": 64,
+    "restart_step": 5000,
+    "final_step": 20000,
+    "timestep_s": 5e-12,
+    "final_time_s": 1.0000000000003827e-07,
+    "averaging_start_s": 8.000000000001559e-08,
+    "averaging_end_s": 1.0000000000003827e-07,
+    "current_source_control_mode": "timestep_local",
+    "potential_reference_correction": "affine",
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "wall_seconds": 850.56,
+    "user_seconds": 850.01,
+    "system_seconds": 0.13,
+    "maximum_resident_kib": 33376,
+    "artifact_bytes": 90000615
+  },
+  "integrity": {
+    "final_live_particles": 286122,
+    "maximum_live_electrons": 142126,
+    "maximum_live_ions": 143996,
+    "max_particles_per_species": 250000,
+    "scalar_samples": 39,
+    "resolved_samples": 11,
+    "maximum_potential_reference_error_v": 7.105427357601002e-14,
+    "final_checkpoint_step": 20000,
+    "final_checkpoint_time_s": 1.0000000000003827e-07
+  },
+  "published_profile_screening": {
+    "reference_kind": "digitized seven-code envelope from Figure 6",
+    "reference_averaging_start_s": 1.6e-05,
+    "reference_averaging_end_s": 2e-05,
+    "averaging_window_matches": false,
+    "passed": false,
+    "observables": {
+      "axial_field": {
+        "prior_relative_l2": 2.0260144779020246,
+        "current_relative_l2": 1.0402096401139962,
+        "relative_l2_change_ratio": 0.5134265581315848,
+        "prior_relative_linf": 5.8494192153620315,
+        "current_relative_linf": 2.555482330012956,
+        "relative_linf_change_ratio": 0.43687795931972584,
+        "prior_passed_points": 5,
+        "current_passed_points": 3,
+        "points": 124,
+        "improved": true
+      },
+      "ion_density": {
+        "prior_relative_l2": 0.7581430275543805,
+        "current_relative_l2": 0.7204943764296136,
+        "relative_l2_change_ratio": 0.9503409650205266,
+        "prior_relative_linf": 0.8431973885564956,
+        "current_relative_linf": 0.7811090717836925,
+        "relative_linf_change_ratio": 0.926365620179286,
+        "prior_passed_points": 0,
+        "current_passed_points": 0,
+        "points": 124,
+        "improved": true
+      },
+      "electron_temperature": {
+        "prior_relative_l2": 0.46267944724622356,
+        "current_relative_l2": 0.36172946616301316,
+        "relative_l2_change_ratio": 0.7818144253347653,
+        "prior_relative_linf": 0.5895993463954998,
+        "current_relative_linf": 0.4700832546885185,
+        "relative_linf_change_ratio": 0.7972926998009076,
+        "prior_passed_points": 11,
+        "current_passed_points": 39,
+        "points": 124,
+        "improved": true
+      }
+    }
+  },
+  "cathode_controller": {
+    "review_required": true,
+    "prior_maximum_unserved_reverse_macroparticles": 158.00000000000125,
+    "current_maximum_unserved_reverse_macroparticles": 849.0000000000015,
+    "prior_unserved_fraction_of_cumulative_emission": 0.012524772096710365,
+    "current_unserved_fraction_of_cumulative_emission": 0.04530657986018472,
+    "maximum_charge_balance_residual_c": 2.0027207924995383e-11,
+    "interpretation": "The published one-way emission law cannot serve intervals where ion loss exceeds electron loss. The reduced early-time run reaches that condition increasingly often, so another horizon extension is held for physics review."
+  },
+  "sha256": {
+    "executable": "f0d9a58b871c42b864bd5dc39ce1b8695b4e5b0a019a8236f23349fd0c26db8b",
+    "case_manifest": "a6265ed698a45a7c4fdb08ea53c1042f58f075af2fe03542a7f731db2f87daed",
+    "prior_checkpoint": "ac00d3b2a1ac5c3137055a6508820d32834abb9a0a64ea48bda3301ec4eb33da",
+    "horizon_manifest": "7b64b9f43b29730cc12609aa3fd59d24c3183078792f86b2637e59ad76df1251",
+    "runtime_config": "d9e1b657390fff7cd7cbee6ff1b2ed57209851a154bf6345dcbd39c6253c98e1",
+    "runtime_measurement": "a85428471f2f27e56e1e6b25dd8efecef1392d8535630b76537038075fb16f7b",
+    "comparison_report": "247b748056195e36bd190f9870476c27cca814098360b2804cba6d699e971142",
+    "credibility_report": "34a58ecc9fb90d98c536fe7a13422fcd89dc54728953298ed23670bcacef1a24",
+    "horizon_analyzer": "bbb998ade9e19727dbef094457b4e53430b78952484d2e7b0b7a31545aca0fdc",
+    "scalars": "6e7028174e07b4f136b30873da4b4087f77f73e1ced611cb13072609da4643cd",
+    "current_source": "623516f593fe5bf9fffec62030a3893549f123b61f7c7da66674d29817769dc9",
+    "potential_reference": "ef436afb25e8bbf7fba2f73ef557a27a7723b13ef25c90207e1d3dc2837ffed9",
+    "field_time_average": "cf499eea08bea3049517883ecba86eaecc619c21abcb1644f5995ec105f32529",
+    "species_time_average": "60b084e959d85ac68676119de8874bba7daa0b62b60084f8219ca437dc91e8af",
+    "resolved_modes": "20f9cbab2aef91a45a0712cbb160e6bc08ed2472c89bbd8ba1a97db55728cae3",
+    "checkpoint_20000": "836632f76c26e4d16bc2d42aa0bf18715eb78015f58c99273dea3e09329c47b0"
+  },
+  "findings": [
+    "The checkpoint continuation passed numerical-integrity and capacity checks.",
+    "All three published-profile L2 and Linf errors improved from 25 ns to 100 ns.",
+    "The result remains far earlier than the published 16-20 us averaging window and does not pass reference screening.",
+    "Increasing unserved reverse cathode demand blocks automatic preparation of a 400 ns stage pending physics review."
+  ],
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}

@@ -448,10 +448,36 @@ remains serial with one thread and is still protected by the CLI large-run
 acknowledgement. The preparer never launches it.
 
 After execution, integrity checks and published-profile screening must be
-repeated. Prepare another stage only if capacity remains safe and the profile
-trend is physically credible. Every stage retains `physics_claim = none`;
+repeated. The stage analyzer binds both comparison reports, verifies restart
+and final checkpoints, checks population capacity and potential correction,
+and requires every profile L2/Linf error to improve:
+
+```sh
+python3 scripts/analyze_hall_horizon_stage.py \
+  /external/campaign/horizon-100ns/horizon.json \
+  --current-comparison /external/campaign/horizon-100ns/comparison.json \
+  --prior-comparison /external/pilot/comparison.json \
+  --report /external/campaign/horizon-100ns/credibility.json
+```
+
+It separately blocks the next extension when cumulative unserved reverse
+charge grows in the one-way cathode controller. Prepare another stage only if
+capacity remains safe, the profile trend is credible, and that controller gate
+is resolved. Every stage retains `physics_claim = none`;
 reaching 20 microseconds, population/time-step/grid convergence, multiple
 seeds, and native-reference agreement remain separate gates.
+
+The completed 100 ns continuation is recorded in
+`benchmarks/hall/landmark-horizon-100ns-20260730-seed24680.json`. It ran from
+the pinned 5,000-step checkpoint to step 20,000 in 850.56 seconds on one
+low-priority CPU core, used 32.6 MiB peak resident memory, and passed numerical
+integrity checks. Relative L2 error against the digitized Figure 6 envelope
+fell by 48.7% for axial field, 5.0% for ion density, and 21.8% for electron
+temperature. This is encouraging time evolution, not reference agreement.
+The cumulative one-way cathode demand that could not be served increased from
+158 to 849 macro-electron charges, or from 1.25% to 4.53% of cumulative
+emission. The analyzer therefore holds a 400 ns extension for review of the
+reduced early-time cathode/anode flux balance.
 
 ## Seeded ensemble comparison
 
