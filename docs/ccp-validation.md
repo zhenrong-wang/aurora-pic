@@ -259,11 +259,35 @@ python3 scripts/extend_turner_horizon.py \
 
 The horizon runner verifies the prior report and checkpoint hashes, advances
 one whole cycle per low-priority serial process, and writes a distinct
-checkpoint and phase-matched diagnostic set after every cycle. Per-cycle
+checkpoint and phase-matched diagnostic set after every cycle. A completed
+horizon report/work directory can be supplied as the next `--prior-*` pair,
+so bounded blocks chain without repeating earlier cycles. Per-cycle
 reports contain collision deltas, charge-paired population balances, inferred
 electrode losses, energy and charge ranges, waveform error, restart
-continuity, and boundary-to-bulk field structure. Three added cycles are the
+continuity, and boundary-to-bulk field structure. Four added cycles are the
 built-in maximum; this is a startup trend screen, not a stationarity test.
+
+Screen a contiguous hash-chained report history before authorizing any
+published-profile comparison:
+
+```sh
+python3 scripts/analyze_turner_stationarity.py \
+  tmp/turner-case1-startup/report.json \
+  tmp/turner-case1-horizon/report.json \
+  tmp/turner-case1-horizon-next/report.json \
+  --window-cycles 4 \
+  --max-population-change 0.005 \
+  --max-observable-span 0.05 \
+  --output tmp/turner-case1-stationarity.json
+```
+
+The default engineering screen requires both species to change by no more
+than 0.5% per cycle throughout the final four cycles and requires the
+ionization count, phase-zero boundary field, and phase-zero total energy each
+to span no more than 5% across that window. These are conservative AuroraPIC
+startup gates, not thresholds published by Turner et al. Passing only permits
+a longer confirmation window; failing explicitly keeps the published
+chi-squared comparison inapplicable.
 
 ## Restart-safe density averaging
 

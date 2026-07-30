@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 
-from extend_turner_horizon import HorizonError, analyze_cycle
+from extend_turner_horizon import HorizonError, analyze_cycle, resolve_prior
 from run_turner_startup import StartupError
 
 
@@ -109,6 +109,24 @@ def main() -> int:
             and int(final_collision["cumulative_candidates"]) == 1800,
             "horizon cycle analyzer produced an incomplete report",
         )
+        prior_cycle, checkpoint, prior_output, digest = resolve_prior(
+            {
+                "turner_horizon_report_version": 1,
+                "case_id": "turner-helium-ccp-2013-case-1",
+                "cycles": [{"cycle": 8}],
+                "provenance": {
+                    "checkpoint_sha256_by_cycle": {"8": "abc"}
+                },
+            },
+            work / "prior-horizon",
+        )
+        require(
+            prior_cycle == 8
+            and checkpoint.name == "checkpoint-cycle-8.apc"
+            and prior_output.name == "cycle-8-output"
+            and digest == "abc",
+            "horizon chaining resolved the wrong prior artifacts",
+        )
 
         changed = scalar(400)
         changed["live_particles_ions"] -= 1
@@ -141,7 +159,7 @@ def main() -> int:
         )
         too_many = subprocess.run(
             [
-                *common, "--additional-cycles", "4",
+                *common, "--additional-cycles", "5",
                 "--acknowledge-cost", ACKNOWLEDGEMENT,
             ],
             cwd=ROOT, text=True,

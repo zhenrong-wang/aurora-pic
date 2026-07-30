@@ -139,13 +139,12 @@ def analyze(stage1: Path, stage2: Path, rf_frequency: float = 13.56e6) -> dict:
     actual_steps = [integer(row, "step", "scalar history") for row in combined_scalars]
     if actual_steps != expected_steps:
         raise StartupError("scalar diagnostic cadence is incomplete")
-    dt = number(combined_scalars[1], "time", "scalar history") / 20.0
     waveform_errors = []
     for row in combined_scalars:
-        step = integer(row, "step", "scalar history")
         actual = number(row, "phi_right", "scalar history")
         expected = 450.0 * math.sin(
-            2.0 * math.pi * rf_frequency * dt * step
+            2.0 * math.pi * rf_frequency
+            * number(row, "time", "scalar history")
         )
         waveform_errors.append(abs(actual - expected))
         for key in (

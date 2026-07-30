@@ -29,8 +29,8 @@ from run_turner_startup import (
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_BOUNDED_TURNER_HORIZON"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 STEPS_PER_CYCLE = 400
-MAX_ADDITIONAL_CYCLES = 3
-HARD_ADDITIONAL_UPDATE_LIMIT = 160_000_000
+MAX_ADDITIONAL_CYCLES = 4
+HARD_ADDITIONAL_UPDATE_LIMIT = 210_000_000
 
 
 class HorizonError(RuntimeError):
@@ -134,16 +134,12 @@ def analyze_cycle(
     restart_relative = continuity(
         prior_scalar, scalar_rows[0], prior_collision, collision_rows[0]
     )
-    dt = number(scalar_rows[1], "time", "cycle scalars") - number(
-        scalar_rows[0], "time", "cycle scalars"
-    )
-    dt /= 20.0
     waveform_error = 0.0
     for row in scalar_rows:
-        step = integer(row, "step", "cycle scalars")
         actual_phi = number(row, "phi_right", "cycle scalars")
         expected_phi = 450.0 * math.sin(
-            2.0 * math.pi * 13.56e6 * dt * step
+            2.0 * math.pi * 13.56e6
+            * number(row, "time", "cycle scalars")
         )
         waveform_error = max(waveform_error, abs(actual_phi - expected_phi))
         for key in (
@@ -228,6 +224,48 @@ def analyze_cycle(
     return metrics, scalar_rows[-1], collision_rows[-1]
 
 
+def resolve_prior(
+    prior_report: dict, prior_work: Path
+) -> tuple[int, Path, Path, str]:
+    if (
+        prior_report.get("turner_startup_report_version") == 1
+        and prior_report.get("case_id") == "turner-helium-ccp-2013-case-1"
+        and prior_report.get("work", {}).get("steps") == STEPS_PER_CYCLE
+        and prior_report.get("diagnostics", {}).get(
+            "startup_checks_passed", False
+        )
+    ):
+        return (
+            1,
+            prior_work / "checkpoint-one-cycle.apc",
+            prior_work / "stage2-output",
+            prior_report.get("provenance", {}).get(
+                "one_cycle_checkpoint_sha256", ""
+            ),
+        )
+    cycles = prior_report.get("cycles")
+    if (
+        prior_report.get("turner_horizon_report_version") == 1
+        and prior_report.get("case_id") == "turner-helium-ccp-2013-case-1"
+        and isinstance(cycles, list) and cycles
+    ):
+        last_cycle = cycles[-1].get("cycle")
+        if not isinstance(last_cycle, int) or last_cycle < 2:
+            raise HorizonError("prior horizon has an invalid final cycle")
+        expected = prior_report.get("provenance", {}).get(
+            "checkpoint_sha256_by_cycle", {}
+        ).get(str(last_cycle), "")
+        return (
+            last_cycle,
+            prior_work / f"checkpoint-cycle-{last_cycle}.apc",
+            prior_work / f"cycle-{last_cycle}-output",
+            expected,
+        )
+    raise HorizonError(
+        "prior report is neither a completed startup nor horizon block"
+    )
+
+
 def execute(args: argparse.Namespace) -> dict:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise HorizonError(
@@ -263,28 +301,22 @@ def execute(args: argparse.Namespace) -> dict:
     if report_path.exists():
         raise HorizonError(f"refusing to overwrite report: {report_path}")
     prior_report = read_json(prior_report_path)
-    if (
-        prior_report.get("turner_startup_report_version") != 1
-        or prior_report.get("case_id") != "turner-helium-ccp-2013-case-1"
-        or prior_report.get("work", {}).get("steps") != STEPS_PER_CYCLE
-        or not prior_report.get("diagnostics", {}).get(
-            "startup_checks_passed", False
-        )
-    ):
-        raise HorizonError("prior report is not a completed one-cycle startup")
-    checkpoint = prior_work / "checkpoint-one-cycle.apc"
-    expected_checkpoint = prior_report.get("provenance", {}).get(
-        "one_cycle_checkpoint_sha256"
+    (
+        prior_cycle, checkpoint, prior_output, expected_checkpoint
+    ) = resolve_prior(
+        prior_report, prior_work
     )
     if not checkpoint.is_file() or sha256(checkpoint) != expected_checkpoint:
-        raise HorizonError("prior one-cycle checkpoint identity mismatch")
-    prior_output = prior_work / "stage2-output"
+        raise HorizonError("prior checkpoint identity mismatch")
     prior_scalars = rows(prior_output / "scalars.csv")
     prior_collisions = rows(prior_output / "collisions.csv")
     prior_scalar = prior_scalars[-1]
     prior_collision = prior_collisions[-1]
-    if integer(prior_scalar, "step", "prior scalars") != STEPS_PER_CYCLE:
-        raise HorizonError("prior diagnostics do not end at one RF cycle")
+    if (
+        integer(prior_scalar, "step", "prior scalars")
+        != prior_cycle * STEPS_PER_CYCLE
+    ):
+        raise HorizonError("prior diagnostics do not end at the reported cycle")
 
     work.mkdir(parents=True)
     production = work / "production.cfg"
@@ -312,7 +344,9 @@ def execute(args: argparse.Namespace) -> dict:
     cycle_reports = []
     checkpoint_hashes = {}
     previous_checkpoint = checkpoint
-    for cycle in range(2, 2 + args.additional_cycles):
+    for cycle in range(
+        prior_cycle + 1, prior_cycle + 1 + args.additional_cycles
+    ):
         output = work / f"cycle-{cycle}-output"
         current_checkpoint = work / f"checkpoint-cycle-{cycle}.apc"
         config = work / f"cycle-{cycle}.cfg"
@@ -383,13 +417,16 @@ def execute(args: argparse.Namespace) -> dict:
         "turner_horizon_report_version": 1,
         "case_id": "turner-helium-ccp-2013-case-1",
         "scope": (
-            f"checkpointed_cycles_2_through_{1 + args.additional_cycles}"
+            f"checkpointed_cycles_{prior_cycle + 1}_through_"
+            f"{prior_cycle + args.additional_cycles}"
         ),
         "physics_claim": "none",
         "steady_state_claim": False,
         "production_launch_authorized": False,
         "work": {
             "additional_cycles": args.additional_cycles,
+            "prior_cycle": prior_cycle,
+            "final_cycle": prior_cycle + args.additional_cycles,
             "additional_initial_particle_updates": updates,
             "stage_timings": stages,
             "total_wall_seconds": sum(
@@ -427,7 +464,7 @@ def execute(args: argparse.Namespace) -> dict:
             "platform": platform.platform(),
         },
         "warnings": [
-            f"{1 + args.additional_cycles} RF cycles remain far shorter "
+            f"{prior_cycle + args.additional_cycles} RF cycles remain far shorter "
             "than the 1280-cycle benchmark.",
             "Population trends do not establish a stationary discharge.",
             "The published chi-squared acceptance range is inapplicable.",

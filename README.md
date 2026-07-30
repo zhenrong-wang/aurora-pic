@@ -409,6 +409,9 @@ before any longer CCP execution is considered.
 A separate checkpointed startup ladder advances one RF cycle at a time,
 retaining species/collision balances and phase-matched field metrics while
 hard-limiting each local horizon.
+Hash-chained horizon reports feed a separate pre-benchmark stationarity
+screen, so the published Turner density comparison remains unavailable until
+population, ionization, field, and energy trends have settled.
 The runner also offers an explicit bounded branching mode: ionization and
 attachment respectively increase and decrease represented electron weight
 while systematic resampling holds computational population fixed, enabling
