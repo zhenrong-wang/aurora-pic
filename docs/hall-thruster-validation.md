@@ -721,6 +721,17 @@ field, `0.748` to `0.736` for ion density, and `0.491` to `0.461` for electron
 temperature. The trajectory is still evolving. Continue it in bounded blocks
 before paying for independent seeds or resolution scaling.
 
+The 75–100 ns continuation is recorded in
+`benchmarks/hall/landmark-population2-flux-block3-100ns-20260730-seed24680.json`.
+Electron loss is now smooth inside the block (`CV = 0.015`) and its mean
+changes by only `3.5%` relative to 50–75 ns. The full state is not stationary:
+mean ion loss falls by `40.0%`, mean net loss changes by `37.1%`, and
+reverse-event frequency falls by `40.3%`. This separates a nearly plateaued
+fast electron response from a still-evolving ion and current-balance response.
+The profile-screening L2 errors improve again, to `0.922` for axial field,
+`0.722` for ion density, and `0.448` for electron temperature, but all formal
+screening and averaging-window gates still fail.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.
