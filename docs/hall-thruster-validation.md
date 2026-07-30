@@ -578,6 +578,12 @@ python3 scripts/analyze_hall_convergence.py \
   --report campaign/case2-convergence/convergence-report.json
 ```
 
+When only one three-stage axis has completed, `--axis population` or
+`--axis duration` produces an explicitly partial report using the shared
+baseline. This avoids launching an unrelated axis merely to inspect a failed
+gate. Only the default `--axis all` report represents the complete v2
+convergence contract.
+
 For each observable, the report records absolute and baseline-normalized L2
 and Linf changes from coarse to baseline and fine to baseline. Acceptance
 requires the fine change to satisfy the pinned tolerances and not exceed the

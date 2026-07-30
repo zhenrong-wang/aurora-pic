@@ -250,6 +250,23 @@ def main() -> int:
             ] == 0.5,
             f"convergent synthetic campaign failed: {analyzed.stderr}",
         )
+        population_report_path = work / "population-report.json"
+        population_analyzed = run([
+            sys.executable, str(ANALYZE), str(manifest_path),
+            "--axis", "population",
+            "--report", str(population_report_path),
+        ])
+        population_report = json.loads(
+            population_report_path.read_text(encoding="utf-8")
+        )
+        require(
+            population_analyzed.returncode == 0
+            and population_report["passed"]
+            and population_report["analyzed_axes"] == ["population"]
+            and len(population_report["runs"]) == 3
+            and "duration" not in population_report["comparisons"],
+            "population-only convergence analysis failed",
+        )
 
         population_fine = next(
             item for item in manifest["runs"]

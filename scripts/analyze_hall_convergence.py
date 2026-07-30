@@ -428,6 +428,15 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     runs = campaign.get("runs")
     if not isinstance(runs, list) or len(runs) != 5:
         raise ConvergenceError("convergence campaign must contain five runs")
+    analyzed_axes = (
+        ("population", "duration")
+        if args.axis == "all" else (args.axis,)
+    )
+    required_stages = {"population_1"}
+    if "population" in analyzed_axes:
+        required_stages.update({"population_0p5", "population_2"})
+    if "duration" in analyzed_axes:
+        required_stages.update({"duration_0p5", "duration_2"})
     acceptance = campaign.get("acceptance")
     if not isinstance(acceptance, dict):
         raise ConvergenceError("convergence acceptance contract is missing")
@@ -474,6 +483,8 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
         stage = str(run.get("stage", ""))
         if not stage or stage in stages:
             raise ConvergenceError("convergence stage identity is invalid")
+        if stage not in required_stages:
+            continue
         deck = root / str(run.get("runtime_config", ""))
         if sha256(deck) != run.get("runtime_config_sha256"):
             raise ConvergenceError(f"{stage} runtime-config hash mismatch")
@@ -508,7 +519,7 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     baseline = stages.get("population_1")
     if baseline is None:
         raise ConvergenceError("population_1 baseline is missing")
-    axes = {
+    all_axes = {
         "population": ("population_0p5", "population_2"),
         "duration": ("duration_0p5", "duration_2"),
     }
@@ -516,7 +527,8 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     passed = True
     baseline_vectors = baseline["vectors"]
     assert isinstance(baseline_vectors, dict)
-    for axis, (coarse_name, fine_name) in axes.items():
+    for axis in analyzed_axes:
+        coarse_name, fine_name = all_axes[axis]
         if (
             stages[coarse_name]["coordinates"]
                 != baseline["coordinates"]
@@ -573,57 +585,75 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 value["passed"] for value in observable_results.values()
             ),
         }
-    controller_stages: dict[str, dict[str, float | int]] = {}
-    for stage_name in ("population_0p5", "population_1", "population_2"):
-        controller = stages[stage_name]["controller"]
-        if not isinstance(controller, dict):
-            raise ConvergenceError(
-                f"{stage_name} controller diagnostics are missing"
-            )
-        controller_stages[stage_name] = controller
-    baseline_controller = controller_stages["population_1"]
-    fine_controller = controller_stages["population_2"]
-    charge_ratio = safe_ratio(
-        float(fine_controller["reverse_demand_charge_per_update_c"]),
-        float(baseline_controller["reverse_demand_charge_per_update_c"]),
-    )
-    impulse_ratio = safe_ratio(
-        float(fine_controller["maximum_reverse_demand_charge_c"]),
-        float(baseline_controller["maximum_reverse_demand_charge_c"]),
-    )
-    controller_passed = (
-        charge_ratio is not None
-        and charge_ratio <= reverse_charge_ratio_limit
-        and impulse_ratio is not None
-        and impulse_ratio <= reverse_impulse_ratio_limit
-        and float(
-            fine_controller[
-                "maximum_reverse_demand_macroparticles"
-            ]
-        ) <= reverse_macro_limit
-    )
-    passed = passed and controller_passed
-    comparisons["controller_population"] = {
-        "coarse_stage": "population_0p5",
-        "baseline_stage": "population_1",
-        "fine_stage": "population_2",
-        "stages": controller_stages,
-        "fine_to_baseline_reverse_charge_per_update_ratio":
-            charge_ratio,
-        "fine_to_baseline_reverse_impulse_ratio": impulse_ratio,
-        "event_frequency_is_acceptance_metric": False,
-        "passed": controller_passed,
-        "interpretation": (
-            "Acceptance uses represented charge because macro-particle "
-            "weight changes with population. Reverse-event frequency is "
-            "reported but is not required to decrease."
-        ),
-    }
+    if "population" in analyzed_axes:
+        controller_stages: dict[str, dict[str, float | int]] = {}
+        for stage_name in (
+            "population_0p5", "population_1", "population_2"
+        ):
+            controller = stages[stage_name]["controller"]
+            if not isinstance(controller, dict):
+                raise ConvergenceError(
+                    f"{stage_name} controller diagnostics are missing"
+                )
+            controller_stages[stage_name] = controller
+        baseline_controller = controller_stages["population_1"]
+        fine_controller = controller_stages["population_2"]
+        charge_ratio = safe_ratio(
+            float(
+                fine_controller[
+                    "reverse_demand_charge_per_update_c"
+                ]
+            ),
+            float(
+                baseline_controller[
+                    "reverse_demand_charge_per_update_c"
+                ]
+            ),
+        )
+        impulse_ratio = safe_ratio(
+            float(
+                fine_controller["maximum_reverse_demand_charge_c"]
+            ),
+            float(
+                baseline_controller[
+                    "maximum_reverse_demand_charge_c"
+                ]
+            ),
+        )
+        controller_passed = (
+            charge_ratio is not None
+            and charge_ratio <= reverse_charge_ratio_limit
+            and impulse_ratio is not None
+            and impulse_ratio <= reverse_impulse_ratio_limit
+            and float(
+                fine_controller[
+                    "maximum_reverse_demand_macroparticles"
+                ]
+            ) <= reverse_macro_limit
+        )
+        passed = passed and controller_passed
+        comparisons["controller_population"] = {
+            "coarse_stage": "population_0p5",
+            "baseline_stage": "population_1",
+            "fine_stage": "population_2",
+            "stages": controller_stages,
+            "fine_to_baseline_reverse_charge_per_update_ratio":
+                charge_ratio,
+            "fine_to_baseline_reverse_impulse_ratio": impulse_ratio,
+            "event_frequency_is_acceptance_metric": False,
+            "passed": controller_passed,
+            "interpretation": (
+                "Acceptance uses represented charge because macro-particle "
+                "weight changes with population. Reverse-event frequency is "
+                "reported but is not required to decrease."
+            ),
+        }
     return {
         "schema_version": 2,
         "case_id": campaign.get("case_id"),
         "physics_claim": "none",
         "passed": passed,
+        "analyzed_axes": list(analyzed_axes),
         "convergence_manifest": str(manifest_path),
         "convergence_manifest_sha256": sha256(manifest_path),
         "acceptance": acceptance,
@@ -645,6 +675,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("convergence_manifest", type=Path)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument(
+        "--axis",
+        choices=("all", "population", "duration"),
+        default="all",
+        help=(
+            "analyze all stages or one completed convergence axis; "
+            "the shared population_1 baseline is always required"
+        ),
+    )
     return parser.parse_args()
 
 
