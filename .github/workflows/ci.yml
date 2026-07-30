@@ -85,6 +85,8 @@ jobs:
         run: python3 scripts/test_turner_runtime_qualification.py build/aurorapic_cli
       - name: Validate Turner one-cycle startup workflow
         run: python3 scripts/test_turner_startup.py
+      - name: Validate bounded Turner horizon workflow
+        run: python3 scripts/test_turner_horizon.py
       - name: Validate Turner ion-density comparison
         run: python3 scripts/test_compare_turner.py
       - name: Validate restart-safe 1D spatial averaging

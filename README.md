@@ -406,6 +406,9 @@ majorants while keeping the publisher tables under ignored `tmp/`; see
 An explicitly acknowledged bounded qualifier measures the exact initial
 population for only a few serial steps under hard work and timeout limits
 before any longer CCP execution is considered.
+A separate checkpointed startup ladder advances one RF cycle at a time,
+retaining species/collision balances and phase-matched field metrics while
+hard-limiting each local horizon.
 The runner also offers an explicit bounded branching mode: ionization and
 attachment respectively increase and decrease represented electron weight
 while systematic resampling holds computational population fixed, enabling

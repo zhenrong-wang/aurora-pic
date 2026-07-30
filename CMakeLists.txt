@@ -85,6 +85,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/prepare_turner_case.py
   scripts/qualify_turner_runtime.py
   scripts/run_turner_startup.py
+  scripts/extend_turner_horizon.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py
   scripts/prepare_hall_convergence.py scripts/analyze_hall_convergence.py
   scripts/analyze_hall_flux_stationarity.py

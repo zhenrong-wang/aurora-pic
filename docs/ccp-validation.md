@@ -240,6 +240,31 @@ charge histories, charge-paired ionization/population balance, and a
 129-node final field. It reports an early boundary-to-bulk field indicator
 but explicitly does not interpret it as a stationary sheath.
 
+Extend that retained one-cycle checkpoint through cycles two to four with:
+
+```sh
+python3 scripts/extend_turner_horizon.py \
+  build/aurorapic_cli \
+  examples/turner_helium_ccp_case1.case \
+  tmp/turner-normalized-v1 \
+  --prior-work-dir tmp/turner-case1-startup \
+  --prior-report tmp/turner-case1-startup/report.json \
+  --work-dir tmp/turner-case1-horizon \
+  --report tmp/turner-case1-horizon/report.json \
+  --additional-cycles 3 \
+  --max-initial-updates 160000000 \
+  --timeout-seconds 120 \
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_BOUNDED_TURNER_HORIZON
+```
+
+The horizon runner verifies the prior report and checkpoint hashes, advances
+one whole cycle per low-priority serial process, and writes a distinct
+checkpoint and phase-matched diagnostic set after every cycle. Per-cycle
+reports contain collision deltas, charge-paired population balances, inferred
+electrode losses, energy and charge ranges, waveform error, restart
+continuity, and boundary-to-bulk field structure. Three added cycles are the
+built-in maximum; this is a startup trend screen, not a stationarity test.
+
 ## Restart-safe density averaging
 
 The primary Turner observable is now produced by a generic 1D post-step
@@ -324,7 +349,8 @@ reduced run as a pass:
    qualification and its hard resource gates are complete. A checkpoint-split
    whole-RF-period startup now proves restart continuity, species/collision
    balance, waveform timing, finite diagnostics, and early boundary-field
-   formation; multi-cycle evolution and stationarity remain.
+   formation. The bounded four-cycle horizon adds phase-matched population,
+   collision, and field trends; longer blockwise stationarity remains.
 4. **C3, checkpointed steady-state comparison:** continue only through
    explicit low-priority blocks, establish whole-cycle stationarity, average
    the final 32 periods, and apply the published chi-squared test.
