@@ -100,8 +100,9 @@ cycle-averaged convergence is implemented.
 
 AuroraPIC must not claim a Turner result until all of these are complete:
 
-1. import and pin the exact benchmark collision tables with their permitted
-   redistribution terms and provenance;
+1. normalize the now checksum-pinned benchmark collision tables without
+   changing their interpolation contract, while keeping the publisher files
+   local unless redistribution permission is established;
 2. report species-resolved electrode current, deposited power, spatial
    density, ionization source, and phase/time averages;
 3. implement statistically bounded campaign and chi-squared comparison
@@ -119,6 +120,29 @@ or redistribution conditions. AuroraPIC's existing local import workflow
 therefore remains the route for user-supplied data until an exact
 redistributable benchmark package is identified and reviewed.
 
+## Publisher supplement lock
+
+The exact publisher supplement was manually acquired on 30 July 2026. The
+committed `examples/turner_ccp.sources` registry pins the 133,969-byte archive
+as SHA-256
+`a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661`
+and separately pins all four members. It contains the Biagi 7.1 electron
+table, the 101-row centre-of-mass He+-He table, original results for all four
+published grids, and refined results. Case 1 has the required 129 nodes over
+the 6.7 cm gap.
+
+The electron table carries an embedded `All rights reserved` notice.
+Consequently the archive and extracted tables remain under ignored `tmp/`;
+AuroraPIC commits only identity and semantic metadata. Verify a local copy
+without modifying or redistributing it with:
+
+```sh
+python3 scripts/verify_turner_source.py \
+  examples/turner_ccp.sources \
+  tmp/013507_1_supplements.zip \
+  --output tmp/turner-source-verification.json
+```
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
@@ -128,10 +152,11 @@ reduced run as a pass:
 1. **C0, collision-law verification:** exact center-of-mass energy lookup,
    finite-mass isotropic recoil, backward velocity exchange, electron
    equal-sharing ionization, and restart fingerprints. This stage is complete.
-2. **C1, source and diagnostic lock:** acquire the electronic supplement
-   outside the repository, pin its hashes and usage terms, normalize the exact
-   tables without changing interpolation semantics, and implement the
-   published density/power/current observables.
+2. **C1, source and diagnostic lock:** the electronic supplement is acquired
+   outside the repository and its archive/member hashes, structure, and usage
+   constraint are pinned. Normalize the exact tables without changing
+   interpolation semantics and implement the published
+   density/power/current observables.
 3. **C2, bounded startup screening:** run the exact Case 1 grid, timestep,
    particle weight, waveform, and collision model for a small declared number
    of RF periods. Check invariants, collision balance, sheath formation,

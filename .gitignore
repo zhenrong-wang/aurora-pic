@@ -11,6 +11,7 @@ compile_commands.json
 output/
 test_output/
 test_output_*/
+tmp/
 *.vtk
 *.vti
 *.vtu
@@ -23,6 +24,7 @@ test_output_*/
 
 # Local editor/OS files
 .DS_Store
+__pycache__/
 *.swp
 *.swo
 .vscode/

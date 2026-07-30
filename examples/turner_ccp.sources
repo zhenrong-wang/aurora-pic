@@ -1,0 +1,37 @@
+source_registry_version = 1
+case_id = turner-helium-ccp-2013
+doi = 10.1063/1.4775084
+landing_url = https://doi.org/10.1063/1.4775084
+
+[source.publisher_supplement]
+artifact_name = 013507_1_supplements.zip
+artifact_bytes = 133969
+sha256 = a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661
+acquisition = manual_from_publisher_record
+license = publisher-supplement-terms; embedded electron table says All rights reserved
+redistribution = not-approved
+members = turner_benchmark_he_electron_table.dat, turner_benchmark_he_ion_table.dat, turner_benchmark_refined_results.dat, turner_benchmark_results.dat
+
+[member.turner_benchmark_he_electron_table.dat]
+bytes = 27599
+sha256 = 2b54247d52389f0777076949a6b2e1f0d0eed1c738ee22d2a43b5249a9567e39
+kind = lxcat-electron-table
+process_counts = ELASTIC:1,EXCITATION:2,IONIZATION:1
+
+[member.turner_benchmark_he_ion_table.dat]
+bytes = 3703
+sha256 = 9f07c77862cc675af25530697a1c33b06c19c0a949a4e886c15107e8c56c4d92
+kind = turner-ion-table
+rows = 101
+
+[member.turner_benchmark_refined_results.dat]
+bytes = 241937
+sha256 = f486cdd2ab76e868ad949dbf054a4b901a4b73be485f2df2a77fcf53239f39a3
+kind = turner-results
+case_rows = 1:129,2:257,3:2049,4:513
+
+[member.turner_benchmark_results.dat]
+bytes = 116983
+sha256 = 60069168c0be535c176d617219be74a31ab4b6d1d0ec60668bee91eadef992de
+kind = turner-results
+case_rows = 1:129,2:257,3:513,4:513

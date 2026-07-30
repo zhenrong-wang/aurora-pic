@@ -44,6 +44,9 @@ controllable cathode remainder and separately unserved reverse demand, and alway
 `physics_claim = none`.
 `lock_hall_source.py` plans external acquisition from the committed source
 registry and stream-hashes local artifacts without downloading them.
+`verify_turner_source.py` checksum-locks and structurally validates a local
+copy of the Turner helium CCP publisher supplement while keeping its
+rights-restricted tables outside the repository.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.
