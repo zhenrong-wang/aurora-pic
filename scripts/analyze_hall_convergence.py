@@ -92,7 +92,8 @@ def read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
 def load_controller(
     output: Path,
     expected_updates: int,
-) -> dict[str, float | int | bool | None]:
+    averaging_start_step: int,
+) -> dict[str, object]:
     path = output / "current_source.csv"
     required = {
         "macro_particles_created",
@@ -106,8 +107,11 @@ def load_controller(
         "cumulative_monitored_negative_charge",
         "cumulative_monitored_positive_charge",
         "cumulative_processed_monitored_charge",
+        "step",
+        "time",
     }
-    final = read_csv(path, required)[-1]
+    data = read_csv(path, required)
+    final = data[-1]
     distribution_keys = {
         "reverse_distribution_start_step",
         "reverse_distribution_steps",
@@ -201,7 +205,76 @@ def load_controller(
     cumulative_charge = cumulative * macro_charge
     maximum_charge = maximum * macro_charge
     monitored_absolute_charge = abs(negative) + positive
-    result: dict[str, float | int | bool | None] = {
+    window_rows: list[tuple[int, float, float, float]] = []
+    previous_step = -1
+    previous_time = -1.0
+    previous_negative = 0.0
+    previous_positive = 0.0
+    for row in data:
+        row_step = nonnegative_integer(
+            row["step"], f"{path.name} sample step"
+        )
+        row_time = finite(row["time"], f"{path.name} sample time")
+        row_negative = finite(
+            row["cumulative_monitored_negative_charge"],
+            f"{path.name} sampled negative charge",
+        )
+        row_positive = finite(
+            row["cumulative_monitored_positive_charge"],
+            f"{path.name} sampled positive charge",
+        )
+        if (
+            row_step <= previous_step
+            or row_time <= previous_time
+            or row_negative > previous_negative + 1e-24
+            or row_positive < previous_positive - 1e-24
+        ):
+            raise ConvergenceError(
+                f"{path.name} boundary-flux samples are not monotone"
+            )
+        if row_step >= averaging_start_step:
+            window_rows.append(
+                (row_step, row_time, row_negative, row_positive)
+            )
+        previous_step = row_step
+        previous_time = row_time
+        previous_negative = row_negative
+        previous_positive = row_positive
+    if (
+        len(window_rows) < 2
+        or window_rows[0][0] != averaging_start_step
+        or window_rows[-1][0] != expected_updates
+    ):
+        raise ConvergenceError(
+            f"{path.name} does not cover the declared averaging window"
+        )
+    window_duration = window_rows[-1][1] - window_rows[0][1]
+    if window_duration <= 0.0:
+        raise ConvergenceError(
+            f"{path.name} averaging window has non-positive duration"
+        )
+    negative_delta = window_rows[-1][2] - window_rows[0][2]
+    positive_delta = window_rows[-1][3] - window_rows[0][3]
+    electron_loss_current = -negative_delta / window_duration
+    ion_loss_current = positive_delta / window_duration
+    net_loss_current = (
+        negative_delta + positive_delta
+    ) / window_duration
+    electron_interval_currents: list[float] = []
+    ion_interval_currents: list[float] = []
+    net_interval_currents: list[float] = []
+    for first, second in zip(window_rows, window_rows[1:]):
+        interval = second[1] - first[1]
+        if interval <= 0.0:
+            raise ConvergenceError(
+                f"{path.name} has a non-positive sample interval"
+            )
+        electron_current = -(second[2] - first[2]) / interval
+        ion_current = (second[3] - first[3]) / interval
+        electron_interval_currents.append(electron_current)
+        ion_interval_currents.append(ion_current)
+        net_interval_currents.append(ion_current - electron_current)
+    result: dict[str, object] = {
         "control_updates": updates,
         "reverse_demand_steps": reverse_steps,
         "reverse_demand_step_fraction": fraction,
@@ -217,6 +290,29 @@ def load_controller(
             if monitored_absolute_charge > 0.0 else 0.0,
         "reverse_distribution_available":
             observed_distribution == distribution_keys,
+        "averaging_window_boundary_flux": {
+            "start_step": averaging_start_step,
+            "end_step": expected_updates,
+            "duration_s": window_duration,
+            "samples": len(window_rows),
+            "intervals": len(window_rows) - 1,
+            "electron_loss_current_a": electron_loss_current,
+            "ion_loss_current_a": ion_loss_current,
+            "net_charge_loss_current_a": net_loss_current,
+            "ion_to_electron_loss_current_ratio":
+                ion_loss_current / electron_loss_current
+                if electron_loss_current > 0.0 else None,
+            "electron_interval_current_stddev_a":
+                statistics.pstdev(electron_interval_currents),
+            "ion_interval_current_stddev_a":
+                statistics.pstdev(ion_interval_currents),
+            "net_interval_current_stddev_a":
+                statistics.pstdev(net_interval_currents),
+            "positive_net_interval_fraction":
+                sum(
+                    value > 0.0 for value in net_interval_currents
+                ) / len(net_interval_currents),
+        },
     }
     if observed_distribution != distribution_keys:
         return result
@@ -380,6 +476,7 @@ def load_stage(
     expected_nodes: int,
     expected_max_mode: int,
     expected_updates: int,
+    averaging_start_step: int,
 ) -> dict[str, object]:
     field_path = output / "resolved_field_time_average.csv"
     field_rows = read_csv(
@@ -478,7 +575,9 @@ def load_stage(
     return {
         "coordinates": coordinates,
         "vectors": vectors,
-        "controller": load_controller(output, expected_updates),
+        "controller": load_controller(
+            output, expected_updates, averaging_start_step
+        ),
         "sha256": {
             "field_average": sha256(field_path),
             "species_average": sha256(species_path),
@@ -521,6 +620,18 @@ def safe_ratio(candidate: float, baseline: float) -> float | None:
     if baseline > 0.0:
         return candidate / baseline
     return 0.0 if candidate == 0.0 else None
+
+
+def scalar_change(candidate: float, baseline: float) -> dict[str, float | None]:
+    absolute = candidate - baseline
+    return {
+        "absolute": absolute,
+        "relative": (
+            abs(absolute) / abs(baseline)
+            if baseline != 0.0
+            else (0.0 if candidate == 0.0 else None)
+        ),
+    }
 
 
 def analyze(args: argparse.Namespace) -> dict[str, object]:
@@ -611,6 +722,7 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
             contract["nodes"],
             contract["max_mode"],
             contract["steps"],
+            contract["start"],
         )
         stages[stage] = loaded
         records.append({
@@ -755,6 +867,59 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 "Acceptance uses represented charge because macro-particle "
                 "weight changes with population. Reverse-event frequency is "
                 "reported but is not required to decrease."
+            ),
+        }
+        flux_stages: dict[str, dict[str, object]] = {}
+        for stage_name, controller in controller_stages.items():
+            flux = controller.get("averaging_window_boundary_flux")
+            if not isinstance(flux, dict):
+                raise ConvergenceError(
+                    f"{stage_name} averaging-window boundary flux is missing"
+                )
+            flux_stages[stage_name] = flux
+        baseline_flux = flux_stages["population_1"]
+        fine_flux = flux_stages["population_2"]
+        coarse_flux = flux_stages["population_0p5"]
+        flux_changes: dict[str, object] = {}
+        for metric in (
+            "electron_loss_current_a",
+            "ion_loss_current_a",
+            "net_charge_loss_current_a",
+            "ion_to_electron_loss_current_ratio",
+            "positive_net_interval_fraction",
+        ):
+            baseline_value = baseline_flux.get(metric)
+            fine_value = fine_flux.get(metric)
+            coarse_value = coarse_flux.get(metric)
+            if not all(
+                isinstance(value, (int, float))
+                for value in (
+                    baseline_value, fine_value, coarse_value
+                )
+            ):
+                raise ConvergenceError(
+                    f"boundary-flux metric {metric} is not comparable"
+                )
+            flux_changes[metric] = {
+                "coarse_to_baseline": scalar_change(
+                    float(coarse_value), float(baseline_value)
+                ),
+                "fine_to_baseline": scalar_change(
+                    float(fine_value), float(baseline_value)
+                ),
+            }
+        comparisons["boundary_flux_population"] = {
+            "coarse_stage": "population_0p5",
+            "baseline_stage": "population_1",
+            "fine_stage": "population_2",
+            "stages": flux_stages,
+            "changes": flux_changes,
+            "acceptance_metric": False,
+            "interpretation": (
+                "These physical-charge rates are measured over each "
+                "stage's declared averaging window. They diagnose the "
+                "controller population failure but do not alter v2 "
+                "acceptance."
             ),
         }
     return {

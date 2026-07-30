@@ -585,6 +585,13 @@ baseline. This avoids launching an unrelated axis merely to inspect a failed
 gate. Only the default `--axis all` report represents the complete v2
 convergence contract.
 
+Population reports also derive physical electron-loss, ion-loss, and net
+charge currents from cumulative monitored charge over each stage's declared
+averaging window. They report interval standard deviations, the fraction of
+sample intervals with positive net loss, and coarse/fine changes from the
+baseline. These windowed fluxes diagnose controller behavior but are not
+retroactively added to v2 acceptance.
+
 For each observable, the report records absolute and baseline-normalized L2
 and Linf changes from coarse to baseline and fine to baseline. Acceptance
 requires the fine change to satisfy the pinned tolerances and not exceed the

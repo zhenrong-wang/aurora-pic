@@ -128,44 +128,26 @@ def synthetic_output(
     )
     macro_charge = 1.6e-10 / particles_per_cell
     created = 10
-    represented = macro_charge * created / 1.602176634e-19
-    reverse_steps = int(round(0.04 * steps))
-    cumulative_reverse = 0.02 * steps
-    negative_charge = -1e-11 * steps
-    positive_charge = 2e-12 * steps
-    write_csv(
-        path / "current_source.csv",
-        [
-            "macro_particles_created",
-            "represented_particles_created",
-            "control_updates",
-            "reverse_diagnostics_start_step",
-            "reverse_demand_steps",
-            "reverse_demand_step_fraction",
-            "cumulative_reverse_demand_macroparticles",
-            "maximum_reverse_demand_macroparticles",
-            "reverse_distribution_start_step",
-            "reverse_distribution_steps",
-            "reverse_one_macro_steps",
-            "reverse_two_macro_steps",
-            "reverse_multi_macro_steps",
-            "distributed_reverse_demand_macroparticles",
-            "mean_reverse_demand_macroparticles",
-            "rms_reverse_demand_macroparticles",
-            "reverse_monitored_negative_charge",
-            "reverse_monitored_positive_charge",
-            "reverse_monitored_net_charge",
-            "cumulative_monitored_negative_charge",
-            "cumulative_monitored_positive_charge",
-            "cumulative_processed_monitored_charge",
-        ],
-        [{
-            "macro_particles_created": created,
-            "represented_particles_created": represented,
-            "control_updates": steps,
+    def controller_row(sample_step: int) -> dict[str, object]:
+        sample_created = max(
+            1, int(round(created * sample_step / steps))
+        )
+        sample_represented = (
+            macro_charge * sample_created / 1.602176634e-19
+        )
+        reverse_steps = int(round(0.04 * sample_step))
+        cumulative_reverse = 0.02 * sample_step
+        negative_charge = -1e-11 * sample_step
+        positive_charge = 2e-12 * sample_step
+        return {
+            "step": sample_step,
+            "time": sample_step * 5e-12,
+            "macro_particles_created": sample_created,
+            "represented_particles_created": sample_represented,
+            "control_updates": sample_step,
             "reverse_diagnostics_start_step": 0,
             "reverse_demand_steps": reverse_steps,
-            "reverse_demand_step_fraction": reverse_steps / steps,
+            "reverse_demand_step_fraction": reverse_steps / sample_step,
             "cumulative_reverse_demand_macroparticles":
                 cumulative_reverse,
             "maximum_reverse_demand_macroparticles": 1,
@@ -190,7 +172,39 @@ def synthetic_output(
             "cumulative_monitored_positive_charge": positive_charge,
             "cumulative_processed_monitored_charge":
                 negative_charge + positive_charge,
-        }],
+        }
+    write_csv(
+        path / "current_source.csv",
+        [
+            "step",
+            "time",
+            "macro_particles_created",
+            "represented_particles_created",
+            "control_updates",
+            "reverse_diagnostics_start_step",
+            "reverse_demand_steps",
+            "reverse_demand_step_fraction",
+            "cumulative_reverse_demand_macroparticles",
+            "maximum_reverse_demand_macroparticles",
+            "reverse_distribution_start_step",
+            "reverse_distribution_steps",
+            "reverse_one_macro_steps",
+            "reverse_two_macro_steps",
+            "reverse_multi_macro_steps",
+            "distributed_reverse_demand_macroparticles",
+            "mean_reverse_demand_macroparticles",
+            "rms_reverse_demand_macroparticles",
+            "reverse_monitored_negative_charge",
+            "reverse_monitored_positive_charge",
+            "reverse_monitored_net_charge",
+            "cumulative_monitored_negative_charge",
+            "cumulative_monitored_positive_charge",
+            "cumulative_processed_monitored_charge",
+        ],
+        [
+            controller_row(int(round(0.8 * steps))),
+            controller_row(steps),
+        ],
     )
 
 
@@ -273,6 +287,14 @@ def main() -> int:
             and report["comparisons"]["controller_population"]["stages"][
                 "population_2"
             ]["reverse_distribution_available"]
+            and not report["comparisons"]["boundary_flux_population"][
+                "acceptance_metric"
+            ]
+            and report["comparisons"]["boundary_flux_population"][
+                "changes"
+            ]["electron_loss_current_a"]["fine_to_baseline"][
+                "relative"
+            ] == 0.0
             and report["comparisons"]["controller_population"][
                 "fine_to_baseline_reverse_charge_per_update_ratio"
             ] == 0.5
