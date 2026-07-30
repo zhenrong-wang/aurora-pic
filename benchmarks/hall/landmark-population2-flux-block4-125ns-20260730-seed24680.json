@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "fine_population_fourth_flux_block",
+  "physics_claim": "none",
+  "stationarity_claim": "none",
+  "passed": false,
+  "simulation_source_commit": "c6c7e264efa3a9c9020c88055d6b4b5e925c5321",
+  "analysis_source_commit": "67dd612dec629d21baad43ece93e510568588b28",
+  "predeclared_gate_source_commit": "ddf5de4bf0c2064bb3b7aeb8fffd53e83a2eb481",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "simulation": {
+    "particles_per_cell_per_species": 32,
+    "cells_x": 125,
+    "cells_y": 64,
+    "timestep_s": 5e-12,
+    "restart_step": 20000,
+    "final_step": 25000,
+    "start_time_s": 1e-07,
+    "final_time_s": 1.25e-07,
+    "window_steps": 1000,
+    "window_duration_s": 5e-09,
+    "windows": 5,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "wall_seconds": 618.54,
+    "user_seconds": 617.94,
+    "system_seconds": 0.25,
+    "maximum_resident_kib": 66660,
+    "artifact_bytes": 195323807,
+    "final_live_particles": 591074,
+    "final_live_electrons": 294133,
+    "final_live_ions": 296941
+  },
+  "adjacent_5ns_flux_windows": [
+    {
+      "start_step": 20000,
+      "end_step": 21000,
+      "left_electron_charge_rate_a": -1.00536583783386,
+      "left_ion_charge_rate_a": 0.2022748000422706,
+      "left_net_charge_rate_a": -0.8030910377915893,
+      "reverse_step_fraction": 0.061,
+      "reverse_mean_demand_macroparticles": 0.7868852459016431
+    },
+    {
+      "start_step": 21000,
+      "end_step": 22000,
+      "left_electron_charge_rate_a": -1.0654474616087917,
+      "left_ion_charge_rate_a": 0.2162938455897547,
+      "left_net_charge_rate_a": -0.8491536160190369,
+      "reverse_step_fraction": 0.065,
+      "reverse_mean_demand_macroparticles": 0.7538461538461784
+    },
+    {
+      "start_step": 22000,
+      "end_step": 23000,
+      "left_electron_charge_rate_a": -1.0834719487412714,
+      "left_ion_charge_rate_a": 0.2022748000422706,
+      "left_net_charge_rate_a": -0.8811971486990008,
+      "reverse_step_fraction": 0.064,
+      "reverse_mean_demand_macroparticles": 0.7656249999999929
+    },
+    {
+      "start_step": 23000,
+      "end_step": 24000,
+      "left_electron_charge_rate_a": -1.0634447408162941,
+      "left_ion_charge_rate_a": 0.20628024162726608,
+      "left_net_charge_rate_a": -0.857164499189028,
+      "reverse_step_fraction": 0.062,
+      "reverse_mean_demand_macroparticles": 0.7580645161290249
+    },
+    {
+      "start_step": 24000,
+      "end_step": 25000,
+      "left_electron_charge_rate_a": -1.1415508517237056,
+      "left_ion_charge_rate_a": 0.17223398815480467,
+      "left_net_charge_rate_a": -0.9693168635689009,
+      "reverse_step_fraction": 0.051,
+      "reverse_mean_demand_macroparticles": 0.6862745098038859
+    }
+  ],
+  "current_block_summary": {
+    "left_electron_charge_rate_mean_a": -1.0718561681447845,
+    "left_electron_charge_rate_coefficient_of_variation": 0.04072043541750351,
+    "left_ion_charge_rate_mean_a": 0.19987153509127334,
+    "left_ion_charge_rate_coefficient_of_variation": 0.07374095989167975,
+    "left_net_charge_rate_mean_a": -0.8719846330535113,
+    "left_net_charge_rate_coefficient_of_variation": 0.06290884084802942,
+    "reverse_step_fraction_mean": 0.0606,
+    "reverse_step_fraction_coefficient_of_variation": 0.08257423104420335,
+    "reverse_mean_demand_macroparticles": 0.750139085136145,
+    "reverse_mean_demand_coefficient_of_variation": 0.045188798503145375
+  },
+  "predeclared_stationarity_screen": {
+    "max_mean_absolute_relative_change": 0.1,
+    "max_current_block_coefficient_of_variation": 0.1,
+    "all_metrics_must_pass": true,
+    "passed": false,
+    "metrics": {
+      "left_electron_charge_rate_a": {
+        "mean_absolute_relative_change": 0.004834510970621093,
+        "current_coefficient_of_variation": 0.04072043541750351,
+        "passed": true
+      },
+      "left_ion_charge_rate_a": {
+        "mean_absolute_relative_change": 0.26509572901325473,
+        "current_coefficient_of_variation": 0.07374095989167975,
+        "passed": false
+      },
+      "left_net_charge_rate_a": {
+        "mean_absolute_relative_change": 0.08308457711442793,
+        "current_coefficient_of_variation": 0.06290884084802942,
+        "passed": true
+      },
+      "reverse_step_fraction": {
+        "mean_absolute_relative_change": 0.2481389578163772,
+        "current_coefficient_of_variation": 0.08257423104420335,
+        "passed": false
+      },
+      "reverse_mean_demand_macroparticles": {
+        "mean_absolute_relative_change": 0.07029907205467296,
+        "current_coefficient_of_variation": 0.045188798503145375,
+        "passed": true
+      }
+    }
+  },
+  "published_profile_screening": {
+    "reference_kind": "digitized seven-code envelope from Figure 6",
+    "reference_averaging_start_s": 1.6e-05,
+    "reference_averaging_end_s": 2e-05,
+    "simulation_averaging_start_s": 1e-07,
+    "simulation_averaging_end_s": 1.25e-07,
+    "simulation_averaging_samples": 51,
+    "averaging_window_matches": false,
+    "passed": false,
+    "observables": {
+      "axial_field": {
+        "relative_l2": 0.8350184270222435,
+        "previous_relative_l2": 0.9219171635589923,
+        "relative_change": -0.09425872515626324,
+        "passed_points": 1,
+        "points": 124
+      },
+      "ion_density": {
+        "relative_l2": 0.7087144202977501,
+        "previous_relative_l2": 0.7222356689174947,
+        "relative_change": -0.018721380294067405,
+        "passed_points": 0,
+        "points": 124
+      },
+      "electron_temperature": {
+        "relative_l2": 0.43935358357653376,
+        "previous_relative_l2": 0.4476349798998077,
+        "relative_change": -0.01850033329640045,
+        "passed_points": 24,
+        "points": 124
+      }
+    }
+  },
+  "assessment": {
+    "numerical_integrity_passed": true,
+    "predeclared_same_seed_stationarity_screen_passed": false,
+    "published_profile_screening_passed": false,
+    "real_case_verified": false,
+    "experimentally_validated": false,
+    "ready_for_independent_seed": false,
+    "ready_for_physics_claim": false,
+    "interpretation": "Three of five predeclared balance metrics pass. Electron mean changes by 0.5%, net mean by 8.3%, and reverse mean demand by 7.0%, with every current-block CV below 10%. Ion mean still changes by 26.5% and reverse-event frequency by 24.8%, so same-seed stationarity is not established. Both failing drifts are smaller than their approximately 40% changes in the previous block. Profile errors improve but formal public-benchmark agreement remains absent.",
+    "next_gate": "Continue the same trajectory under the unchanged 10% mean-change and 10% within-block-CV gate. Do not launch independent seeds or claim LANDMARK verification until all five metrics pass."
+  },
+  "sha256": {
+    "executable": "02681aa933b6c9fa6bdddd984d59f9ff496222e016229d661acc34603b0e77fc",
+    "runtime_config": "73dee2c09b25b72439340b77807f8701e7998baef2a929e226486509ca15d21b",
+    "runtime_measurement": "48507bc0a6bcfbe7ba6cde921003a7c034c9356d5c2be40809eddf20a1fa56f5",
+    "magnetic_profile": "d813ea74a7c098f51349cb58242c91707eaca9bfa278a69155d86cb9683b1d3a",
+    "checkpoint_20000": "e2fe38629de121a547f4b8dbe3e075de3ef945122c86472175053aa243b6ccbb",
+    "boundary_flux": "2fe0eba852c66f2b59be9581390d099e52bfac9f7d08bafdd791744e8fb1327e",
+    "current_source": "e14f424af2ec931fecf2f8ba4009cf020d835ebb4f3105ec455f572ad082a670",
+    "scalars": "ea85232e9798aec0cdf979346e8d686df9517f15b9d1b472a1b72bbc53111856",
+    "field_time_average": "573fca41b0fd6716e94d21632306e4094019148c14cf58c9c48c448acc17217c",
+    "species_time_average": "4b527144e1f237e1e4399ab88ef8039ff69934c58b56157a16d7c179fad2a497",
+    "checkpoint_25000": "f04fd7390eb1870ebf86bdb8bb5bd89deed37d77809cc55296c1472864e96886",
+    "stationarity_report": "33442afb8c221cc8af12a777c0db1e9ab9df7ebeeba57c148877ceaa2d7ad2b5",
+    "stationarity_analyzer": "3a6d2a25c6e3a8e69ff52b189efeaba0482733bcd7fd1c32ec8452af65a40b9e",
+    "block_comparison": "fcd3db5108650a9cef4b57d9a11815073242720a9d44687f5159d7f332d34e64",
+    "block_comparator": "f8974dcb000aef46f87e54123ad7417771297e156b819ac95a00be727d527124",
+    "figure6_comparison": "92237365dd0f0b8666ed16e83fe94a88be7cc9c0e2a496acf01a782bd0023126"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}

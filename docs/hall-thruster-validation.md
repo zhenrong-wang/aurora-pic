@@ -753,6 +753,15 @@ The profile-screening L2 errors improve again, to `0.922` for axial field,
 `0.722` for ion density, and `0.448` for electron temperature, but all formal
 screening and averaging-window gates still fail.
 
+The first prospectively screened continuation, 100–125 ns, is recorded in
+`benchmarks/hall/landmark-population2-flux-block4-125ns-20260730-seed24680.json`.
+The `10%` mean-change and within-block-CV limits were committed before the run.
+Electron, net-current, and reverse-demand metrics pass; ion-current mean still
+changes by `26.5%` and reverse-event frequency by `24.8%`, so the all-metrics
+gate fails. Those two changes have fallen from approximately `40%` in the
+preceding comparison. Figure 6 L2 errors improve to `0.835`, `0.709`, and
+`0.439`, respectively, without meeting the published comparison contract.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.
