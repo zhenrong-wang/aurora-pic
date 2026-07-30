@@ -666,6 +666,19 @@ is bursty (`CV = 1.76`; second-half magnitude is 0.41 times the first).
 The next gate must therefore extend or ensemble the fine-population electron
 flux statistics rather than interpreting this 5 ns mean as converged.
 
+The first fine-population flux horizon is recorded in
+`benchmarks/hall/landmark-population2-flux-horizon-50ns-20260730-seed24680.json`.
+It extends the 32-particle/cell state to 50 ns and supplies five adjacent 5 ns
+blocks. Reverse-event frequency is comparatively stationary at 15.4–17.7%
+and ion-loss block means have `CV = 0.092`, but electron-loss block means
+still have `CV = 0.235` and remain bursty inside every block. Screening the
+30–50 ns averaged profiles against the digitized published Figure 6 envelope
+also fails: relative L2 errors are 1.627 for axial field, 0.748 for ion
+density, and 0.491 for electron temperature. The published average covers
+16–20 microseconds. This is a real side-by-side benchmark calculation, but it
+is a documented non-agreement result—not LANDMARK verification and not
+experimental validation.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.
