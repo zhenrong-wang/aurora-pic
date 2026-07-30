@@ -615,6 +615,19 @@ macroparticles and fails the predeclared v2 quantization criterion. No
 threshold was changed after observing the result. The two duration stages
 remain unlaunched because they cannot resolve this population-axis failure.
 
+The follow-up checkpoint-v10 distribution probe is recorded in
+`benchmarks/hall/landmark-population2-distribution-v10-20260730-seed24680.json`.
+It continued the 32-particle/cell stage for 1,000 updates without changing its
+physics. Of 165 reverse-demand timesteps, 146 requested at most 1.5
+macroparticles, 18 requested between 1.5 and 2.5, and one requested more than
+2.5; the mean was 1.085, the RMS 1.157, and the maximum three. Positive
+monitored charge contributed 98.95% of absolute boundary charge on those
+timesteps. This makes the failed maximum-macro criterion a rare,
+ion-loss-dominated tail rather than a controller runaway or cancellation
+bookkeeping defect. It does not establish population convergence. The next
+gate is time-windowed, species-resolved boundary-flux scaling; only then
+should the raw maximum criterion be reconsidered.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.

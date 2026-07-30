@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "controller_distribution_diagnostic",
+  "physics_claim": "none",
+  "source_commit": "31a1b1c1562d4988d8db8d616e9de9c69f49cb7f",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "purpose": "Resolve the reverse-demand event distribution and boundary-flux composition after the 32-particle-per-cell population stage failed the v2 maximum-macro criterion.",
+  "simulation": {
+    "particles_per_cell_per_species": 32,
+    "cells_x": 125,
+    "cells_y": 64,
+    "timestep_s": 5e-12,
+    "restart_step": 5000,
+    "final_step": 6000,
+    "observed_updates": 1000,
+    "observed_duration_s": 5e-09,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "wall_seconds": 116.26,
+    "user_seconds": 116.02,
+    "system_seconds": 0.18,
+    "maximum_resident_kib": 61488,
+    "artifact_bytes": 170702559,
+    "final_live_particles": 524846,
+    "final_live_electrons": 258367,
+    "final_live_ions": 266479
+  },
+  "reverse_distribution": {
+    "distribution_start_step": 5000,
+    "distribution_steps": 165,
+    "one_macro_steps": 146,
+    "two_macro_steps": 18,
+    "multi_macro_steps": 1,
+    "one_macro_fraction": 0.8848484848484849,
+    "two_macro_fraction": 0.10909090909090909,
+    "multi_macro_fraction": 0.006060606060606061,
+    "distributed_reverse_demand_macroparticles": 179.00000000000119,
+    "mean_reverse_demand_macroparticles": 1.0848484848484921,
+    "rms_reverse_demand_macroparticles": 1.1573218823618856,
+    "maximum_reverse_demand_macroparticles": 3.0000000000005924
+  },
+  "reverse_step_boundary_flux": {
+    "monitored_negative_charge_c": -2.0027207924951013e-11,
+    "monitored_positive_charge_c": 1.8825575449500018e-09,
+    "monitored_net_charge_c": 1.8625303370250508e-09,
+    "positive_fraction_of_absolute_monitored_charge": 0.9894736842105518,
+    "negative_fraction_of_absolute_monitored_charge": 0.010526315789448197
+  },
+  "assessment": {
+    "runaway_controller_observed": false,
+    "bookkeeping_defect_indicated": false,
+    "rare_multi_macro_tail_observed": true,
+    "boundary_flux_imbalance_observed": true,
+    "ready_for_physics_claim": false,
+    "ready_for_400ns_extension": false,
+    "interpretation": "One-macroparticle events comprise 88.5% of reverse timesteps, two-macroparticle events 10.9%, and one three-macroparticle event 0.6%. Positive monitored charge accounts for 98.95% of absolute reverse-step boundary charge. The failed maximum-macro gate is therefore a rare tail driven by ion-dominated boundary loss, not controller runaway or cancellation bookkeeping.",
+    "next_gate": "Add time-windowed species boundary-flux rates and compare their population scaling before deciding whether the raw maximum-macro criterion should be replaced by a tail-probability and represented-charge criterion."
+  },
+  "sha256": {
+    "executable": "40e6f3dbc0bc8dd14d5c75ade375682fb5e1f7ed402f3f4c1d4f956a8826f422",
+    "runtime_config": "b319ca5d3b5709ed3da807e6f661cb2bfc0b8ecd8e7015b45bd832c60059cd59",
+    "runtime_measurement": "47244698c697a8faa4daf662da1158070f0aef390b100b76bd94d39261866db3",
+    "magnetic_profile": "d813ea74a7c098f51349cb58242c91707eaca9bfa278a69155d86cb9683b1d3a",
+    "checkpoint_5000_v9": "7965497b3d71888cb1ca84fb8809f0e2d471c380edbfa3aa6f747d24bc4f477c",
+    "current_source": "216159c898c7aebdddfc269aeb4fd0dc9da23e6c2ba103d059c40a1f3534213d",
+    "scalars": "0575c1e9019ca20510a5f3df6cd63a4ac0c399a5bba2705f93194e41af604611",
+    "checkpoint_6000_v10": "e38aa564d7f4d3b6e6cd7edb4c19ae568e334ac4f0eea940aeb8d159764789ac"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}
