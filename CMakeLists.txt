@@ -82,6 +82,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/prepare_hall_campaign.py scripts/lock_hall_source.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py
   scripts/prepare_hall_convergence.py scripts/analyze_hall_convergence.py
+  scripts/analyze_hall_flux_stationarity.py
   scripts/prepare_hall_horizon_stage.py
   scripts/analyze_hall_horizon_stage.py
   scripts/run_swarm_campaign.py

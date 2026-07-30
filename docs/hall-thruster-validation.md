@@ -648,6 +648,23 @@ than their means, so this is not yet a boundary-flux convergence claim. A v3
 criterion must be based on longer, disjoint time windows rather than fitted
 to this observation.
 
+Adjacent completed windows are reduced without rerunning the solver:
+
+```sh
+python3 scripts/analyze_hall_flux_stationarity.py \
+  /external/campaign/output \
+  --start-step 6000 \
+  --end-step 9000 \
+  --window-steps 1000 \
+  --report /external/campaign/stationarity-report.json
+```
+
+The analyzer requires complete species/boundary coverage in every physical
+output interval and matching checkpoint-v10 controller distribution rows at
+each window edge. It reports window means, interval variability, and
+cross-window coefficients of variation, pins both source CSV hashes, and
+deliberately applies no post-hoc stationarity threshold.
+
 That matched flux study is recorded in
 `benchmarks/hall/landmark-boundary-flux-scaling-v10-20260730-seed24680.json`.
 The 8, 16, and 32 particle/cell checkpoints were each continued over the same
