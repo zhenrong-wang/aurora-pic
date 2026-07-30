@@ -50,7 +50,11 @@ def main() -> int:
             writer.writerow(reference_header)
             for index in range(129):
                 x = 0.067 * index / 128
-                writer.writerow([x, 1, 1, 1, 1.0e14, 1, 1.0e11])
+                # Match the limited coordinate precision in the publisher
+                # supplement rather than manufacturing exact binary equality.
+                writer.writerow([
+                    f"{x:.6g}", 1, 1, 1, 1.0e14, 1, 1.0e11
+                ])
         with candidate.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.writer(stream)
             writer.writerow(candidate_header)
@@ -99,6 +103,9 @@ def main() -> int:
             == "population_standard_deviation_squared"
             and value["candidate"]["species"] == "ions"
             and value["averaging_contract_verified"]
+            and value["coordinate_contract"]["mapping"]
+            == "ordered_prescribed_grid_no_interpolation"
+            and value["coordinate_contract"]["maximum_reference_error_m"] > 0
             and value["physics_claim"].startswith("none_"),
             "Turner comparator statistic or claim boundary is incorrect",
         )
@@ -116,6 +123,37 @@ def main() -> int:
         ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         require(rejected.returncode == 2 and "SHA-256 differs" in rejected.stderr,
                 "Turner comparator accepted an unlocked reference")
+
+        invalid_reference = work / "turner_case1_benchmark.csv"
+        rows = invalid_reference.read_text(encoding="utf-8").splitlines()
+        columns = rows[1].split(",")
+        columns[0] = "0.0001"
+        rows[1] = ",".join(columns)
+        invalid_reference.write_text(
+            "\n".join(rows) + "\n", encoding="utf-8"
+        )
+        audit.write_text(json.dumps({
+            "turner_normalization_version": 1,
+            "normalized_files": {
+                invalid_reference.name: {
+                    "sha256": sha256(invalid_reference)
+                }
+            },
+        }), encoding="utf-8")
+        off_grid = subprocess.run([
+            sys.executable, str(COMPARATOR), "--case", "1",
+            "--reference", str(invalid_reference),
+            "--candidate", str(candidate),
+            "--candidate-metadata", str(metadata),
+            "--normalization-audit", str(audit),
+            "--output", str(work / "off-grid.json"),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(
+            off_grid.returncode == 2
+            and "reference coordinate is off the prescribed grid"
+            in off_grid.stderr,
+            "Turner comparator accepted a reference on a different grid",
+        )
 
     print("Turner ion-density comparison passed")
     return 0

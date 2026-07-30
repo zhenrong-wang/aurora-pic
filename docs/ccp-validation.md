@@ -352,11 +352,50 @@ python3 scripts/compare_turner.py \
   --output tmp/turner-case1-comparison.json
 ```
 
-The tool requires exact node coordinates and does not interpolate. It rejects
+The tool requires ordered correspondence to the prescribed uniform mesh and
+does not interpolate. Candidate coordinates must match that mesh to numerical
+roundoff. The publisher supplement prints coordinates with limited precision,
+so reference coordinates receive a narrowly bounded `2.5e-4`-cell rounding
+allowance; the report records both maximum coordinate errors. The tool rejects
 partial data unless metadata proves the exact case timestep and final 32 RF
-cycles. A report still makes no overall physics claim because density
-metadata alone cannot prove the prescribed particle count, collision model,
-or prior stationary state.
+cycles. A report still makes no overall physics claim because density metadata
+alone cannot prove the prescribed particle count, collision model, or prior
+stationary state.
+
+## First exact Case 1 campaign result
+
+The first exact Case 1 campaign completed all 512,000 steps on 30 July 2026
+using the 2006-CODATA-normalized local supplement. The final averaging metadata
+records all 12,800 required samples over steps 499,201--512,000 and the final
+checkpoint is present. The retained local artifact identities are:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Generated deck | `b39c9e70b92757f561c88f7d1a2a03bd0c617861a393d6fce12e53c445d13927` |
+| Normalization audit | `29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740` |
+| Final checkpoint | `ba8383387194671ab77001bd8892027a170d67ed7e46a5c23ed7b6ab786c2092` |
+| Averaged profile | `13f7dbfdd12f81986c28251676a895b8b67a2fcd664d7e265fa8e44cb750a702` |
+| Averaging metadata | `3a8ad14babf4fc23a510e788c7a08c5cf6f6e7276241505087f1c47fda064278` |
+| Comparison report | `5f9f5fb7a50c7e438552e74276f5161438698cde785f2bb1702fb22531f9bc4f` |
+
+The unmodified published comparison gives `X² = 574.399`, outside both the
+Case 1 95% range (`55--303`) and 99% range (`48--405`). The relative profile
+L2 error is 2.874%, the maximum pointwise relative error is 4.811%, and the
+mid-plane ion density is 2.211% above the reference mean. The final
+macro-particle population is 32,280 and the mean of the final 32
+cycle-boundary samples is 32,157.6, close to the approximately 31,900 reported
+by Turner et al.
+
+A post-hoc weighted amplitude fit multiplies the candidate density by
+`0.980363` and reduces `X²` to `121.834`; an unweighted amplitude removal
+leaves 1.036% relative shape L2 error. These fitted values are diagnostic and
+are not part of the published test, so they do not change the failed campaign
+classification. The candidate symmetry error is 1.429% in relative L2, and
+the live population rises 1.465% across the final 32 cycle-boundary samples.
+The result proves the complete benchmark execution and comparison path, but
+does **not** yet establish Turner code-to-code verification. The next
+credibility work must isolate late-time stochastic drift and the roughly 2%
+density-amplitude bias before another production campaign is justified.
 
 ## Bounded execution ladder
 

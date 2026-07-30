@@ -22,6 +22,11 @@ RANGES_99 = {1: (48.0, 405.0), 2: (160.0, 548.0),
 STEPS_PER_RF_CYCLE = {1: 400, 2: 800, 3: 1600, 4: 3200}
 TOTAL_RF_CYCLES = {1: 1280, 2: 5120, 3: 5120, 4: 15360}
 RF_FREQUENCY_HZ = 13.56e6
+GAP_LENGTH_M = 0.067
+# The publisher result files print mesh coordinates with approximately six
+# significant digits. Their largest Case 1 discrepancy from the prescribed
+# uniform grid is 1.91e-4 cell widths.
+REFERENCE_COORDINATE_TOLERANCE_CELLS = 2.5e-4
 REFERENCE_COLUMNS = (
     "x_m",
     "ion_density_mean_m-3",
@@ -212,12 +217,30 @@ def compare(case: int, reference: Path, candidate: Path,
     squared_error: list[float] = []
     squared_reference: list[float] = []
     relative_errors: list[float] = []
+    cell_width = GAP_LENGTH_M / (expected_nodes - 1)
+    maximum_reference_coordinate_error = 0.0
+    maximum_candidate_coordinate_error = 0.0
     for index, (ref, value) in enumerate(zip(reference_rows, candidate_rows)):
         x_ref = ref["x_m"]
         x_value = value["x_m"]
-        require(abs(x_ref - x_value) <=
-                1e-12 * max(1.0, abs(x_ref), abs(x_value)),
-                f"candidate coordinate differs at node {index}")
+        x_expected = index * cell_width
+        reference_error = abs(x_ref - x_expected)
+        candidate_error = abs(x_value - x_expected)
+        maximum_reference_coordinate_error = max(
+            maximum_reference_coordinate_error, reference_error
+        )
+        maximum_candidate_coordinate_error = max(
+            maximum_candidate_coordinate_error, candidate_error
+        )
+        require(
+            reference_error
+            <= REFERENCE_COORDINATE_TOLERANCE_CELLS * cell_width,
+            f"reference coordinate is off the prescribed grid at node {index}",
+        )
+        require(
+            candidate_error <= 1e-12 * max(1.0, abs(x_expected)),
+            f"candidate coordinate is off the prescribed grid at node {index}",
+        )
         mean = ref["ion_density_mean_m-3"]
         sigma = ref["ion_density_population_stddev_m-3"]
         density = value["ion_density_mean_m-3"]
@@ -262,6 +285,17 @@ def compare(case: int, reference: Path, candidate: Path,
                 math.fsum(squared_error) / math.fsum(squared_reference)
             ),
             "maximum_pointwise_relative_error": max(relative_errors),
+        },
+        "coordinate_contract": {
+            "mapping": "ordered_prescribed_grid_no_interpolation",
+            "gap_length_m": GAP_LENGTH_M,
+            "cell_width_m": cell_width,
+            "reference_rounding_tolerance_cell_widths":
+                REFERENCE_COORDINATE_TOLERANCE_CELLS,
+            "maximum_reference_error_m":
+                maximum_reference_coordinate_error,
+            "maximum_candidate_error_m":
+                maximum_candidate_coordinate_error,
         },
         "comparison_scope": "published_baseline_ion_density_statistic_only",
         "averaging_contract_verified": True,
