@@ -628,6 +628,24 @@ bookkeeping defect. It does not establish population convergence. The next
 gate is time-windowed, species-resolved boundary-flux scaling; only then
 should the raw maximum criterion be reconsidered.
 
+That matched flux study is recorded in
+`benchmarks/hall/landmark-boundary-flux-scaling-v10-20260730-seed24680.json`.
+The 8, 16, and 32 particle/cell checkpoints were each continued over the same
+5 ns window. At the monitored left boundary, represented electron-loss
+current changed from `-4.246 A` to `-1.919 A` to `-0.647 A`, while ion-loss
+current changed from `+0.280 A` to `+0.312 A` to `+0.437 A`. The net rate
+moved toward balance (`-3.965 A`, `-1.606 A`, `-0.210 A`) as the reverse-event
+fraction rose (`1.6%`, `4.8%`, `16.5%`). Thus the higher event frequency is
+consistent with the electron and ion loss rates approaching one another under
+population refinement; it is not evidence of controller runaway. The
+electron loss rate still changes by about a factor of three from baseline to
+fine, so the early transient remains strongly population dependent. Across
+the ten 0.5 ns subwindows, fine-population ion current is comparatively stable
+(`CV = 0.145` and identical first/second-half means), while electron current
+is bursty (`CV = 1.76`; second-half magnitude is 0.41 times the first).
+The next gate must therefore extend or ensemble the fine-population electron
+flux statistics rather than interpreting this 5 ns mean as converged.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.

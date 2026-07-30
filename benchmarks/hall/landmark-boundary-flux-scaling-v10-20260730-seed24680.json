@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "boundary_flux_population_diagnostic",
+  "physics_claim": "none",
+  "passed": false,
+  "source_commit": "c6c7e264efa3a9c9020c88055d6b4b5e925c5321",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "purpose": "Measure species-resolved boundary charge flux over the same post-checkpoint physical-time window at three particle populations.",
+  "fixed_contract": {
+    "cells_x": 125,
+    "cells_y": 64,
+    "timestep_s": 5e-12,
+    "restart_step": 5000,
+    "final_step": 6000,
+    "window_duration_s": 5e-09,
+    "output_window_steps": 100,
+    "population_particles_per_cell_per_species": [
+      8,
+      16,
+      32
+    ],
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19
+  },
+  "runs": {
+    "population_0p5": {
+      "particles_per_cell_per_species": 8,
+      "wall_seconds": 29.22,
+      "maximum_resident_kib": 20024,
+      "artifact_bytes": 43972983,
+      "final_live_particles": 131323,
+      "left_boundary_charge_rate": {
+        "electrons_a": -4.245768080100801,
+        "ions_a": 0.28038091095005285,
+        "net_a": -3.965387169150748
+      },
+      "right_boundary_charge_rate": {
+        "electrons_a": -0.008010883170001513,
+        "ions_a": 0.5928053545801119,
+        "net_a": 0.5847944714101103
+      },
+      "reverse_distribution_window": {
+        "reverse_steps": 16,
+        "reverse_step_fraction": 0.016,
+        "mean_demand_macroparticles": 0.562499999999885,
+        "maximum_demand_macroparticles": 1.0000000000001974
+      }
+    },
+    "population_1": {
+      "particles_per_cell_per_species": 16,
+      "wall_seconds": 57.61,
+      "maximum_resident_kib": 33572,
+      "artifact_bytes": 86188976,
+      "final_live_particles": 262404,
+      "left_boundary_charge_rate": {
+        "electrons_a": -1.9186065192153623,
+        "ions_a": 0.31242444363005895,
+        "net_a": -1.6061820755853033
+      },
+      "right_boundary_charge_rate": {
+        "electrons_a": -0.016021766340003026,
+        "ions_a": 0.6208434456751172,
+        "net_a": 0.6048216793351141
+      },
+      "reverse_distribution_window": {
+        "reverse_steps": 48,
+        "reverse_step_fraction": 0.048,
+        "mean_demand_macroparticles": 0.7291666666666448,
+        "maximum_demand_macroparticles": 2.0000000000003948
+      }
+    },
+    "population_2": {
+      "particles_per_cell_per_species": 32,
+      "wall_seconds": 117.49,
+      "maximum_resident_kib": 61628,
+      "artifact_bytes": 170714019,
+      "final_live_particles": 524846,
+      "left_boundary_charge_rate": {
+        "electrons_a": -0.6468788159776222,
+        "ions_a": 0.43659313276508244,
+        "net_a": -0.21028568321253976
+      },
+      "right_boundary_charge_rate": {
+        "electrons_a": -0.01001360396250189,
+        "ions_a": 0.5607618219001059,
+        "net_a": 0.5507482179376041
+      },
+      "reverse_distribution_window": {
+        "reverse_steps": 165,
+        "reverse_step_fraction": 0.165,
+        "mean_demand_macroparticles": 1.0848484848484921,
+        "maximum_demand_macroparticles": 3.0000000000005924
+      }
+    }
+  },
+  "fine_to_baseline_ratios": {
+    "left_electron_charge_rate_magnitude": 0.33716075156576203,
+    "left_ion_charge_rate_magnitude": 1.3974358974358976,
+    "left_net_charge_rate_magnitude": 0.13092393736017896,
+    "right_electron_charge_rate_magnitude": 0.625,
+    "right_ion_charge_rate_magnitude": 0.9032258064516131,
+    "right_net_charge_rate_magnitude": 0.9105960634433294,
+    "reverse_step_fraction": 3.4375
+  },
+  "window_variability": {
+    "windows": 10,
+    "window_duration_s": 5e-10,
+    "left_electron_charge_rate_coefficient_of_variation": {
+      "population_0p5": 0.15405595866560906,
+      "population_1": 0.7829011054404872,
+      "population_2": 1.7552386685115764
+    },
+    "left_ion_charge_rate_coefficient_of_variation": {
+      "population_0p5": 0.7158712561129962,
+      "population_1": 0.29484082582325444,
+      "population_2": 0.14473589683424146
+    },
+    "population_2_second_half_to_first_half_rate_magnitude": {
+      "electrons": 0.4104803493449777,
+      "ions": 0.9999999999999988
+    }
+  },
+  "assessment": {
+    "population_converged": false,
+    "controller_runaway_observed": false,
+    "boundary_flux_population_dependence_observed": true,
+    "ready_for_physics_claim": false,
+    "ready_for_400ns_extension": false,
+    "interpretation": "The monitored-boundary electron loss rate changes by a factor of about three from 16 to 32 particles/cell while the ion rate increases by about 40%. The net left-boundary charge rate moves toward zero, from -1.61 A to -0.21 A, and the reverse-event fraction rises from 4.8% to 16.5%. Higher reverse-event frequency is therefore consistent with population-dependent convergence of electron and ion loss rates, not controller instability. Within the fine run, ion current is stable between half-windows while electron current is bursty (coefficient of variation 1.76 and second/first-half magnitude ratio 0.41), so this 5 ns average is statistically inadequate.",
+    "next_gate": "Separate transient evolution from sampling noise with multiple adjacent windows or independent seeds at the 32-particle population before changing the cathode acceptance rule."
+  },
+  "sha256": {
+    "executable": "02681aa933b6c9fa6bdddd984d59f9ff496222e016229d661acc34603b0e77fc",
+    "magnetic_profile": "d813ea74a7c098f51349cb58242c91707eaca9bfa278a69155d86cb9683b1d3a",
+    "population_0p5_runtime_config": "44022428bdc34da321755bf22757bba7cdda3accf6a297b86e6a2bc8cf088475",
+    "population_1_runtime_config": "51e6465cae08df0638c0c5d78f43821e2dbe17ce6946b67a0ee0c416443394d6",
+    "population_2_runtime_config": "8d859c3c84e7150233e6152bba3fecd91de8adc40e0a7b4a9edae8bb4b8a70d9",
+    "population_0p5_runtime_measurement": "345294bc9f92450698c6d52735b82b10418b816038e1f2ccdd5863664309c242",
+    "population_1_runtime_measurement": "3beeb298a90f4e9fcce37d7ab054f9027eb18323f4ee24fb38f93221e3c65a2a",
+    "population_2_runtime_measurement": "150203e97ffa157b60b05ca0e8d1198f896c7b46cbb962247b81e9e34135b968",
+    "population_0p5_boundary_flux": "5df0664b558320b70cd27e5b6ce8c4b28576339d18efc184c4766e1e2161f2c7",
+    "population_1_boundary_flux": "f426bcbf002332b6595d96ac5e3e390c0b25274d30fa400019eddfe118c420f7",
+    "population_2_boundary_flux": "968a131059b5acbadea5b789997ade05a93a4d9935e9bd2feb882f35d844aa51",
+    "population_0p5_checkpoint_6000": "1952d745ccc2dfad4e56c696a0452cae6161821818890c64ec5ee0e066b15a55",
+    "population_1_checkpoint_6000": "ebc9083e93a3ba8b47b47bc58594942b10fa4fef33e89d4cfc0b51820424dd94",
+    "population_2_checkpoint_6000": "e38aa564d7f4d3b6e6cd7edb4c19ae568e334ac4f0eea940aeb8d159764789ac"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}
