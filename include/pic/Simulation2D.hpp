@@ -90,6 +90,14 @@ struct CurrentRegulatedSource2DDiagnostics {
     std::size_t reverse_diagnostics_start_step{0};
     double cumulative_reverse_demand_macroparticles{0.0};
     double maximum_reverse_demand_macroparticles{0.0};
+    std::size_t reverse_distribution_start_step{0};
+    std::size_t reverse_one_macro_steps{0};
+    std::size_t reverse_two_macro_steps{0};
+    std::size_t reverse_multi_macro_steps{0};
+    double distributed_reverse_demand_macroparticles{0.0};
+    double squared_reverse_demand_macroparticles{0.0};
+    double reverse_monitored_negative_charge{0.0};
+    double reverse_monitored_positive_charge{0.0};
 };
 
 enum class PotentialReferenceCorrection {

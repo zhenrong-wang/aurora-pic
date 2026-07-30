@@ -518,6 +518,17 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
             "reverse_demand_step_fraction",
             "cumulative_reverse_demand_macroparticles",
             "maximum_reverse_demand_macroparticles",
+            "reverse_distribution_start_step",
+            "reverse_distribution_steps",
+            "reverse_one_macro_steps",
+            "reverse_two_macro_steps",
+            "reverse_multi_macro_steps",
+            "distributed_reverse_demand_macroparticles",
+            "mean_reverse_demand_macroparticles",
+            "rms_reverse_demand_macroparticles",
+            "reverse_monitored_negative_charge",
+            "reverse_monitored_positive_charge",
+            "reverse_monitored_net_charge",
             "cumulative_monitored_negative_charge",
             "cumulative_monitored_positive_charge",
             "cumulative_processed_monitored_charge",
@@ -535,15 +546,9 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
     )
     require_numeric_rows(
         [current_header[index]
-         for index in (
-             0, 1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-             16, 17, 18, 19, 20, 21, 22,
-         )],
+         for index in [0, 1, *range(6, len(current_header))]],
         [[row[index]
-          for index in (
-              0, 1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-              16, 17, 18, 19, 20, 21, 22,
-          )]
+          for index in [0, 1, *range(6, len(current_header))]]
          for row in current_rows],
         current_path,
     )

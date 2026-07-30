@@ -144,6 +144,17 @@ def synthetic_output(
             "reverse_demand_step_fraction",
             "cumulative_reverse_demand_macroparticles",
             "maximum_reverse_demand_macroparticles",
+            "reverse_distribution_start_step",
+            "reverse_distribution_steps",
+            "reverse_one_macro_steps",
+            "reverse_two_macro_steps",
+            "reverse_multi_macro_steps",
+            "distributed_reverse_demand_macroparticles",
+            "mean_reverse_demand_macroparticles",
+            "rms_reverse_demand_macroparticles",
+            "reverse_monitored_negative_charge",
+            "reverse_monitored_positive_charge",
+            "reverse_monitored_net_charge",
             "cumulative_monitored_negative_charge",
             "cumulative_monitored_positive_charge",
             "cumulative_processed_monitored_charge",
@@ -158,6 +169,23 @@ def synthetic_output(
             "cumulative_reverse_demand_macroparticles":
                 cumulative_reverse,
             "maximum_reverse_demand_macroparticles": 1,
+            "reverse_distribution_start_step": 0,
+            "reverse_distribution_steps": reverse_steps,
+            "reverse_one_macro_steps": reverse_steps,
+            "reverse_two_macro_steps": 0,
+            "reverse_multi_macro_steps": 0,
+            "distributed_reverse_demand_macroparticles":
+                cumulative_reverse,
+            "mean_reverse_demand_macroparticles":
+                cumulative_reverse / reverse_steps,
+            "rms_reverse_demand_macroparticles":
+                cumulative_reverse / reverse_steps,
+            "reverse_monitored_negative_charge":
+                -1e-13 * reverse_steps,
+            "reverse_monitored_positive_charge":
+                2e-13 * reverse_steps,
+            "reverse_monitored_net_charge":
+                1e-13 * reverse_steps,
             "cumulative_monitored_negative_charge": negative_charge,
             "cumulative_monitored_positive_charge": positive_charge,
             "cumulative_processed_monitored_charge":
@@ -242,6 +270,9 @@ def main() -> int:
             and report["comparisons"]["population"]["passed"]
             and report["comparisons"]["duration"]["passed"]
             and report["comparisons"]["controller_population"]["passed"]
+            and report["comparisons"]["controller_population"]["stages"][
+                "population_2"
+            ]["reverse_distribution_available"]
             and report["comparisons"]["controller_population"][
                 "fine_to_baseline_reverse_charge_per_update_ratio"
             ] == 0.5

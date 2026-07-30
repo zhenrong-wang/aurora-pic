@@ -146,7 +146,7 @@ the models.
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D automatically uses a direct spectral-tridiagonal Poisson solve for either periodic/Dirichlet orientation; mixed-radix FFT and Bluestein paths cover composite and prime periodic sizes | Measure the serial production grid, then distribute the transform and axial mode solves with MPI before full LANDMARK campaigns |
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
-| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit flux/reverse-demand diagnostics and checkpoint v9; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
+| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit flux/reverse-demand distribution diagnostics and checkpoint v10; the exact-control workstation pilot passed | Resolve population scaling, then qualify long-duration response and cathode-temperature sensitivity |
 | Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically; the exact-control workstation pilot passed | Compare converged profiles against checksum-pinned published data |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, a guarded population/duration convergence workflow, and checkpoint-chained horizon stages | Resolve the measured early-time population/controller failures, add long-run segment aggregation, and qualify with native reference data |
@@ -567,8 +567,9 @@ python3 scripts/prepare_hall_convergence.py \
 ```
 
 Every generated deck remains independently protected by the CLI large-run
-acknowledgement. The population stages also preserve the checkpoint-v9
-controller observability contract from step zero. After separately executing
+acknowledgement. Newly generated population stages preserve the checkpoint-v10
+controller totals and reverse-event distribution contract from step zero.
+After separately executing
 all five decks, analyze their time-averaged axial field/species profiles,
 time-averaged azimuthal spectra, and cathode reverse-demand scaling:
 

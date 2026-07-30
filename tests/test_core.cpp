@@ -3748,21 +3748,27 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v9\n") == 0,
-                "2D current regulation checkpoint did not use v9");
+                    "AuroraPIC-checkpoint-v10\n") == 0,
+                "2D current regulation checkpoint did not use v10");
             const auto legacy_checkpoint_path =
                 output_dir / "regulated-v8.apc";
-            {
+            const auto v9_checkpoint_path =
+                output_dir / "regulated-v9.apc";
+            const auto write_legacy_checkpoint = [&](
+                const std::filesystem::path& legacy_path,
+                const std::string& magic,
+                std::size_t removed_fields
+            ) {
                 std::istringstream input(
                     read_file_text(checkpoint_path));
-                std::ofstream legacy(legacy_checkpoint_path);
+                std::ofstream legacy(legacy_path);
                 require(
                     static_cast<bool>(legacy),
-                    "cannot create synthetic v8 checkpoint");
+                    "cannot create synthetic legacy checkpoint");
                 std::string line;
                 while (std::getline(input, line)) {
-                    if (line == "AuroraPIC-checkpoint-v9") {
-                        legacy << "AuroraPIC-checkpoint-v8\n";
+                    if (line == "AuroraPIC-checkpoint-v10") {
+                        legacy << magic << '\n';
                         continue;
                     }
                     if (line.rfind(
@@ -3772,9 +3778,10 @@ int main() {
                             std::istream_iterator<std::string>(fields),
                             std::istream_iterator<std::string>()};
                         require(
-                            tokens.size() > 7,
-                            "synthetic v8 controller line is incomplete");
-                        tokens.resize(tokens.size() - 7);
+                            tokens.size() > removed_fields,
+                            "synthetic legacy controller line is incomplete");
+                        tokens.resize(
+                            tokens.size() - removed_fields);
                         for (std::size_t index = 0;
                              index < tokens.size(); ++index) {
                             if (index != 0) legacy << ' ';
@@ -3785,7 +3792,13 @@ int main() {
                     }
                     legacy << line << '\n';
                 }
-            }
+            };
+            write_legacy_checkpoint(
+                legacy_checkpoint_path,
+                "AuroraPIC-checkpoint-v8", 15);
+            write_legacy_checkpoint(
+                v9_checkpoint_path,
+                "AuroraPIC-checkpoint-v9", 8);
             continuous.step();
             const auto& regulated =
                 *continuous
@@ -3824,8 +3837,31 @@ int main() {
                     restarted
                         .current_regulated_source_diagnostics()
                         ->reverse_demand_steps ==
-                    regulated.reverse_demand_steps,
+                    regulated.reverse_demand_steps &&
+                    restarted
+                        .current_regulated_source_diagnostics()
+                        ->reverse_one_macro_steps ==
+                    regulated.reverse_one_macro_steps &&
+                    restarted
+                        .current_regulated_source_diagnostics()
+                        ->squared_reverse_demand_macroparticles ==
+                    regulated.squared_reverse_demand_macroparticles,
                 "2D current-regulation checkpoint lost controller state");
+            pic::Simulation2D v9_restarted(cfg);
+            v9_restarted.load_checkpoint(v9_checkpoint_path);
+            require(
+                v9_restarted
+                        .current_regulated_source_diagnostics()
+                        ->control_updates == 1 &&
+                    v9_restarted
+                        .current_regulated_source_diagnostics()
+                        ->reverse_distribution_start_step == 1,
+                "2D v9 restart did not mark partial reverse distribution");
+            v9_restarted.step();
+            require_species_close(
+                continuous.species(),
+                v9_restarted.species(),
+                "2D v9 current-regulation checkpoint compatibility");
             pic::Simulation2D legacy_restarted(cfg);
             legacy_restarted.load_checkpoint(
                 legacy_checkpoint_path);
@@ -3933,7 +3969,19 @@ int main() {
                         ->cumulative_reverse_demand_macroparticles > 0.0 &&
                     timestep_local_reverse
                         .current_regulated_source_diagnostics()
-                        ->maximum_reverse_demand_macroparticles > 0.0,
+                        ->maximum_reverse_demand_macroparticles > 0.0 &&
+                    timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->reverse_one_macro_steps > 0 &&
+                    timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->distributed_reverse_demand_macroparticles > 0.0 &&
+                    timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->squared_reverse_demand_macroparticles > 0.0 &&
+                    timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->reverse_monitored_positive_charge > 0.0,
                 "2D timestep-local current control did not audit reverse demand");
 
             auto affine_cfg = cfg;
@@ -4254,8 +4302,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v9\n") == 0,
-                "2D pair source checkpoint did not use v9");
+                    "AuroraPIC-checkpoint-v10\n") == 0,
+                "2D pair source checkpoint did not use v10");
             for (std::size_t step = continuous.step_count();
                  step < cfg.steps; ++step) {
                 continuous.step();

@@ -28,6 +28,7 @@ constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
 constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
+constexpr const char* kCheckpointMagicV10 = "AuroraPIC-checkpoint-v10";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -1092,6 +1093,12 @@ void Simulation2D::inject_current_regulated_source() {
     const double delta_charge =
         cumulative_charge -
         diagnostics.processed_monitored_charge;
+    const double delta_negative_charge =
+        cumulative_negative_charge -
+        diagnostics.processed_monitored_negative_charge;
+    const double delta_positive_charge =
+        cumulative_positive_charge -
+        diagnostics.processed_monitored_positive_charge;
     const double macro_charge =
         emitted_species.charge() * emitted_species.weight();
     const double requested =
@@ -1115,12 +1122,26 @@ void Simulation2D::inject_current_regulated_source() {
         requested < 0.0
     ) {
         const double reverse_demand = -requested;
+        const double squared_reverse_demand =
+            reverse_demand * reverse_demand;
         if (
             diagnostics.reverse_demand_steps ==
                 std::numeric_limits<std::size_t>::max() ||
             !std::isfinite(
                 diagnostics.cumulative_reverse_demand_macroparticles +
-                reverse_demand)
+                reverse_demand) ||
+            !std::isfinite(
+                diagnostics.squared_reverse_demand_macroparticles +
+                squared_reverse_demand) ||
+            !std::isfinite(
+                diagnostics.distributed_reverse_demand_macroparticles +
+                reverse_demand) ||
+            !std::isfinite(
+                diagnostics.reverse_monitored_negative_charge +
+                delta_negative_charge) ||
+            !std::isfinite(
+                diagnostics.reverse_monitored_positive_charge +
+                delta_positive_charge)
         ) {
             throw std::runtime_error(
                 "2D current-regulated source reverse-demand "
@@ -1133,6 +1154,27 @@ void Simulation2D::inject_current_regulated_source() {
             std::max(
                 diagnostics.maximum_reverse_demand_macroparticles,
                 reverse_demand);
+        diagnostics.squared_reverse_demand_macroparticles +=
+            squared_reverse_demand;
+        diagnostics.distributed_reverse_demand_macroparticles +=
+            reverse_demand;
+        diagnostics.reverse_monitored_negative_charge +=
+            delta_negative_charge;
+        diagnostics.reverse_monitored_positive_charge +=
+            delta_positive_charge;
+        auto* distribution_bin =
+            reverse_demand <= 1.5
+                ? &diagnostics.reverse_one_macro_steps
+                : reverse_demand <= 2.5
+                    ? &diagnostics.reverse_two_macro_steps
+                    : &diagnostics.reverse_multi_macro_steps;
+        if (*distribution_bin ==
+            std::numeric_limits<std::size_t>::max()) {
+            throw std::runtime_error(
+                "2D current-regulated source reverse-demand "
+                "distribution counter overflow");
+        }
+        ++(*distribution_bin);
     }
     const double accumulated =
         config.control_mode ==
@@ -1325,7 +1367,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV9 << '\n';
+    out << kCheckpointMagicV10 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1373,7 +1415,16 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
             << ' ' << diagnostics.reverse_demand_steps
             << ' ' << diagnostics.reverse_diagnostics_start_step
             << ' ' << diagnostics.cumulative_reverse_demand_macroparticles
-            << ' ' << diagnostics.maximum_reverse_demand_macroparticles;
+            << ' ' << diagnostics.maximum_reverse_demand_macroparticles
+            << ' ' << diagnostics.reverse_distribution_start_step
+            << ' ' << diagnostics.reverse_one_macro_steps
+            << ' ' << diagnostics.reverse_two_macro_steps
+            << ' ' << diagnostics.reverse_multi_macro_steps
+            << ' ' <<
+                diagnostics.distributed_reverse_demand_macroparticles
+            << ' ' << diagnostics.squared_reverse_demand_macroparticles
+            << ' ' << diagnostics.reverse_monitored_negative_charge
+            << ' ' << diagnostics.reverse_monitored_positive_charge;
     }
     out << "\n";
     out << "potential_reference "
@@ -1476,9 +1527,11 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v7 = magic == kCheckpointMagicV7;
     const bool checkpoint_v8 = magic == kCheckpointMagicV8;
     const bool checkpoint_v9 = magic == kCheckpointMagicV9;
+    const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
         !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6 &&
-        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
+        !checkpoint_v10) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1494,12 +1547,12 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         in >> unit_system >> relative_permittivity >> permittivity;
         double out_of_plane_depth = 1.0;
         if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
-            checkpoint_v9) {
+            checkpoint_v9 || checkpoint_v10) {
             in >> out_of_plane_depth;
         }
         if ((!checkpoint_v2 && !checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 && !checkpoint_v7 &&
-             !checkpoint_v8 && !checkpoint_v9) ||
+             !checkpoint_v8 && !checkpoint_v9 && !checkpoint_v10) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity() ||
@@ -1514,6 +1567,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                checkpoint_v7 ||
                checkpoint_v8 ||
                checkpoint_v9 ||
+               checkpoint_v10 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1526,7 +1580,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     in >> key >> boundary_losses_.absorbed_left >> boundary_losses_.absorbed_right
        >> boundary_losses_.absorbed_bottom >> boundary_losses_.absorbed_top;
     if (key != "boundary_losses") throw std::runtime_error("checkpoint missing 2D boundary loss counters");
-    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
+    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+        checkpoint_v10) {
         std::size_t loss_species_count = 0;
         in >> key >> loss_species_count;
         if (key != "species_boundary_losses" ||
@@ -1564,7 +1619,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             auto& diagnostics =
                 *current_regulated_source_diagnostics_;
             in >> stored.species;
-            if (checkpoint_v8 || checkpoint_v9) {
+            if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
                 in >> control_mode;
                 if (control_mode == "cumulative") {
                     stored.control_mode =
@@ -1586,7 +1641,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 diagnostics.control_macro_remainder >>
                 diagnostics.processed_monitored_charge >>
                 diagnostics.injected_kinetic_energy;
-            if (checkpoint_v9) {
+            if (checkpoint_v9 || checkpoint_v10) {
                 in >>
                     diagnostics.processed_monitored_negative_charge >>
                     diagnostics.processed_monitored_positive_charge >>
@@ -1595,8 +1650,24 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                     diagnostics.reverse_diagnostics_start_step >>
                     diagnostics.cumulative_reverse_demand_macroparticles >>
                     diagnostics.maximum_reverse_demand_macroparticles;
+                if (checkpoint_v10) {
+                    in >>
+                        diagnostics.reverse_distribution_start_step >>
+                        diagnostics.reverse_one_macro_steps >>
+                        diagnostics.reverse_two_macro_steps >>
+                        diagnostics.reverse_multi_macro_steps >>
+                        diagnostics
+                            .distributed_reverse_demand_macroparticles >>
+                        diagnostics
+                            .squared_reverse_demand_macroparticles >>
+                        diagnostics.reverse_monitored_negative_charge >>
+                        diagnostics.reverse_monitored_positive_charge;
+                } else {
+                    diagnostics.reverse_distribution_start_step = step_;
+                }
             } else {
                 diagnostics.reverse_diagnostics_start_step = step_;
+                diagnostics.reverse_distribution_start_step = step_;
                 diagnostics.processed_monitored_negative_charge =
                     std::min(
                         0.0,
@@ -1629,7 +1700,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                     diagnostics.control_macro_remainder) ||
                 !std::isfinite(
                     diagnostics.processed_monitored_charge) ||
-                (checkpoint_v9 &&
+                ((checkpoint_v9 || checkpoint_v10) &&
                  (!std::isfinite(
                       diagnostics.processed_monitored_negative_charge) ||
                   diagnostics.processed_monitored_negative_charge > 0.0 ||
@@ -1666,7 +1737,35 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                     diagnostics.maximum_reverse_demand_macroparticles) ||
                 diagnostics.maximum_reverse_demand_macroparticles < 0.0 ||
                 diagnostics.maximum_reverse_demand_macroparticles >
-                    diagnostics.cumulative_reverse_demand_macroparticles) {
+                    diagnostics.cumulative_reverse_demand_macroparticles ||
+                diagnostics.reverse_distribution_start_step > step_ ||
+                diagnostics.reverse_one_macro_steps >
+                    diagnostics.reverse_demand_steps ||
+                diagnostics.reverse_two_macro_steps >
+                    diagnostics.reverse_demand_steps -
+                        diagnostics.reverse_one_macro_steps ||
+                diagnostics.reverse_multi_macro_steps >
+                    diagnostics.reverse_demand_steps -
+                        diagnostics.reverse_one_macro_steps -
+                        diagnostics.reverse_two_macro_steps ||
+                !std::isfinite(
+                    diagnostics
+                        .distributed_reverse_demand_macroparticles) ||
+                diagnostics
+                    .distributed_reverse_demand_macroparticles < 0.0 ||
+                diagnostics
+                    .distributed_reverse_demand_macroparticles >
+                        diagnostics
+                            .cumulative_reverse_demand_macroparticles ||
+                !std::isfinite(
+                    diagnostics.squared_reverse_demand_macroparticles) ||
+                diagnostics.squared_reverse_demand_macroparticles < 0.0 ||
+                !std::isfinite(
+                    diagnostics.reverse_monitored_negative_charge) ||
+                diagnostics.reverse_monitored_negative_charge > 0.0 ||
+                !std::isfinite(
+                    diagnostics.reverse_monitored_positive_charge) ||
+                diagnostics.reverse_monitored_positive_charge < 0.0) {
                 throw std::runtime_error(
                     "checkpoint current-regulated source metadata is invalid or does not match 2D config");
             }
@@ -1687,7 +1786,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             PotentialReference2DConfig stored;
             in >> axis >> stored.coordinate >> stored.target;
             stored.axis = parse_coordinate_axis(axis);
-            if (checkpoint_v8 || checkpoint_v9) {
+            if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
                 in >> correction;
                 if (correction == "gauge") {
                     stored.correction =
@@ -1727,7 +1826,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
     in >> rng_;
     if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
+        checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+        checkpoint_v10) {
         std::size_t source_count = 0;
         in >> key >> source_count;
         if (key != "source_count" ||
@@ -1742,7 +1842,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> key >> stored.name >> stored.first_species >>
                 stored.second_species >> stored.pairs_per_step;
             if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
-                checkpoint_v8 || checkpoint_v9) {
+                checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
                 int has_rate = 0;
                 double rate = 0.0;
                 in >> has_rate >> rate;
@@ -1754,7 +1854,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                     stored.represented_pair_rate = rate;
                 }
                 if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
-                    checkpoint_v9) {
+                    checkpoint_v9 || checkpoint_v10) {
                     int has_peak_rate = 0;
                     double peak_rate = 0.0;
                     in >> has_peak_rate >> peak_rate;
@@ -1778,7 +1878,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 stored.first_thermal_velocity >>
                 stored.second_thermal_velocity;
             if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
-                checkpoint_v8 || checkpoint_v9) {
+                checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
                 std::string profile;
                 in >> profile;
                 stored.spatial_profile.density_profile =
@@ -1827,7 +1927,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> diagnostics.macro_pairs_created >>
                 diagnostics.represented_pairs_created;
             if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
-                checkpoint_v8 || checkpoint_v9) {
+                checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
                 in >> diagnostics
                           .fractional_macro_pair_remainder >>
                     diagnostics.injected_kinetic_energy;
@@ -1927,7 +2027,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                >> p.velocity.x >> p.velocity.y;
             if (checkpoint_v3 || checkpoint_v4 ||
                 checkpoint_v5 || checkpoint_v6 ||
-                checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
+                checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+                checkpoint_v10) {
                 in >> p.velocity_z;
             } else {
                 p.velocity_z = 0.0;
@@ -1935,7 +2036,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> p.velocity_half.x >> p.velocity_half.y;
             if (checkpoint_v3 || checkpoint_v4 ||
                 checkpoint_v5 || checkpoint_v6 ||
-                checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
+                checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+                checkpoint_v10) {
                 in >> p.velocity_half_z;
             } else {
                 p.velocity_half_z = 0.0;
@@ -2080,6 +2182,17 @@ RunSummary2D Simulation2D::run() {
                "reverse_demand_step_fraction,"
                "cumulative_reverse_demand_macroparticles,"
                "maximum_reverse_demand_macroparticles,"
+               "reverse_distribution_start_step,"
+               "reverse_distribution_steps,"
+               "reverse_one_macro_steps,"
+               "reverse_two_macro_steps,"
+               "reverse_multi_macro_steps,"
+               "distributed_reverse_demand_macroparticles,"
+               "mean_reverse_demand_macroparticles,"
+               "rms_reverse_demand_macroparticles,"
+               "reverse_monitored_negative_charge,"
+               "reverse_monitored_positive_charge,"
+               "reverse_monitored_net_charge,"
                "cumulative_monitored_negative_charge,"
                "cumulative_monitored_positive_charge,"
                "cumulative_processed_monitored_charge,"
@@ -2105,6 +2218,24 @@ RunSummary2D Simulation2D::run() {
         const double control_residual =
             diagnostics.control_macro_remainder *
             emitted.charge() * emitted.weight();
+        const std::size_t reverse_distribution_steps =
+            diagnostics.reverse_one_macro_steps +
+            diagnostics.reverse_two_macro_steps +
+            diagnostics.reverse_multi_macro_steps;
+        const double mean_reverse_demand =
+            reverse_distribution_steps > 0
+                ? diagnostics
+                    .distributed_reverse_demand_macroparticles /
+                    static_cast<double>(
+                        reverse_distribution_steps)
+                : 0.0;
+        const double rms_reverse_demand =
+            reverse_distribution_steps > 0
+                ? std::sqrt(
+                    diagnostics
+                        .squared_reverse_demand_macroparticles /
+                    static_cast<double>(reverse_distribution_steps))
+                : 0.0;
         current_source_output
             << step_ << ',' << std::setprecision(17) << time_
             << ',' << config.species
@@ -2128,6 +2259,20 @@ RunSummary2D Simulation2D::run() {
                 diagnostics.cumulative_reverse_demand_macroparticles
             << ',' <<
                 diagnostics.maximum_reverse_demand_macroparticles
+            << ',' << diagnostics.reverse_distribution_start_step
+            << ',' << reverse_distribution_steps
+            << ',' << diagnostics.reverse_one_macro_steps
+            << ',' << diagnostics.reverse_two_macro_steps
+            << ',' << diagnostics.reverse_multi_macro_steps
+            << ',' <<
+                diagnostics.distributed_reverse_demand_macroparticles
+            << ',' << mean_reverse_demand
+            << ',' << rms_reverse_demand
+            << ',' << diagnostics.reverse_monitored_negative_charge
+            << ',' << diagnostics.reverse_monitored_positive_charge
+            << ',' << (
+                diagnostics.reverse_monitored_negative_charge +
+                diagnostics.reverse_monitored_positive_charge)
             << ',' <<
                 diagnostics.processed_monitored_negative_charge
             << ',' <<

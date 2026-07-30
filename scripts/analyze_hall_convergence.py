@@ -92,7 +92,7 @@ def read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
 def load_controller(
     output: Path,
     expected_updates: int,
-) -> dict[str, float | int]:
+) -> dict[str, float | int | bool | None]:
     path = output / "current_source.csv"
     required = {
         "macro_particles_created",
@@ -108,6 +108,24 @@ def load_controller(
         "cumulative_processed_monitored_charge",
     }
     final = read_csv(path, required)[-1]
+    distribution_keys = {
+        "reverse_distribution_start_step",
+        "reverse_distribution_steps",
+        "reverse_one_macro_steps",
+        "reverse_two_macro_steps",
+        "reverse_multi_macro_steps",
+        "distributed_reverse_demand_macroparticles",
+        "mean_reverse_demand_macroparticles",
+        "rms_reverse_demand_macroparticles",
+        "reverse_monitored_negative_charge",
+        "reverse_monitored_positive_charge",
+        "reverse_monitored_net_charge",
+    }
+    observed_distribution = distribution_keys & set(final)
+    if observed_distribution and observed_distribution != distribution_keys:
+        raise ConvergenceError(
+            f"{path.name} has a partial reverse-distribution schema"
+        )
     created = nonnegative_integer(
         final["macro_particles_created"],
         f"{path.name} macro particles created",
@@ -183,7 +201,7 @@ def load_controller(
     cumulative_charge = cumulative * macro_charge
     maximum_charge = maximum * macro_charge
     monitored_absolute_charge = abs(negative) + positive
-    return {
+    result: dict[str, float | int | bool | None] = {
         "control_updates": updates,
         "reverse_demand_steps": reverse_steps,
         "reverse_demand_step_fraction": fraction,
@@ -197,7 +215,96 @@ def load_controller(
         "reverse_demand_fraction_of_absolute_monitored_charge":
             cumulative_charge / monitored_absolute_charge
             if monitored_absolute_charge > 0.0 else 0.0,
+        "reverse_distribution_available":
+            observed_distribution == distribution_keys,
     }
+    if observed_distribution != distribution_keys:
+        return result
+    distribution_start = nonnegative_integer(
+        final["reverse_distribution_start_step"],
+        f"{path.name} reverse distribution start step",
+    )
+    distribution_steps = nonnegative_integer(
+        final["reverse_distribution_steps"],
+        f"{path.name} reverse distribution steps",
+    )
+    one_steps = nonnegative_integer(
+        final["reverse_one_macro_steps"],
+        f"{path.name} one-macro reverse steps",
+    )
+    two_steps = nonnegative_integer(
+        final["reverse_two_macro_steps"],
+        f"{path.name} two-macro reverse steps",
+    )
+    multi_steps = nonnegative_integer(
+        final["reverse_multi_macro_steps"],
+        f"{path.name} multi-macro reverse steps",
+    )
+    distributed = finite(
+        final["distributed_reverse_demand_macroparticles"],
+        f"{path.name} distributed reverse demand",
+    )
+    mean = finite(
+        final["mean_reverse_demand_macroparticles"],
+        f"{path.name} mean reverse demand",
+    )
+    rms = finite(
+        final["rms_reverse_demand_macroparticles"],
+        f"{path.name} RMS reverse demand",
+    )
+    reverse_negative = finite(
+        final["reverse_monitored_negative_charge"],
+        f"{path.name} reverse monitored negative charge",
+    )
+    reverse_positive = finite(
+        final["reverse_monitored_positive_charge"],
+        f"{path.name} reverse monitored positive charge",
+    )
+    reverse_net = finite(
+        final["reverse_monitored_net_charge"],
+        f"{path.name} reverse monitored net charge",
+    )
+    expected_mean = (
+        distributed / distribution_steps
+        if distribution_steps else 0.0
+    )
+    if (
+        distribution_start != 0
+        or distribution_steps != one_steps + two_steps + multi_steps
+        or distribution_steps > reverse_steps
+        or distributed < 0.0
+        or mean < 0.0
+        or rms < mean
+        or reverse_negative > 0.0
+        or reverse_positive < 0.0
+        or not math.isclose(
+            mean, expected_mean, rel_tol=1e-12, abs_tol=1e-15
+        )
+        or not math.isclose(
+            reverse_negative + reverse_positive,
+            reverse_net,
+            rel_tol=1e-12,
+            abs_tol=1e-24,
+        )
+    ):
+        raise ConvergenceError(
+            f"{path.name} reverse distribution is inconsistent "
+            "or does not cover the complete run"
+        )
+    result.update({
+        "reverse_distribution_start_step": distribution_start,
+        "reverse_distribution_steps": distribution_steps,
+        "reverse_one_macro_steps": one_steps,
+        "reverse_two_macro_steps": two_steps,
+        "reverse_multi_macro_steps": multi_steps,
+        "distributed_reverse_demand_macroparticles": distributed,
+        "mean_reverse_demand_macroparticles": mean,
+        "rms_reverse_demand_macroparticles": rms,
+        "reverse_monitored_negative_charge_c": reverse_negative,
+        "reverse_monitored_positive_charge_c": reverse_positive,
+        "reverse_monitored_net_charge_c": reverse_net,
+    })
+    return result
 
 
 def atomic_json(path: Path, value: dict[str, object]) -> None:
@@ -586,7 +693,9 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
             ),
         }
     if "population" in analyzed_axes:
-        controller_stages: dict[str, dict[str, float | int]] = {}
+        controller_stages: dict[
+            str, dict[str, float | int | bool | None]
+        ] = {}
         for stage_name in (
             "population_0p5", "population_1", "population_2"
         ):
