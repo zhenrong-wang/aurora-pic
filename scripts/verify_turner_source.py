@@ -155,6 +155,9 @@ def verify(registry_path: Path, artifact_path: Path) -> dict[str, object]:
             "publisher archive SHA-256 differs")
 
     expected_names = [item.strip() for item in source["members"].split(",")]
+    acquired = source.get("acquired", "")
+    require(re.fullmatch(r"\d{4}-\d{2}-\d{2}", acquired) is not None,
+            "publisher supplement acquired date must use YYYY-MM-DD")
     require(len(expected_names) == len(set(expected_names)),
             "registry contains duplicate member names")
     member_reports: dict[str, object] = {}
@@ -207,6 +210,7 @@ def verify(registry_path: Path, artifact_path: Path) -> dict[str, object]:
         "artifact_name": artifact.name,
         "artifact_bytes": len(raw),
         "artifact_sha256": expected_archive_hash,
+        "acquired": acquired,
         "license": source["license"],
         "redistribution": source["redistribution"],
         "verified": True,

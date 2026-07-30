@@ -36,8 +36,10 @@ def result_table() -> bytes:
 
 
 def main() -> int:
+    project_tmp = ROOT / "tmp"
+    project_tmp.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(
-        prefix="aurorapic_turner_source_"
+        prefix="aurorapic_turner_source_", dir=project_tmp
     ) as temporary:
         work = Path(temporary)
         members = {
@@ -92,6 +94,7 @@ def main() -> int:
             f"artifact_bytes = {artifact.stat().st_size}\n"
             f"sha256 = {sha256(artifact.read_bytes())}\n"
             "acquisition = synthetic\n"
+            "acquired = 2026-07-30\n"
             "license = synthetic\n"
             "redistribution = test-only\n"
             f"members = {', '.join(members)}\n\n"

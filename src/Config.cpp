@@ -1,4 +1,5 @@
 #include "pic/Config.hpp"
+#include "pic/GasDataset.hpp"
 #include "pic/Runtime.hpp"
 #include "pic/Simulation2D.hpp"
 #include "pic/Simulation3D.hpp"
@@ -1365,7 +1366,7 @@ Config load_config(const std::string& path) {
         "enabled", "model", "frequency", "neutral_temperature_velocity",
         "neutral_density", "species", "max_frequency",
         "max_candidates_per_particle", "neutral_mass",
-        "neutral_temperature"
+        "neutral_temperature", "gas_data_file"
     };
     static const std::unordered_set<std::string> collision_channel_keys{
         "name", "type", "cross_section_file", "threshold_energy",
@@ -1461,6 +1462,11 @@ Config load_config(const std::string& path) {
         as<double>(
             collision, "neutral_temperature",
             cfg.collisions.neutral_temperature);
+    if (collision.count("gas_data_file")) {
+        throw std::runtime_error(
+            "1D gas_data_file requires a named "
+            "[collisions.<model>] section");
+    }
     cfg.collisions.gas_data_units = cfg.units.system;
     cfg.checkpoint_output = parse_bool(global, "checkpoint_output", cfg.checkpoint_output);
     cfg.checkpoint_interval = as<std::size_t>(global, "checkpoint_interval", cfg.checkpoint_interval);
@@ -1638,9 +1644,95 @@ Config load_config(const std::string& path) {
                 block.values, "neutral_temperature",
                 named.config.neutral_temperature);
         named.config.gas_data_units = cfg.units.system;
-        for (const auto& channel : block.channel_blocks) {
-            named.config.channels.push_back(
-                parse_channel(channel));
+        const auto gas_data_file =
+            as<std::string>(
+                block.values, "gas_data_file", "");
+        if (!gas_data_file.empty()) {
+            if (block.values.count("neutral_mass")) {
+                throw std::runtime_error(
+                    "named collision model '" + named.name +
+                    "' gas_data_file cannot be combined with "
+                    "neutral_mass");
+            }
+            const std::filesystem::path configured(gas_data_file);
+            named.config.gas_data_file =
+                (configured.is_absolute()
+                     ? configured
+                     : config_directory / configured)
+                    .lexically_normal();
+            const auto dataset =
+                load_gas_dataset(named.config.gas_data_file);
+            if (dataset.unit_system != cfg.units.system) {
+                throw std::runtime_error(
+                    "named collision model '" + named.name +
+                    "' gas dataset units '" +
+                    to_string(dataset.unit_system) +
+                    "' do not match simulation units '" +
+                    to_string(cfg.units.system) + "'");
+            }
+            named.config.gas_data_version =
+                dataset.format_version;
+            named.config.gas_data_units =
+                dataset.unit_system;
+            named.config.gas_name = dataset.gas_name;
+            named.config.neutral_mass =
+                dataset.neutral_mass;
+            named.config.data_provenance =
+                dataset.data_provenance;
+            named.config.dataset_id = dataset.dataset_id;
+            named.config.dataset_version =
+                dataset.dataset_version;
+            named.config.citation = dataset.citation;
+            named.config.retrieved = dataset.retrieved;
+            named.config.license = dataset.license;
+            named.config.channels = dataset.channels;
+            for (const auto& override : block.channel_blocks) {
+                const std::string channel_name =
+                    as<std::string>(override, "name", "");
+                const auto found = std::find_if(
+                    named.config.channels.begin(),
+                    named.config.channels.end(),
+                    [&](const auto& channel) {
+                        return channel.name == channel_name;
+                    });
+                if (found == named.config.channels.end()) {
+                    throw std::runtime_error(
+                        "named collision model '" + named.name +
+                        "' gas dataset has no channel '" +
+                        channel_name + "'");
+                }
+                for (const auto& [key, unused] : override) {
+                    (void)unused;
+                    if (key != "name" &&
+                        key != "secondary_species" &&
+                        key != "ion_species") {
+                        throw std::runtime_error(
+                            "named collision model '" + named.name +
+                            "' gas dataset channel '" + channel_name +
+                            "' permits only reactive product mappings");
+                    }
+                }
+                if (found->process !=
+                    CollisionProcessKind::Ionization) {
+                    throw std::runtime_error(
+                        "named collision model '" + named.name +
+                        "' gas dataset channel '" + channel_name +
+                        "' is not ionization and cannot map products");
+                }
+                found->secondary_species =
+                    as<std::string>(
+                        override, "secondary_species",
+                        found->secondary_species);
+                found->ion_species =
+                    as<std::string>(
+                        override, "ion_species",
+                        found->ion_species);
+            }
+        } else {
+            for (const auto& channel : block.channel_blocks) {
+                named.config.channels.push_back(
+                    parse_channel(channel));
+            }
         }
         cfg.collision_models.push_back(std::move(named));
     }

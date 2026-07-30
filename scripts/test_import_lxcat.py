@@ -49,8 +49,10 @@ def base_command(output_dir: Path, source: Path = FIXTURE) -> list[str]:
 
 
 def main() -> int:
+    project_tmp = ROOT / "tmp"
+    project_tmp.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(
-        prefix="aurorapic_lxcat_test_"
+        prefix="aurorapic_lxcat_test_", dir=project_tmp
     ) as temporary:
         root = Path(temporary)
         output_dir = root / "argon"
@@ -62,7 +64,9 @@ def main() -> int:
             and "units = si\n" in manifest
             and manifest.count("[collision.") == 3
             and manifest.count("angular_model = isotropic") == 1
-            and "energy_scale = 1.6021766339999999e-19" in manifest,
+            and "energy_scale = 1.6021766339999999e-19" in manifest
+            and "threshold_energy = 3.2043532679999998e-19" in manifest
+            and "threshold_energy = 8.0108831699999997e-19" in manifest,
             "generated gas manifest is incomplete",
         )
         audit = json.loads(

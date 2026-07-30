@@ -340,7 +340,8 @@ def write_package(
                     handle.write("angular_model = isotropic\n")
                 if process.threshold_ev > 0.0:
                     handle.write(
-                        f"threshold_energy = {process.threshold_ev:.17g}\n"
+                        "threshold_energy = "
+                        f"{process.threshold_ev * EV_TO_J:.17g}\n"
                     )
 
         maximum_energy = (

@@ -307,6 +307,26 @@ The public
 `pic::load_gas_dataset` API exposes the same validated manifest contract to
 embedding applications.
 
+Named 1D null-collision models can consume the same package directly:
+
+```ini
+[collisions.electron_mcc]
+model = null_collision
+species = electrons
+neutral_density = 9.64e20
+neutral_temperature = 300
+max_frequency = 1e9
+gas_data_file = turner_he_electron.gas
+
+[collisions.electron_mcc.channel.ionization]
+secondary_species = electrons
+ion_species = ions
+```
+
+The manifest supplies neutral mass, provenance, channel tables, units, and
+scattering contracts. Inline channel blocks are restricted to ionization
+product mappings; inline collision physics cannot override packaged data.
+
 Elastic channels are isotropic by default. A version-2 manifest or inline
 3V channel may instead set
 `angular_model = henyey_greenstein` and provide a strict two-column

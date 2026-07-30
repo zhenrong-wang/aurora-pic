@@ -5336,6 +5336,112 @@ int main() {
                             pic::AngularScatteringKind::Backward,
                     "gas dataset loader lost Turner ion energy-frame "
                     "or backward-scattering data");
+                const auto turner_config_path =
+                    std::filesystem::path(
+                        "test_turner_named_gas_config.cfg");
+                {
+                    std::ofstream config(turner_config_path);
+                    config
+                        << "config_version = 1\n"
+                        << "units = si\n"
+                        << "dimension = 1\n"
+                        << "velocity_dimensions = 3\n"
+                        << "nx = 3\n"
+                        << "length = 0.067\n"
+                        << "dt = 1e-12\n"
+                        << "steps = 1\n"
+                        << "output_interval = 1\n"
+                        << "boundary = dirichlet\n"
+                        << "mode = transient\n"
+                        << "[collisions.ion_mcc]\n"
+                        << "model = null_collision\n"
+                        << "species = ions\n"
+                        << "neutral_density = 9.64e20\n"
+                        << "neutral_temperature = 300\n"
+                        << "max_frequency = 1e9\n"
+                        << "gas_data_file = "
+                        << turner_gas_path.string() << "\n"
+                        << "[species.ions]\n"
+                        << "charge = 1.602176634e-19\n"
+                        << "mass = 6.67e-27\n"
+                        << "weight = 1\n"
+                        << "particles = 2\n"
+                        << "thermal_velocity = 0\n";
+                }
+                const auto turner_config =
+                    pic::load_config(turner_config_path.string());
+                require(
+                    turner_config.collision_models.size() == 1 &&
+                        turner_config.collision_models[0]
+                                .config.dataset_id ==
+                            "test.turner.he-ion" &&
+                        turner_config.collision_models[0]
+                                .config.channels.size() == 2 &&
+                        turner_config.collision_models[0]
+                                .config.gas_data_file.filename() ==
+                            turner_gas_path.filename(),
+                    "1D named collision model lost its gas dataset "
+                    "identity or channels");
+                std::filesystem::remove(turner_config_path);
+
+                const auto reactive_config_path =
+                    std::filesystem::path(
+                        "test_named_reactive_gas_config.cfg");
+                {
+                    std::ofstream config(reactive_config_path);
+                    config
+                        << "config_version = 1\n"
+                        << "units = normalized\n"
+                        << "dimension = 1\n"
+                        << "velocity_dimensions = 3\n"
+                        << "nx = 3\n"
+                        << "length = 1\n"
+                        << "dt = 0.01\n"
+                        << "steps = 1\n"
+                        << "output_interval = 1\n"
+                        << "boundary = periodic\n"
+                        << "mode = transient\n"
+                        << "[collisions.electron_mcc]\n"
+                        << "model = null_collision\n"
+                        << "species = electrons\n"
+                        << "neutral_density = 1\n"
+                        << "neutral_temperature = 0\n"
+                        << "max_frequency = 1\n"
+                        << "gas_data_file = "
+                        << (std::filesystem::path(
+                                AURORA_TEST_SOURCE_DIR) /
+                            "examples" /
+                            "synthetic_ionization.gas").string()
+                        << "\n"
+                        << "[collisions.electron_mcc.channel."
+                           "synthetic_ionization]\n"
+                        << "secondary_species = electrons\n"
+                        << "ion_species = ions\n"
+                        << "[species.electrons]\n"
+                        << "charge = -1\n"
+                        << "mass = 1\n"
+                        << "weight = 1\n"
+                        << "particles = 2\n"
+                        << "[species.ions]\n"
+                        << "charge = 1\n"
+                        << "mass = 40\n"
+                        << "weight = 1\n"
+                        << "particles = 2\n";
+                }
+                const auto reactive_config =
+                    pic::load_config(reactive_config_path.string());
+                require(
+                    reactive_config.collision_models.size() == 1 &&
+                        reactive_config.collision_models[0]
+                                .config.channels.size() == 1 &&
+                        reactive_config.collision_models[0]
+                                .config.channels[0].secondary_species ==
+                            "electrons" &&
+                        reactive_config.collision_models[0]
+                                .config.channels[0].ion_species ==
+                            "ions",
+                    "1D gas dataset ionization product mapping was lost");
+                std::filesystem::remove(reactive_config_path);
                 std::filesystem::remove(turner_gas_path);
                 std::filesystem::remove(turner_table_path);
 

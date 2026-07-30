@@ -8,6 +8,7 @@ artifact_name = 013507_1_supplements.zip
 artifact_bytes = 133969
 sha256 = a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661
 acquisition = manual_from_publisher_record
+acquired = 2026-07-30
 license = publisher-supplement-terms; embedded electron table says All rights reserved
 redistribution = not-approved
 members = turner_benchmark_he_electron_table.dat, turner_benchmark_he_ion_table.dat, turner_benchmark_refined_results.dat, turner_benchmark_results.dat

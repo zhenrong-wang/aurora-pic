@@ -47,6 +47,13 @@ registry and stream-hashes local artifacts without downloading them.
 `verify_turner_source.py` checksum-locks and structurally validates a local
 copy of the Turner helium CCP publisher supplement while keeping its
 rights-restricted tables outside the repository.
+`normalize_turner_source.py` then produces local, audit-hashed AuroraPIC gas
+manifests and all four original/refined reference profiles without resampling
+or committing the restricted values. Named 1D collision models can load these
+manifests directly with `gas_data_file`.
+`compare_turner.py` implements the paper's ion-density `X²` statistic against
+the population standard deviation, locks the local reference through the
+normalization audit, and applies the published 95% and 99% case ranges.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.

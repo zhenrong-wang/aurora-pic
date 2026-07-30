@@ -100,13 +100,14 @@ cycle-averaged convergence is implemented.
 
 AuroraPIC must not claim a Turner result until all of these are complete:
 
-1. normalize the now checksum-pinned benchmark collision tables without
-   changing their interpolation contract, while keeping the publisher files
-   local unless redistribution permission is established;
+1. retain and audit the locally normalized, checksum-pinned collision tables
+   without changing their interpolation contract, while keeping the
+   publisher-derived files local unless redistribution permission is
+   established;
 2. report species-resolved electrode current, deposited power, spatial
    density, ionization source, and phase/time averages;
-3. implement statistically bounded campaign and chi-squared comparison
-   tooling;
+3. connect the implemented chi-squared comparator to a statistically bounded,
+   run-contract-validated campaign;
 4. implement whole-RF-cycle convergence and phase/time averaging;
 5. run the full case only through an explicit production profile. Case 1
    alone requires 512,000 steps at the published resolution, so it must never
@@ -143,6 +144,49 @@ python3 scripts/verify_turner_source.py \
   --output tmp/turner-source-verification.json
 ```
 
+Normalize the verified bytes into local AuroraPIC manifests, channel tables,
+reference CSV files, and a transformation audit with:
+
+```sh
+python3 scripts/normalize_turner_source.py \
+  examples/turner_ccp.sources \
+  tmp/013507_1_supplements.zip \
+  --output-dir tmp/turner-normalized-v1
+```
+
+Electron thresholds are converted from eV to joules using the exact
+elementary charge. Ion energy remains tabulated in centre-of-mass eV and ion
+cross sections remain in their source `1e-20 m2` scale; the gas manifest
+performs both SI conversions at load time. No table is resampled. Named 1D
+collision models load either generated manifest through `gas_data_file`, with
+only ionization product-species mappings supplied by the simulation deck.
+
+The baseline statistical comparison uses the original-grid reference, not the
+numerically refined profile. For every mesh node it computes
+
+```text
+X^2 = sum((candidate_ion_mean - reference_ion_mean)^2
+          / reference_ion_population_stddev^2).
+```
+
+The population standard deviation is the denominator; the standard deviation
+of the reference mean is not. Once a candidate final-32-period profile exists,
+run:
+
+```sh
+python3 scripts/compare_turner.py \
+  --case 1 \
+  --reference tmp/turner-normalized-v1/turner_case1_benchmark.csv \
+  --candidate tmp/turner-case1-run/ion-density-average.csv \
+  --normalization-audit tmp/turner-normalized-v1/audit.json \
+  --output tmp/turner-case1-comparison.json
+```
+
+The tool requires exact node coordinates and does not interpolate. A report
+by itself makes no physics claim because the comparator cannot prove that the
+candidate used the prescribed particle count, timestep, collision model,
+steady state, or final 32-period averaging window.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
@@ -154,9 +198,9 @@ reduced run as a pass:
    equal-sharing ionization, and restart fingerprints. This stage is complete.
 2. **C1, source and diagnostic lock:** the electronic supplement is acquired
    outside the repository and its archive/member hashes, structure, and usage
-   constraint are pinned. Normalize the exact tables without changing
-   interpolation semantics and implement the published
-   density/power/current observables.
+   constraint are pinned. Exact tables are locally normalized without
+   resampling and load through provenance-bearing gas manifests. Implement
+   the published density/power/current observables to complete C1.
 3. **C2, bounded startup screening:** run the exact Case 1 grid, timestep,
    particle weight, waveform, and collision model for a small declared number
    of RF periods. Check invariants, collision balance, sheath formation,
