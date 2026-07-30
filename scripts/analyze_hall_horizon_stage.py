@@ -156,7 +156,9 @@ def comparison_summary(
     return result
 
 
-def controller_metrics(path: Path) -> dict[str, float | int]:
+def controller_metrics(
+    path: Path,
+) -> dict[str, float | int | bool | None]:
     data = rows(
         path,
         {
@@ -186,7 +188,7 @@ def controller_metrics(path: Path) -> dict[str, float | int]:
         abs(finite(row["charge_balance_residual"], path.name))
         for row in data
     )
-    return {
+    result: dict[str, float | int | bool | None] = {
         "samples": len(data),
         "macro_particles_created": created,
         "macro_charge_c": macro_charge,
@@ -197,6 +199,95 @@ def controller_metrics(path: Path) -> dict[str, float | int]:
             maximum_unserved / macro_charge / created,
         "maximum_charge_balance_residual_c": maximum_residual,
     }
+    detailed = {
+        "control_updates",
+        "reverse_diagnostics_start_step",
+        "reverse_demand_steps",
+        "reverse_demand_step_fraction",
+        "cumulative_reverse_demand_macroparticles",
+        "maximum_reverse_demand_macroparticles",
+        "cumulative_monitored_negative_charge",
+        "cumulative_monitored_positive_charge",
+        "cumulative_processed_monitored_charge",
+    }
+    observed = detailed & set(final)
+    if observed and observed != detailed:
+        raise HorizonAnalysisError(
+            f"{path.name} has a partial reverse-demand schema"
+        )
+    available = observed == detailed
+    result["reverse_diagnostics_available"] = available
+    if not available:
+        result.update({
+            "reverse_diagnostics_start_step": None,
+            "reverse_diagnostics_complete": False,
+            "control_updates": None,
+            "reverse_demand_steps": None,
+            "reverse_demand_step_fraction": None,
+            "cumulative_reverse_demand_macroparticles": None,
+            "maximum_reverse_demand_macroparticles": None,
+        })
+        return result
+    updates = integer(final["control_updates"], f"{path.name} updates")
+    reverse_steps = integer(
+        final["reverse_demand_steps"], f"{path.name} reverse steps"
+    )
+    start_step = integer(
+        final["reverse_diagnostics_start_step"],
+        f"{path.name} reverse start step",
+    )
+    fraction = finite(
+        final["reverse_demand_step_fraction"],
+        f"{path.name} reverse fraction",
+    )
+    cumulative = finite(
+        final["cumulative_reverse_demand_macroparticles"],
+        f"{path.name} cumulative reverse demand",
+    )
+    maximum = finite(
+        final["maximum_reverse_demand_macroparticles"],
+        f"{path.name} maximum reverse demand",
+    )
+    negative = finite(
+        final["cumulative_monitored_negative_charge"],
+        f"{path.name} monitored negative charge",
+    )
+    positive = finite(
+        final["cumulative_monitored_positive_charge"],
+        f"{path.name} monitored positive charge",
+    )
+    processed = finite(
+        final["cumulative_processed_monitored_charge"],
+        f"{path.name} processed charge",
+    )
+    expected_fraction = reverse_steps / updates if updates else 0.0
+    if (
+        reverse_steps > updates
+        or cumulative < 0.0
+        or maximum < 0.0
+        or maximum > cumulative + 1e-12
+        or not math.isclose(
+            fraction, expected_fraction,
+            rel_tol=1e-12, abs_tol=1e-15,
+        )
+        or not math.isclose(
+            negative + positive, processed,
+            rel_tol=1e-12, abs_tol=abs(macro_charge) * 1e-9,
+        )
+    ):
+        raise HorizonAnalysisError(
+            f"{path.name} reverse-demand diagnostics are inconsistent"
+        )
+    result.update({
+        "reverse_diagnostics_start_step": start_step,
+        "reverse_diagnostics_complete": start_step == 0,
+        "control_updates": updates,
+        "reverse_demand_steps": reverse_steps,
+        "reverse_demand_step_fraction": fraction,
+        "cumulative_reverse_demand_macroparticles": cumulative,
+        "maximum_reverse_demand_macroparticles": maximum,
+    })
+    return result
 
 
 def atomic_json(path: Path, value: dict[str, object]) -> None:

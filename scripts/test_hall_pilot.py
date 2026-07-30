@@ -98,7 +98,13 @@ def main() -> int:
             and result["physics_claim"] == "none"
             and result["metrics"]["steps"] == 200
             and result["metrics"]["resolved_samples"] == 11
-            and result["metrics"]["resolved_modes"] == 9,
+            and result["metrics"]["resolved_modes"] == 9
+            and result["metrics"]["reverse_diagnostics_available"]
+            and result["metrics"]["reverse_diagnostics_complete"]
+            and result["metrics"]["reverse_diagnostics_start_step"] == 0
+            and 0.0 <= result["metrics"][
+                "reverse_demand_step_fraction"
+            ] <= 1.0,
             f"Hall pilot analysis failed: {analyzed.stderr}",
         )
         require(
@@ -125,9 +131,17 @@ def main() -> int:
             final_current["cumulative_emitted_charge"]
         )
         final_current["control_macro_remainder"] = "-2"
+        processed_charge = emitted_charge + 2 * macro_charge
         final_current["cumulative_processed_monitored_charge"] = str(
-            emitted_charge + 2 * macro_charge
+            processed_charge
         )
+        if "cumulative_monitored_negative_charge" in final_current:
+            final_current[
+                "cumulative_monitored_negative_charge"
+            ] = str(min(0.0, processed_charge))
+            final_current[
+                "cumulative_monitored_positive_charge"
+            ] = str(max(0.0, processed_charge))
         final_current["charge_balance_residual"] = str(2 * macro_charge)
         if "raw_charge_balance_residual" in final_current:
             final_current["raw_charge_balance_residual"] = str(2 * macro_charge)

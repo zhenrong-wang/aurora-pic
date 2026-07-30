@@ -82,7 +82,14 @@ struct CurrentRegulatedSource2DDiagnostics {
     double represented_particles_created{0.0};
     double control_macro_remainder{0.0};
     double processed_monitored_charge{0.0};
+    double processed_monitored_negative_charge{0.0};
+    double processed_monitored_positive_charge{0.0};
     double injected_kinetic_energy{0.0};
+    std::size_t control_updates{0};
+    std::size_t reverse_demand_steps{0};
+    std::size_t reverse_diagnostics_start_step{0};
+    double cumulative_reverse_demand_macroparticles{0.0};
+    double maximum_reverse_demand_macroparticles{0.0};
 };
 
 enum class PotentialReferenceCorrection {

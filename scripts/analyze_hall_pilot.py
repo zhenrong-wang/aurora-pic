@@ -176,6 +176,30 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     maximum_control_remainder = 0.0
     maximum_unserved_reverse_charge = 0.0
     controller_saturation_samples = 0
+    detailed_keys = {
+        "control_updates",
+        "reverse_diagnostics_start_step",
+        "reverse_demand_steps",
+        "reverse_demand_step_fraction",
+        "cumulative_reverse_demand_macroparticles",
+        "maximum_reverse_demand_macroparticles",
+        "cumulative_monitored_negative_charge",
+        "cumulative_monitored_positive_charge",
+    }
+    observed_detailed_keys = detailed_keys & set(current[0])
+    if observed_detailed_keys and observed_detailed_keys != detailed_keys:
+        raise PilotError(
+            "current_source.csv has a partial reverse-demand schema"
+        )
+    has_detailed_controller = observed_detailed_keys == detailed_keys
+    previous_updates = -1
+    previous_reverse_steps = -1
+    previous_cumulative_reverse = -1.0
+    previous_maximum_reverse = -1.0
+    reverse_diagnostics_start_step = 0
+    reverse_demand_step_fraction = 0.0
+    cumulative_reverse_demand = 0.0
+    maximum_reverse_demand = 0.0
     expected_control_mode = manifest["cathode_control"].get(
         "control_mode", "cumulative"
     )
@@ -224,6 +248,84 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
             raise PilotError(
                 "current-source control mode drifted from the manifest"
             )
+        if has_detailed_controller:
+            updates = integer(
+                row, "control_updates", "current_source.csv"
+            )
+            start_step = integer(
+                row,
+                "reverse_diagnostics_start_step",
+                "current_source.csv",
+            )
+            reverse_steps = integer(
+                row, "reverse_demand_steps", "current_source.csv"
+            )
+            reverse_fraction = number(
+                row,
+                "reverse_demand_step_fraction",
+                "current_source.csv",
+            )
+            cumulative_reverse = number(
+                row,
+                "cumulative_reverse_demand_macroparticles",
+                "current_source.csv",
+            )
+            maximum_reverse = number(
+                row,
+                "maximum_reverse_demand_macroparticles",
+                "current_source.csv",
+            )
+            negative_charge = number(
+                row,
+                "cumulative_monitored_negative_charge",
+                "current_source.csv",
+            )
+            positive_charge = number(
+                row,
+                "cumulative_monitored_positive_charge",
+                "current_source.csv",
+            )
+            expected_fraction = (
+                reverse_steps / updates if updates else 0.0
+            )
+            if (
+                reverse_steps > updates
+                or updates < previous_updates
+                or reverse_steps < previous_reverse_steps
+                or cumulative_reverse < previous_cumulative_reverse
+                or maximum_reverse < previous_maximum_reverse
+                or maximum_reverse > cumulative_reverse + 1e-12
+                or not math.isclose(
+                    reverse_fraction,
+                    expected_fraction,
+                    rel_tol=1e-12,
+                    abs_tol=1e-15,
+                )
+                or not math.isclose(
+                    negative_charge + positive_charge,
+                    processed_charge,
+                    rel_tol=1e-12,
+                    abs_tol=macro_charge * 1e-9,
+                )
+            ):
+                raise PilotError(
+                    "current-source reverse-demand diagnostics "
+                    "are inconsistent"
+                )
+            if previous_updates >= 0 and (
+                start_step != reverse_diagnostics_start_step
+            ):
+                raise PilotError(
+                    "reverse-demand diagnostic start step changed"
+                )
+            previous_updates = updates
+            previous_reverse_steps = reverse_steps
+            previous_cumulative_reverse = cumulative_reverse
+            previous_maximum_reverse = maximum_reverse
+            reverse_diagnostics_start_step = start_step
+            reverse_demand_step_fraction = reverse_fraction
+            cumulative_reverse_demand = cumulative_reverse
+            maximum_reverse_demand = maximum_reverse
         # The pinned emitted species is electrons, so its represented
         # macrocharge is negative. A negative remainder is valid actuator
         # debt: electron emission cannot retract particles already emitted.
@@ -417,6 +519,23 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 maximum_unserved_reverse_charge,
             "maximum_unserved_reverse_macroparticles":
                 maximum_unserved_reverse_charge / macro_charge,
+            "reverse_diagnostics_available":
+                has_detailed_controller,
+            "reverse_diagnostics_start_step":
+                reverse_diagnostics_start_step
+                if has_detailed_controller else None,
+            "reverse_diagnostics_complete":
+                has_detailed_controller
+                and reverse_diagnostics_start_step == 0,
+            "reverse_demand_step_fraction":
+                reverse_demand_step_fraction
+                if has_detailed_controller else None,
+            "cumulative_reverse_demand_macroparticles":
+                cumulative_reverse_demand
+                if has_detailed_controller else None,
+            "maximum_reverse_demand_macroparticles":
+                maximum_reverse_demand
+                if has_detailed_controller else None,
             "maximum_potential_reference_error_v": maximum_reference_error,
             "resolved_modes": len(observed_modes),
         },

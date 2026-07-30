@@ -32,6 +32,7 @@
 #include <limits>
 #include <numbers>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -3747,15 +3748,53 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v8\n") == 0,
-                "2D current regulation checkpoint did not use v8");
+                    "AuroraPIC-checkpoint-v9\n") == 0,
+                "2D current regulation checkpoint did not use v9");
+            const auto legacy_checkpoint_path =
+                output_dir / "regulated-v8.apc";
+            {
+                std::istringstream input(
+                    read_file_text(checkpoint_path));
+                std::ofstream legacy(legacy_checkpoint_path);
+                require(
+                    static_cast<bool>(legacy),
+                    "cannot create synthetic v8 checkpoint");
+                std::string line;
+                while (std::getline(input, line)) {
+                    if (line == "AuroraPIC-checkpoint-v9") {
+                        legacy << "AuroraPIC-checkpoint-v8\n";
+                        continue;
+                    }
+                    if (line.rfind(
+                            "current_regulated_source 1 ", 0) == 0) {
+                        std::istringstream fields(line);
+                        std::vector<std::string> tokens{
+                            std::istream_iterator<std::string>(fields),
+                            std::istream_iterator<std::string>()};
+                        require(
+                            tokens.size() > 7,
+                            "synthetic v8 controller line is incomplete");
+                        tokens.resize(tokens.size() - 7);
+                        for (std::size_t index = 0;
+                             index < tokens.size(); ++index) {
+                            if (index != 0) legacy << ' ';
+                            legacy << tokens[index];
+                        }
+                        legacy << '\n';
+                        continue;
+                    }
+                    legacy << line << '\n';
+                }
+            }
             continuous.step();
             const auto& regulated =
                 *continuous
                      .current_regulated_source_diagnostics();
             require(
                 regulated.macro_particles_created == 1 &&
-                    continuous.species()[0].live_count() == 1,
+                    continuous.species()[0].live_count() == 1 &&
+                    regulated.control_updates == 2 &&
+                    regulated.reverse_diagnostics_start_step == 0,
                 "2D current regulator did not emit the charge-balanced macro-particle");
             require_near(
                 regulated.represented_particles_created,
@@ -3777,8 +3816,37 @@ int main() {
                         .absorbed_left == 3 &&
                     restarted
                         .current_regulated_source_diagnostics()
-                        ->macro_particles_created == 1,
+                        ->macro_particles_created == 1 &&
+                    restarted
+                        .current_regulated_source_diagnostics()
+                        ->control_updates ==
+                    regulated.control_updates &&
+                    restarted
+                        .current_regulated_source_diagnostics()
+                        ->reverse_demand_steps ==
+                    regulated.reverse_demand_steps,
                 "2D current-regulation checkpoint lost controller state");
+            pic::Simulation2D legacy_restarted(cfg);
+            legacy_restarted.load_checkpoint(
+                legacy_checkpoint_path);
+            require(
+                legacy_restarted
+                        .current_regulated_source_diagnostics()
+                        ->reverse_diagnostics_start_step == 1 &&
+                    legacy_restarted
+                        .current_regulated_source_diagnostics()
+                        ->control_updates == 0,
+                "2D v8 restart did not mark partial reverse diagnostics");
+            legacy_restarted.step();
+            require_species_close(
+                continuous.species(),
+                legacy_restarted.species(),
+                "2D v8 current-regulation checkpoint compatibility");
+            require(
+                legacy_restarted
+                        .current_regulated_source_diagnostics()
+                        ->control_updates == 1,
+                "2D v8 restart did not begin reverse-demand accounting");
             auto changed_controller = cfg;
             changed_controller.current_regulated_source
                 ->emission_inset = 0.2;
@@ -3856,6 +3924,17 @@ int main() {
                     ->control_macro_remainder,
                 0.0, 1e-14,
                 "2D timestep-local current control retained signed debt");
+            require(
+                timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->reverse_demand_steps > 0 &&
+                    timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->cumulative_reverse_demand_macroparticles > 0.0 &&
+                    timestep_local_reverse
+                        .current_regulated_source_diagnostics()
+                        ->maximum_reverse_demand_macroparticles > 0.0,
+                "2D timestep-local current control did not audit reverse demand");
 
             auto affine_cfg = cfg;
             affine_cfg.boundary_x = pic::Boundary::Dirichlet;
@@ -4175,8 +4254,8 @@ int main() {
             continuous.save_checkpoint(checkpoint_path);
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v8\n") == 0,
-                "2D pair source checkpoint did not use v8");
+                    "AuroraPIC-checkpoint-v9\n") == 0,
+                "2D pair source checkpoint did not use v9");
             for (std::size_t step = continuous.step_count();
                  step < cfg.steps; ++step) {
                 continuous.step();

@@ -54,8 +54,16 @@ def write_prior_output(path: Path, final_total: int = 260_675) -> None:
     )
     (path / "current_source.csv").write_text(
         "macro_particles_created,represented_particles_created,"
-        "unserved_reverse_charge,charge_balance_residual\n"
-        "10,1250000000,2.0027207925e-11,0\n",
+        "unserved_reverse_charge,charge_balance_residual,"
+        "control_updates,reverse_diagnostics_start_step,"
+        "reverse_demand_steps,reverse_demand_step_fraction,"
+        "cumulative_reverse_demand_macroparticles,"
+        "maximum_reverse_demand_macroparticles,"
+        "cumulative_monitored_negative_charge,"
+        "cumulative_monitored_positive_charge,"
+        "cumulative_processed_monitored_charge\n"
+        "10,1250000000,2.0027207925e-11,0,"
+        "5000,0,100,0.02,110,3,-2e-8,1e-8,-1e-8\n",
         encoding="utf-8",
     )
     (path / "checkpoint_5000.apc").write_text(
@@ -171,8 +179,16 @@ def main() -> int:
         )
         (stage_output / "current_source.csv").write_text(
             "macro_particles_created,represented_particles_created,"
-            "unserved_reverse_charge,charge_balance_residual\n"
-            "20,2500000000,4.005441585e-11,0\n",
+            "unserved_reverse_charge,charge_balance_residual,"
+            "control_updates,reverse_diagnostics_start_step,"
+            "reverse_demand_steps,reverse_demand_step_fraction,"
+            "cumulative_reverse_demand_macroparticles,"
+            "maximum_reverse_demand_macroparticles,"
+            "cumulative_monitored_negative_charge,"
+            "cumulative_monitored_positive_charge,"
+            "cumulative_processed_monitored_charge\n"
+            "20,2500000000,4.005441585e-11,0,"
+            "15000,5000,600,0.04,700,5,-4e-8,2e-8,-2e-8\n",
             encoding="utf-8",
         )
         (stage_output / "potential_reference.csv").write_text(
@@ -256,6 +272,24 @@ def main() -> int:
             and credibility_report["controller_review_required"]
             and not credibility_report["ready_for_next_stage"],
             "horizon analysis did not gate worsening controller saturation",
+        )
+        require(
+            credibility_report["prior_controller"][
+                "reverse_diagnostics_complete"
+            ]
+            and credibility_report["current_controller"][
+                "reverse_diagnostics_available"
+            ]
+            and not credibility_report["current_controller"][
+                "reverse_diagnostics_complete"
+            ]
+            and credibility_report["current_controller"][
+                "reverse_diagnostics_start_step"
+            ] == 5000
+            and credibility_report["current_controller"][
+                "reverse_demand_step_fraction"
+            ] == 0.04,
+            "horizon analysis lost restart-scoped reverse-demand metrics",
         )
 
         expensive_output = work / "expensive-output"

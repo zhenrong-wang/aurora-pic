@@ -178,7 +178,7 @@ the integer part, and carries the remainder. Capacity is checked for both
 species before storage changes; dead slots are reused deterministically.
 Diagnostics report cumulative macro/represented pairs, the fractional
 remainder, sampled full-3V kinetic energy, and configured rate. Structured
-checkpoint v8 fingerprints extrusion depth and the complete source definition and preserves the
+checkpoint v9 fingerprints extrusion depth and the complete source definition and preserves the
 accumulator, diagnostics, particle state, and RNG. This is a prescribed
 source, not a collision, neutral-depletion, recoil, or reaction-network model.
 
@@ -191,13 +191,19 @@ surplus or debt for generic unequal-weight regulation. Timestep-local mode
 clears reverse demand every step and carries only positive fractional
 remainder; with equal species macro weights this is the LANDMARK
 electron-minus-ion anode-loss rule.
+`current_source.csv` separates cumulative negative and positive monitored
+charge and records controller updates, reverse-demand steps and fraction,
+cumulative reverse demand, and the largest single-step reverse demand in
+macro-particle equivalents. Checkpoint v9 preserves these counters. When a
+v1-v8 checkpoint is loaded, the diagnostic start step is the restart step so
+partial coverage cannot be mistaken for whole-run statistics.
 
 An optional x/y line-average potential reference has two modes. Gauge mode
 applies a constant potential offset after each Poisson solve and leaves the
 electric field invariant. Affine mode preserves the zero-coordinate
 electrode, linearly reaches the requested internal-plane target, and adds the
 exact constant correction to the corresponding electric-field component.
-Checkpoint v8 preserves both mode choices, boundary counters, controller
+Checkpoint v9 preserves both mode choices, boundary counters, controller
 accumulator, diagnostics, and RNG state.
 
 Opt-in structured-2D resolved diagnostics reduce fields along one profile axis

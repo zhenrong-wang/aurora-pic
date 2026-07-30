@@ -146,7 +146,7 @@ the models.
 | Prescribed magnetic field | Uniform vectors and strict one-coordinate tabulated profiles are available across structured 2D/3D and imported 2D | Add profile provenance fingerprints and arbitrary sampled-map import |
 | Mixed topology | Structured 2D automatically uses a direct spectral-tridiagonal Poisson solve for either periodic/Dirichlet orientation; mixed-radix FFT and Bluestein paths cover composite and prime periodic sizes | Measure the serial production grid, then distribute the transform and axial mode solves with MPI before full LANDMARK campaigns |
 | Volumetric pair source | Structured 2D has normalized profiles, explicit extrusion depth, analytic peak-volumetric-to-total conversion, SI eV thermal loading, fractional accumulation, diagnostics, restart, and a versioned reduced LANDMARK manifest | Qualify source statistics at production population and duration |
-| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit diagnostics and checkpoint v8; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
+| Cathode/current control | Selectable generic cumulative regulation and published timestep-local electron-minus-ion loss injection are available with explicit flux/reverse-demand diagnostics and checkpoint v9; the exact-control workstation pilot passed | Qualify long-duration response and cathode-temperature sensitivity |
 | Cathode potential correction | Selectable gauge and affine internal-plane corrections are available; affine mode preserves the anode and changes the axial field analytically; the exact-control workstation pilot passed | Compare converged profiles against checksum-pinned published data |
 | Radial benchmark virtual axis | Not available | Implement bounded virtual-axis replacement and audit its energy/particle flux |
 | HET diagnostics | Structured 2D emits transverse field/species profiles, density-weighted three-velocity moments, all current components, trapezoidal time averages, complex periodic-axis Fourier histories, checksum-pinned reference comparisons, seeded ensemble statistics, a guarded population/duration convergence workflow, and checkpoint-chained horizon stages | Execute the guarded horizon ladder, add long-run segment aggregation, and qualify with native reference data |
@@ -478,6 +478,20 @@ The cumulative one-way cathode demand that could not be served increased from
 158 to 849 macro-electron charges, or from 1.25% to 4.53% of cumulative
 emission. The analyzer therefore holds a 400 ns extension for review of the
 reduced early-time cathode/anode flux balance.
+
+Checkpoint v9 adds restart-safe, per-update observability to distinguish that
+cumulative diagnostic from a controller instability. The guarded
+1,000-update probe recorded in
+`benchmarks/hall/landmark-controller-probe-v9-20260730-seed24680.json`
+covered steps 20,001 through 21,000 (5 ns): reverse demand occurred in 43
+updates (4.3%), totaled 26 macro-electron charges, and never exceeded one
+macro-electron charge in an update. The run completed on one pinned,
+low-priority CPU core in 55.08 seconds with 35.7 MiB peak resident memory.
+This rules out runaway reverse demand over the observed interval and instead
+identifies a sparse, population-quantized edge condition. It does not prove
+population convergence or justify bypassing the controller gate. The next
+physics-facing test is a paired population-sensitivity probe with the same
+physical inputs, timestep, seed policy, and observation window.
 
 ## Seeded ensemble comparison
 

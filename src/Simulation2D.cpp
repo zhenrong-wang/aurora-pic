@@ -27,6 +27,7 @@ constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
+constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
 
 double wrap_periodic(double value, double length) {
     return std::fmod(std::fmod(value, length) + length, length);
@@ -1067,6 +1068,8 @@ void Simulation2D::inject_current_regulated_source() {
     auto& diagnostics =
         *current_regulated_source_diagnostics_;
     double cumulative_charge = 0.0;
+    double cumulative_negative_charge = 0.0;
+    double cumulative_positive_charge = 0.0;
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
         const double contribution =
@@ -1076,6 +1079,11 @@ void Simulation2D::inject_current_regulated_source() {
             species_[species_id].charge() *
             species_[species_id].weight();
         cumulative_charge += contribution;
+        if (contribution < 0.0) {
+            cumulative_negative_charge += contribution;
+        } else {
+            cumulative_positive_charge += contribution;
+        }
     }
     if (!std::isfinite(cumulative_charge)) {
         throw std::runtime_error(
@@ -1092,6 +1100,39 @@ void Simulation2D::inject_current_regulated_source() {
     if (!std::isfinite(requested)) {
         throw std::runtime_error(
             "2D current-regulated source accumulator overflow");
+    }
+    if (
+        diagnostics.control_updates ==
+        std::numeric_limits<std::size_t>::max()
+    ) {
+        throw std::runtime_error(
+            "2D current-regulated source update counter overflow");
+    }
+    ++diagnostics.control_updates;
+    if (
+        config.control_mode ==
+            CurrentSourceControlMode::TimestepLocal &&
+        requested < 0.0
+    ) {
+        const double reverse_demand = -requested;
+        if (
+            diagnostics.reverse_demand_steps ==
+                std::numeric_limits<std::size_t>::max() ||
+            !std::isfinite(
+                diagnostics.cumulative_reverse_demand_macroparticles +
+                reverse_demand)
+        ) {
+            throw std::runtime_error(
+                "2D current-regulated source reverse-demand "
+                "diagnostic overflow");
+        }
+        ++diagnostics.reverse_demand_steps;
+        diagnostics.cumulative_reverse_demand_macroparticles +=
+            reverse_demand;
+        diagnostics.maximum_reverse_demand_macroparticles =
+            std::max(
+                diagnostics.maximum_reverse_demand_macroparticles,
+                reverse_demand);
     }
     const double accumulated =
         config.control_mode ==
@@ -1215,6 +1256,10 @@ void Simulation2D::inject_current_regulated_source() {
         accumulated - static_cast<double>(particles_this_step);
     diagnostics.processed_monitored_charge =
         cumulative_charge;
+    diagnostics.processed_monitored_negative_charge =
+        cumulative_negative_charge;
+    diagnostics.processed_monitored_positive_charge =
+        cumulative_positive_charge;
     diagnostics.injected_kinetic_energy += injected_energy;
 }
 
@@ -1280,7 +1325,7 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open 2D checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV8 << '\n';
+    out << kCheckpointMagicV9 << '\n';
     out << "dimension 2\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1321,7 +1366,14 @@ void Simulation2D::save_checkpoint(const std::filesystem::path& path) const {
             << ' ' << diagnostics.represented_particles_created
             << ' ' << diagnostics.control_macro_remainder
             << ' ' << diagnostics.processed_monitored_charge
-            << ' ' << diagnostics.injected_kinetic_energy;
+            << ' ' << diagnostics.injected_kinetic_energy
+            << ' ' << diagnostics.processed_monitored_negative_charge
+            << ' ' << diagnostics.processed_monitored_positive_charge
+            << ' ' << diagnostics.control_updates
+            << ' ' << diagnostics.reverse_demand_steps
+            << ' ' << diagnostics.reverse_diagnostics_start_step
+            << ' ' << diagnostics.cumulative_reverse_demand_macroparticles
+            << ' ' << diagnostics.maximum_reverse_demand_macroparticles;
     }
     out << "\n";
     out << "potential_reference "
@@ -1423,9 +1475,10 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v6 = magic == kCheckpointMagicV6;
     const bool checkpoint_v7 = magic == kCheckpointMagicV7;
     const bool checkpoint_v8 = magic == kCheckpointMagicV8;
+    const bool checkpoint_v9 = magic == kCheckpointMagicV9;
     if (!checkpoint_v1 && !checkpoint_v2 && !checkpoint_v3 &&
         !checkpoint_v4 && !checkpoint_v5 && !checkpoint_v6 &&
-        !checkpoint_v7 && !checkpoint_v8) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1440,12 +1493,13 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
         double out_of_plane_depth = 1.0;
-        if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8) {
+        if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
+            checkpoint_v9) {
             in >> out_of_plane_depth;
         }
         if ((!checkpoint_v2 && !checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 && !checkpoint_v7 &&
-             !checkpoint_v8) ||
+             !checkpoint_v8 && !checkpoint_v9) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity() ||
@@ -1459,6 +1513,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                checkpoint_v6 ||
                checkpoint_v7 ||
                checkpoint_v8 ||
+               checkpoint_v9 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1471,7 +1526,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     in >> key >> boundary_losses_.absorbed_left >> boundary_losses_.absorbed_right
        >> boundary_losses_.absorbed_bottom >> boundary_losses_.absorbed_top;
     if (key != "boundary_losses") throw std::runtime_error("checkpoint missing 2D boundary loss counters");
-    if (checkpoint_v7 || checkpoint_v8) {
+    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
         std::size_t loss_species_count = 0;
         in >> key >> loss_species_count;
         if (key != "species_boundary_losses" ||
@@ -1509,7 +1564,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             auto& diagnostics =
                 *current_regulated_source_diagnostics_;
             in >> stored.species;
-            if (checkpoint_v8) {
+            if (checkpoint_v8 || checkpoint_v9) {
                 in >> control_mode;
                 if (control_mode == "cumulative") {
                     stored.control_mode =
@@ -1531,6 +1586,26 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 diagnostics.control_macro_remainder >>
                 diagnostics.processed_monitored_charge >>
                 diagnostics.injected_kinetic_energy;
+            if (checkpoint_v9) {
+                in >>
+                    diagnostics.processed_monitored_negative_charge >>
+                    diagnostics.processed_monitored_positive_charge >>
+                    diagnostics.control_updates >>
+                    diagnostics.reverse_demand_steps >>
+                    diagnostics.reverse_diagnostics_start_step >>
+                    diagnostics.cumulative_reverse_demand_macroparticles >>
+                    diagnostics.maximum_reverse_demand_macroparticles;
+            } else {
+                diagnostics.reverse_diagnostics_start_step = step_;
+                diagnostics.processed_monitored_negative_charge =
+                    std::min(
+                        0.0,
+                        diagnostics.processed_monitored_charge);
+                diagnostics.processed_monitored_positive_charge =
+                    std::max(
+                        0.0,
+                        diagnostics.processed_monitored_charge);
+            }
             stored.monitor_boundary =
                 boundary_side_from_string(monitor_boundary);
             stored.emission_boundary =
@@ -1554,9 +1629,44 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                     diagnostics.control_macro_remainder) ||
                 !std::isfinite(
                     diagnostics.processed_monitored_charge) ||
+                (checkpoint_v9 &&
+                 (!std::isfinite(
+                      diagnostics.processed_monitored_negative_charge) ||
+                  diagnostics.processed_monitored_negative_charge > 0.0 ||
+                  !std::isfinite(
+                      diagnostics.processed_monitored_positive_charge) ||
+                  diagnostics.processed_monitored_positive_charge < 0.0 ||
+                  !std::isfinite(
+                      diagnostics.processed_monitored_negative_charge +
+                      diagnostics.processed_monitored_positive_charge) ||
+                  std::abs(
+                      diagnostics.processed_monitored_negative_charge +
+                      diagnostics.processed_monitored_positive_charge -
+                      diagnostics.processed_monitored_charge) >
+                      1e-12 * std::max({
+                          1e-30,
+                          std::abs(
+                              diagnostics
+                                  .processed_monitored_negative_charge),
+                          std::abs(
+                              diagnostics
+                                  .processed_monitored_positive_charge),
+                          std::abs(
+                              diagnostics.processed_monitored_charge)}))) ||
                 !std::isfinite(
                     diagnostics.injected_kinetic_energy) ||
-                diagnostics.injected_kinetic_energy < 0.0) {
+                diagnostics.injected_kinetic_energy < 0.0 ||
+                diagnostics.reverse_demand_steps >
+                    diagnostics.control_updates ||
+                diagnostics.reverse_diagnostics_start_step > step_ ||
+                !std::isfinite(
+                    diagnostics.cumulative_reverse_demand_macroparticles) ||
+                diagnostics.cumulative_reverse_demand_macroparticles < 0.0 ||
+                !std::isfinite(
+                    diagnostics.maximum_reverse_demand_macroparticles) ||
+                diagnostics.maximum_reverse_demand_macroparticles < 0.0 ||
+                diagnostics.maximum_reverse_demand_macroparticles >
+                    diagnostics.cumulative_reverse_demand_macroparticles) {
                 throw std::runtime_error(
                     "checkpoint current-regulated source metadata is invalid or does not match 2D config");
             }
@@ -1577,7 +1687,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             PotentialReference2DConfig stored;
             in >> axis >> stored.coordinate >> stored.target;
             stored.axis = parse_coordinate_axis(axis);
-            if (checkpoint_v8) {
+            if (checkpoint_v8 || checkpoint_v9) {
                 in >> correction;
                 if (correction == "gauge") {
                     stored.correction =
@@ -1617,7 +1727,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
     if (key != "rng") throw std::runtime_error("checkpoint missing rng state");
     in >> rng_;
     if (checkpoint_v4 || checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7 || checkpoint_v8) {
+        checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
         std::size_t source_count = 0;
         in >> key >> source_count;
         if (key != "source_count" ||
@@ -1632,7 +1742,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> key >> stored.name >> stored.first_species >>
                 stored.second_species >> stored.pairs_per_step;
             if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
-                checkpoint_v8) {
+                checkpoint_v8 || checkpoint_v9) {
                 int has_rate = 0;
                 double rate = 0.0;
                 in >> has_rate >> rate;
@@ -1643,7 +1753,8 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 if (has_rate != 0) {
                     stored.represented_pair_rate = rate;
                 }
-                if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8) {
+                if (checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
+                    checkpoint_v9) {
                     int has_peak_rate = 0;
                     double peak_rate = 0.0;
                     in >> has_peak_rate >> peak_rate;
@@ -1667,7 +1778,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                 stored.first_thermal_velocity >>
                 stored.second_thermal_velocity;
             if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
-                checkpoint_v8) {
+                checkpoint_v8 || checkpoint_v9) {
                 std::string profile;
                 in >> profile;
                 stored.spatial_profile.density_profile =
@@ -1716,7 +1827,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> diagnostics.macro_pairs_created >>
                 diagnostics.represented_pairs_created;
             if (checkpoint_v5 || checkpoint_v6 || checkpoint_v7 ||
-                checkpoint_v8) {
+                checkpoint_v8 || checkpoint_v9) {
                 in >> diagnostics
                           .fractional_macro_pair_remainder >>
                     diagnostics.injected_kinetic_energy;
@@ -1816,7 +1927,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
                >> p.velocity.x >> p.velocity.y;
             if (checkpoint_v3 || checkpoint_v4 ||
                 checkpoint_v5 || checkpoint_v6 ||
-                checkpoint_v7 || checkpoint_v8) {
+                checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
                 in >> p.velocity_z;
             } else {
                 p.velocity_z = 0.0;
@@ -1824,7 +1935,7 @@ void Simulation2D::load_checkpoint(const std::filesystem::path& path) {
             in >> p.velocity_half.x >> p.velocity_half.y;
             if (checkpoint_v3 || checkpoint_v4 ||
                 checkpoint_v5 || checkpoint_v6 ||
-                checkpoint_v7 || checkpoint_v8) {
+                checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
                 in >> p.velocity_half_z;
             } else {
                 p.velocity_half_z = 0.0;
@@ -1963,6 +2074,14 @@ RunSummary2D Simulation2D::run() {
                "emission_boundary,macro_particles_created,"
                "represented_particles_created,"
                "control_macro_remainder,"
+               "control_updates,"
+               "reverse_diagnostics_start_step,"
+               "reverse_demand_steps,"
+               "reverse_demand_step_fraction,"
+               "cumulative_reverse_demand_macroparticles,"
+               "maximum_reverse_demand_macroparticles,"
+               "cumulative_monitored_negative_charge,"
+               "cumulative_monitored_positive_charge,"
                "cumulative_processed_monitored_charge,"
                "cumulative_emitted_charge,"
                "raw_charge_balance_residual,"
@@ -1995,6 +2114,24 @@ RunSummary2D Simulation2D::run() {
             << ',' << diagnostics.macro_particles_created
             << ',' << diagnostics.represented_particles_created
             << ',' << diagnostics.control_macro_remainder
+            << ',' << diagnostics.control_updates
+            << ',' << diagnostics.reverse_diagnostics_start_step
+            << ',' << diagnostics.reverse_demand_steps
+            << ',' << (
+                diagnostics.control_updates > 0
+                    ? static_cast<double>(
+                          diagnostics.reverse_demand_steps) /
+                          static_cast<double>(
+                              diagnostics.control_updates)
+                    : 0.0)
+            << ',' <<
+                diagnostics.cumulative_reverse_demand_macroparticles
+            << ',' <<
+                diagnostics.maximum_reverse_demand_macroparticles
+            << ',' <<
+                diagnostics.processed_monitored_negative_charge
+            << ',' <<
+                diagnostics.processed_monitored_positive_charge
             << ',' << diagnostics.processed_monitored_charge
             << ',' << emitted_charge
             << ',' << raw_residual
