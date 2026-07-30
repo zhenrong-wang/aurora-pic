@@ -146,7 +146,7 @@ def compare(case: int, reference: Path, candidate: Path,
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ComparisonError(f"cannot read normalization audit: {error}") from error
-    require(audit.get("turner_normalization_version") == 1,
+    require(audit.get("turner_normalization_version") in (1, 2),
             "normalization audit version must be 1")
     files = audit.get("normalized_files")
     require(isinstance(files, dict) and reference.name in files,

@@ -7,7 +7,7 @@ status = production_campaign_not_run
 doi = 10.1063/1.4775084
 source_case_id = turner-helium-ccp-2013
 source_artifact_sha256 = a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661
-normalized_audit_sha256 = cca4818f05691a8f81930f8183d3bf18533412f974ae0351e67af91ee59d3159
+normalized_audit_sha256 = 29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740
 reference_file = turner_case1_benchmark.csv
 
 [physics]
@@ -21,8 +21,17 @@ electron_temperature_k = 30000
 ion_temperature_k = 300
 electron_mass_kg = 9.109e-31
 helium_mass_kg = 6.67e-27
-elementary_charge_c = 1.602176634e-19
+elementary_charge_c = 1.602176487e-19
 boltzmann_constant_j_k = 1.3806504e-23
+
+[reported_case1_characteristics]
+source = Turner et al. 2013 Table III
+time_averaged_midplane_ion_density_m3 = 1.40e14
+time_averaged_electron_temperature_ev = 9.36
+time_averaged_electron_power_w_m2 = 34.3
+time_averaged_ion_power_w_m2 = 90.6
+time_averaged_ion_current_a_m2 = 0.219
+total_macro_particles = 31900
 
 [numerics]
 nodes = 129

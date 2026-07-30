@@ -129,6 +129,12 @@ def main() -> int:
             ),
             "stationarity pass report is incomplete",
         )
+        require(
+            passed_report["published_context"][
+                "total_macro_particles"
+            ] == 31900,
+            "stationarity report omitted the published population context",
+        )
 
         failed_path = work / "failed.json"
         failed = run([

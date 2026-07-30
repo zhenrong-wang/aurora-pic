@@ -152,11 +152,12 @@ reference CSV files, and a transformation audit with:
 python3 scripts/normalize_turner_source.py \
   examples/turner_ccp.sources \
   tmp/013507_1_supplements.zip \
-  --output-dir tmp/turner-normalized-v1
+  --output-dir tmp/turner-normalized-v3
 ```
 
-Electron thresholds are converted from eV to joules using the exact
-elementary charge. Ion energy remains tabulated in centre-of-mass eV and ion
+Electron thresholds are converted from eV to joules using the 2006 CODATA
+elementary charge required by the paper. Normalization audit version 2 records
+that constant edition explicitly. Ion energy remains tabulated in centre-of-mass eV and ion
 cross sections remain in their source `1e-20 m2` scale; the gas manifest
 performs both SI conversions at load time. No table is resampled. Named 1D
 collision models load either generated manifest through `gas_data_file`, with
@@ -172,7 +173,7 @@ deck and its machine-readable preflight report with:
 ```sh
 python3 scripts/prepare_turner_case.py \
   examples/turner_helium_ccp_case1.case \
-  tmp/turner-normalized-v1 \
+  tmp/turner-normalized-v3 \
   --output tmp/turner-case1-campaign/turner_case1.cfg \
   --acknowledge-cost I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_TURNER_RUN
 ```
@@ -200,7 +201,7 @@ Run that qualification explicitly with:
 python3 scripts/qualify_turner_runtime.py \
   build/aurorapic_cli \
   examples/turner_helium_ccp_case1.case \
-  tmp/turner-normalized-v1 \
+  tmp/turner-normalized-v3 \
   --steps 4 \
   --max-initial-updates 1000000 \
   --timeout-seconds 60 \
@@ -223,7 +224,7 @@ The next bounded rung executes exactly one RF cycle in two half-cycle stages:
 python3 scripts/run_turner_startup.py \
   build/aurorapic_cli \
   examples/turner_helium_ccp_case1.case \
-  tmp/turner-normalized-v1 \
+  tmp/turner-normalized-v3 \
   --work-dir tmp/turner-case1-startup \
   --report tmp/turner-case1-startup/report.json \
   --max-initial-updates 60000000 \
@@ -246,7 +247,7 @@ Extend that retained one-cycle checkpoint through cycles two to four with:
 python3 scripts/extend_turner_horizon.py \
   build/aurorapic_cli \
   examples/turner_helium_ccp_case1.case \
-  tmp/turner-normalized-v1 \
+  tmp/turner-normalized-v3 \
   --prior-work-dir tmp/turner-case1-startup \
   --prior-report tmp/turner-case1-startup/report.json \
   --work-dir tmp/turner-case1-horizon \
@@ -288,6 +289,14 @@ to span no more than 5% across that window. These are conservative AuroraPIC
 startup gates, not thresholds published by Turner et al. Passing only permits
 a longer confirmation window; failing explicitly keeps the published
 chi-squared comparison inapplicable.
+
+The case manifest separately pins the published Case 1 summary from Table III:
+mid-plane ion density `1.40e14 m^-3`, electron temperature `9.36 eV`,
+electron and ion power `34.3` and `90.6 W m^-2`, ion current
+`0.219 A m^-2`, and approximately 31,900 total macro-particles. The
+stationarity report includes the current-to-reported macro-particle ratio as
+context, but does not turn that reported stochastic population into an
+acceptance gate.
 
 ## Restart-safe density averaging
 
@@ -334,12 +343,12 @@ run:
 ```sh
 python3 scripts/compare_turner.py \
   --case 1 \
-  --reference tmp/turner-normalized-v1/turner_case1_benchmark.csv \
+  --reference tmp/turner-normalized-v3/turner_case1_benchmark.csv \
   --candidate tmp/turner-case1-run/spatial_average.csv \
   --candidate-metadata \
     tmp/turner-case1-run/spatial_average_metadata.json \
   --species ions \
-  --normalization-audit tmp/turner-normalized-v1/audit.json \
+  --normalization-audit tmp/turner-normalized-v3/audit.json \
   --output tmp/turner-case1-comparison.json
 ```
 

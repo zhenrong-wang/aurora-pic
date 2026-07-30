@@ -403,6 +403,8 @@ non-launching production Case 1 preparer. It locks the exact grid, initial
 population, RF duration, restart-safe averaging window, and guarded collision
 majorants while keeping the publisher tables under ignored `tmp/`; see
 [`docs/ccp-validation.md`](docs/ccp-validation.md).
+The Turner-only normalization audit pins the paper's required 2006 CODATA
+eV-to-joule conversion rather than silently inheriting current SI constants.
 An explicitly acknowledged bounded qualifier measures the exact initial
 population for only a few serial steps under hard work and timeout limits
 before any longer CCP execution is considered.

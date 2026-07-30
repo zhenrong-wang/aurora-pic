@@ -102,7 +102,7 @@ angular_model = isotropic
         "turner_he_ion.gas", "turner_case1_benchmark.csv",
     )
     audit = {
-        "turner_normalization_version": 1,
+        "turner_normalization_version": 2,
         "case_id": "turner-helium-ccp-2013",
         "source_artifact": {
             "sha256":
@@ -118,9 +118,13 @@ angular_model = isotropic
         encoding="utf-8",
     )
     case_text = CASE.read_text(encoding="utf-8")
+    pinned_audit = next(
+        line.split("=", 1)[1].strip()
+        for line in case_text.splitlines()
+        if line.startswith("normalized_audit_sha256")
+    )
     case_text = case_text.replace(
-        "cca4818f05691a8f81930f8183d3bf18533412f974ae0351e67af91ee59d3159",
-        hashlib.sha256(audit_path.read_bytes()).hexdigest(),
+        pinned_audit, hashlib.sha256(audit_path.read_bytes()).hexdigest()
     )
     case_path = work / "case.case"
     case_path.write_text(case_text, encoding="utf-8")
@@ -168,6 +172,9 @@ def main() -> int:
             and contract["rf_cycles"] == 1280
             and contract["particles_per_species"] == 65536
             and contract["averaging_samples"] == 12800
+            and report["reported_case1_characteristics"][
+                "total_macro_particles"
+            ] == 31900
             and collision["electron"]["majorant_dt"] < 0.1
             and collision["ion"]["majorant_dt"] < 0.1
             and collision["electron"]["configured_majorant_s"]

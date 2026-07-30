@@ -13,11 +13,12 @@ import sys
 import tempfile
 import zipfile
 
-from import_lxcat import EV_TO_J, parse_lxcat
+from import_lxcat import parse_lxcat
 from verify_turner_source import VerificationError, verify
 
 
 HELIUM_MASS_KG = 6.67e-27
+CODATA_2006_EV_TO_J = 1.602176487e-19
 EXPECTED_THRESHOLDS_EV = (0.0, 19.82, 20.61, 24.587)
 ELECTRON_MEMBER = "turner_benchmark_he_electron_table.dat"
 ION_MEMBER = "turner_benchmark_he_ion_table.dat"
@@ -75,7 +76,7 @@ def write_manifest(path: Path, channels: list[dict[str, object]],
             stream.write(
                 f"cross_section_file = {channel['cross_section_file']}\n"
             )
-            stream.write(f"energy_scale = {EV_TO_J:.17g}\n")
+            stream.write(f"energy_scale = {CODATA_2006_EV_TO_J:.17g}\n")
             if channel.get("cross_section_scale") is not None:
                 stream.write(
                     "cross_section_scale = "
@@ -203,7 +204,9 @@ def write_normalized(
             "angular_model": "isotropic",
         }
         if process.threshold_ev > 0.0:
-            channel["threshold_energy"] = process.threshold_ev * EV_TO_J
+            channel["threshold_energy"] = (
+                process.threshold_ev * CODATA_2006_EV_TO_J
+            )
         electron_channels.append(channel)
     write_manifest(
         stage / "turner_he_electron.gas", electron_channels,
@@ -255,7 +258,7 @@ def write_normalized(
         }
 
     audit = {
-        "turner_normalization_version": 1,
+        "turner_normalization_version": 2,
         "case_id": report["case_id"],
         "doi": report["doi"],
         "source_artifact": {
@@ -268,13 +271,15 @@ def write_normalized(
         "redistribution": report["redistribution"],
         "acquired": acquired,
         "constants": {
-            "electron_volt_J": EV_TO_J,
+            "electron_volt_J": CODATA_2006_EV_TO_J,
+            "constant_edition": "2006 CODATA",
             "helium_mass_kg": HELIUM_MASS_KG,
         },
         "transformations": {
             "electron_energy": "numeric eV retained; manifest scales eV to J",
             "electron_cross_section": "numeric m2 retained",
-            "inelastic_threshold": "eV multiplied by exact elementary charge",
+            "inelastic_threshold":
+                "eV multiplied by the 2006 CODATA elementary charge",
             "ion_energy": "numeric center-of-mass eV retained; manifest scales to J",
             "ion_cross_section": "numeric 1e-20 m2 retained; manifest scales by 1e-20",
             "results": "seven numeric columns converted losslessly to CSV",

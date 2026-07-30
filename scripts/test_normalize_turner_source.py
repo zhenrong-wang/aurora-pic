@@ -146,8 +146,8 @@ def main() -> int:
         ).read_text(encoding="utf-8")
         audit = json.loads((output / "audit.json").read_text(encoding="utf-8"))
         require(
-            "threshold_energy = 3.1755140885879999e-18" in electron_manifest
-            and "threshold_energy = 3.9392716900158001e-18"
+            "threshold_energy = 3.175513797234e-18" in electron_manifest
+            and "threshold_energy = 3.9392713285868997e-18"
             in electron_manifest
             and electron_manifest.count("[collision.") == 4,
             "electron threshold conversion or channel set is incomplete",
@@ -160,7 +160,9 @@ def main() -> int:
             "ion unit/frame/scattering normalization is incomplete",
         )
         require(
-            audit["transformations"]["interpolation"].startswith("linear")
+            audit["turner_normalization_version"] == 2
+            and audit["constants"]["constant_edition"] == "2006 CODATA"
+            and audit["transformations"]["interpolation"].startswith("linear")
             and audit["case_rows"]["benchmark"]["1"] == 2
             and len(audit["normalized_files"]) == 16,
             "normalization audit is incomplete",

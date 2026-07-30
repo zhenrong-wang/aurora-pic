@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import hashlib
 import json
 import math
@@ -43,6 +44,41 @@ def load(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise StationarityError(f"cannot read {path}: {error}") from error
+
+
+def reported_characteristics(path: Path) -> dict:
+    parser = configparser.ConfigParser(interpolation=None, strict=True)
+    try:
+        parser.read_string("[global]\n" + path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, configparser.Error) as error:
+        raise StationarityError(
+            f"cannot read Case 1 manifest {path}: {error}"
+        ) from error
+    section = "reported_case1_characteristics"
+    if section not in parser:
+        raise StationarityError(
+            f"Case 1 manifest is missing [{section}]"
+        )
+    values = parser[section]
+    return {
+        "source": values["source"],
+        "time_averaged_midplane_ion_density_m3": values.getfloat(
+            "time_averaged_midplane_ion_density_m3"
+        ),
+        "time_averaged_electron_temperature_ev": values.getfloat(
+            "time_averaged_electron_temperature_ev"
+        ),
+        "time_averaged_electron_power_w_m2": values.getfloat(
+            "time_averaged_electron_power_w_m2"
+        ),
+        "time_averaged_ion_power_w_m2": values.getfloat(
+            "time_averaged_ion_power_w_m2"
+        ),
+        "time_averaged_ion_current_a_m2": values.getfloat(
+            "time_averaged_ion_current_a_m2"
+        ),
+        "total_macro_particles": values.getint("total_macro_particles"),
+    }
 
 
 def relative_span(values: list[float], name: str) -> float:
@@ -212,6 +248,10 @@ def analyze(args: argparse.Namespace) -> dict:
         },
     }
     stationary = all(gate["passed"] for gate in gates.values())
+    published = reported_characteristics(args.case_manifest.resolve())
+    final_total = (
+        cycles[-1]["final_electrons"] + cycles[-1]["final_ions"]
+    )
     return {
         "turner_stationarity_screen_version": 1,
         "case_id": case_id,
@@ -234,6 +274,14 @@ def analyze(args: argparse.Namespace) -> dict:
                 * (
                     1.0 + cycles[0]["electron_relative_change"]
                 ),
+        },
+        "published_context": {
+            **published,
+            "current_total_macro_particles": final_total,
+            "current_to_reported_total_macro_particle_ratio":
+                final_total / published["total_macro_particles"],
+            "note":
+                "reported characteristics are context, not stationarity gates",
         },
         "cycle_history": cycles,
         "provenance": {
@@ -277,6 +325,11 @@ def atomic_json(path: Path, report: dict) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("reports", nargs="+", type=Path)
+    parser.add_argument(
+        "--case-manifest",
+        type=Path,
+        default=Path("examples/turner_helium_ccp_case1.case"),
+    )
     parser.add_argument("--window-cycles", type=positive_integer, default=4)
     parser.add_argument(
         "--max-population-change", type=bounded_fraction, default=0.005

@@ -64,7 +64,7 @@ def load_case(path: Path) -> configparser.ConfigParser:
         raise PreparationError(f"cannot read case manifest {path}: {error}") from error
     for section in (
         "global", "reference", "physics", "numerics", "collision_guard",
-        "authorization",
+        "authorization", "reported_case1_characteristics",
     ):
         require(section in parser, f"case manifest is missing [{section}]")
     require(
@@ -85,7 +85,7 @@ def load_audit(normalized_dir: Path, case: configparser.ConfigParser) -> dict:
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise PreparationError(f"cannot parse normalization audit: {error}") from error
     require(
-        audit.get("turner_normalization_version") == 1,
+        audit.get("turner_normalization_version") == 2,
         "unsupported Turner normalization version",
     )
     require(
@@ -269,10 +269,15 @@ def prepare(args: argparse.Namespace) -> tuple[Path, Path]:
     )
     case = load_case(case_path)
     authorization = case["authorization"]
+    reported = case["reported_case1_characteristics"]
     acknowledgement = authorization["acknowledgement"]
     require(
         args.acknowledge_cost == acknowledgement,
         f"deck generation requires --acknowledge-cost {acknowledgement}",
+    )
+    require(
+        reported.getint("total_macro_particles") > 0,
+        "reported Case 1 macro-particle population must be positive",
     )
     audit = load_audit(normalized_dir, case)
     physics = case["physics"]
@@ -466,6 +471,27 @@ loading = quiet_start
             "initial_particle_updates": 2 * particles_per_species * steps,
             "capacity_particles": 2 * capacity,
             "note": "wall time is intentionally not projected without a bounded runtime measurement",
+        },
+        "reported_case1_characteristics": {
+            "source": reported["source"],
+            "time_averaged_midplane_ion_density_m3": reported.getfloat(
+                "time_averaged_midplane_ion_density_m3"
+            ),
+            "time_averaged_electron_temperature_ev": reported.getfloat(
+                "time_averaged_electron_temperature_ev"
+            ),
+            "time_averaged_electron_power_w_m2": reported.getfloat(
+                "time_averaged_electron_power_w_m2"
+            ),
+            "time_averaged_ion_power_w_m2": reported.getfloat(
+                "time_averaged_ion_power_w_m2"
+            ),
+            "time_averaged_ion_current_a_m2": reported.getfloat(
+                "time_averaged_ion_current_a_m2"
+            ),
+            "total_macro_particles": reported.getint(
+                "total_macro_particles"
+            ),
         },
     }
     atomic_text(output, deck)
