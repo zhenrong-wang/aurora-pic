@@ -709,6 +709,18 @@ density, and 0.491 for electron temperature. The published average covers
 is a documented non-agreement result—not LANDMARK verification and not
 experimental validation.
 
+The next non-overlapping block is recorded in
+`benchmarks/hall/landmark-population2-flux-block2-75ns-20260730-seed24680.json`.
+It continues the exact step-10000 checkpoint from 50 to 75 ns on one pinned,
+low-priority CPU. Within this second block, electron-loss window CV falls to
+`0.091` and ion-loss CV to `0.070`. This is not stationarity: relative to the
+preceding 25 ns block, mean electron loss changes by `24.1%`, mean net loss by
+`65.8%`, and reverse-event fraction by `18.2%`. The 50–75 ns profile screen
+also fails, although relative L2 errors move from `1.627` to `1.250` for axial
+field, `0.748` to `0.736` for ion density, and `0.491` to `0.461` for electron
+temperature. The trajectory is still evolving. Continue it in bounded blocks
+before paying for independent seeds or resolution scaling.
+
 ## Resource policy
 
 No published-scale HET case runs in `scripts/verify.sh`, CTest, or ordinary CI.
