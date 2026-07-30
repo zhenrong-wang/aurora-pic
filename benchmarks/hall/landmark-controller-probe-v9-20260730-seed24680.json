@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "case_id": "landmark-axial-azimuthal-2019",
+  "campaign_tier": "controller_diagnostic",
+  "physics_claim": "none",
+  "source_commit": "74af4bffb12d6cd6561f5bd489f15fe58a62a87e",
+  "date_utc": "2026-07-30",
+  "seed": 24680,
+  "purpose": "Measure timestep-local reverse cathode demand directly after the guarded 100 ns horizon without changing the controller physics.",
+  "execution": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": [
+      0
+    ],
+    "nice_level": 19,
+    "timestep_s": 5e-12,
+    "diagnostic_start_step": 20000,
+    "final_step": 21000,
+    "observed_updates": 1000,
+    "observed_duration_s": 5e-09,
+    "segments": [
+      {
+        "restart_step": 20000,
+        "final_step": 20100,
+        "checkpoint_input_version": 8,
+        "checkpoint_output_version": 9,
+        "wall_seconds": 8.43,
+        "user_seconds": 8.31,
+        "system_seconds": 0.11,
+        "maximum_resident_kib": 36360
+      },
+      {
+        "restart_step": 20100,
+        "final_step": 21000,
+        "checkpoint_input_version": 9,
+        "checkpoint_output_version": 9,
+        "wall_seconds": 55.08,
+        "user_seconds": 54.93,
+        "system_seconds": 0.12,
+        "maximum_resident_kib": 36508,
+        "artifact_bytes": 94224806
+      }
+    ]
+  },
+  "controller_diagnostics": {
+    "control_mode": "timestep_local",
+    "monitor_boundary": "left",
+    "emission_boundary": "right",
+    "control_updates": 1000,
+    "reverse_diagnostics_start_step": 20000,
+    "reverse_demand_steps": 43,
+    "reverse_demand_step_fraction": 0.043,
+    "cumulative_reverse_demand_macroparticles": 25.9999999999973,
+    "maximum_reverse_demand_macroparticles": 1.0000000000001974,
+    "cumulative_monitored_negative_charge_c": -3.9986323343054993e-07,
+    "cumulative_monitored_positive_charge_c": 3.480728737365e-08,
+    "cumulative_processed_monitored_charge_c": -3.6505594605689994e-07,
+    "cumulative_emitted_charge_c": -3.8255972578334995e-07,
+    "raw_charge_balance_residual_c": 1.7503779726450013e-08,
+    "unserved_reverse_charge_c": 1.7523806934374928e-08,
+    "controllable_charge_balance_residual_c": -2.002720792491389e-11
+  },
+  "assessment": {
+    "runaway_reverse_demand_observed": false,
+    "population_convergence_established": false,
+    "ready_for_400ns_extension": false,
+    "interpretation": "Reverse demand was sparse and quantized: 43 of 1000 updates, 26 macro-electron charges total, and at most one macro-electron charge per update. This excludes a runaway controller over the observed 5 ns but does not distinguish finite-population shot noise from a persistent physical flux imbalance.",
+    "next_gate": "Run a paired population-sensitivity probe with unchanged physical inputs and timestep before reconsidering the horizon-extension hold."
+  },
+  "sha256": {
+    "executable": "42c58a55050d2242bad1e7aeebeafe5a18a5e8f7bcbbf958ac687175f4086878",
+    "checkpoint_20000_v8": "836632f76c26e4d16bc2d42aa0bf18715eb78015f58c99273dea3e09329c47b0",
+    "segment_100_config": "ef57094c775fe4a6d1bcf1d13d72d37ba11a9114958792fc967097827c08578b",
+    "segment_100_runtime": "1d940d471448e3bfe35a608d9bcb5eb13aeb65ec9cb821845f79ac8ca7f752e1",
+    "segment_100_current_source": "5fa112c8d9b259f14ef04cd1c41e18d615cc9d512bf7005f828568e4332d9be3",
+    "checkpoint_20100_v9": "e3f4283367069c02da33c424bbd1bfccdf6fc51e8fe34e0a18d79518318c6d09",
+    "segment_900_config": "8d5ddf49de2341ffd6c75eae7179bf6af9b57ec1ee67742f2cfcd589129423ab",
+    "segment_900_runtime": "513890d334aa8f8da4a4cdd80ab6dbd88f02e66404837094c6944909b9864b9f",
+    "segment_900_current_source": "16f21c59841ea3b017c6e4f73d939d4b9847973e918afa046bbce8eae041556b",
+    "checkpoint_21000_v9": "15428110e843608c65f0da74a1a28e2bffa2d6eedaebfa73eae7d56cde2d9058"
+  },
+  "reference": {
+    "citation": "Charoy et al., Plasma Sources Science and Technology 28, 105010 (2019)",
+    "doi": "10.1088/1361-6595/ab46c5"
+  }
+}
