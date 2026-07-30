@@ -340,11 +340,13 @@ solve evaluates the waveform at the new field time level, and restart
 reconstructs its phase from the checkpoint time. All 1D runs write:
 
 ```text
-step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,phi_left,phi_right
+step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,phi_left,phi_right,live_particles_<species>...
 ```
 
 The potential columns contain the values actually applied by a Dirichlet
 field solve and are zero for periodic domains, which have no electrodes.
+One trailing `live_particles_<species>` column is written for every configured
+species, in configuration order.
 For driven systems, particle-plus-field energy is not conserved because the
 external electrode supplies or removes energy.
 

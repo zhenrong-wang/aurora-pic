@@ -1256,7 +1256,8 @@ RunSummary Simulation::run() {
         initialization_acceptance);
     enforce_initialization_acceptance(
         initialization_acceptance);
-    Diagnostics diag(cfg_.output_dir, cfg_.units.permittivity());
+    Diagnostics diag(
+        cfg_.output_dir, species_, cfg_.units.permittivity());
     diag.write_header();
     auto s0 = diag.sample(step_, time_, grid_, species_);
     diag.write_sample(s0);

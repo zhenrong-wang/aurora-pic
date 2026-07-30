@@ -8,7 +8,9 @@
 
 namespace pic {
 Diagnostics::Diagnostics(
-    std::filesystem::path output_dir, double permittivity)
+    std::filesystem::path output_dir,
+    const std::vector<Species>& species,
+    double permittivity)
     : output_dir_(std::move(output_dir)),
       permittivity_(permittivity) {
     if (!std::isfinite(permittivity_) || !(permittivity_ > 0.0)) {
@@ -18,15 +20,29 @@ Diagnostics::Diagnostics(
     std::filesystem::create_directories(output_dir_);
     scalar_file_.open(output_dir_ / "scalars.csv");
     if (!scalar_file_) throw std::runtime_error("cannot open diagnostics output");
+    species_names_.reserve(species.size());
+    for (const auto& item : species) {
+        species_names_.push_back(item.name());
+    }
 }
 void Diagnostics::write_header() {
     scalar_file_
         << "step,time,kinetic_energy,field_energy,total_energy,"
-           "charge_l1,live_particles,phi_left,phi_right\n";
+           "charge_l1,live_particles,phi_left,phi_right";
+    for (const auto& name : species_names_) {
+        scalar_file_ << ",live_particles_" << name;
+    }
+    scalar_file_ << '\n';
 }
 DiagnosticSample Diagnostics::sample(std::size_t step, double time, const Grid& grid, const std::vector<Species>& species) {
     DiagnosticSample s; s.step = step; s.time = time;
-    for (const auto& sp : species) { s.kinetic_energy += sp.kinetic_energy(); s.live_particles += sp.live_count(); }
+    s.live_particles_by_species.reserve(species.size());
+    for (const auto& sp : species) {
+        s.kinetic_energy += sp.kinetic_energy();
+        const auto live = sp.live_count();
+        s.live_particles += live;
+        s.live_particles_by_species.push_back(live);
+    }
     for (std::size_t i = 0; i < grid.nx(); ++i) {
         const double volume = grid.node_volume(i);
         s.field_energy +=
@@ -47,7 +63,11 @@ void Diagnostics::write_sample(const DiagnosticSample& s) {
                  << s.time << ',' << s.kinetic_energy << ','
                  << s.field_energy << ',' << s.total_energy << ','
                  << s.charge_l1 << ',' << s.live_particles << ','
-                 << s.phi_left << ',' << s.phi_right << '\n';
+                 << s.phi_left << ',' << s.phi_right;
+    for (const auto live : s.live_particles_by_species) {
+        scalar_file_ << ',' << live;
+    }
+    scalar_file_ << '\n';
     scalar_file_.flush();
 }
 void Diagnostics::write_fields(std::size_t step, const Grid& grid) const {

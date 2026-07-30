@@ -58,7 +58,8 @@ The first five bounded prerequisites are complete:
   amplitude, frequency, and phase;
 - the field solve applies the voltage at the new field time level;
 - restart reconstructs the waveform phase from the stored simulation time;
-- `scalars.csv` records the actual Dirichlet `phi_left` and `phi_right`;
+- `scalars.csv` records the actual Dirichlet `phi_left` and `phi_right` plus
+  live macro-particle counts for each species;
 - `examples/rf_electrode_1d.cfg` checks the zero, quarter-cycle, and
   half-cycle values with a bounded normalized 1D3V run;
 - `velocity_dimensions = 3` retains transverse velocity through initialization,
@@ -216,6 +217,29 @@ is an initial-population-only planning estimate, not a promise: ionization,
 electrode losses, checkpoints, storage, and long-run hardware behavior can
 all change the production cost.
 
+The next bounded rung executes exactly one RF cycle in two half-cycle stages:
+
+```sh
+python3 scripts/run_turner_startup.py \
+  build/aurorapic_cli \
+  examples/turner_helium_ccp_case1.case \
+  tmp/turner-normalized-v1 \
+  --work-dir tmp/turner-case1-startup \
+  --report tmp/turner-case1-startup/report.json \
+  --max-initial-updates 60000000 \
+  --timeout-seconds 120 \
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_ONE_CYCLE_TURNER_STARTUP
+```
+
+This stage advances 52,428,800 initial-particle updates, checkpoints at the
+half-cycle, restarts to the full cycle, and retains both checkpoints and both
+diagnostic directories under ignored `tmp/`. Its report requires exact
+integer population and collision-counter continuity, floating diagnostic
+continuity to roundoff, the prescribed electrode waveform, finite energy and
+charge histories, charge-paired ionization/population balance, and a
+129-node final field. It reports an early boundary-to-bulk field indicator
+but explicitly does not interpret it as a stationary sheath.
+
 ## Restart-safe density averaging
 
 The primary Turner observable is now produced by a generic 1D post-step
@@ -297,8 +321,10 @@ reduced run as a pass:
    of RF periods. Check invariants, collision balance, sheath formation,
    restart, and resource behavior. This cannot use the steady-state
    chi-squared acceptance range. The exact-population, few-step runtime
-   qualification and its hard resource gates are complete; whole-RF-period
-   startup diagnostics remain.
+   qualification and its hard resource gates are complete. A checkpoint-split
+   whole-RF-period startup now proves restart continuity, species/collision
+   balance, waveform timing, finite diagnostics, and early boundary-field
+   formation; multi-cycle evolution and stationarity remain.
 4. **C3, checkpointed steady-state comparison:** continue only through
    explicit low-priority blocks, establish whole-cycle stationarity, average
    the final 32 periods, and apply the published chi-squared test.

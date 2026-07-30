@@ -259,7 +259,7 @@ def run_example(cli: Path, config_name: str, output_name: str, temp_root: Path) 
 def check_two_stream(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
-        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles", "phi_left", "phi_right"],
+        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles", "phi_left", "phi_right", "live_particles_electrons_left", "live_particles_electrons_right", "live_particles_ion_background"],
         min_rows=2,
     )
     require_step(rows, 300, output_dir / "scalars.csv")
@@ -273,7 +273,8 @@ def check_external_state_1d(output_dir: Path) -> None:
         expected_header=[
             "step", "time", "kinetic_energy", "field_energy",
             "total_energy", "charge_l1", "live_particles",
-            "phi_left", "phi_right",
+            "phi_left", "phi_right", "live_particles_electrons",
+            "live_particles_ions",
         ],
         min_rows=3,
     )
@@ -302,7 +303,7 @@ def check_external_state_1d(output_dir: Path) -> None:
 def check_sheath_steady(output_dir: Path) -> None:
     header, rows = require_csv(
         output_dir / "scalars.csv",
-        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles", "phi_left", "phi_right"],
+        expected_header=["step", "time", "kinetic_energy", "field_energy", "total_energy", "charge_l1", "live_particles", "phi_left", "phi_right", "live_particles_electrons", "live_particles_ions"],
         min_rows=2,
     )
     final_step = int(float(rows[-1][header.index("step")]))
@@ -330,7 +331,7 @@ def check_mcc_relaxation(output_dir: Path) -> None:
         expected_header=[
             "step", "time", "kinetic_energy", "field_energy",
             "total_energy", "charge_l1", "live_particles",
-            "phi_left", "phi_right",
+            "phi_left", "phi_right", "live_particles_electrons",
         ],
         min_rows=6,
     )
@@ -367,7 +368,8 @@ def check_mcc_ionization_1d(output_dir: Path) -> None:
         expected_header=[
             "step", "time", "kinetic_energy", "field_energy",
             "total_energy", "charge_l1", "live_particles",
-            "phi_left", "phi_right",
+            "phi_left", "phi_right", "live_particles_electrons",
+            "live_particles_ions",
         ],
         min_rows=5,
     )
@@ -380,6 +382,16 @@ def check_mcc_ionization_1d(output_dir: Path) -> None:
     )
     final_live = int(float(
         scalar_rows[-1][scalar_header.index("live_particles")]
+    ))
+    final_electrons = int(float(
+        scalar_rows[-1][
+            scalar_header.index("live_particles_electrons")
+        ]
+    ))
+    final_ions = int(float(
+        scalar_rows[-1][
+            scalar_header.index("live_particles_ions")
+        ]
     ))
     collision_header, collision_rows = require_csv(
         output_dir / "collisions.csv", min_rows=5
@@ -399,7 +411,9 @@ def check_mcc_ionization_1d(output_dir: Path) -> None:
         "1D multi-MCC example did not exercise both targets",
     )
     require(
-        final_live == 128 + 2 * ionizations,
+        final_live == 128 + 2 * ionizations
+        and final_electrons == 64 + ionizations
+        and final_ions == 64 + ionizations,
         "1D ionization did not create charge-paired products",
     )
     require(
@@ -415,7 +429,8 @@ def check_rf_electrode_1d(output_dir: Path) -> None:
         expected_header=[
             "step", "time", "kinetic_energy", "field_energy",
             "total_energy", "charge_l1", "live_particles",
-            "phi_left", "phi_right",
+            "phi_left", "phi_right", "live_particles_electrons",
+            "live_particles_ions",
         ],
         min_rows=5,
     )

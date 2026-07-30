@@ -21,6 +21,7 @@ struct DiagnosticSample {
     std::size_t live_particles{0};
     double phi_left{0.0};
     double phi_right{0.0};
+    std::vector<std::size_t> live_particles_by_species{};
 };
 
 struct BoundaryLoss2D {
@@ -67,6 +68,7 @@ class Diagnostics {
 public:
     explicit Diagnostics(
         std::filesystem::path output_dir,
+        const std::vector<Species>& species,
         double permittivity = EPS0);
     void write_header();
     DiagnosticSample sample(std::size_t step, double time, const Grid& grid, const std::vector<Species>& species);
@@ -76,6 +78,7 @@ public:
 private:
     std::filesystem::path output_dir_;
     std::ofstream scalar_file_;
+    std::vector<std::string> species_names_;
     double permittivity_{EPS0};
     std::vector<DiagnosticSample> history_;
 };

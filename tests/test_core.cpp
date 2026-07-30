@@ -84,6 +84,8 @@ void require_checkpoint_samples_close(const pic::DiagnosticSample& a,
     require(a.step == b.step, label + ": step mismatch");
     require_near(a.time, b.time, 1e-15, label + ": time mismatch");
     require(a.live_particles == b.live_particles, label + ": live-particle mismatch");
+    require(a.live_particles_by_species == b.live_particles_by_species,
+            label + ": per-species live-particle mismatch");
     require_near(a.kinetic_energy, b.kinetic_energy, 1e-12, label + ": kinetic-energy mismatch");
     require_near(a.field_energy, b.field_energy, 1e-12, label + ": field-energy mismatch");
     require_near(a.total_energy, b.total_energy, 1e-12, label + ": total-energy mismatch");
@@ -3272,7 +3274,8 @@ int main() {
                 scalars.find(
                     "step,time,kinetic_energy,field_energy,"
                     "total_energy,charge_l1,live_particles,"
-                    "phi_left,phi_right\n") == 0,
+                    "phi_left,phi_right,"
+                    "live_particles_neutral\n") == 0,
                 "1D RF scalar diagnostics omitted electrode potentials");
         }
         {
