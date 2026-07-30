@@ -3384,8 +3384,9 @@ int main() {
                 "1D3V MCC restart lost collision diagnostics");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v4\n") == 0,
-                "1D3V checkpoint did not use the velocity-aware format");
+                    "AuroraPIC-checkpoint-v5\n") == 0,
+                "1D3V checkpoint did not use the spatial-average-aware "
+                "velocity format");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }

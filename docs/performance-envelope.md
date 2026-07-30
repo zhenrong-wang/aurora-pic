@@ -47,10 +47,13 @@ check nonlinear turnover and directional symmetry, and gate total-energy
 drift. These bounded cases are system-level kinetic verification, not
 general convergence or experimental-validation claims.
 
-The 1D3V RF-electrode smoke is only a waveform/integration check. The full Turner
-helium CCP Case 1 requires 512,000 steps and physics not yet present in the
-1D path, so it is excluded from ordinary CI. Its capability gates and
-production-run envelope are pinned in
+The 1D3V RF-electrode smoke is only a waveform/integration check. The full
+Turner helium CCP Case 1 requires 512,000 steps, 65,536 initial
+macro-particles per species, checkpointed stationarity evidence, and
+remaining power/current/source diagnostics, so it is excluded from ordinary
+CI. Exact collision data and restart-safe final-32-cycle density averaging are
+available locally; they do not make the bounded smoke a benchmark result. Its
+capability gates and production-run envelope are pinned in
 [ccp-validation.md](ccp-validation.md).
 
 The LANDMARK Hall Case 2a production contract is likewise excluded from CI.

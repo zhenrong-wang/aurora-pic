@@ -114,6 +114,7 @@ def validate_ci_matrix() -> None:
         "python3 scripts/test_verify_turner_source.py",
         "python3 scripts/test_normalize_turner_source.py",
         "python3 scripts/test_compare_turner.py",
+        "python3 scripts/test_spatial_average_1d.py build/aurorapic_cli",
         "python3 scripts/test_normalize_hall_reference.py",
         "python3 scripts/test_hall_pilot.py build/aurorapic_cli",
         "python3 scripts/test_hall_runtime_qualification.py build/aurorapic_cli",

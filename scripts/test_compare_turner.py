@@ -41,7 +41,10 @@ def main() -> int:
             "ion_density_mean_m-3", "ion_density_mean_stddev_m-3",
             "ion_density_population_stddev_m-3",
         ]
-        candidate_header = ["x_m", "ion_density_mean_m-3"]
+        candidate_header = [
+            "species_id", "species", "node", "x_m",
+            "number_density_mean_m-3",
+        ]
         with reference.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.writer(stream)
             writer.writerow(reference_header)
@@ -53,7 +56,8 @@ def main() -> int:
             writer.writerow(candidate_header)
             for index in range(129):
                 x = 0.067 * index / 128
-                writer.writerow([x, 1.001e14])
+                writer.writerow([0, "electrons", index, x, 1.0e13])
+                writer.writerow([1, "ions", index, x, 1.001e14])
         audit = work / "audit.json"
         audit.write_text(json.dumps({
             "turner_normalization_version": 1,
@@ -61,10 +65,27 @@ def main() -> int:
                 reference.name: {"sha256": sha256(reference)}
             },
         }), encoding="utf-8")
+        metadata = work / "spatial_average_metadata.json"
+        metadata.write_text(json.dumps({
+            "spatial_average_version": 1,
+            "unit_system": "si",
+            "start_step": 499201,
+            "end_step": 512000,
+            "interval": 1,
+            "samples": 12800,
+            "expected_samples": 12800,
+            "final_step": 512000,
+            "dt": 1.0 / (13.56e6 * 400),
+            "rf_frequency": 13.56e6,
+            "rf_cycles": 32,
+            "complete": True,
+            "species": ["electrons", "ions"],
+        }), encoding="utf-8")
         report = work / "report.json"
         completed = subprocess.run([
             sys.executable, str(COMPARATOR), "--case", "1",
             "--reference", str(reference), "--candidate", str(candidate),
+            "--candidate-metadata", str(metadata),
             "--normalization-audit", str(audit), "--output", str(report),
         ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         require(completed.returncode == 0,
@@ -76,6 +97,8 @@ def main() -> int:
             and value["statistic"]["accepted_99_percent"]
             and value["statistic"]["formula_variance"]
             == "population_standard_deviation_squared"
+            and value["candidate"]["species"] == "ions"
+            and value["averaging_contract_verified"]
             and value["physics_claim"].startswith("none_"),
             "Turner comparator statistic or claim boundary is incorrect",
         )
@@ -87,6 +110,7 @@ def main() -> int:
         rejected = subprocess.run([
             sys.executable, str(COMPARATOR), "--case", "1",
             "--reference", str(reference), "--candidate", str(candidate),
+            "--candidate-metadata", str(metadata),
             "--normalization-audit", str(audit),
             "--output", str(work / "bad.json"),
         ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

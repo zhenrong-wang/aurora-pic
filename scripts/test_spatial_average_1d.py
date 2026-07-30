@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Conservative CLI regression for restart-safe 1D spatial averaging."""
+
+from __future__ import annotations
+
+import csv
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise RuntimeError(message)
+
+
+def run(binary: Path, config: Path) -> subprocess.CompletedProcess[str]:
+    environment = os.environ.copy()
+    environment["OMP_NUM_THREADS"] = "1"
+    return subprocess.run(
+        [str(binary), str(config)],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
+def deck(output: Path, steps: int, restart: Path | None = None,
+         interval: int = 1) -> str:
+    restart_line = "" if restart is None else f"restart_path = {restart}\n"
+    return (
+        "config_version = 1\n"
+        "units = normalized\n"
+        "dimension = 1\n"
+        "velocity_dimensions = 1\n"
+        "nx = 5\n"
+        "length = 1\n"
+        "dt = 0.01\n"
+        f"steps = {steps}\n"
+        "output_interval = 2\n"
+        f"output_dir = {output}\n"
+        f"{restart_line}"
+        "boundary = periodic\n"
+        "mode = transient\n"
+        "runtime_backend = serial\n"
+        "runtime_threads = 1\n"
+        "checkpoint_output = true\n"
+        "checkpoint_interval = 2\n"
+        "spatial_average = true\n"
+        f"spatial_average_interval = {interval}\n"
+        "spatial_average_start_step = 1\n"
+        "spatial_average_end_step = 4\n"
+        "[species.electrons]\n"
+        "charge = -1\n"
+        "mass = 1\n"
+        "weight = 0.125\n"
+        "particles = 8\n"
+        "thermal_velocity = 0\n"
+        "loading = quiet_start\n"
+        "[species.ions]\n"
+        "charge = 1\n"
+        "mass = 40\n"
+        "weight = 0.125\n"
+        "particles = 8\n"
+        "thermal_velocity = 0\n"
+        "loading = quiet_start\n"
+    )
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("usage: test_spatial_average_1d.py AURORAPIC_CLI", file=sys.stderr)
+        return 2
+    binary = Path(sys.argv[1]).resolve()
+    require(binary.is_file(), f"missing AuroraPIC CLI: {binary}")
+    project_tmp = ROOT / "tmp"
+    project_tmp.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix="aurorapic_spatial_average_", dir=project_tmp
+    ) as temporary:
+        work = Path(temporary)
+        direct_output = work / "direct-output"
+        direct_config = work / "direct.cfg"
+        direct_config.write_text(
+            deck(direct_output, 4), encoding="utf-8"
+        )
+        direct = run(binary, direct_config)
+        require(direct.returncode == 0,
+                f"direct spatial-average run failed: {direct.stderr}")
+
+        split_output = work / "split-output"
+        split_config = work / "split.cfg"
+        split_config.write_text(
+            deck(split_output, 2), encoding="utf-8"
+        )
+        split = run(binary, split_config)
+        require(split.returncode == 0,
+                f"split spatial-average run failed: {split.stderr}")
+        checkpoint = split_output / "checkpoint_2.apc"
+        require(checkpoint.is_file(),
+                "split run did not write its averaging checkpoint")
+
+        resumed_output = work / "resumed-output"
+        resumed_config = work / "resumed.cfg"
+        resumed_config.write_text(
+            deck(resumed_output, 4, checkpoint), encoding="utf-8"
+        )
+        resumed = run(binary, resumed_config)
+        require(resumed.returncode == 0,
+                f"resumed spatial-average run failed: {resumed.stderr}")
+
+        direct_profile = direct_output / "spatial_average.csv"
+        resumed_profile = resumed_output / "spatial_average.csv"
+        require(
+            direct_profile.read_bytes() == resumed_profile.read_bytes(),
+            "checkpoint continuation changed the spatial average",
+        )
+        metadata = json.loads(
+            (resumed_output / "spatial_average_metadata.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        require(
+            metadata["complete"] is True
+            and metadata["samples"] == 4
+            and metadata["expected_samples"] == 4
+            and metadata["final_step"] == 4,
+            "completed spatial-average metadata is incorrect",
+        )
+        totals: dict[str, float] = {}
+        with resumed_profile.open(newline="", encoding="utf-8") as stream:
+            for row in csv.DictReader(stream):
+                totals[row["species"]] = totals.get(row["species"], 0.0) + (
+                    float(row["number_density_mean_normalized"]) * 0.2
+                )
+        require(
+            set(totals) == {"electrons", "ions"}
+            and all(abs(value - 1.0) < 1e-14 for value in totals.values()),
+            "spatial-average number density is not conservative",
+        )
+
+        mismatched_config = work / "mismatched.cfg"
+        mismatched_config.write_text(
+            deck(work / "mismatched-output", 4, checkpoint, interval=2),
+            encoding="utf-8",
+        )
+        mismatched = run(binary, mismatched_config)
+        require(
+            mismatched.returncode != 0
+            and "spatial-average contract" in mismatched.stderr,
+            "checkpoint accepted a changed spatial-average contract",
+        )
+
+        rf_config = work / "rf.cfg"
+        rf_config.write_text(
+            deck(work / "rf-output", 4)
+            .replace("dt = 0.01", "dt = 0.25")
+            .replace(
+                "spatial_average_end_step = 4\n",
+                "spatial_average_end_step = 4\n"
+                "spatial_average_rf_frequency = 1\n"
+                "spatial_average_rf_cycles = 1\n",
+            ),
+            encoding="utf-8",
+        )
+        rf = run(binary, rf_config)
+        require(rf.returncode == 0,
+                f"whole-cycle RF averaging was rejected: {rf.stderr}")
+
+        invalid_rf_config = work / "invalid-rf.cfg"
+        invalid_rf_config.write_text(
+            rf_config.read_text(encoding="utf-8").replace(
+                "spatial_average_end_step = 4",
+                "spatial_average_end_step = 3",
+            ).replace("steps = 4", "steps = 3"),
+            encoding="utf-8",
+        )
+        invalid_rf = run(binary, invalid_rf_config)
+        require(
+            invalid_rf.returncode != 0
+            and "whole RF cycles" in invalid_rf.stderr,
+            "non-whole-cycle RF averaging window was accepted",
+        )
+
+    print("restart-safe 1D spatial averaging passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

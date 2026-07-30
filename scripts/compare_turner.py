@@ -19,6 +19,9 @@ RANGES_95 = {1: (55.0, 303.0), 2: (177.0, 435.0),
              3: (405.0, 693.0), 4: (417.0, 665.0)}
 RANGES_99 = {1: (48.0, 405.0), 2: (160.0, 548.0),
              3: (382.0, 798.0), 4: (392.0, 730.0)}
+STEPS_PER_RF_CYCLE = {1: 400, 2: 800, 3: 1600, 4: 3200}
+TOTAL_RF_CYCLES = {1: 1280, 2: 5120, 3: 5120, 4: 15360}
+RF_FREQUENCY_HZ = 13.56e6
 REFERENCE_COLUMNS = (
     "x_m",
     "ion_density_mean_m-3",
@@ -85,8 +88,60 @@ def load_columns(path: Path, columns: tuple[str, ...]) -> list[dict[str, float]]
     return rows
 
 
+def load_candidate(path: Path, species: str) -> list[dict[str, float]]:
+    try:
+        with path.open(newline="", encoding="utf-8") as stream:
+            reader = csv.DictReader(stream)
+            require(reader.fieldnames is not None, f"{path} has no CSV header")
+            if all(name in reader.fieldnames for name in CANDIDATE_COLUMNS):
+                rows = []
+                for line, source in enumerate(reader, 2):
+                    try:
+                        x = float(source["x_m"])
+                        density = float(source["ion_density_mean_m-3"])
+                    except (TypeError, ValueError) as error:
+                        raise ComparisonError(
+                            f"{path}:{line}: invalid numeric value"
+                        ) from error
+                    require(math.isfinite(x) and math.isfinite(density),
+                            f"{path}:{line}: non-finite numeric value")
+                    rows.append({
+                        "x_m": x,
+                        "ion_density_mean_m-3": density,
+                    })
+                return rows
+
+            required = {
+                "species", "x_m", "number_density_mean_m-3"
+            }
+            missing = sorted(required - set(reader.fieldnames))
+            require(not missing, f"{path} is missing columns {missing}")
+            rows = []
+            for line, source in enumerate(reader, 2):
+                if source["species"] != species:
+                    continue
+                try:
+                    x = float(source["x_m"])
+                    density = float(source["number_density_mean_m-3"])
+                except (TypeError, ValueError) as error:
+                    raise ComparisonError(
+                        f"{path}:{line}: invalid numeric value"
+                    ) from error
+                require(math.isfinite(x) and math.isfinite(density),
+                        f"{path}:{line}: non-finite numeric value")
+                rows.append({
+                    "x_m": x,
+                    "ion_density_mean_m-3": density,
+                })
+            require(rows, f"{path} has no rows for species {species!r}")
+            return rows
+    except OSError as error:
+        raise ComparisonError(f"cannot read {path}: {error}") from error
+
+
 def compare(case: int, reference: Path, candidate: Path,
-            audit_path: Path) -> dict[str, object]:
+            audit_path: Path, metadata_path: Path,
+            species: str = "ions") -> dict[str, object]:
     try:
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
@@ -103,9 +158,50 @@ def compare(case: int, reference: Path, candidate: Path,
     expected_name = f"turner_case{case}_benchmark.csv"
     require(reference.name == expected_name,
             f"Case {case} statistical comparison requires {expected_name}")
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ComparisonError(
+            f"cannot read candidate averaging metadata: {error}"
+        ) from error
+    steps_per_cycle = STEPS_PER_RF_CYCLE[case]
+    end_step = steps_per_cycle * TOTAL_RF_CYCLES[case]
+    samples = 32 * steps_per_cycle
+    start_step = end_step - samples + 1
+    expected_metadata = {
+        "spatial_average_version": 1,
+        "unit_system": "si",
+        "start_step": start_step,
+        "end_step": end_step,
+        "interval": 1,
+        "samples": samples,
+        "expected_samples": samples,
+        "final_step": end_step,
+        "rf_cycles": 32,
+        "complete": True,
+    }
+    for key, expected in expected_metadata.items():
+        require(metadata.get(key) == expected,
+                f"candidate averaging metadata {key!r} must be {expected!r}")
+    require(
+        math.isclose(
+            float(metadata.get("rf_frequency", 0.0)),
+            RF_FREQUENCY_HZ, rel_tol=1e-14, abs_tol=0.0),
+        "candidate averaging metadata has the wrong RF frequency",
+    )
+    require(
+        math.isclose(
+            float(metadata.get("dt", 0.0)),
+            1.0 / (RF_FREQUENCY_HZ * steps_per_cycle),
+            rel_tol=1e-14, abs_tol=0.0),
+        "candidate averaging metadata has the wrong timestep",
+    )
+    metadata_species = metadata.get("species")
+    require(isinstance(metadata_species, list) and species in metadata_species,
+            f"candidate averaging metadata does not contain species {species!r}")
 
     reference_rows = load_columns(reference, REFERENCE_COLUMNS)
-    candidate_rows = load_columns(candidate, CANDIDATE_COLUMNS)
+    candidate_rows = load_candidate(candidate, species)
     expected_nodes = EXPECTED_NODES[case]
     require(len(reference_rows) == expected_nodes,
             f"Case {case} reference must have {expected_nodes} nodes")
@@ -147,6 +243,9 @@ def compare(case: int, reference: Path, candidate: Path,
         "candidate": {
             "path": str(candidate.resolve()),
             "sha256": sha256(candidate),
+            "species": species,
+            "averaging_metadata_path": str(metadata_path.resolve()),
+            "averaging_metadata_sha256": sha256(metadata_path),
         },
         "nodes": expected_nodes,
         "statistic": {
@@ -165,7 +264,8 @@ def compare(case: int, reference: Path, candidate: Path,
             "maximum_pointwise_relative_error": max(relative_errors),
         },
         "comparison_scope": "published_baseline_ion_density_statistic_only",
-        "physics_claim": "none_without_run_contract_and_final_32_period_average",
+        "averaging_contract_verified": True,
+        "physics_claim": "none_without_complete_solver_run_contract",
     }
 
 
@@ -174,13 +274,16 @@ def main() -> int:
     parser.add_argument("--case", type=int, choices=range(1, 5), required=True)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument("--candidate-metadata", type=Path, required=True)
+    parser.add_argument("--species", default="ions")
     parser.add_argument("--normalization-audit", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         report = compare(
             args.case, args.reference, args.candidate,
-            args.normalization_audit,
+            args.normalization_audit, args.candidate_metadata,
+            args.species,
         )
         write_report(args.output, report)
     except (ComparisonError, OSError) as error:

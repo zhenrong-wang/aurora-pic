@@ -183,6 +183,56 @@ void Species::deposit_charge(Grid& grid) const {
         }
     }
 }
+
+void Species::deposit_number_density(
+    const Grid& grid, std::vector<double>& density) const {
+    if (density.size() != grid.nx()) {
+        throw std::invalid_argument(
+            "number-density output size must match the grid");
+    }
+    std::fill(density.begin(), density.end(), 0.0);
+    const double dx = grid.dx();
+    for (const auto& p : particles_) {
+        if (!p.alive) continue;
+        if (grid.boundary() == Boundary::Periodic) {
+            const double xp =
+                std::fmod(
+                    std::fmod(p.x, grid.length()) +
+                        grid.length(),
+                    grid.length());
+            const double coordinate = xp / dx;
+            const auto cell =
+                static_cast<std::size_t>(
+                    std::floor(coordinate));
+            const double fraction =
+                coordinate - static_cast<double>(cell);
+            const std::size_t left = cell % grid.nx();
+            const std::size_t right =
+                (cell + 1) % grid.nx();
+            density[left] +=
+                cfg_.weight * (1.0 - fraction) / dx;
+            density[right] +=
+                cfg_.weight * fraction / dx;
+        } else {
+            const double xp =
+                std::clamp(p.x, 0.0, grid.length());
+            const double coordinate = xp / dx;
+            const auto cell = static_cast<std::size_t>(
+                std::min<double>(
+                    std::floor(coordinate),
+                    grid.nx() - 2));
+            const double fraction =
+                coordinate - static_cast<double>(cell);
+            density[cell] +=
+                cfg_.weight * (1.0 - fraction) /
+                grid.node_volume(cell);
+            density[cell + 1] +=
+                cfg_.weight * fraction /
+                grid.node_volume(cell + 1);
+        }
+    }
+}
+
 double Species::kinetic_energy() const {
     double e = 0.0;
     for (const auto& p : particles_) {

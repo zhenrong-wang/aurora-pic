@@ -25,6 +25,7 @@ constexpr const char* kCheckpointMagicV1 = "AuroraPIC-checkpoint-v1";
 constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
+constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -34,6 +35,7 @@ void validate_runtime_config(const Config& cfg) {
     }
     if (!std::isfinite(cfg.dt) || cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive and finite");
     if (cfg.output_interval == 0) throw std::invalid_argument("output_interval must be positive");
+    validate_spatial_average_1d(cfg);
     if (!std::isfinite(cfg.phi_left) || !std::isfinite(cfg.phi_right)) {
         throw std::invalid_argument("Dirichlet boundary potentials must be finite");
     }
@@ -163,6 +165,46 @@ void write_collision_sample(
     }
     output << '\n';
     output.flush();
+}
+
+std::string csv_cell(const std::string& value) {
+    if (value.find_first_of(",\"\r\n") == std::string::npos) {
+        return value;
+    }
+    std::string escaped{"\""};
+    for (const char character : value) {
+        if (character == '"') escaped.push_back('"');
+        escaped.push_back(character);
+    }
+    escaped.push_back('"');
+    return escaped;
+}
+
+std::string json_string(const std::string& value) {
+    std::string escaped{"\""};
+    for (const unsigned char character : value) {
+        switch (character) {
+            case '"': escaped += "\\\""; break;
+            case '\\': escaped += "\\\\"; break;
+            case '\b': escaped += "\\b"; break;
+            case '\f': escaped += "\\f"; break;
+            case '\n': escaped += "\\n"; break;
+            case '\r': escaped += "\\r"; break;
+            case '\t': escaped += "\\t"; break;
+            default:
+                if (character < 0x20) {
+                    constexpr char hex[] = "0123456789abcdef";
+                    escaped += "\\u00";
+                    escaped.push_back(hex[character >> 4]);
+                    escaped.push_back(hex[character & 0x0f]);
+                } else {
+                    escaped.push_back(
+                        static_cast<char>(character));
+                }
+        }
+    }
+    escaped.push_back('"');
+    return escaped;
 }
 
 } // namespace
@@ -351,6 +393,13 @@ Simulation::Simulation(Config cfg)
         collision_totals_.channel_names;
     collision_interval_.channel_collisions.assign(
         collision_totals_.channel_names.size(), 0);
+    if (cfg_.spatial_average.enabled) {
+        spatial_density_sums_.assign(
+            species_.size(),
+            std::vector<double>(grid_.nx(), 0.0));
+        spatial_density_scratch_.assign(
+            grid_.nx(), 0.0);
+    }
 }
 
 std::uint64_t Simulation::collision_signature() const {
@@ -731,6 +780,7 @@ void Simulation::step() {
     apply_collisions();
     ++step_;
     time_ += cfg_.dt;
+    accumulate_spatial_average();
 }
 
 DiagnosticSample Simulation::sample() const {
@@ -756,12 +806,139 @@ DiagnosticSample Simulation::sample() const {
     return s;
 }
 
+std::size_t Simulation::expected_spatial_average_samples() const {
+    if (!cfg_.spatial_average.enabled) return 0;
+    return 1 +
+        (cfg_.spatial_average.end_step -
+         cfg_.spatial_average.start_step) /
+            cfg_.spatial_average.interval;
+}
+
+void Simulation::accumulate_spatial_average() {
+    const auto& average = cfg_.spatial_average;
+    if (!average.enabled ||
+        step_ < average.start_step ||
+        step_ > average.end_step ||
+        (step_ - average.start_step) %
+                average.interval !=
+            0) {
+        return;
+    }
+    if (spatial_density_sums_.size() !=
+            species_.size() ||
+        spatial_density_scratch_.size() !=
+            grid_.nx()) {
+        throw std::logic_error(
+            "spatial-average storage does not match simulation state");
+    }
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        species_[species_id].deposit_number_density(
+            grid_, spatial_density_scratch_);
+        auto& sum = spatial_density_sums_[species_id];
+        for (std::size_t node = 0;
+             node < grid_.nx(); ++node) {
+            sum[node] += spatial_density_scratch_[node];
+        }
+    }
+    ++spatial_average_samples_;
+}
+
+void Simulation::write_spatial_average() const {
+    if (!cfg_.spatial_average.enabled) return;
+    const auto output_dir =
+        std::filesystem::path(cfg_.output_dir);
+    std::filesystem::create_directories(output_dir);
+    const bool si =
+        cfg_.units.system == UnitSystem::SI;
+    std::ofstream profile(
+        output_dir / "spatial_average.csv");
+    if (!profile) {
+        throw std::runtime_error(
+            "cannot open 1D spatial-average profile output");
+    }
+    profile
+        << "species_id,species,node,"
+        << (si ? "x_m" : "x_normalized") << ','
+        << (si
+                ? "number_density_mean_m-3"
+                : "number_density_mean_normalized")
+        << '\n';
+    profile << std::setprecision(17);
+    if (spatial_average_samples_ > 0) {
+        for (std::size_t species_id = 0;
+             species_id < species_.size(); ++species_id) {
+            for (std::size_t node = 0;
+                 node < grid_.nx(); ++node) {
+                profile
+                    << species_id << ','
+                    << csv_cell(species_[species_id].name())
+                    << ',' << node << ','
+                    << grid_.node_x(node) << ','
+                    << spatial_density_sums_[species_id][node] /
+                           static_cast<double>(
+                               spatial_average_samples_)
+                    << '\n';
+            }
+        }
+    }
+    require_stream(
+        profile,
+        "failed while writing 1D spatial-average profile");
+
+    const auto expected =
+        expected_spatial_average_samples();
+    const bool complete =
+        step_ >= cfg_.spatial_average.end_step &&
+        spatial_average_samples_ == expected;
+    std::ofstream metadata(
+        output_dir / "spatial_average_metadata.json");
+    if (!metadata) {
+        throw std::runtime_error(
+            "cannot open 1D spatial-average metadata output");
+    }
+    metadata << std::setprecision(17)
+             << "{\n"
+             << "  \"spatial_average_version\": 1,\n"
+             << "  \"unit_system\": "
+             << json_string(to_string(cfg_.units.system))
+             << ",\n"
+             << "  \"start_step\": "
+             << cfg_.spatial_average.start_step << ",\n"
+             << "  \"end_step\": "
+             << cfg_.spatial_average.end_step << ",\n"
+             << "  \"interval\": "
+             << cfg_.spatial_average.interval << ",\n"
+             << "  \"samples\": "
+             << spatial_average_samples_ << ",\n"
+             << "  \"expected_samples\": "
+             << expected << ",\n"
+             << "  \"final_step\": " << step_ << ",\n"
+             << "  \"dt\": " << cfg_.dt << ",\n"
+             << "  \"rf_frequency\": "
+             << cfg_.spatial_average.rf_frequency << ",\n"
+             << "  \"rf_cycles\": "
+             << cfg_.spatial_average.rf_cycles << ",\n"
+             << "  \"complete\": "
+             << (complete ? "true" : "false") << ",\n"
+             << "  \"species\": [";
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        if (species_id != 0) metadata << ", ";
+        metadata << json_string(species_[species_id].name());
+    }
+    metadata << "]\n}\n";
+    require_stream(
+        metadata,
+        "failed while writing 1D spatial-average metadata");
+}
+
 void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     ensure_parent_directory(path);
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV4 << '\n';
+    out << kCheckpointMagicV5 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -783,6 +960,27 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         out << ' ' << count;
     }
     out << "\n";
+    out << "spatial_average "
+        << (cfg_.spatial_average.enabled ? 1 : 0) << ' '
+        << cfg_.spatial_average.interval << ' '
+        << cfg_.spatial_average.start_step << ' '
+        << cfg_.spatial_average.end_step << ' '
+        << cfg_.spatial_average.rf_frequency << ' '
+        << cfg_.spatial_average.rf_cycles << ' '
+        << spatial_average_samples_ << ' '
+        << spatial_density_sums_.size() << ' '
+        << grid_.nx() << "\n";
+    for (std::size_t species_id = 0;
+         species_id < spatial_density_sums_.size();
+         ++species_id) {
+        out << "spatial_species " << species_id << ' '
+            << species_[species_id].name();
+        for (const double value :
+             spatial_density_sums_[species_id]) {
+            out << ' ' << value;
+        }
+        out << "\n";
+    }
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -809,8 +1007,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v2 = magic == kCheckpointMagicV2;
     const bool checkpoint_v3 = magic == kCheckpointMagicV3;
     const bool checkpoint_v4 = magic == kCheckpointMagicV4;
+    const bool checkpoint_v5 = magic == kCheckpointMagicV5;
+    const bool checkpoint_v4_state =
+        checkpoint_v4 || checkpoint_v5;
     if (!checkpoint_v1 && !checkpoint_v2 &&
-        !checkpoint_v3 && !checkpoint_v4) {
+        !checkpoint_v3 && !checkpoint_v4 &&
+        !checkpoint_v5) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -825,7 +1027,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
         if ((!checkpoint_v2 && !checkpoint_v3 &&
-             !checkpoint_v4) ||
+             !checkpoint_v4 && !checkpoint_v5) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -834,7 +1036,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         in >> key;
     } else if (checkpoint_v2 || checkpoint_v3 ||
-               checkpoint_v4 ||
+               checkpoint_v4 || checkpoint_v5 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -843,13 +1045,13 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     if (key == "velocity_dimensions") {
         std::size_t velocity_dimensions = 0;
         in >> velocity_dimensions;
-        if (!checkpoint_v4 ||
+        if (!checkpoint_v4_state ||
             velocity_dimensions != cfg_.velocity_dimensions) {
             throw std::runtime_error(
                 "checkpoint velocity dimensions do not match 1D config");
         }
         in >> key;
-    } else if (checkpoint_v4 ||
+    } else if (checkpoint_v4_state ||
                cfg_.velocity_dimensions != 1) {
         throw std::runtime_error(
             "legacy 1D1V checkpoint cannot initialize 1D3V");
@@ -863,7 +1065,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             legacy_bgk_enabled_ || !mcc_models_.empty();
         const std::uint64_t expected_signature =
             collision_signature();
-        if ((!checkpoint_v3 && !checkpoint_v4) ||
+        if ((!checkpoint_v3 && !checkpoint_v4 &&
+             !checkpoint_v5) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -885,13 +1088,90 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         clear_collision_counts(collision_interval_);
         in >> key;
     } else if (checkpoint_v3 || checkpoint_v4 ||
+               checkpoint_v5 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
     }
+    if (checkpoint_v5) {
+        int enabled = 0;
+        std::size_t interval = 0;
+        std::size_t start_step = 0;
+        std::size_t end_step = 0;
+        double rf_frequency = 0.0;
+        std::size_t rf_cycles = 0;
+        std::size_t stored_samples = 0;
+        std::size_t stored_species_count = 0;
+        std::size_t stored_nx = 0;
+        in >> enabled >> interval >> start_step >>
+            end_step >> rf_frequency >> rf_cycles >>
+            stored_samples >> stored_species_count >>
+            stored_nx;
+        const auto& configured = cfg_.spatial_average;
+        if (key != "spatial_average" ||
+            enabled != (configured.enabled ? 1 : 0) ||
+            interval != configured.interval ||
+            start_step != configured.start_step ||
+            end_step != configured.end_step ||
+            rf_frequency != configured.rf_frequency ||
+            rf_cycles != configured.rf_cycles ||
+            stored_species_count !=
+                spatial_density_sums_.size() ||
+            stored_nx != grid_.nx() ||
+            stored_samples >
+                expected_spatial_average_samples()) {
+            throw std::runtime_error(
+                "checkpoint spatial-average contract does not "
+                "match 1D config");
+        }
+        spatial_average_samples_ = stored_samples;
+        for (std::size_t species_id = 0;
+             species_id < stored_species_count;
+             ++species_id) {
+            std::size_t stored_species_id = 0;
+            std::string stored_name;
+            in >> key >> stored_species_id >> stored_name;
+            if (key != "spatial_species" ||
+                stored_species_id != species_id ||
+                stored_name != species_[species_id].name()) {
+                throw std::runtime_error(
+                    "checkpoint spatial-average species metadata "
+                    "does not match 1D config");
+            }
+            for (double& value :
+                 spatial_density_sums_[species_id]) {
+                in >> value;
+                if (!std::isfinite(value) || value < 0.0) {
+                    throw std::runtime_error(
+                        "checkpoint spatial-average sum is invalid");
+                }
+            }
+        }
+        in >> key;
+    } else if (cfg_.spatial_average.enabled) {
+        throw std::runtime_error(
+            "legacy checkpoint cannot restore enabled 1D "
+            "spatial averaging");
+    }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
+    if (cfg_.spatial_average.enabled) {
+        const auto& average = cfg_.spatial_average;
+        std::size_t expected_at_step = 0;
+        if (step_ >= average.start_step) {
+            const std::size_t last =
+                std::min(step_, average.end_step);
+            expected_at_step =
+                1 + (last - average.start_step) /
+                        average.interval;
+        }
+        if (spatial_average_samples_ != expected_at_step) {
+            throw std::runtime_error(
+                "checkpoint spatial-average sample count does not "
+                "match its step");
+        }
+    }
     in >> key >> time_;
     if (key != "time") throw std::runtime_error("checkpoint missing time");
     std::size_t species_count = 0;
@@ -919,7 +1199,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         particles.resize(particle_count);
         for (auto& p : particles) {
             int alive = 0;
-            if (checkpoint_v4) {
+            if (checkpoint_v4_state) {
                 in >> p.x >> p.v >>
                     p.velocity_y >> p.velocity_z >>
                     p.v_half >> alive;
@@ -1034,6 +1314,7 @@ RunSummary Simulation::run() {
     summary.steps_completed = step_;
     summary.final_time = time_;
     if (summary.final_sample.step != step_) summary.final_sample = sample();
+    write_spatial_average();
     return summary;
 }
 }

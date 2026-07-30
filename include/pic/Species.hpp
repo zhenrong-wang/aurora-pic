@@ -19,6 +19,8 @@ public:
     const std::vector<Particle>& particles() const { return particles_; }
     void initialize(const Grid& grid, std::mt19937_64& rng);
     void deposit_charge(Grid& grid) const;
+    void deposit_number_density(
+        const Grid& grid, std::vector<double>& density) const;
     double kinetic_energy() const;
     std::size_t live_count() const;
     std::size_t velocity_dimensions() const {

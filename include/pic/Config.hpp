@@ -142,6 +142,15 @@ struct SinusoidalVoltageConfig {
     double phase{0.0};
 };
 
+struct SpatialAverage1DConfig {
+    bool enabled{false};
+    std::size_t interval{1};
+    std::size_t start_step{1};
+    std::size_t end_step{0};
+    double rf_frequency{0.0};
+    std::size_t rf_cycles{0};
+};
+
 struct Config {
     UnitSystemConfig units{};
     std::size_t velocity_dimensions{1};
@@ -150,6 +159,7 @@ struct Config {
     double dt{0.02};
     std::size_t steps{100};
     std::size_t output_interval{10};
+    SpatialAverage1DConfig spatial_average{};
     Boundary boundary{Boundary::Periodic};
     RunMode mode{RunMode::Transient};
     double phi_left{0.0};
@@ -175,6 +185,7 @@ struct Config {
     std::vector<SpeciesConfig> species{};
 };
 
+void validate_spatial_average_1d(const Config& cfg);
 Config load_config(const std::string& path);
 Simulation2DConfig load_config_2d(const std::string& path);
 Simulation3DConfig load_config_3d(const std::string& path);

@@ -558,6 +558,7 @@ void validate_config(const Config& cfg) {
             "until cycle-averaged convergence is implemented");
     }
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
+    validate_spatial_average_1d(cfg);
     validate_positive(cfg.steady_tolerance, "steady_tolerance");
     if (cfg.steady_window == 0) throw std::runtime_error("steady_window must be positive");
     if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) throw std::runtime_error("max_steps must be positive for steady-state mode");
@@ -1344,10 +1345,108 @@ ParsedBlocks parse_config_blocks(const std::string& path,
 
 } // namespace
 
+void validate_spatial_average_1d(const Config& cfg) {
+    const auto& average = cfg.spatial_average;
+    if (!std::isfinite(average.rf_frequency) ||
+        average.rf_frequency < 0.0) {
+        throw std::runtime_error(
+            "spatial_average_rf_frequency must be non-negative "
+            "and finite");
+    }
+    if (!average.enabled) {
+        if (average.rf_cycles != 0 ||
+            average.rf_frequency != 0.0) {
+            throw std::runtime_error(
+                "disabled spatial_average cannot configure an RF "
+                "contract");
+        }
+        return;
+    }
+    if (average.interval == 0) {
+        throw std::runtime_error(
+            "spatial_average_interval must be positive");
+    }
+    if (average.start_step == 0 ||
+        average.end_step < average.start_step) {
+        throw std::runtime_error(
+            "spatial_average requires 1 <= start_step <= end_step");
+    }
+    if (average.rf_frequency == 0.0) {
+        if (average.rf_cycles != 0) {
+            throw std::runtime_error(
+                "spatial_average_rf_cycles requires positive "
+                "spatial_average_rf_frequency");
+        }
+        return;
+    }
+    if (average.rf_cycles == 0) {
+        throw std::runtime_error(
+            "positive spatial_average_rf_frequency requires positive "
+            "spatial_average_rf_cycles");
+    }
+    const double steps_per_cycle_value =
+        1.0 / (average.rf_frequency * cfg.dt);
+    if (!std::isfinite(steps_per_cycle_value) ||
+        steps_per_cycle_value >
+            static_cast<double>(
+                std::numeric_limits<long long>::max())) {
+        throw std::runtime_error(
+            "spatial-average RF steps per cycle are invalid");
+    }
+    const auto steps_per_cycle = static_cast<std::size_t>(
+        std::llround(steps_per_cycle_value));
+    if (steps_per_cycle == 0 ||
+        std::abs(steps_per_cycle_value -
+                 static_cast<double>(steps_per_cycle)) >
+            1e-10 * std::max(1.0, steps_per_cycle_value)) {
+        throw std::runtime_error(
+            "spatial-average RF period must contain an integer "
+            "number of timesteps");
+    }
+    if (average.rf_cycles >
+        std::numeric_limits<std::size_t>::max() /
+            steps_per_cycle) {
+        throw std::runtime_error(
+            "spatial-average RF window step count overflows");
+    }
+    const std::size_t window_steps =
+        average.end_step - average.start_step + 1;
+    if (window_steps !=
+        average.rf_cycles * steps_per_cycle) {
+        throw std::runtime_error(
+            "spatial-average step window does not span the "
+            "configured whole RF cycles");
+    }
+    if (average.end_step % steps_per_cycle != 0) {
+        throw std::runtime_error(
+            "spatial-average RF window must end at the time-zero "
+            "drive phase");
+    }
+    if (steps_per_cycle % average.interval != 0) {
+        throw std::runtime_error(
+            "spatial_average_interval must divide RF steps per cycle");
+    }
+    for (const auto& drive :
+         {cfg.phi_left_drive, cfg.phi_right_drive}) {
+        if (drive.amplitude == 0.0) continue;
+        if (std::abs(
+                drive.frequency - average.rf_frequency) >
+            1e-12 * std::max(
+                drive.frequency, average.rf_frequency)) {
+            throw std::runtime_error(
+                "spatial-average RF frequency does not match "
+                "the electrode drive");
+        }
+    }
+}
+
 Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "velocity_dimensions", "dt", "steps",
         "output_interval", "output_dir", "seed",
+        "spatial_average", "spatial_average_interval",
+        "spatial_average_start_step", "spatial_average_end_step",
+        "spatial_average_rf_frequency", "spatial_average_rf_cycles",
         "max_particles_per_species",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
@@ -1406,6 +1505,23 @@ Config load_config(const std::string& path) {
     cfg.dt = as<double>(global, "dt", cfg.dt);
     cfg.steps = as<std::size_t>(global, "steps", cfg.steps);
     cfg.output_interval = as<std::size_t>(global, "output_interval", cfg.output_interval);
+    cfg.spatial_average.enabled = parse_bool(
+        global, "spatial_average", cfg.spatial_average.enabled);
+    cfg.spatial_average.interval = as<std::size_t>(
+        global, "spatial_average_interval",
+        cfg.spatial_average.interval);
+    cfg.spatial_average.start_step = as<std::size_t>(
+        global, "spatial_average_start_step",
+        cfg.spatial_average.start_step);
+    cfg.spatial_average.end_step = as<std::size_t>(
+        global, "spatial_average_end_step",
+        cfg.spatial_average.end_step);
+    cfg.spatial_average.rf_frequency = as<double>(
+        global, "spatial_average_rf_frequency",
+        cfg.spatial_average.rf_frequency);
+    cfg.spatial_average.rf_cycles = as<std::size_t>(
+        global, "spatial_average_rf_cycles",
+        cfg.spatial_average.rf_cycles);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir);
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.phi_left = as<double>(global, "phi_left", cfg.phi_left);

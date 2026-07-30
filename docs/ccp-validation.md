@@ -104,8 +104,8 @@ AuroraPIC must not claim a Turner result until all of these are complete:
    without changing their interpolation contract, while keeping the
    publisher-derived files local unless redistribution permission is
    established;
-2. report species-resolved electrode current, deposited power, spatial
-   density, ionization source, and phase/time averages;
+2. report species-resolved electrode current, deposited power, and ionization
+   source; restart-safe spatial-density time averaging is complete;
 3. connect the implemented chi-squared comparator to a statistically bounded,
    run-contract-validated campaign;
 4. implement whole-RF-cycle convergence and phase/time averaging;
@@ -161,6 +161,36 @@ performs both SI conversions at load time. No table is resampled. Named 1D
 collision models load either generated manifest through `gas_data_file`, with
 only ionization product-species mappings supplied by the simulation deck.
 
+## Restart-safe density averaging
+
+The primary Turner observable is now produced by a generic 1D post-step
+spatial averager. It deposits each species' represented particle number with
+the same linear particle-grid shape and node-volume convention used for
+charge, then accumulates nodal density independently of the ordinary output
+interval. For Case 1, the exact final-32-cycle contract is:
+
+```ini
+spatial_average = true
+spatial_average_interval = 1
+spatial_average_start_step = 499201
+spatial_average_end_step = 512000
+spatial_average_rf_frequency = 13.56e6
+spatial_average_rf_cycles = 32
+```
+
+This selects 12,800 post-step samples. Configuration validation requires an
+integer number of timesteps per RF cycle, a whole-cycle window ending at the
+time-zero drive phase, an interval that divides the cycle, and agreement with
+every active electrode-drive frequency. `spatial_average.csv` uses long-form
+species/node rows; `spatial_average_metadata.json` records the window,
+timestep, sample count, species, and a `complete` gate.
+
+1D checkpoint v5 stores the averaging contract, sample count, and every nodal
+sum. A changed averaging window is rejected on restart, and a legacy v1-v4
+checkpoint can restart only when spatial averaging is disabled. A bounded
+regression proves byte-identical continuous and checkpoint-split profiles and
+represented-number conservation.
+
 The baseline statistical comparison uses the original-grid reference, not the
 numerically refined profile. For every mesh node it computes
 
@@ -177,15 +207,19 @@ run:
 python3 scripts/compare_turner.py \
   --case 1 \
   --reference tmp/turner-normalized-v1/turner_case1_benchmark.csv \
-  --candidate tmp/turner-case1-run/ion-density-average.csv \
+  --candidate tmp/turner-case1-run/spatial_average.csv \
+  --candidate-metadata \
+    tmp/turner-case1-run/spatial_average_metadata.json \
+  --species ions \
   --normalization-audit tmp/turner-normalized-v1/audit.json \
   --output tmp/turner-case1-comparison.json
 ```
 
-The tool requires exact node coordinates and does not interpolate. A report
-by itself makes no physics claim because the comparator cannot prove that the
-candidate used the prescribed particle count, timestep, collision model,
-steady state, or final 32-period averaging window.
+The tool requires exact node coordinates and does not interpolate. It rejects
+partial data unless metadata proves the exact case timestep and final 32 RF
+cycles. A report still makes no overall physics claim because density
+metadata alone cannot prove the prescribed particle count, collision model,
+or prior stationary state.
 
 ## Bounded execution ladder
 
@@ -199,8 +233,10 @@ reduced run as a pass:
 2. **C1, source and diagnostic lock:** the electronic supplement is acquired
    outside the repository and its archive/member hashes, structure, and usage
    constraint are pinned. Exact tables are locally normalized without
-   resampling and load through provenance-bearing gas manifests. Implement
-   the published density/power/current observables to complete C1.
+   resampling and load through provenance-bearing gas manifests. Restart-safe
+   whole-cycle spatial-density averaging and the statistical comparator are
+   complete. Implement the remaining power/current/source observables to
+   complete the broader C1 diagnostic set.
 3. **C2, bounded startup screening:** run the exact Case 1 grid, timestep,
    particle weight, waveform, and collision model for a small declared number
    of RF periods. Check invariants, collision balance, sheath formation,

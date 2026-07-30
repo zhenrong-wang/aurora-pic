@@ -103,7 +103,7 @@ in `m^-3`, current density is in `A/m^2`, velocity and thermal speed are in
 retain normalized density/current/velocity values and `temperature_ev` is
 written as `nan`; AuroraPIC does not invent an SI temperature scale.
 
-Current 1D checkpoint v4, structured 2D checkpoint v10, structured 3D
+Current 1D checkpoint v5, structured 2D checkpoint v10, structured 3D
 checkpoint v2, and imported checkpoint v6 record and validate the unit
 contract. The 1D v4 format also records velocity dimensionality; 1D v1-v3
 can initialize only 1D1V. Historical structured v1

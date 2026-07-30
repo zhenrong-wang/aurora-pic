@@ -54,6 +54,9 @@ private:
         double offset,
         const SinusoidalVoltageConfig& drive,
         double field_time) const;
+    void accumulate_spatial_average();
+    void write_spatial_average() const;
+    std::size_t expected_spatial_average_samples() const;
     Config cfg_;
     Grid grid_;
     FieldSolver solver_;
@@ -62,6 +65,10 @@ private:
     bool legacy_bgk_enabled_{false};
     CollisionDiagnostics collision_totals_{};
     CollisionDiagnostics collision_interval_{};
+    std::size_t spatial_average_samples_{0};
+    std::vector<std::vector<double>>
+        spatial_density_sums_{};
+    std::vector<double> spatial_density_scratch_{};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};
