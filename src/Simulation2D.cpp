@@ -6,6 +6,7 @@
 #include "pic/Units.hpp"
 #include "pic/VTKWriter.hpp"
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <filesystem>
@@ -2286,6 +2287,84 @@ RunSummary2D Simulation2D::run() {
             << '\n';
         current_source_output.flush();
     };
+    std::ofstream boundary_flux_output(
+        cfg_.output_dir / "boundary_flux.csv");
+    if (!boundary_flux_output) {
+        throw std::runtime_error(
+            "cannot open 2D boundary-flux diagnostics output");
+    }
+    boundary_flux_output
+        << "step,time,window_start_step,window_start_time,"
+           "window_duration,species,boundary,"
+           "absorbed_macroparticles,"
+           "cumulative_absorbed_macroparticles,"
+           "represented_particles,represented_charge,"
+           "represented_particle_rate,charge_rate\n";
+    auto previous_species_boundary_losses =
+        species_boundary_losses_;
+    std::size_t boundary_flux_start_step = step_;
+    double boundary_flux_start_time = time_;
+    const auto write_boundary_flux_sample = [&]() {
+        const double duration = time_ - boundary_flux_start_time;
+        if (!std::isfinite(duration) || duration < 0.0) {
+            throw std::runtime_error(
+                "2D boundary-flux diagnostic time is invalid");
+        }
+        constexpr std::array sides{
+            BoundarySide2DName::Left,
+            BoundarySide2DName::Right,
+            BoundarySide2DName::Bottom,
+            BoundarySide2DName::Top,
+        };
+        for (std::size_t species_id = 0;
+             species_id < species_.size(); ++species_id) {
+            const auto& species = species_[species_id];
+            for (const auto side : sides) {
+                const std::size_t cumulative = boundary_loss(
+                    species_boundary_losses_[species_id], side);
+                const std::size_t previous = boundary_loss(
+                    previous_species_boundary_losses[species_id],
+                    side);
+                if (cumulative < previous) {
+                    throw std::runtime_error(
+                        "2D boundary-flux counter moved backward");
+                }
+                const std::size_t absorbed = cumulative - previous;
+                const double represented =
+                    static_cast<double>(absorbed) * species.weight();
+                const double charge = represented * species.charge();
+                const double represented_rate =
+                    duration > 0.0 ? represented / duration : 0.0;
+                const double charge_rate =
+                    duration > 0.0 ? charge / duration : 0.0;
+                if (!std::isfinite(represented) ||
+                    !std::isfinite(charge) ||
+                    !std::isfinite(represented_rate) ||
+                    !std::isfinite(charge_rate)) {
+                    throw std::runtime_error(
+                        "2D boundary-flux diagnostic overflow");
+                }
+                boundary_flux_output
+                    << step_ << ',' << std::setprecision(17) << time_
+                    << ',' << boundary_flux_start_step
+                    << ',' << boundary_flux_start_time
+                    << ',' << duration
+                    << ',' << species.name()
+                    << ',' << to_string(side)
+                    << ',' << absorbed
+                    << ',' << cumulative
+                    << ',' << represented
+                    << ',' << charge
+                    << ',' << represented_rate
+                    << ',' << charge_rate
+                    << '\n';
+            }
+        }
+        previous_species_boundary_losses = species_boundary_losses_;
+        boundary_flux_start_step = step_;
+        boundary_flux_start_time = time_;
+        boundary_flux_output.flush();
+    };
     std::ofstream potential_reference_output;
     if (cfg_.potential_reference) {
         potential_reference_output.open(
@@ -2322,6 +2401,7 @@ RunSummary2D Simulation2D::run() {
     diag.write_sample(s0);
     write_source_sample();
     write_current_source_sample();
+    write_boundary_flux_sample();
     write_potential_reference_sample();
     write_resolved_sample();
     if (cfg_.vtk_output) write_vtk_outputs(mesh_, cfg_.output_dir, step_, cfg_.vtk_format);
@@ -2342,6 +2422,7 @@ RunSummary2D Simulation2D::run() {
             diag.write_sample(s);
             write_source_sample();
             write_current_source_sample();
+            write_boundary_flux_sample();
             write_potential_reference_sample();
             summary.final_sample = s;
             if (cfg_.vtk_output) {

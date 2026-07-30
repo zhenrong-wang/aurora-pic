@@ -202,6 +202,14 @@ the reverse-total start step is the restart step; when a v1-v9 checkpoint is
 loaded, the distribution start step is the restart step. Partial coverage
 therefore cannot be mistaken for whole-run statistics.
 
+Every structured-2D scalar-output window also writes species-resolved loss
+rows to `boundary_flux.csv`. Each row identifies the window start/end,
+species, and boundary and contains incremental and cumulative macroparticle
+loss, represented particles and charge, and their rates. On a fresh or
+restarted run the first rows have zero duration and zero increment; subsequent
+windows are differences of the checkpoint-preserved cumulative species loss
+counters. Thus restart does not blend pre-restart losses into the first rate.
+
 An optional x/y line-average potential reference has two modes. Gauge mode
 applies a constant potential offset after each Poisson solve and leaves the
 electric field invariant. Affine mode preserves the zero-coordinate

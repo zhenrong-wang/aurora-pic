@@ -561,6 +561,33 @@ def check_hall_field_profile_smoke(output_dir: Path) -> None:
         and abs(float(final_current[13])) < 1e-30,
         "Hall smoke current-control diagnostics are inconsistent",
     )
+    flux_path = output_dir / "boundary_flux.csv"
+    flux_header, flux_rows = read_csv(flux_path)
+    require(
+        flux_header == [
+            "step", "time", "window_start_step",
+            "window_start_time", "window_duration",
+            "species", "boundary",
+            "absorbed_macroparticles",
+            "cumulative_absorbed_macroparticles",
+            "represented_particles", "represented_charge",
+            "represented_particle_rate", "charge_rate",
+        ],
+        f"unexpected header in {flux_path}",
+    )
+    require(
+        len(flux_rows) >= 24
+        and {row[5] for row in flux_rows} == {"electrons", "ions"}
+        and {row[6] for row in flux_rows}
+            == {"left", "right", "bottom", "top"},
+        "Hall boundary-flux diagnostics are incomplete",
+    )
+    require_numeric_rows(
+        [flux_header[index] for index in (*range(5), *range(7, 13))],
+        [[row[index] for index in (*range(5), *range(7, 13))]
+         for row in flux_rows],
+        flux_path,
+    )
     potential_path = output_dir / "potential_reference.csv"
     potential_header, potential_rows = read_csv(potential_path)
     require(

@@ -3575,6 +3575,20 @@ int main() {
             require(scalars.find("step,time,kinetic_energy,field_energy,total_energy,charge_l1,live_particles,absorbed_left,absorbed_right,absorbed_bottom,absorbed_top,live_particles_e2,live_particles_i2\n") == 0,
                     "2D scalar diagnostics header is wrong");
             require(count_lines(scalars) == 4, "2D scalar diagnostics wrote unexpected number of rows");
+            const auto boundary_flux = read_file_text(
+                cfg.output_dir / "boundary_flux.csv");
+            require(
+                boundary_flux.find(
+                    "step,time,window_start_step,window_start_time,"
+                    "window_duration,species,boundary,"
+                    "absorbed_macroparticles,"
+                    "cumulative_absorbed_macroparticles,"
+                    "represented_particles,represented_charge,"
+                    "represented_particle_rate,charge_rate\n") == 0,
+                "2D boundary-flux diagnostics header is wrong");
+            require(
+                count_lines(boundary_flux) == 25,
+                "2D boundary-flux diagnostics wrote unexpected rows");
             require(std::filesystem::exists(cfg.output_dir / "particles_0.csv"), "2D simulation did not write initial particle sample");
             require(std::filesystem::exists(cfg.output_dir / "particles_2.csv"), "2D simulation did not write interval particle sample");
             require(std::filesystem::exists(cfg.output_dir / "particles_3.csv"), "2D simulation did not write final particle sample");
