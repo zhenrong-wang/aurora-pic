@@ -126,7 +126,7 @@ def main() -> int:
         for factor in duration_factors if factor != 1.0
     ))
     require(
-        convergence.getint("convergence_contract_version") == 1
+        convergence.getint("convergence_contract_version") == 2
         and convergence["base_tier"] == "workstation"
         and population_factors == [0.5, 1.0, 2.0]
         and duration_factors == [0.5, 1.0, 2.0]
@@ -136,6 +136,24 @@ def main() -> int:
             <= convergence.getint(
                 "maximum_aggregate_initial_particle_updates"
             )
+        and math.isclose(
+            convergence.getfloat(
+                "maximum_fine_to_baseline_reverse_charge_per_update_ratio"
+            ),
+            1.25,
+        )
+        and math.isclose(
+            convergence.getfloat(
+                "maximum_fine_to_baseline_reverse_impulse_ratio"
+            ),
+            0.75,
+        )
+        and math.isclose(
+            convergence.getfloat(
+                "maximum_fine_reverse_demand_macroparticles_per_update"
+            ),
+            1.5,
+        )
         and convergence["physics_claim"] == "none",
         "Hall workstation convergence contract drifted",
     )

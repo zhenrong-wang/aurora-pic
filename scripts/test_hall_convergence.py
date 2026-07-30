@@ -52,6 +52,8 @@ def synthetic_output(
     path: Path,
     multiplier: float,
     samples: int,
+    particles_per_cell: int,
+    steps: int,
     nodes: int = 126,
     max_mode: int = 32,
 ) -> None:
@@ -124,6 +126,44 @@ def synthetic_output(
         ["mode", "quantity", "species", "amplitude"],
         mode_rows,
     )
+    macro_charge = 1.6e-10 / particles_per_cell
+    created = 10
+    represented = macro_charge * created / 1.602176634e-19
+    reverse_steps = int(round(0.04 * steps))
+    cumulative_reverse = 0.02 * steps
+    negative_charge = -1e-11 * steps
+    positive_charge = 2e-12 * steps
+    write_csv(
+        path / "current_source.csv",
+        [
+            "macro_particles_created",
+            "represented_particles_created",
+            "control_updates",
+            "reverse_diagnostics_start_step",
+            "reverse_demand_steps",
+            "reverse_demand_step_fraction",
+            "cumulative_reverse_demand_macroparticles",
+            "maximum_reverse_demand_macroparticles",
+            "cumulative_monitored_negative_charge",
+            "cumulative_monitored_positive_charge",
+            "cumulative_processed_monitored_charge",
+        ],
+        [{
+            "macro_particles_created": created,
+            "represented_particles_created": represented,
+            "control_updates": steps,
+            "reverse_diagnostics_start_step": 0,
+            "reverse_demand_steps": reverse_steps,
+            "reverse_demand_step_fraction": reverse_steps / steps,
+            "cumulative_reverse_demand_macroparticles":
+                cumulative_reverse,
+            "maximum_reverse_demand_macroparticles": 1,
+            "cumulative_monitored_negative_charge": negative_charge,
+            "cumulative_monitored_positive_charge": positive_charge,
+            "cumulative_processed_monitored_charge":
+                negative_charge + positive_charge,
+        }],
+    )
 
 
 def main() -> int:
@@ -156,7 +196,9 @@ def main() -> int:
         manifest_path = campaign_dir / "convergence.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         require(
-            manifest["aggregate_initial_particle_updates"] == 7_680_000_000
+            manifest["hall_convergence_version"] == 2
+            and manifest["aggregate_initial_particle_updates"]
+                == 7_680_000_000
             and len(manifest["runs"]) == 5
             and not manifest["launched"],
             "convergence manifest cost or launch contract is invalid",
@@ -179,18 +221,33 @@ def main() -> int:
                 Path(item["result_dir"]),
                 multipliers[item["stage"]],
                 item["diagnostic_samples"],
+                item["particles_per_cell_per_species"],
+                item["steps"],
             )
         report_path = work / "report.json"
         analyzed = run([
             sys.executable, str(ANALYZE), str(manifest_path),
             "--report", str(report_path),
         ])
+        require(
+            report_path.is_file(),
+            f"convergence analyzer did not write a report: "
+            f"{analyzed.stderr}",
+        )
         report = json.loads(report_path.read_text(encoding="utf-8"))
         require(
             analyzed.returncode == 0
+            and report["schema_version"] == 2
             and report["passed"]
             and report["comparisons"]["population"]["passed"]
-            and report["comparisons"]["duration"]["passed"],
+            and report["comparisons"]["duration"]["passed"]
+            and report["comparisons"]["controller_population"]["passed"]
+            and report["comparisons"]["controller_population"][
+                "fine_to_baseline_reverse_charge_per_update_ratio"
+            ] == 0.5
+            and report["comparisons"]["controller_population"][
+                "fine_to_baseline_reverse_impulse_ratio"
+            ] == 0.5,
             f"convergent synthetic campaign failed: {analyzed.stderr}",
         )
 
@@ -202,6 +259,8 @@ def main() -> int:
             Path(population_fine["result_dir"]),
             1.8,
             population_fine["diagnostic_samples"],
+            population_fine["particles_per_cell_per_species"],
+            population_fine["steps"],
         )
         failed_path = work / "failed.json"
         failed = run([
@@ -216,6 +275,52 @@ def main() -> int:
             and not failed_report["passed"]
             and not failed_report["comparisons"]["population"]["passed"],
             "convergence analyzer accepted a divergent population stage",
+        )
+
+        synthetic_output(
+            Path(population_fine["result_dir"]),
+            1.05,
+            population_fine["diagnostic_samples"],
+            population_fine["particles_per_cell_per_species"],
+            population_fine["steps"],
+        )
+        controller_path = (
+            Path(population_fine["result_dir"]) / "current_source.csv"
+        )
+        with controller_path.open(
+            newline="", encoding="utf-8"
+        ) as stream:
+            controller_rows = list(csv.DictReader(stream))
+            controller_fields = list(
+                controller_rows[0].keys()
+            )
+        controller_rows[-1][
+            "cumulative_reverse_demand_macroparticles"
+        ] = "400"
+        controller_rows[-1][
+            "maximum_reverse_demand_macroparticles"
+        ] = "4"
+        write_csv(
+            controller_path, controller_fields, controller_rows
+        )
+        controller_failed_path = work / "controller-failed.json"
+        controller_failed = run([
+            sys.executable, str(ANALYZE), str(manifest_path),
+            "--report", str(controller_failed_path),
+        ])
+        controller_failed_report = json.loads(
+            controller_failed_path.read_text(encoding="utf-8")
+        )
+        require(
+            controller_failed.returncode == 1
+            and not controller_failed_report["passed"]
+            and not controller_failed_report["comparisons"][
+                "controller_population"
+            ]["passed"]
+            and controller_failed_report["comparisons"]["population"][
+                "passed"
+            ],
+            "convergence analyzer accepted non-convergent controller demand",
         )
     print("Hall convergence preparation and analysis passed")
     return 0

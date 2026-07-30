@@ -136,9 +136,9 @@ def prepare_convergence(args: argparse.Namespace) -> Path:
             f"case manifest is missing [{section_name}]"
         )
     contract = case[section_name]
-    if contract.get("convergence_contract_version") != "1":
+    if contract.get("convergence_contract_version") != "2":
         raise ConvergencePreparationError(
-            "convergence_contract_version must be 1"
+            "convergence_contract_version must be 2"
         )
     if contract.get("base_tier") != "workstation":
         raise ConvergencePreparationError(
@@ -249,7 +249,7 @@ def prepare_convergence(args: argparse.Namespace) -> Path:
                 "launched": False,
             })
         manifest = {
-            "hall_convergence_version": 1,
+            "hall_convergence_version": 2,
             "case_id": case["global"]["case_id"],
             "tier": "workstation",
             "physics_claim": contract["physics_claim"],
@@ -270,6 +270,19 @@ def prepare_convergence(args: argparse.Namespace) -> Path:
                     contract.getfloat(
                         "maximum_fine_to_coarse_change_ratio"
                     ),
+                "maximum_fine_to_baseline_reverse_charge_per_update_ratio":
+                    contract.getfloat(
+                        "maximum_fine_to_baseline_"
+                        "reverse_charge_per_update_ratio"
+                    ),
+                "maximum_fine_to_baseline_reverse_impulse_ratio":
+                    contract.getfloat(
+                        "maximum_fine_to_baseline_reverse_impulse_ratio"
+                    ),
+                "maximum_fine_reverse_demand_macroparticles_per_update":
+                    contract.getfloat(
+                        "maximum_fine_reverse_demand_macroparticles_per_update"
+                    ),
             },
             "launched": False,
             "runs": runs,
@@ -279,6 +292,9 @@ def prepare_convergence(args: argparse.Namespace) -> Path:
                 "acknowledgement.",
                 "Single-seed convergence is necessary but not sufficient "
                 "for a physics claim.",
+                "Controller acceptance uses represented charge, not raw "
+                "macro-particle counts, because macro weight changes with "
+                "population.",
             ],
         }
         (temporary / "convergence.json").write_text(

@@ -567,8 +567,10 @@ python3 scripts/prepare_hall_convergence.py \
 ```
 
 Every generated deck remains independently protected by the CLI large-run
-acknowledgement. After separately executing all five decks, analyze their
-time-averaged axial field/species profiles and time-averaged azimuthal spectra:
+acknowledgement. The population stages also preserve the checkpoint-v9
+controller observability contract from step zero. After separately executing
+all five decks, analyze their time-averaged axial field/species profiles,
+time-averaged azimuthal spectra, and cathode reverse-demand scaling:
 
 ```sh
 python3 scripts/analyze_hall_convergence.py \
@@ -579,7 +581,16 @@ python3 scripts/analyze_hall_convergence.py \
 For each observable, the report records absolute and baseline-normalized L2
 and Linf changes from coarse to baseline and fine to baseline. Acceptance
 requires the fine change to satisfy the pinned tolerances and not exceed the
-coarse change. This is a fixed-grid, same-seed sensitivity gate with
+coarse change. The controller population gate compares represented reverse
+charge per update and the maximum represented reverse impulse, rather than
+raw macro-particle counts. The 32-particle/cell stage may not exceed 1.25
+times the baseline reverse charge per update, its maximum represented impulse
+must fall to at most 0.75 times baseline, and its largest reverse request must
+remain at or below 1.5 macroparticles. Reverse-event frequency is reported but
+is deliberately not required to decrease: smaller macro weights can resolve
+more sub-baseline events even while their represented physical charge falls.
+All five runs require complete v9 diagnostics; a legacy restart with partial
+coverage is rejected. This is a fixed-grid, same-seed sensitivity gate with
 `physics_claim = none`; grid, timestep, seed-ensemble, and external-reference
 agreement remain separate requirements.
 

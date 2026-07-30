@@ -33,6 +33,7 @@ MODE_OBSERVABLES = (
     ("electric_x", ""),
     ("number_density", "electrons"),
 )
+ELEMENTARY_CHARGE_C = 1.602176634e-19
 
 
 def sha256(path: Path) -> str:
@@ -62,6 +63,14 @@ def finite(value: str, context: str) -> float:
     return result
 
 
+def nonnegative_integer(value: str, context: str) -> int:
+    numeric = finite(value, context)
+    result = int(numeric)
+    if numeric != result or result < 0:
+        raise ConvergenceError(f"{context} is not a non-negative integer")
+    return result
+
+
 def read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
     try:
         with path.open(newline="", encoding="utf-8") as stream:
@@ -78,6 +87,117 @@ def read_csv(path: Path, required: set[str]) -> list[dict[str, str]]:
     if not rows:
         raise ConvergenceError(f"{path.name} has no rows")
     return rows
+
+
+def load_controller(
+    output: Path,
+    expected_updates: int,
+) -> dict[str, float | int]:
+    path = output / "current_source.csv"
+    required = {
+        "macro_particles_created",
+        "represented_particles_created",
+        "control_updates",
+        "reverse_diagnostics_start_step",
+        "reverse_demand_steps",
+        "reverse_demand_step_fraction",
+        "cumulative_reverse_demand_macroparticles",
+        "maximum_reverse_demand_macroparticles",
+        "cumulative_monitored_negative_charge",
+        "cumulative_monitored_positive_charge",
+        "cumulative_processed_monitored_charge",
+    }
+    final = read_csv(path, required)[-1]
+    created = nonnegative_integer(
+        final["macro_particles_created"],
+        f"{path.name} macro particles created",
+    )
+    represented = finite(
+        final["represented_particles_created"],
+        f"{path.name} represented particles created",
+    )
+    updates = nonnegative_integer(
+        final["control_updates"], f"{path.name} control updates"
+    )
+    start_step = nonnegative_integer(
+        final["reverse_diagnostics_start_step"],
+        f"{path.name} reverse diagnostic start step",
+    )
+    reverse_steps = nonnegative_integer(
+        final["reverse_demand_steps"],
+        f"{path.name} reverse-demand steps",
+    )
+    fraction = finite(
+        final["reverse_demand_step_fraction"],
+        f"{path.name} reverse-demand fraction",
+    )
+    cumulative = finite(
+        final["cumulative_reverse_demand_macroparticles"],
+        f"{path.name} cumulative reverse demand",
+    )
+    maximum = finite(
+        final["maximum_reverse_demand_macroparticles"],
+        f"{path.name} maximum reverse demand",
+    )
+    negative = finite(
+        final["cumulative_monitored_negative_charge"],
+        f"{path.name} monitored negative charge",
+    )
+    positive = finite(
+        final["cumulative_monitored_positive_charge"],
+        f"{path.name} monitored positive charge",
+    )
+    processed = finite(
+        final["cumulative_processed_monitored_charge"],
+        f"{path.name} processed monitored charge",
+    )
+    expected_fraction = reverse_steps / updates if updates else 0.0
+    if (
+        created <= 0
+        or represented <= 0.0
+        or updates != expected_updates
+        or start_step != 0
+        or reverse_steps > updates
+        or cumulative < 0.0
+        or maximum < 0.0
+        or maximum > cumulative + 1e-12
+        or negative > 0.0
+        or positive < 0.0
+        or not math.isclose(
+            fraction, expected_fraction, rel_tol=1e-12, abs_tol=1e-15
+        )
+        or not math.isclose(
+            negative + positive,
+            processed,
+            rel_tol=1e-12,
+            abs_tol=1e-24,
+        )
+    ):
+        raise ConvergenceError(
+            f"{path.name} controller diagnostics are inconsistent "
+            "or do not cover the complete run"
+        )
+    macro_charge = (
+        represented / created * ELEMENTARY_CHARGE_C
+    )
+    cumulative_charge = cumulative * macro_charge
+    maximum_charge = maximum * macro_charge
+    monitored_absolute_charge = abs(negative) + positive
+    return {
+        "control_updates": updates,
+        "reverse_demand_steps": reverse_steps,
+        "reverse_demand_step_fraction": fraction,
+        "cumulative_reverse_demand_macroparticles": cumulative,
+        "maximum_reverse_demand_macroparticles": maximum,
+        "macro_charge_c": macro_charge,
+        "cumulative_reverse_demand_charge_c": cumulative_charge,
+        "reverse_demand_charge_per_update_c":
+            cumulative_charge / updates,
+        "maximum_reverse_demand_charge_c": maximum_charge,
+        "reverse_demand_fraction_of_absolute_monitored_charge":
+            cumulative_charge / monitored_absolute_charge
+            if monitored_absolute_charge > 0.0 else 0.0,
+    }
 
 
 def atomic_json(path: Path, value: dict[str, object]) -> None:
@@ -152,6 +272,7 @@ def load_stage(
     expected_samples: int,
     expected_nodes: int,
     expected_max_mode: int,
+    expected_updates: int,
 ) -> dict[str, object]:
     field_path = output / "resolved_field_time_average.csv"
     field_rows = read_csv(
@@ -250,10 +371,12 @@ def load_stage(
     return {
         "coordinates": coordinates,
         "vectors": vectors,
+        "controller": load_controller(output, expected_updates),
         "sha256": {
             "field_average": sha256(field_path),
             "species_average": sha256(species_path),
             "mode_history": sha256(mode_path),
+            "current_source": sha256(output / "current_source.csv"),
         },
     }
 
@@ -287,12 +410,18 @@ def difference(
     }
 
 
+def safe_ratio(candidate: float, baseline: float) -> float | None:
+    if baseline > 0.0:
+        return candidate / baseline
+    return 0.0 if candidate == 0.0 else None
+
+
 def analyze(args: argparse.Namespace) -> dict[str, object]:
     manifest_path = args.convergence_manifest.resolve()
     root = manifest_path.parent
     campaign = load_json(manifest_path, "convergence manifest")
-    if campaign.get("hall_convergence_version") != 1:
-        raise ConvergenceError("hall_convergence_version must be 1")
+    if campaign.get("hall_convergence_version") != 2:
+        raise ConvergenceError("hall_convergence_version must be 2")
     case_path = Path(str(campaign.get("case_manifest", "")))
     if sha256(case_path) != campaign.get("case_manifest_sha256"):
         raise ConvergenceError("case-manifest SHA-256 mismatch")
@@ -307,6 +436,35 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
     ratio_limit = float(
         acceptance["maximum_fine_to_coarse_change_ratio"]
     )
+    reverse_charge_ratio_limit = float(
+        acceptance[
+            "maximum_fine_to_baseline_reverse_charge_per_update_ratio"
+        ]
+    )
+    reverse_impulse_ratio_limit = float(
+        acceptance[
+            "maximum_fine_to_baseline_reverse_impulse_ratio"
+        ]
+    )
+    reverse_macro_limit = float(
+        acceptance[
+            "maximum_fine_reverse_demand_macroparticles_per_update"
+        ]
+    )
+    if any(
+        not math.isfinite(value) or value <= 0.0
+        for value in (
+            l2_tolerance,
+            linf_tolerance,
+            ratio_limit,
+            reverse_charge_ratio_limit,
+            reverse_impulse_ratio_limit,
+            reverse_macro_limit,
+        )
+    ):
+        raise ConvergenceError(
+            "convergence acceptance limits must be positive and finite"
+        )
 
     stages: dict[str, dict[str, object]] = {}
     records: list[dict[str, object]] = []
@@ -334,6 +492,7 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
             int(run["diagnostic_samples"]),
             contract["nodes"],
             contract["max_mode"],
+            contract["steps"],
         )
         stages[stage] = loaded
         records.append({
@@ -343,6 +502,7 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
             "output_dir": str(output),
             "runtime_config_sha256": run.get("runtime_config_sha256"),
             "artifacts": loaded["sha256"],
+            "controller": loaded["controller"],
         })
 
     baseline = stages.get("population_1")
@@ -413,8 +573,54 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
                 value["passed"] for value in observable_results.values()
             ),
         }
+    controller_stages: dict[str, dict[str, float | int]] = {}
+    for stage_name in ("population_0p5", "population_1", "population_2"):
+        controller = stages[stage_name]["controller"]
+        if not isinstance(controller, dict):
+            raise ConvergenceError(
+                f"{stage_name} controller diagnostics are missing"
+            )
+        controller_stages[stage_name] = controller
+    baseline_controller = controller_stages["population_1"]
+    fine_controller = controller_stages["population_2"]
+    charge_ratio = safe_ratio(
+        float(fine_controller["reverse_demand_charge_per_update_c"]),
+        float(baseline_controller["reverse_demand_charge_per_update_c"]),
+    )
+    impulse_ratio = safe_ratio(
+        float(fine_controller["maximum_reverse_demand_charge_c"]),
+        float(baseline_controller["maximum_reverse_demand_charge_c"]),
+    )
+    controller_passed = (
+        charge_ratio is not None
+        and charge_ratio <= reverse_charge_ratio_limit
+        and impulse_ratio is not None
+        and impulse_ratio <= reverse_impulse_ratio_limit
+        and float(
+            fine_controller[
+                "maximum_reverse_demand_macroparticles"
+            ]
+        ) <= reverse_macro_limit
+    )
+    passed = passed and controller_passed
+    comparisons["controller_population"] = {
+        "coarse_stage": "population_0p5",
+        "baseline_stage": "population_1",
+        "fine_stage": "population_2",
+        "stages": controller_stages,
+        "fine_to_baseline_reverse_charge_per_update_ratio":
+            charge_ratio,
+        "fine_to_baseline_reverse_impulse_ratio": impulse_ratio,
+        "event_frequency_is_acceptance_metric": False,
+        "passed": controller_passed,
+        "interpretation": (
+            "Acceptance uses represented charge because macro-particle "
+            "weight changes with population. Reverse-event frequency is "
+            "reported but is not required to decrease."
+        ),
+    }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "case_id": campaign.get("case_id"),
         "physics_claim": "none",
         "passed": passed,
@@ -425,6 +631,8 @@ def analyze(args: argparse.Namespace) -> dict[str, object]:
         "comparisons": comparisons,
         "limitations": [
             "This is a same-seed fixed-grid population/duration study.",
+            "The controller test diagnoses population scaling over this "
+            "early-time window; it does not validate the cathode model.",
             "Grid, timestep, random-seed, and published-reference "
             "convergence remain independent requirements.",
         ],

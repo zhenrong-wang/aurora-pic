@@ -125,7 +125,7 @@ storage_budget_gib = 32
 physics_claim = candidate_for_reference_comparison
 
 [convergence.workstation]
-convergence_contract_version = 1
+convergence_contract_version = 2
 base_tier = workstation
 authorization = explicit_cost_acknowledgement
 population_factors = 0.5,1,2
@@ -137,6 +137,9 @@ maximum_aggregate_initial_particle_updates = 7680000000
 relative_l2_tolerance = 0.25
 relative_linf_tolerance = 0.5
 maximum_fine_to_coarse_change_ratio = 1
+maximum_fine_to_baseline_reverse_charge_per_update_ratio = 1.25
+maximum_fine_to_baseline_reverse_impulse_ratio = 0.75
+maximum_fine_reverse_demand_macroparticles_per_update = 1.5
 physics_claim = none
 
 [horizon.workstation]
