@@ -396,6 +396,11 @@ uncertainty-aware acceptance report without bundling the reference data.
 The serialized campaign runner applies that contract to every resolution,
 checks physics identity and uncertainty-aware numerical convergence, and
 keeps all runs single-threaded and sequential by default.
+The Turner helium CCP workflow additionally provides a hash-audited,
+non-launching production Case 1 preparer. It locks the exact grid, initial
+population, RF duration, restart-safe averaging window, and guarded collision
+majorants while keeping the publisher tables under ignored `tmp/`; see
+[`docs/ccp-validation.md`](docs/ccp-validation.md).
 The runner also offers an explicit bounded branching mode: ionization and
 attachment respectively increase and decrease represented electron weight
 while systematic resampling holds computational population fixed, enabling

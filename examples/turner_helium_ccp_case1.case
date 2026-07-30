@@ -1,0 +1,52 @@
+case_manifest_version = 1
+case_id = turner-helium-ccp-2013-case-1
+case_class = code_to_code_verification_benchmark
+status = production_campaign_not_run
+
+[reference]
+doi = 10.1063/1.4775084
+source_case_id = turner-helium-ccp-2013
+source_artifact_sha256 = a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661
+normalized_audit_sha256 = cca4818f05691a8f81930f8183d3bf18533412f974ae0351e67af91ee59d3159
+reference_file = turner_case1_benchmark.csv
+
+[physics]
+length_m = 0.067
+neutral_density_m3 = 9.64e20
+neutral_temperature_k = 300
+rf_frequency_hz = 13.56e6
+voltage_amplitude_v = 450
+initial_density_m3 = 2.56e14
+electron_temperature_k = 30000
+ion_temperature_k = 300
+electron_mass_kg = 9.109e-31
+helium_mass_kg = 6.67e-27
+elementary_charge_c = 1.602176634e-19
+boltzmann_constant_j_k = 1.3806504e-23
+
+[numerics]
+nodes = 129
+cells = 128
+particles_per_cell_per_species = 512
+steps_per_rf_cycle = 400
+rf_cycles = 1280
+averaging_rf_cycles = 32
+output_interval_steps = 400
+checkpoint_interval_steps = 12800
+max_particles_per_species = 262144
+seed = 13507
+
+[collision_guard]
+electron_energy_ceiling_ev = 10000
+ion_energy_ceiling_ev = 10000
+thermal_neutral_sigma_limit = 8
+scan_intervals = 20000
+safety_factor = 1.25
+rounding_significant_digits = 2
+max_candidates_per_particle = 16
+
+[authorization]
+generation = explicit_cost_acknowledgement
+acknowledgement = I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_TURNER_RUN
+launch = never_by_preparer
+physics_claim_before_complete_comparison = none

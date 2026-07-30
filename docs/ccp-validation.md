@@ -161,6 +161,38 @@ performs both SI conversions at load time. No table is resampled. Named 1D
 collision models load either generated manifest through `gas_data_file`, with
 only ionization product-species mappings supplied by the simulation deck.
 
+## Exact Case 1 campaign preflight
+
+[`examples/turner_helium_ccp_case1.case`](../examples/turner_helium_ccp_case1.case)
+locks the published Case 1 physics and numerical contract independently of
+the restricted local tables. After normalization, generate the production
+deck and its machine-readable preflight report with:
+
+```sh
+python3 scripts/prepare_turner_case.py \
+  examples/turner_helium_ccp_case1.case \
+  tmp/turner-normalized-v1 \
+  --output tmp/turner-case1-campaign/turner_case1.cfg \
+  --acknowledge-cost I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_TURNER_RUN
+```
+
+The preparer verifies the normalization audit and every normalized file,
+derives the exact 65,536 macro-particles per species and weight, locks the
+512,000-step/1,280-cycle duration and final 12,800-sample window, and audits
+thermal-neutral collision majorants through the declared 10 keV projectile
+envelopes. The scan follows the production kernel's eight-standard-deviation
+thermal bound, applies a safety factor, and records both sampled peaks and
+configured majorants. During execution, the collision kernel independently
+checks every encountered particle and fails rather than biasing the result if
+a majorant is exceeded.
+
+Generation never launches the calculation and the report explicitly carries
+`physics_claim = none`. The exact campaign has a floor of 67,108,864,000
+initial-particle updates before collision work and particle creation, so it
+must first receive a bounded, single-core runtime qualification. Use
+`aurorapic_cli --validate-only` to parse the generated deck without allocating
+or advancing its particles.
+
 ## Restart-safe density averaging
 
 The primary Turner observable is now produced by a generic 1D post-step
