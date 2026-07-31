@@ -26,6 +26,7 @@ constexpr const char* kCheckpointMagicV2 = "AuroraPIC-checkpoint-v2";
 constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
+constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -162,6 +163,67 @@ void write_collision_sample(
            << totals.null_collisions;
     for (const auto count : totals.channel_collisions) {
         output << ',' << count;
+    }
+    output << '\n';
+    output.flush();
+}
+
+std::string csv_cell(const std::string& value);
+
+void write_boundary_loss_header(
+    std::ofstream& output,
+    const std::vector<Species>& species,
+    bool si) {
+    output << "step,time,counter_origin_step";
+    for (const auto& item : species) {
+        const auto& name = item.name();
+        output << ',' << csv_cell("absorbed_left_count_" + name)
+               << ',' << csv_cell("absorbed_right_count_" + name)
+               << ',' << csv_cell(
+                      "absorbed_left_charge_" + name +
+                      (si ? "_C_m-2" : "_normalized"))
+               << ',' << csv_cell(
+                      "absorbed_right_charge_" + name +
+                      (si ? "_C_m-2" : "_normalized"))
+               << ',' << csv_cell(
+                      "absorbed_left_kinetic_energy_" + name +
+                      (si ? "_J_m-2" : "_normalized"))
+               << ',' << csv_cell(
+                      "absorbed_right_kinetic_energy_" + name +
+                      (si ? "_J_m-2" : "_normalized"));
+    }
+    output << '\n';
+}
+
+void write_boundary_loss_sample(
+    std::ofstream& output,
+    std::size_t step,
+    double time,
+    std::size_t counter_origin_step,
+    const std::vector<Species>& species,
+    const std::vector<BoundaryLoss1D>& losses) {
+    if (species.size() != losses.size()) {
+        throw std::logic_error(
+            "1D boundary-loss diagnostics do not match species");
+    }
+    output << step << ',' << std::setprecision(17) << time
+           << ',' << counter_origin_step;
+    for (std::size_t species_id = 0;
+         species_id < species.size(); ++species_id) {
+        const auto& item = species[species_id];
+        const auto& loss = losses[species_id];
+        const double charge_per_macro =
+            item.charge() * item.config().weight;
+        output << ',' << loss.absorbed_left
+               << ',' << loss.absorbed_right
+               << ',' << charge_per_macro *
+                              static_cast<double>(
+                                  loss.absorbed_left)
+               << ',' << charge_per_macro *
+                              static_cast<double>(
+                                  loss.absorbed_right)
+               << ',' << loss.kinetic_energy_left
+               << ',' << loss.kinetic_energy_right;
     }
     output << '\n';
     output.flush();
@@ -393,6 +455,13 @@ Simulation::Simulation(Config cfg)
         collision_totals_.channel_names;
     collision_interval_.channel_collisions.assign(
         collision_totals_.channel_names.size(), 0);
+    species_boundary_losses_.assign(
+        species_.size(), BoundaryLoss1D{});
+    boundary_loss_chunks_.assign(
+        species_.size(),
+        std::vector<BoundaryLoss1D>(
+            runtime_info(cfg_.runtime).active_threads,
+            BoundaryLoss1D{}));
     if (cfg_.spatial_average.enabled) {
         spatial_density_sums_.assign(
             species_.size(),
@@ -506,6 +575,11 @@ void Simulation::deposit_and_solve(double field_time) {
 void Simulation::initialize() {
     time_ = 0.0;
     step_ = 0;
+    boundary_loss_origin_step_ = 0;
+    std::fill(
+        species_boundary_losses_.begin(),
+        species_boundary_losses_.end(),
+        BoundaryLoss1D{});
     if (cfg_.initial_state_path.empty()) {
         for (auto& sp : species_) sp.initialize(grid_, rng_);
     } else {
@@ -754,17 +828,67 @@ void Simulation::step() {
         auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
         auto& particles = sp.particles();
-        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
-            auto& p = particles[particle_id];
-            if (!p.alive) return;
-            kick_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
-            drift_leapfrog(p, cfg_.dt);
-            if (grid_.boundary() == Boundary::Periodic) {
-                p.x = std::fmod(std::fmod(p.x, grid_.length()) + grid_.length(), grid_.length());
-            } else if (p.x < 0.0 || p.x > grid_.length()) {
-                p.alive = false;
-            }
-        });
+        auto& chunk_losses =
+            boundary_loss_chunks_[species_id];
+        std::fill(
+            chunk_losses.begin(), chunk_losses.end(),
+            BoundaryLoss1D{});
+        runtime_static_chunks(
+            std::size_t{0}, particles.size(), cfg_.runtime,
+            [&](std::size_t chunk, std::size_t begin,
+                std::size_t end) {
+                auto& loss = chunk_losses[chunk];
+                for (std::size_t particle_id = begin;
+                     particle_id < end; ++particle_id) {
+                    auto& p = particles[particle_id];
+                    if (!p.alive) continue;
+                    kick_leapfrog(
+                        p, interpolate_electric(grid_, p.x),
+                        qm, cfg_.dt);
+                    drift_leapfrog(p, cfg_.dt);
+                    if (grid_.boundary() ==
+                        Boundary::Periodic) {
+                        p.x = std::fmod(
+                            std::fmod(
+                                p.x, grid_.length()) +
+                                grid_.length(),
+                            grid_.length());
+                    } else if (
+                        p.x < 0.0 ||
+                        p.x > grid_.length()) {
+                        const double speed_squared =
+                            p.v_half * p.v_half +
+                            p.velocity_y * p.velocity_y +
+                            p.velocity_z * p.velocity_z;
+                        const double represented_energy =
+                            0.5 * sp.mass() *
+                            sp.config().weight *
+                            speed_squared;
+                        if (p.x < 0.0) {
+                            ++loss.absorbed_left;
+                            loss.kinetic_energy_left +=
+                                represented_energy;
+                        } else {
+                            ++loss.absorbed_right;
+                            loss.kinetic_energy_right +=
+                                represented_energy;
+                        }
+                        p.alive = false;
+                    }
+                }
+            });
+        auto& total_loss =
+            species_boundary_losses_[species_id];
+        for (const auto& loss : chunk_losses) {
+            total_loss.absorbed_left +=
+                loss.absorbed_left;
+            total_loss.absorbed_right +=
+                loss.absorbed_right;
+            total_loss.kinetic_energy_left +=
+                loss.kinetic_energy_left;
+            total_loss.kinetic_energy_right +=
+                loss.kinetic_energy_right;
+        }
     }
     deposit_and_solve(time_ + cfg_.dt);
     for (std::size_t species_id = 0;
@@ -938,7 +1062,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV5 << '\n';
+    out << kCheckpointMagicV6 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -960,6 +1084,22 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         out << ' ' << count;
     }
     out << "\n";
+    out << "boundary_loss_origin_step "
+        << boundary_loss_origin_step_ << "\n";
+    out << "boundary_loss_count "
+        << species_boundary_losses_.size() << "\n";
+    for (std::size_t species_id = 0;
+         species_id < species_boundary_losses_.size();
+         ++species_id) {
+        const auto& loss =
+            species_boundary_losses_[species_id];
+        out << "boundary_loss " << species_id << ' '
+            << species_[species_id].name() << ' '
+            << loss.absorbed_left << ' '
+            << loss.absorbed_right << ' '
+            << loss.kinetic_energy_left << ' '
+            << loss.kinetic_energy_right << "\n";
+    }
     out << "spatial_average "
         << (cfg_.spatial_average.enabled ? 1 : 0) << ' '
         << cfg_.spatial_average.interval << ' '
@@ -1008,11 +1148,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v3 = magic == kCheckpointMagicV3;
     const bool checkpoint_v4 = magic == kCheckpointMagicV4;
     const bool checkpoint_v5 = magic == kCheckpointMagicV5;
+    const bool checkpoint_v6 = magic == kCheckpointMagicV6;
     const bool checkpoint_v4_state =
-        checkpoint_v4 || checkpoint_v5;
+        checkpoint_v4 || checkpoint_v5 || checkpoint_v6;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
-        !checkpoint_v5) {
+        !checkpoint_v5 && !checkpoint_v6) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1027,7 +1168,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         double permittivity = 0.0;
         in >> unit_system >> relative_permittivity >> permittivity;
         if ((!checkpoint_v2 && !checkpoint_v3 &&
-             !checkpoint_v4 && !checkpoint_v5) ||
+             !checkpoint_v4 && !checkpoint_v5 &&
+             !checkpoint_v6) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1037,6 +1179,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key;
     } else if (checkpoint_v2 || checkpoint_v3 ||
                checkpoint_v4 || checkpoint_v5 ||
+               checkpoint_v6 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1066,7 +1209,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         const std::uint64_t expected_signature =
             collision_signature();
         if ((!checkpoint_v3 && !checkpoint_v4 &&
-             !checkpoint_v5) ||
+             !checkpoint_v5 && !checkpoint_v6) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1088,13 +1231,62 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         clear_collision_counts(collision_interval_);
         in >> key;
     } else if (checkpoint_v3 || checkpoint_v4 ||
-               checkpoint_v5 ||
+               checkpoint_v5 || checkpoint_v6 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
     }
-    if (checkpoint_v5) {
+    const bool legacy_boundary_loss_origin =
+        !checkpoint_v6;
+    if (checkpoint_v6) {
+        in >> boundary_loss_origin_step_;
+        if (key != "boundary_loss_origin_step") {
+            throw std::runtime_error(
+                "checkpoint is missing the 1D boundary-loss "
+                "counter origin");
+        }
+        in >> key;
+        std::size_t stored_loss_count = 0;
+        in >> stored_loss_count;
+        if (key != "boundary_loss_count" ||
+            stored_loss_count !=
+                species_boundary_losses_.size()) {
+            throw std::runtime_error(
+                "checkpoint boundary-loss species count does "
+                "not match 1D config");
+        }
+        for (std::size_t species_id = 0;
+             species_id < stored_loss_count; ++species_id) {
+            std::size_t stored_species_id = 0;
+            std::string stored_name;
+            auto& loss =
+                species_boundary_losses_[species_id];
+            in >> key >> stored_species_id >> stored_name >>
+                loss.absorbed_left >>
+                loss.absorbed_right >>
+                loss.kinetic_energy_left >>
+                loss.kinetic_energy_right;
+            if (key != "boundary_loss" ||
+                stored_species_id != species_id ||
+                stored_name != species_[species_id].name() ||
+                !std::isfinite(loss.kinetic_energy_left) ||
+                loss.kinetic_energy_left < 0.0 ||
+                !std::isfinite(loss.kinetic_energy_right) ||
+                loss.kinetic_energy_right < 0.0) {
+                throw std::runtime_error(
+                    "checkpoint 1D boundary-loss data are "
+                    "invalid");
+            }
+        }
+        in >> key;
+    } else {
+        std::fill(
+            species_boundary_losses_.begin(),
+            species_boundary_losses_.end(),
+            BoundaryLoss1D{});
+    }
+    if (checkpoint_v5 || checkpoint_v6) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -1156,6 +1348,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
+    if (legacy_boundary_loss_origin) {
+        boundary_loss_origin_step_ = step_;
+    }
     if (cfg_.spatial_average.enabled) {
         const auto& average = cfg_.spatial_average;
         std::size_t expected_at_step = 0;
@@ -1280,6 +1475,20 @@ RunSummary Simulation::run() {
             collision_interval_, collision_totals_);
         clear_collision_counts(collision_interval_);
     }
+    std::ofstream boundary_loss_output(
+        std::filesystem::path(cfg_.output_dir) /
+        "boundary_losses.csv");
+    if (!boundary_loss_output) {
+        throw std::runtime_error(
+            "cannot open 1D boundary-loss diagnostics output");
+    }
+    write_boundary_loss_header(
+        boundary_loss_output, species_,
+        cfg_.units.system == UnitSystem::SI);
+    write_boundary_loss_sample(
+        boundary_loss_output, step_, time_,
+        boundary_loss_origin_step_, species_,
+        species_boundary_losses_);
     if (cfg_.checkpoint_output) save_checkpoint(checkpoint_path_for_step(cfg_, step_));
 
     const std::size_t limit = cfg_.mode == RunMode::SteadyState ? cfg_.max_steps : cfg_.steps;
@@ -1299,6 +1508,10 @@ RunSummary Simulation::run() {
                     collision_interval_, collision_totals_);
                 clear_collision_counts(collision_interval_);
             }
+            write_boundary_loss_sample(
+                boundary_loss_output, step_, time_,
+                boundary_loss_origin_step_, species_,
+                species_boundary_losses_);
             summary.final_sample = s;
             reached_steady = cfg_.mode == RunMode::SteadyState &&
                              adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);

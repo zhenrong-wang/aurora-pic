@@ -17,6 +17,13 @@ struct RunSummary {
     DiagnosticSample final_sample{};
 };
 
+struct BoundaryLoss1D {
+    std::size_t absorbed_left{0};
+    std::size_t absorbed_right{0};
+    double kinetic_energy_left{0.0};
+    double kinetic_energy_right{0.0};
+};
+
 class Simulation {
 public:
     explicit Simulation(Config cfg);
@@ -32,6 +39,13 @@ public:
     std::size_t step_count() const { return step_; }
     const CollisionDiagnostics& collision_diagnostics() const {
         return collision_totals_;
+    }
+    const std::vector<BoundaryLoss1D>&
+    species_boundary_losses() const {
+        return species_boundary_losses_;
+    }
+    std::size_t boundary_loss_origin_step() const {
+        return boundary_loss_origin_step_;
     }
 private:
     struct IonizationChannelRuntime {
@@ -65,6 +79,10 @@ private:
     bool legacy_bgk_enabled_{false};
     CollisionDiagnostics collision_totals_{};
     CollisionDiagnostics collision_interval_{};
+    std::vector<BoundaryLoss1D> species_boundary_losses_{};
+    std::vector<std::vector<BoundaryLoss1D>>
+        boundary_loss_chunks_{};
+    std::size_t boundary_loss_origin_step_{0};
     std::size_t spatial_average_samples_{0};
     std::vector<std::vector<double>>
         spatial_density_sums_{};

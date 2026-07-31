@@ -350,6 +350,14 @@ species, in configuration order.
 For driven systems, particle-plus-field energy is not conserved because the
 external electrode supplies or removes energy.
 
+Every 1D run also writes `boundary_losses.csv`. For each species and electrode
+it records cumulative absorbed macro-particle count, represented signed
+charge, and full-velocity kinetic energy at impact. Differences between
+successive rows give output-window current density and kinetic power per area
+in SI runs. `counter_origin_step` is zero for a complete fresh/v6 history; a
+legacy restart reports its restart step so partial wall coverage cannot be
+mistaken for whole-run data.
+
 For tabulated MCC, select `model = null_collision`, name the target `species`,
 set `neutral_density` and a conservative `max_frequency`, then add one or more
 `[collision.<name>]` elastic/excitation sections. This legacy singular schema
@@ -556,7 +564,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support text `.apc` checkpoints for deterministic restart and regression debugging. Structured 2D checkpoint v10 records extrusion depth, volumetric and current-regulated source state, controller/correction modes, reverse-demand statistics and distribution moments, species-resolved boundary losses, potential-reference configuration, unit metadata, RNG state, and full 3V particle state. Structured 2D v1-v9 remain readable when their controller contract is compatible; reverse-demand totals begin at the restart step for pre-v9 inputs and distribution statistics begin there for pre-v10 inputs. Current 1D v5 additionally preserves the spatial-density averaging contract, sample count, and nodal sums; v1-v4 remain readable when spatial averaging is disabled. Structured 3D v2 and imported 2D v6 retain their documented compatibility rules. Imported checkpoints additionally fingerprint mesh topology, coordinates, and tags.
+All 1D, 2D, and 3D runs support text `.apc` checkpoints for deterministic restart and regression debugging. Structured 2D checkpoint v10 records extrusion depth, volumetric and current-regulated source state, controller/correction modes, reverse-demand statistics and distribution moments, species-resolved boundary losses, potential-reference configuration, unit metadata, RNG state, and full 3V particle state. Structured 2D v1-v9 remain readable when their controller contract is compatible; reverse-demand totals begin at the restart step for pre-v9 inputs and distribution statistics begin there for pre-v10 inputs. Current 1D v6 preserves the spatial-density averaging contract, sample count, nodal sums, and species/side-resolved wall counts and impact energies. A v5 restart retains its density average and starts explicitly origin-labeled wall counters at the restart step; v1-v4 remain readable when spatial averaging is disabled. Structured 3D v2 and imported 2D v6 retain their documented compatibility rules. Imported checkpoints additionally fingerprint mesh topology, coordinates, and tags.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.

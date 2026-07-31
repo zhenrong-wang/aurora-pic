@@ -60,6 +60,8 @@ The first five bounded prerequisites are complete:
 - restart reconstructs the waveform phase from the stored simulation time;
 - `scalars.csv` records the actual Dirichlet `phi_left` and `phi_right` plus
   live macro-particle counts for each species;
+- `boundary_losses.csv` records restart-safe cumulative macro-particle count,
+  represented charge, and impact kinetic energy by species and electrode;
 - `examples/rf_electrode_1d.cfg` checks the zero, quarter-cycle, and
   half-cycle values with a bounded normalized 1D3V run;
 - `velocity_dimensions = 3` retains transverse velocity through initialization,
@@ -105,8 +107,10 @@ AuroraPIC must not claim a Turner result until all of these are complete:
    without changing their interpolation contract, while keeping the
    publisher-derived files local unless redistribution permission is
    established;
-2. report species-resolved electrode current, deposited power, and ionization
-   source; restart-safe spatial-density time averaging is complete;
+2. finish volume power-transfer diagnostics. Species-resolved electrode
+   charge/current and wall kinetic power are derivable from restart-safe
+   cumulative boundary losses, ionization source is recorded by the collision
+   diagnostics, and spatial-density time averaging is complete;
 3. connect the implemented chi-squared comparator to a statistically bounded,
    run-contract-validated campaign;
 4. implement whole-RF-cycle convergence and phase/time averaging;
@@ -322,11 +326,14 @@ every active electrode-drive frequency. `spatial_average.csv` uses long-form
 species/node rows; `spatial_average_metadata.json` records the window,
 timestep, sample count, species, and a `complete` gate.
 
-1D checkpoint v5 stores the averaging contract, sample count, and every nodal
-sum. A changed averaging window is rejected on restart, and a legacy v1-v4
-checkpoint can restart only when spatial averaging is disabled. A bounded
-regression proves byte-identical continuous and checkpoint-split profiles and
-represented-number conservation.
+1D checkpoint v6 stores the averaging contract, sample count, every nodal sum,
+and species/side wall count and impact energy. A changed averaging window is
+rejected on restart, and a legacy v1-v4 checkpoint can restart only when
+spatial averaging is disabled. A v5 restart retains its averaging state and
+starts explicitly origin-labeled wall counters at the restart step. Bounded
+regressions prove byte-identical continuous/checkpoint-split profiles,
+represented-number conservation, exact wall accounting, and wall-counter
+restart continuity.
 
 The baseline statistical comparison uses the original-grid reference, not the
 numerically refined profile. For every mesh node it computes

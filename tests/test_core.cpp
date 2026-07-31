@@ -3212,6 +3212,125 @@ int main() {
         }
         {
             const auto output_dir =
+                std::filesystem::path(
+                    "test_output_1d_boundary_losses");
+            const auto checkpoint_path =
+                output_dir / "checkpoint_1.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Config cfg;
+            cfg.nx = 3;
+            cfg.length = 1.0;
+            cfg.dt = 0.2;
+            cfg.steps = 1;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir.string();
+            cfg.boundary = pic::Boundary::Dirichlet;
+            cfg.checkpoint_output = true;
+            cfg.checkpoint_interval = 1;
+            cfg.species = {
+                pic::SpeciesConfig{
+                    "left", 0.0, 2.0, 3.0, 1, 1.0,
+                    -10.0, 0.0, 0.0, -1.0},
+                pic::SpeciesConfig{
+                    "right", 0.0, 2.0, 3.0, 1, 1.0,
+                    10.0, 0.0, 0.0, -1.0}};
+
+            pic::Simulation simulation(cfg);
+            const auto summary = simulation.run();
+            const auto& losses =
+                simulation.species_boundary_losses();
+            require(
+                summary.final_sample.live_particles == 0 &&
+                    losses.size() == 2 &&
+                    losses[0].absorbed_left == 1 &&
+                    losses[0].absorbed_right == 0 &&
+                    losses[1].absorbed_left == 0 &&
+                    losses[1].absorbed_right == 1,
+                "1D species-resolved wall counts are wrong");
+            require_near(
+                losses[0].kinetic_energy_left, 300.0,
+                1e-12,
+                "1D left-wall represented impact energy is wrong");
+            require_near(
+                losses[1].kinetic_energy_right, 300.0,
+                1e-12,
+                "1D right-wall represented impact energy is wrong");
+
+            const auto diagnostics = read_file_text(
+                output_dir / "boundary_losses.csv");
+            require(
+                diagnostics.find(
+                    "absorbed_left_count_left,"
+                    "absorbed_right_count_left,"
+                    "absorbed_left_charge_left_normalized,"
+                    "absorbed_right_charge_left_normalized,"
+                    "absorbed_left_kinetic_energy_left_normalized,"
+                    "absorbed_right_kinetic_energy_left_normalized")
+                    != std::string::npos &&
+                    count_lines(diagnostics) == 3,
+                "1D wall-loss CSV contract is wrong");
+
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            const auto& restarted_losses =
+                restarted.species_boundary_losses();
+            require(
+                restarted_losses[0].absorbed_left == 1 &&
+                    restarted_losses[1].absorbed_right == 1 &&
+                    restarted.boundary_loss_origin_step() == 0,
+                "1D checkpoint lost species-resolved wall counts");
+            require_near(
+                restarted_losses[0].kinetic_energy_left,
+                300.0, 1e-12,
+                "1D checkpoint lost left-wall impact energy");
+            require_near(
+                restarted_losses[1].kinetic_energy_right,
+                300.0, 1e-12,
+                "1D checkpoint lost right-wall impact energy");
+            require(
+                read_file_text(checkpoint_path).find(
+                    "AuroraPIC-checkpoint-v6\n") == 0,
+                "1D wall-loss checkpoint did not use v6");
+
+            const auto legacy_path =
+                output_dir / "legacy_v5.apc";
+            {
+                std::istringstream input(
+                    read_file_text(checkpoint_path));
+                std::ofstream legacy(legacy_path);
+                std::string line;
+                bool first = true;
+                while (std::getline(input, line)) {
+                    if (first) {
+                        legacy
+                            << "AuroraPIC-checkpoint-v5\n";
+                        first = false;
+                    } else if (
+                        line.starts_with(
+                            "boundary_loss")) {
+                        continue;
+                    } else {
+                        legacy << line << '\n';
+                    }
+                }
+            }
+            pic::Simulation legacy_restarted(cfg);
+            legacy_restarted.load_checkpoint(legacy_path);
+            require(
+                legacy_restarted.boundary_loss_origin_step() == 1 &&
+                    legacy_restarted
+                            .species_boundary_losses()[0]
+                            .absorbed_left == 0 &&
+                    legacy_restarted
+                            .species_boundary_losses()[1]
+                            .absorbed_right == 0,
+                "legacy v5 restart did not expose its wall-counter "
+                "origin");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
+            const auto output_dir =
                 std::filesystem::path("test_output_1d_rf_drive");
             const auto checkpoint_path =
                 output_dir / "rf_checkpoint.apc";
@@ -3387,9 +3506,9 @@ int main() {
                 "1D3V MCC restart lost collision diagnostics");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v5\n") == 0,
-                "1D3V checkpoint did not use the spatial-average-aware "
-                "velocity format");
+                    "AuroraPIC-checkpoint-v6\n") == 0,
+                "1D3V checkpoint did not use the boundary-loss-aware "
+                "spatial-average velocity format");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }
