@@ -404,6 +404,61 @@ does **not** yet establish Turner code-to-code verification. The next
 credibility work must isolate late-time stochastic drift and the roughly 2%
 density-amplitude bias before another production campaign is justified.
 
+## Post-benchmark source/wall diagnostic
+
+Checkpoint v6 wall accounting was introduced after the exact 1,280-cycle run,
+so a diagnostic continuation started from its final v5 checkpoint. One cycle
+first established the counter transition; a subsequent 32-cycle window covered
+steps 512,400--525,200. These steps are deliberately outside the published
+duration and cannot change the failed density comparison. The retained local
+artifact identities are:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Solver executable (commit `d11875a`) | `c05bf308f18a21a32ca23e520b1410ac7267d329a7f23025395f9f64863f015c` |
+| Original step-512,000 v5 checkpoint | `ba8383387194671ab77001bd8892027a170d67ed7e46a5c23ed7b6ab786c2092` |
+| One-cycle diagnostic deck | `230a17ed38f02b269780692d09051eb51229b7bdae21180b1608e75841aeab03` |
+| 32-cycle diagnostic deck | `5c91148fc5a5a2fb6b59f5f832050eea2da407a18370a31d3ba19cc7902334c5` |
+| Final step-525,200 v6 checkpoint | `23c82ef6ce77a8acf9b4465d9c38aab0da38621da0dfd89a1c9e3fc54061cd95` |
+| 32-cycle balance report | `e224564a6d9aa06a517a86090703920dce1e7e449b09408e68c3ff6ce7a813e3` |
+
+The 32-cycle window recorded 24,657 ionizations. Electron absorption was
+12,721 left plus 12,038 right, giving the exact observed population change of
+-102. Ion absorption was 12,325 left plus 12,478 right, giving the exact
+observed change of -146. Both integer balance residuals are zero.
+
+The left and right ion-current magnitudes are `0.218999` and
+`0.221717 A m^-2`; their mean is `0.220358 A m^-2`, 0.620% above the Turner
+Table III value `0.219 A m^-2`. This has no published single-window acceptance
+range, but it is an encouraging independent observable. The corresponding
+mean electron absorbed-current magnitude is `0.219967 A m^-2`, within 0.18%
+of the ion mean. The reported wall kinetic powers are particle energy carried
+to each electrode, not the volume electron/ion power transfer in Table III.
+
+The total live population fell from 32,298 to 32,050 during this continuation,
+moving toward the approximately 31,900 reported value. Together with exact
+source/loss closure and close electrode current, this argues against a gross
+wall-loss implementation error. It does not resolve whether the original
+density excess is a seed fluctuation, residual finite-duration drift, or a
+smaller collision/heating discrepancy.
+
+Generate a checksum-bearing balance report for any fully covered SI diagnostic
+window with:
+
+```sh
+python3 scripts/analyze_turner_balance.py \
+  --scalars diagnostic-output/scalars.csv \
+  --collisions diagnostic-output/collisions.csv \
+  --boundary-losses diagnostic-output/boundary_losses.csv \
+  --expected-steps 12800 \
+  --output diagnostic-balance.json
+```
+
+The analyzer rejects mismatched step windows, partial wall-counter coverage,
+decreasing counters, non-finite values, and nonzero integer source/loss
+residuals. Its reports retain `physics_claim = none` because a post-benchmark
+continuation is diagnostic evidence rather than the published test.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
