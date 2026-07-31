@@ -185,6 +185,38 @@ def main() -> int:
             "campaign contract or preflight report is incomplete",
         )
 
+        seeded_output = work / "seeded" / "turner.cfg"
+        seeded = run([
+            sys.executable, str(PREPARER), str(case_path), str(normalized),
+            "--output", str(seeded_output), "--seed", "24680",
+            "--acknowledge-cost", ACKNOWLEDGEMENT,
+        ])
+        seeded_report = json.loads(
+            seeded_output.with_suffix(".preflight.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        require(
+            seeded.returncode == 0
+            and seeded_report["contract"]["seed"] == 24680
+            and "seed = 24680" in seeded_output.read_text(encoding="utf-8")
+            and seeded_report["provenance"]["generated_deck_sha256"]
+                == hashlib.sha256(seeded_output.read_bytes()).hexdigest(),
+            "campaign seed override is not hash-consistent",
+        )
+
+        invalid_seed = run([
+            sys.executable, str(PREPARER), str(case_path), str(normalized),
+            "--output", str(work / "invalid-seed.cfg"),
+            "--seed", "4294967296",
+            "--acknowledge-cost", ACKNOWLEDGEMENT,
+        ])
+        require(
+            invalid_seed.returncode == 2
+            and "unsigned 32-bit" in invalid_seed.stderr,
+            "campaign preparation accepted an invalid seed",
+        )
+
         (normalized / "electron.dat").write_text(
             table + "20000 1e-22\n", encoding="utf-8"
         )

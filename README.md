@@ -58,6 +58,10 @@ normalization audit, and applies the published 95% and 99% case ranges.
 post-benchmark profiles and quantifies density drift, adjacent profile motion,
 lag-one correlation, and an AR(1) effective block count without treating a
 diagnostic continuation as a published benchmark pass.
+`prepare_turner_ensemble.py` atomically creates three or more distinct-seed,
+full-duration Turner decks and preflight reports behind a separate aggregate
+cost acknowledgement. It never launches a run and records a sequential-only
+workstation policy plus aggregate resource floors.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.

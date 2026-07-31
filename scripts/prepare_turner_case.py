@@ -349,6 +349,12 @@ def prepare(args: argparse.Namespace) -> tuple[Path, Path]:
         if args.output_dir is not None
         else output.parent / "output"
     )
+    seed_argument = getattr(args, "seed", None)
+    seed = numerics.getint("seed") if seed_argument is None else seed_argument
+    require(
+        isinstance(seed, int) and 0 <= seed <= 4_294_967_295,
+        "seed must be an unsigned 32-bit integer",
+    )
     deck = f"""# Generated exact Turner et al. helium CCP benchmark Case 1 deck.
 # The preparer audited local restricted inputs and did not launch this run.
 config_version = 1
@@ -367,7 +373,7 @@ phi_left = 0
 phi_right = 0
 phi_right_amplitude = {physics.getfloat('voltage_amplitude_v'):.17g}
 phi_right_frequency = {frequency:.17g}
-seed = {numerics.getint('seed')}
+seed = {seed}
 runtime_backend = serial
 runtime_threads = 1
 max_particles_per_species = {capacity}
@@ -444,6 +450,7 @@ loading = quiet_start
             "averaging_start_step": averaging_start,
             "averaging_end_step": steps,
             "averaging_samples": averaging_samples,
+            "seed": seed,
         },
         "collision_guard": {
             "method": "sampled production-kernel thermal bound plus safety factor",
@@ -508,6 +515,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--seed", type=int)
     parser.add_argument("--acknowledge-cost")
     return parser.parse_args()
 

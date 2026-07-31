@@ -38,6 +38,7 @@ python3 scripts/test_hall_runtime_qualification.py build/aurorapic_cli
 python3 scripts/test_turner_balance.py
 python3 scripts/test_compare_turner.py
 python3 scripts/test_turner_density_blocks.py
+python3 scripts/test_prepare_turner_ensemble.py
 python3 scripts/test_spatial_average_1d.py build/aurorapic_cli
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
 python3 scripts/validate_pushers.py

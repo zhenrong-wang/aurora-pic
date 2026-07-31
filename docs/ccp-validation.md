@@ -807,6 +807,56 @@ The next credibility test is an independent-seed, published-duration ensemble;
 that is the appropriate way to distinguish seed variability from a residual
 systematic density bias.
 
+## Independent-seed production ensemble
+
+`scripts/prepare_turner_case.py` now accepts an audited unsigned-32-bit
+`--seed` override and records it in both the generated deck and checksum-bound
+preflight contract. `scripts/prepare_turner_ensemble.py` builds on that
+contract to atomically prepare 3--16 unique full-duration seed decks without
+launching them. It refuses overwrite, requires a separate aggregate cost
+acknowledgement, and fixes workstation concurrency at one run.
+
+```sh
+python3 scripts/prepare_turner_ensemble.py \
+  examples/turner_helium_ccp_case1.case \
+  tmp/turner-normalized-v3 \
+  --output-dir /external/campaign/turner-case1-ensemble \
+  --seeds 13507,24680,97531 \
+  --acknowledge-cost \
+    I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_TURNER_ENSEMBLE
+```
+
+The ensemble manifest records every deck and preflight SHA-256, result and
+comparison locations, the aggregate initial particle-update floor, and an
+explicit `launched = false` claim boundary. Preparation does not authorize
+parallel launch or establish any physics result. The existing completed
+seed-13507 trajectory may be attached later only through a checksum-verified
+result-ingestion step; the preparer does not silently treat it as an ensemble
+member.
+
+The first real campaign preparation uses seeds 13,507, 24,680, and 97,531.
+All three full 512,000-step decks pass `aurorapic_cli --validate-only`; none
+was launched. The aggregate preflight floor is 201,326,592,000 initial
+particle updates and 1,572,864 aggregate capacity slots, with only one run
+authorized concurrently. Based on the completed local seed-13,507 trajectory,
+planning should allow roughly 2.2 hours and about 0.5 GiB per run on this host;
+these are observations, not portable performance guarantees.
+
+| Prepared ensemble artifact | SHA-256 |
+| --- | --- |
+| Ensemble manifest | `5ebf633d827403c8fab97c7fabbb04505249bc90fde1dc412f57c929ec338358` |
+| Seed-13,507 deck | `1cb7abc71c6e38aec2c0cd51dfe77d22158889923463ed06d45a587a46ba4a0f` |
+| Seed-13,507 preflight | `3e289b7efc2cd67fbfd56acf0d4b95cd5a01a92a009192b3df62c67098e393b4` |
+| Seed-24,680 deck | `552cb91fe121fc408f72b6c328722153c91e0de96bfaf5f31e549b5d1c012838` |
+| Seed-24,680 preflight | `1b4d4f4d9223ae452e5edf91f793ec6ee1d56fa2fca695e59c5cdca84f60d47e` |
+| Seed-97,531 deck | `0153288faf1ebb0baaee0be3a4d6e23395175cc22987cf39dbb7d9f518f83f53` |
+| Seed-97,531 preflight | `9af247d3e97de6bcc071f505908175a0f558e283406b60f6bd23c9f8c06a3100` |
+
+The next implementation gate is checksum-verified attachment of the existing
+completed seed-13,507 published-duration result to this ensemble manifest.
+Only after that ingestion path is regression-tested should the two new
+multi-hour seeds be launched sequentially.
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
