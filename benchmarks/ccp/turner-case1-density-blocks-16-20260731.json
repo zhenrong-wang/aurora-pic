@@ -1,0 +1,82 @@
+{
+  "evidence_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "campaign_scope": "post_benchmark_density_stationarity_diagnostic_only",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/turner-case1-stationarity-rule-20260731.json",
+    "sha256": "75591319e7e90cc4cbcb35409b348e6b4ef6e413e293a284d5e64df2d7757fdd"
+  },
+  "solver": {
+    "executable_sha256": "ed6c8c31f73754cbc5851678ade9ef85d2445dd456cefe271cb9e8c0390ef072",
+    "runtime_backend": "serial",
+    "runtime_threads": 1
+  },
+  "block_contract": {
+    "count": 16,
+    "rf_cycles_per_block": 32,
+    "start_step": 525201,
+    "end_step": 730000,
+    "contiguous": true,
+    "spatial_average_reset_on_restart": true
+  },
+  "blocks": [
+    {"start_step": 525201, "end_step": 538000, "x_squared": 365.34344838822597, "reference_relative_l2": 0.023622079713699003, "line_integrated_density_m-2": 5093989859924.319},
+    {"start_step": 538001, "end_step": 550800, "x_squared": 849.2836219308886, "reference_relative_l2": 0.03477545053038739, "line_integrated_density_m-2": 5158225885009.765},
+    {"start_step": 550801, "end_step": 563600, "x_squared": 484.78541998949396, "reference_relative_l2": 0.033345818721807335, "line_integrated_density_m-2": 5131084669189.456},
+    {"start_step": 563601, "end_step": 576400, "x_squared": 423.87147695957657, "reference_relative_l2": 0.02795558514096353, "line_integrated_density_m-2": 5119520585327.15},
+    {"start_step": 576401, "end_step": 589200, "x_squared": 482.35760524550545, "reference_relative_l2": 0.03169659029961097, "line_integrated_density_m-2": 5125810954589.845},
+    {"start_step": 589201, "end_step": 602000, "x_squared": 257.45364057939, "reference_relative_l2": 0.019344602696724736, "line_integrated_density_m-2": 5072663584899.902},
+    {"start_step": 602001, "end_step": 614800, "x_squared": 283.68048560039625, "reference_relative_l2": 0.019255793933981486, "line_integrated_density_m-2": 5088279872436.524},
+    {"start_step": 614801, "end_step": 627600, "x_squared": 198.20179696851895, "reference_relative_l2": 0.0168337530090438, "line_integrated_density_m-2": 5069670238037.107},
+    {"start_step": 627601, "end_step": 640400, "x_squared": 513.1985302618757, "reference_relative_l2": 0.03189851300330588, "line_integrated_density_m-2": 5130779521484.376},
+    {"start_step": 640401, "end_step": 653200, "x_squared": 329.91424035456555, "reference_relative_l2": 0.025169359496365427, "line_integrated_density_m-2": 5101435390319.823},
+    {"start_step": 653201, "end_step": 666000, "x_squared": 411.4495937087976, "reference_relative_l2": 0.03148948835456042, "line_integrated_density_m-2": 5125159867858.885},
+    {"start_step": 666001, "end_step": 678800, "x_squared": 241.05335146410195, "reference_relative_l2": 0.022955766192445503, "line_integrated_density_m-2": 5088962733459.473},
+    {"start_step": 678801, "end_step": 691600, "x_squared": 249.08239425397022, "reference_relative_l2": 0.018662543808887638, "line_integrated_density_m-2": 5076607481994.629},
+    {"start_step": 691601, "end_step": 704400, "x_squared": 159.12963831870806, "reference_relative_l2": 0.01620888329728361, "line_integrated_density_m-2": 5059315376586.914},
+    {"start_step": 704401, "end_step": 717200, "x_squared": 259.4940046431327, "reference_relative_l2": 0.01847481761598187, "line_integrated_density_m-2": 5081578318481.446},
+    {"start_step": 717201, "end_step": 730000, "x_squared": 799.512471177732, "reference_relative_l2": 0.03388286684849815, "line_integrated_density_m-2": 5157093746948.243}
+  ],
+  "x_squared_diagnostic_distribution": {
+    "mean": 394.238232490305,
+    "minimum": 159.12963831870806,
+    "maximum": 849.2836219308886,
+    "windows_within_published_95_percent_numerical_interval": 7,
+    "windows_within_published_99_percent_numerical_interval": 9,
+    "published_acceptance_applicable": false
+  },
+  "stationarity_screen": {
+    "analysis_version": 2,
+    "classification": "internal_stationarity_screen_passed",
+    "passed": true,
+    "gates": {
+      "minimum_total_blocks": {"threshold": 16, "value": 16, "passed": true},
+      "minimum_ar1_effective_blocks": {"threshold": 8.0, "value": 11.835513973903481, "passed": true},
+      "maximum_absolute_projected_fractional_drift": {"threshold": 0.01, "value": 0.004841352457111756, "passed": true},
+      "maximum_absolute_split_half_fractional_change": {"threshold": 0.01, "value": 0.0009381275403117947, "passed": true},
+      "maximum_adjacent_profile_relative_l2": {"threshold": 0.025, "value": 0.020297696056393037, "passed": true}
+    },
+    "lag_one_integrated_density_correlation": 0.1496105309929191,
+    "analysis_report_sha256": "34b0b9de4597e7f6c478f588cb7e3d04ccb11e0d4f8ae1f25b04ab859abf5ccf"
+  },
+  "final_block_integrity": {
+    "balance_exact": true,
+    "ionization_macro_events": 25167,
+    "ion_current_relative_difference": 0.015369912709583655,
+    "electron_power_relative_difference": 0.014794883963963334,
+    "ion_power_relative_difference": 0.018329867984239856,
+    "input_deck_sha256": "4230b429662410df8f2c923a3ed96f442bff35969db6a064047f59e235135bbb",
+    "density_profile_sha256": "424b22d7911537d3333fd014954ac4ae0088f9010e5d9238883d651648ae3025",
+    "averaging_metadata_sha256": "d7215ba0ff0cdce7b2b09e0a2b2bc8fa959d9f332a4e3227c3c32c50602a7ac4",
+    "checkpoint_step_730000_sha256": "33fd628288ec665369e67a426062489e2923db95f23121ef1d528045c7899a76",
+    "comparison_sha256": "b712e29b29084bb5dee4ad054e60982dad063b56d1053d583e2fb0f9afdfd656",
+    "balance_sha256": "530b73f5825cfd4031891ff1f6be3888e0152376dd7eea2718ad1565d29da621"
+  },
+  "claim_boundary": {
+    "established": "late post_benchmark continuation passed the predeclared AuroraPIC internal stationarity screen",
+    "not_established": "Turner published-duration code-to-code acceptance",
+    "original_published_duration_x_squared": 574.3986511135444,
+    "original_published_duration_result": "failed_99_percent_interval",
+    "physics_claim": "stationary_late_continuation_diagnostic_only"
+  }
+}

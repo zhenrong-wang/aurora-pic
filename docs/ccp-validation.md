@@ -770,6 +770,43 @@ block remains in the fixed horizon.
 | Source/wall/power balance | `ecd038908a0efd79d68f7b1ea358ae5b09db2b79f16abd8d7dccef36ee2efc1d` |
 | Fifteen-block analysis | `d5c08866f0a6345bf0b1053955faa9cd71d33ac8c13893f7441f4d037ee480da` |
 
+### Predeclared 16-block stationarity result
+
+Block 16 (cycles 1,794--1,825, steps 717,201--730,000) gives
+`X² = 799.512`, 3.388% relative profile L2 error, and a +1.486%
+line-integrated-density change. Exact source/loss balance closes. Its global
+ion-current, electron-power, and ion-power differences are +1.537%, +1.479%,
+and +1.833%; these remain close but are the largest of the recent windows and
+have no single-window published acceptance gates.
+
+Despite the noisy final window, the predeclared full-series stationarity
+screen **passes all five gates**:
+
+| Gate | Threshold | 16-block value | Result |
+| --- | ---: | ---: | --- |
+| Total blocks | at least 16 | 16 | pass |
+| AR(1) effective blocks | at least 8 | 11.84 | pass |
+| Absolute fitted density drift | at most 1% | 0.484% | pass |
+| Absolute split-half density shift | at most 1% | 0.094% | pass |
+| Maximum adjacent profile L2 | at most 2.5% | 2.030% | pass |
+
+This establishes that the late continuation is stationary at the resolution
+of the predeclared AuroraPIC diagnostic. It also quantifies substantial
+32-cycle sampling variability: `X²` spans 159--849, only 7 of 16 windows lie
+inside the published 95% numerical interval, and 9 of 16 lie inside the 99%
+interval. Therefore the result does not retroactively make the original
+published-duration `X² = 574.399` comparison pass. It instead supports the
+interpretation that the approximately 2--3% density discrepancy is comparable
+to correlated finite-window noise on a single trajectory.
+
+The committed, nonrestricted result is
+[`benchmarks/ccp/turner-case1-density-blocks-16-20260731.json`](../benchmarks/ccp/turner-case1-density-blocks-16-20260731.json)
+(SHA-256
+`f9b92a2b0232cd192910254a998f8030422266f4c3fe9f0f3c1f7e8ed7a0846b`).
+The next credibility test is an independent-seed, published-duration ensemble;
+that is the appropriate way to distinguish seed variability from a residual
+systematic density bias.
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
