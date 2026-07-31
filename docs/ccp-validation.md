@@ -582,10 +582,43 @@ python3 scripts/analyze_turner_density_blocks.py \
   --output density-block-analysis.json
 ```
 
-The next bounded campaign action is therefore five additional contiguous
-32-cycle continuations from the step-563,600 checkpoint, one serial process
-at a time. Their purpose is to estimate late-window correlation and drift,
-not to repair or replace the failed published-duration result.
+Five further low-priority serial continuations completed the declared
+eight-block floor through cycle 1,569 (step 627,600). One attempt at the final
+block was externally interrupted after 400 steps; its partial output was
+excluded and the block was rerun cleanly from the intact step-614,800
+checkpoint. Every new complete block has exact integer source/loss closure.
+
+| 32-cycle block | X² | Relative L2 | Integrated-density change | Gate |
+| --- | ---: | ---: | ---: | --- |
+| 1,314--1,345 | 365.343 | 2.362% | baseline | diagnostic only |
+| 1,346--1,377 | 849.284 | 3.478% | +1.261% | diagnostic only |
+| 1,378--1,409 | 484.785 | 3.335% | -0.526% | diagnostic only |
+| 1,410--1,441 | 423.871 | 2.796% | -0.225% | diagnostic only |
+| 1,442--1,473 | 482.358 | 3.170% | +0.123% | diagnostic only |
+| 1,474--1,505 | 257.454 | 1.934% | -1.037% | diagnostic only |
+| 1,506--1,537 | 283.680 | 1.926% | +0.308% | diagnostic only |
+| 1,538--1,569 | 198.202 | 1.683% | -0.366% | diagnostic only |
+
+The complete series is now eligible for interpretation, but does not
+demonstrate stationarity. The line-integrated density has lag-one correlation
+`0.261`, leaving an AR(1) effective count of only `4.69` blocks, and its fitted
+change across the series is -1.124%. Adjacent profile movement reaches 1.908%.
+Individual windows span `X² = 198--849`; two happen to lie inside the
+published 95% interval, demonstrating why selecting one favorable
+post-benchmark window would be misleading.
+
+The final block again supports the global-physics result: its ion current,
+electron power, and ion power differ from Turner by +0.247%, +0.355%, and
++0.727%, respectively. The committed nonrestricted summary evidence is
+[`benchmarks/ccp/turner-case1-density-blocks-8-20260731.json`](../benchmarks/ccp/turner-case1-density-blocks-8-20260731.json)
+(SHA-256
+`23001a2086cae8df032bcd970963e0c34fbb2528646eba4eec79cdf0b33a1d7c`).
+The original published-duration `X² = 574.399` failure remains unchanged.
+
+The next campaign decision must be made before observing more data: either
+predeclare a longer stationarity horizon and stopping rule, or run an
+independent-seed published-duration ensemble. The latter is stronger but costs
+roughly three full 1,280-cycle trajectories.
 
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:

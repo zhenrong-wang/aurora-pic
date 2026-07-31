@@ -1,0 +1,106 @@
+{
+  "evidence_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "campaign_scope": "post_benchmark_density_diagnostic_only",
+  "solver": {
+    "git_commit": "98e17cd",
+    "executable_sha256": "ed6c8c31f73754cbc5851678ade9ef85d2445dd456cefe271cb9e8c0390ef072",
+    "runtime_backend": "serial",
+    "runtime_threads": 1
+  },
+  "block_contract": {
+    "count": 8,
+    "rf_cycles_per_block": 32,
+    "start_step": 525201,
+    "end_step": 627600,
+    "contiguous": true,
+    "spatial_average_reset_on_restart": true
+  },
+  "blocks": [
+    {
+      "start_step": 525201,
+      "end_step": 538000,
+      "x_squared": 365.34344838822597,
+      "reference_relative_l2": 0.023622079713699003,
+      "line_integrated_density_m-2": 5093989859924.319
+    },
+    {
+      "start_step": 538001,
+      "end_step": 550800,
+      "x_squared": 849.2836219308886,
+      "reference_relative_l2": 0.03477545053038739,
+      "line_integrated_density_m-2": 5158225885009.765
+    },
+    {
+      "start_step": 550801,
+      "end_step": 563600,
+      "x_squared": 484.78541998949396,
+      "reference_relative_l2": 0.033345818721807335,
+      "line_integrated_density_m-2": 5131084669189.456
+    },
+    {
+      "start_step": 563601,
+      "end_step": 576400,
+      "x_squared": 423.87147695957657,
+      "reference_relative_l2": 0.02795558514096353,
+      "line_integrated_density_m-2": 5119520585327.15
+    },
+    {
+      "start_step": 576401,
+      "end_step": 589200,
+      "x_squared": 482.35760524550545,
+      "reference_relative_l2": 0.03169659029961097,
+      "line_integrated_density_m-2": 5125810954589.845
+    },
+    {
+      "start_step": 589201,
+      "end_step": 602000,
+      "x_squared": 257.45364057939,
+      "reference_relative_l2": 0.019344602696724736,
+      "line_integrated_density_m-2": 5072663584899.902
+    },
+    {
+      "start_step": 602001,
+      "end_step": 614800,
+      "x_squared": 283.68048560039625,
+      "reference_relative_l2": 0.019255793933981486,
+      "line_integrated_density_m-2": 5088279872436.524
+    },
+    {
+      "start_step": 614801,
+      "end_step": 627600,
+      "x_squared": 198.20179696851895,
+      "reference_relative_l2": 0.0168337530090438,
+      "line_integrated_density_m-2": 5069670238037.107
+    }
+  ],
+  "series_metrics": {
+    "mean_line_integrated_density_m-2": 5107405706176.759,
+    "projected_fractional_drift_across_series": -0.011240871578067274,
+    "lag_one_integrated_density_correlation": 0.26127852691278314,
+    "ar1_effective_blocks": 4.685540630873195,
+    "maximum_adjacent_profile_relative_l2": 0.019082166354119048
+  },
+  "artifact_sha256": {
+    "analysis_report": "163014e5507b17e478e35d9d3d05209d2f6814f62d4cad711a0039176983b356",
+    "final_checkpoint_step_627600": "4fb6603d27bd1bafd54be0371f0b79c2a179f366fea5dbcf461f763d242fd783",
+    "block_1410_1441_comparison": "662b48b1499b825feabc762c7178e67714b0a5a57baef134de648e480db8e83d",
+    "block_1410_1441_balance": "466e9d646f2d390ecfa018bef4f347bc9a4f4063bf8d95ebe81fec4503d55c4d",
+    "block_1442_1473_comparison": "af1f2e819d511f8ff3739d2b082bd2f9db1f3afe2ff050d601639797656736b8",
+    "block_1442_1473_balance": "606036f836b4c3eabbc50aada8fbc3fd92eea6efefd19e4fbea60318f4200b46",
+    "block_1474_1505_comparison": "b76ac5d963ab590489642a4696bc91c044040387d977a6aadbeee77906779757",
+    "block_1474_1505_balance": "72fe2f042ebdc9f5496db0717e3420a3616af54068c95ab0bf09216918155477",
+    "block_1506_1537_comparison": "ac874e7018222a805b13f627bbc12f9db4988a1e4be534420d72aac3d49d1f26",
+    "block_1506_1537_balance": "144395deb39f9ca7ad584587f5d8069dfc6afc5be1ae4c010abb01582b9b60b0",
+    "block_1538_1569_comparison": "610ce8cfd05cad40e2d3313b70aeae990781eea31925c98bbbfdfaa594c3b791",
+    "block_1538_1569_balance": "9dd81ddd2891b9fb4876e4e95a0001fc21ad29fc383d9973d17824c0cccdeed5"
+  },
+  "integrity": {
+    "all_five_new_blocks_exact_source_loss_balance": true,
+    "interrupted_attempt_excluded": true
+  },
+  "diagnostic_series_ready": true,
+  "stationarity_interpretation": "not_demonstrated_due_to_residual_drift_and_low_effective_block_count",
+  "published_acceptance_applicable": false,
+  "physics_claim": "none_post_benchmark_diagnostic_only"
+}
