@@ -354,8 +354,12 @@ Every 1D run also writes `boundary_losses.csv`. For each species and electrode
 it records cumulative absorbed macro-particle count, represented signed
 charge, and full-velocity kinetic energy at impact. Differences between
 successive rows give output-window current density and kinetic power per area
-in SI runs. `counter_origin_step` is zero for a complete fresh/v6 history; a
-legacy restart reports its restart step so partial wall coverage cannot be
+in SI runs. Every 1D run additionally writes `power_transfer.csv`, containing
+cumulative species-resolved kinetic-energy change caused by the electric
+particle push. A row difference divided by elapsed time is the mean electrical
+power per area delivered to that species over the window (`W m^-2` in SI).
+`counter_origin_step` is zero for a complete fresh/v7 history; a legacy
+restart reports its restart step so partial diagnostic coverage cannot be
 mistaken for whole-run data.
 
 For tabulated MCC, select `model = null_collision`, name the target `species`,

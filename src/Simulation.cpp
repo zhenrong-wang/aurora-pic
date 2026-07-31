@@ -27,6 +27,7 @@ constexpr const char* kCheckpointMagicV3 = "AuroraPIC-checkpoint-v3";
 constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
+constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -224,6 +225,39 @@ void write_boundary_loss_sample(
                                   loss.absorbed_right)
                << ',' << loss.kinetic_energy_left
                << ',' << loss.kinetic_energy_right;
+    }
+    output << '\n';
+    output.flush();
+}
+
+void write_power_transfer_header(
+    std::ofstream& output,
+    const std::vector<Species>& species,
+    bool si) {
+    output << "step,time,counter_origin_step";
+    for (const auto& item : species) {
+        output << ',' << csv_cell(
+            "electric_work_" + item.name() +
+            (si ? "_J_m-2" : "_normalized"));
+    }
+    output << '\n';
+}
+
+void write_power_transfer_sample(
+    std::ofstream& output,
+    std::size_t step,
+    double time,
+    std::size_t counter_origin_step,
+    const std::vector<Species>& species,
+    const std::vector<SpeciesPower1D>& power) {
+    if (species.size() != power.size()) {
+        throw std::logic_error(
+            "1D power-transfer diagnostics do not match species");
+    }
+    output << step << ',' << std::setprecision(17) << time
+           << ',' << counter_origin_step;
+    for (const auto& item : power) {
+        output << ',' << item.electric_work;
     }
     output << '\n';
     output.flush();
@@ -462,6 +496,13 @@ Simulation::Simulation(Config cfg)
         std::vector<BoundaryLoss1D>(
             runtime_info(cfg_.runtime).active_threads,
             BoundaryLoss1D{}));
+    species_power_transfer_.assign(
+        species_.size(), SpeciesPower1D{});
+    power_transfer_chunks_.assign(
+        species_.size(),
+        std::vector<SpeciesPower1D>(
+            runtime_info(cfg_.runtime).active_threads,
+            SpeciesPower1D{}));
     if (cfg_.spatial_average.enabled) {
         spatial_density_sums_.assign(
             species_.size(),
@@ -580,6 +621,11 @@ void Simulation::initialize() {
         species_boundary_losses_.begin(),
         species_boundary_losses_.end(),
         BoundaryLoss1D{});
+    power_transfer_origin_step_ = 0;
+    std::fill(
+        species_power_transfer_.begin(),
+        species_power_transfer_.end(),
+        SpeciesPower1D{});
     if (cfg_.initial_state_path.empty()) {
         for (auto& sp : species_) sp.initialize(grid_, rng_);
     } else {
@@ -833,11 +879,17 @@ void Simulation::step() {
         std::fill(
             chunk_losses.begin(), chunk_losses.end(),
             BoundaryLoss1D{});
+        auto& chunk_power =
+            power_transfer_chunks_[species_id];
+        std::fill(
+            chunk_power.begin(), chunk_power.end(),
+            SpeciesPower1D{});
         runtime_static_chunks(
             std::size_t{0}, particles.size(), cfg_.runtime,
             [&](std::size_t chunk, std::size_t begin,
                 std::size_t end) {
                 auto& loss = chunk_losses[chunk];
+                auto& power = chunk_power[chunk];
                 for (std::size_t particle_id = begin;
                      particle_id < end; ++particle_id) {
                     auto& p = particles[particle_id];
@@ -856,6 +908,16 @@ void Simulation::step() {
                     } else if (
                         p.x < 0.0 ||
                         p.x > grid_.length()) {
+                        const double old_longitudinal_energy =
+                            0.5 * sp.mass() *
+                            sp.config().weight * p.v * p.v;
+                        const double crossing_longitudinal_energy =
+                            0.5 * sp.mass() *
+                            sp.config().weight *
+                            p.v_half * p.v_half;
+                        power.electric_work +=
+                            crossing_longitudinal_energy -
+                            old_longitudinal_energy;
                         const double speed_squared =
                             p.v_half * p.v_half +
                             p.velocity_y * p.velocity_y +
@@ -896,10 +958,39 @@ void Simulation::step() {
         auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
         auto& particles = sp.particles();
-        runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
-            auto& p = particles[particle_id];
-            if (p.alive) synchronize_leapfrog(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
-        });
+        auto& chunk_power =
+            power_transfer_chunks_[species_id];
+        runtime_static_chunks(
+            std::size_t{0}, particles.size(), cfg_.runtime,
+            [&](std::size_t chunk, std::size_t begin,
+                std::size_t end) {
+                auto& power = chunk_power[chunk];
+                for (std::size_t particle_id = begin;
+                     particle_id < end; ++particle_id) {
+                    auto& p = particles[particle_id];
+                    if (!p.alive) continue;
+                    const double old_velocity = p.v;
+                    synchronize_leapfrog(
+                        p, interpolate_electric(grid_, p.x),
+                        qm, cfg_.dt);
+                    power.electric_work +=
+                        0.5 * sp.mass() *
+                        sp.config().weight *
+                        (p.v * p.v -
+                         old_velocity * old_velocity);
+                }
+            });
+        auto& total_power =
+            species_power_transfer_[species_id];
+        for (const auto& power : chunk_power) {
+            total_power.electric_work +=
+                power.electric_work;
+        }
+        if (!std::isfinite(total_power.electric_work)) {
+            throw std::runtime_error(
+                "1D species electric-work diagnostic "
+                "became non-finite");
+        }
     }
     apply_collisions();
     ++step_;
@@ -1062,7 +1153,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV6 << '\n';
+    out << kCheckpointMagicV7 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1099,6 +1190,19 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             << loss.absorbed_right << ' '
             << loss.kinetic_energy_left << ' '
             << loss.kinetic_energy_right << "\n";
+    }
+    out << "power_transfer_origin_step "
+        << power_transfer_origin_step_ << "\n";
+    out << "power_transfer_count "
+        << species_power_transfer_.size() << "\n";
+    for (std::size_t species_id = 0;
+         species_id < species_power_transfer_.size();
+         ++species_id) {
+        out << "power_transfer " << species_id << ' '
+            << species_[species_id].name() << ' '
+            << species_power_transfer_[species_id]
+                   .electric_work
+            << "\n";
     }
     out << "spatial_average "
         << (cfg_.spatial_average.enabled ? 1 : 0) << ' '
@@ -1149,11 +1253,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v4 = magic == kCheckpointMagicV4;
     const bool checkpoint_v5 = magic == kCheckpointMagicV5;
     const bool checkpoint_v6 = magic == kCheckpointMagicV6;
+    const bool checkpoint_v7 = magic == kCheckpointMagicV7;
     const bool checkpoint_v4_state =
-        checkpoint_v4 || checkpoint_v5 || checkpoint_v6;
+        checkpoint_v4 || checkpoint_v5 ||
+        checkpoint_v6 || checkpoint_v7;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
-        !checkpoint_v5 && !checkpoint_v6) {
+        !checkpoint_v5 && !checkpoint_v6 &&
+        !checkpoint_v7) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1169,7 +1276,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> unit_system >> relative_permittivity >> permittivity;
         if ((!checkpoint_v2 && !checkpoint_v3 &&
              !checkpoint_v4 && !checkpoint_v5 &&
-             !checkpoint_v6) ||
+             !checkpoint_v6 && !checkpoint_v7) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1179,7 +1286,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key;
     } else if (checkpoint_v2 || checkpoint_v3 ||
                checkpoint_v4 || checkpoint_v5 ||
-               checkpoint_v6 ||
+               checkpoint_v6 || checkpoint_v7 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1209,7 +1316,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         const std::uint64_t expected_signature =
             collision_signature();
         if ((!checkpoint_v3 && !checkpoint_v4 &&
-             !checkpoint_v5 && !checkpoint_v6) ||
+             !checkpoint_v5 && !checkpoint_v6 &&
+             !checkpoint_v7) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1232,14 +1340,17 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key;
     } else if (checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 || checkpoint_v6 ||
+               checkpoint_v7 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
     }
+    const bool checkpoint_has_boundary_losses =
+        checkpoint_v6 || checkpoint_v7;
     const bool legacy_boundary_loss_origin =
-        !checkpoint_v6;
-    if (checkpoint_v6) {
+        !checkpoint_has_boundary_losses;
+    if (checkpoint_has_boundary_losses) {
         in >> boundary_loss_origin_step_;
         if (key != "boundary_loss_origin_step") {
             throw std::runtime_error(
@@ -1286,7 +1397,51 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             species_boundary_losses_.end(),
             BoundaryLoss1D{});
     }
-    if (checkpoint_v5 || checkpoint_v6) {
+    const bool legacy_power_transfer_origin =
+        !checkpoint_v7;
+    if (checkpoint_v7) {
+        in >> power_transfer_origin_step_;
+        if (key != "power_transfer_origin_step") {
+            throw std::runtime_error(
+                "checkpoint is missing the 1D power-transfer "
+                "counter origin");
+        }
+        in >> key;
+        std::size_t stored_power_count = 0;
+        in >> stored_power_count;
+        if (key != "power_transfer_count" ||
+            stored_power_count !=
+                species_power_transfer_.size()) {
+            throw std::runtime_error(
+                "checkpoint power-transfer species count does "
+                "not match 1D config");
+        }
+        for (std::size_t species_id = 0;
+             species_id < stored_power_count; ++species_id) {
+            std::size_t stored_species_id = 0;
+            std::string stored_name;
+            auto& power =
+                species_power_transfer_[species_id];
+            in >> key >> stored_species_id >> stored_name >>
+                power.electric_work;
+            if (key != "power_transfer" ||
+                stored_species_id != species_id ||
+                stored_name != species_[species_id].name() ||
+                !std::isfinite(power.electric_work)) {
+                throw std::runtime_error(
+                    "checkpoint 1D power-transfer data are "
+                    "invalid");
+            }
+        }
+        in >> key;
+    } else {
+        std::fill(
+            species_power_transfer_.begin(),
+            species_power_transfer_.end(),
+            SpeciesPower1D{});
+    }
+    if (checkpoint_v5 || checkpoint_v6 ||
+        checkpoint_v7) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -1350,6 +1505,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     if (key != "step") throw std::runtime_error("checkpoint missing step");
     if (legacy_boundary_loss_origin) {
         boundary_loss_origin_step_ = step_;
+    }
+    if (legacy_power_transfer_origin) {
+        power_transfer_origin_step_ = step_;
     }
     if (cfg_.spatial_average.enabled) {
         const auto& average = cfg_.spatial_average;
@@ -1489,6 +1647,20 @@ RunSummary Simulation::run() {
         boundary_loss_output, step_, time_,
         boundary_loss_origin_step_, species_,
         species_boundary_losses_);
+    std::ofstream power_transfer_output(
+        std::filesystem::path(cfg_.output_dir) /
+        "power_transfer.csv");
+    if (!power_transfer_output) {
+        throw std::runtime_error(
+            "cannot open 1D power-transfer diagnostics output");
+    }
+    write_power_transfer_header(
+        power_transfer_output, species_,
+        cfg_.units.system == UnitSystem::SI);
+    write_power_transfer_sample(
+        power_transfer_output, step_, time_,
+        power_transfer_origin_step_, species_,
+        species_power_transfer_);
     if (cfg_.checkpoint_output) save_checkpoint(checkpoint_path_for_step(cfg_, step_));
 
     const std::size_t limit = cfg_.mode == RunMode::SteadyState ? cfg_.max_steps : cfg_.steps;
@@ -1512,6 +1684,10 @@ RunSummary Simulation::run() {
                 boundary_loss_output, step_, time_,
                 boundary_loss_origin_step_, species_,
                 species_boundary_losses_);
+            write_power_transfer_sample(
+                power_transfer_output, step_, time_,
+                power_transfer_origin_step_, species_,
+                species_power_transfer_);
             summary.final_sample = s;
             reached_steady = cfg_.mode == RunMode::SteadyState &&
                              adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);

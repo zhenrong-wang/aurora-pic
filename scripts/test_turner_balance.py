@@ -36,6 +36,7 @@ def main() -> int:
         scalars = work / "scalars.csv"
         collisions = work / "collisions.csv"
         boundaries = work / "boundary_losses.csv"
+        power = work / "power_transfer.csv"
         write_csv(
             scalars,
             [
@@ -74,12 +75,25 @@ def main() -> int:
                 ],
             ],
         )
+        write_csv(
+            power,
+            [
+                "step", "time", "counter_origin_step",
+                "electric_work_electrons_J_m-2",
+                "electric_work_ions_J_m-2",
+            ],
+            [
+                [100, 1.0, 100, 10.0, 20.0],
+                [500, 2.0, 100, 44.3, 110.6],
+            ],
+        )
         report = work / "report.json"
         completed = subprocess.run([
             sys.executable, str(ANALYZER),
             "--scalars", str(scalars),
             "--collisions", str(collisions),
             "--boundary-losses", str(boundaries),
+            "--power-transfer", str(power),
             "--expected-steps", "400",
             "--reported-ion-current", "4",
             "--output", str(report),
@@ -97,6 +111,12 @@ def main() -> int:
             and value["ion_current_context"][
                 "two_electrode_mean_magnitude_A_m2"
             ] == 4.0
+            and abs(value["volume_electrical_power_context"][
+                "species"
+            ]["electrons"]["mean_electrical_power_W_m2"] - 34.3) < 1e-12
+            and abs(value["volume_electrical_power_context"][
+                "species"
+            ]["ions"]["mean_electrical_power_W_m2"] - 90.6) < 1e-12
             and value["physics_claim"].startswith("none_"),
             "Turner balance report is incorrect",
         )
@@ -118,6 +138,28 @@ def main() -> int:
             rejected.returncode == 2
             and "do not cover the entire" in rejected.stderr,
             "Turner balance analyzer accepted partial wall coverage",
+        )
+        changed[-1][2] = "100"
+        with boundaries.open("w", newline="", encoding="utf-8") as stream:
+            csv.writer(stream).writerows(changed)
+        changed_power = list(csv.reader(power.open(
+            newline="", encoding="utf-8"
+        )))
+        changed_power[-1][2] = "99"
+        with power.open("w", newline="", encoding="utf-8") as stream:
+            csv.writer(stream).writerows(changed_power)
+        rejected = subprocess.run([
+            sys.executable, str(ANALYZER),
+            "--scalars", str(scalars),
+            "--collisions", str(collisions),
+            "--boundary-losses", str(boundaries),
+            "--power-transfer", str(power),
+            "--output", str(work / "bad-power.json"),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(
+            rejected.returncode == 2
+            and "power counters do not cover" in rejected.stderr,
+            "Turner balance analyzer accepted partial power coverage",
         )
 
     print("Turner source/wall balance regression passed")

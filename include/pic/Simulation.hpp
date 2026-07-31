@@ -24,6 +24,10 @@ struct BoundaryLoss1D {
     double kinetic_energy_right{0.0};
 };
 
+struct SpeciesPower1D {
+    double electric_work{0.0};
+};
+
 class Simulation {
 public:
     explicit Simulation(Config cfg);
@@ -46,6 +50,13 @@ public:
     }
     std::size_t boundary_loss_origin_step() const {
         return boundary_loss_origin_step_;
+    }
+    const std::vector<SpeciesPower1D>&
+    species_power_transfer() const {
+        return species_power_transfer_;
+    }
+    std::size_t power_transfer_origin_step() const {
+        return power_transfer_origin_step_;
     }
 private:
     struct IonizationChannelRuntime {
@@ -83,6 +94,10 @@ private:
     std::vector<std::vector<BoundaryLoss1D>>
         boundary_loss_chunks_{};
     std::size_t boundary_loss_origin_step_{0};
+    std::vector<SpeciesPower1D> species_power_transfer_{};
+    std::vector<std::vector<SpeciesPower1D>>
+        power_transfer_chunks_{};
+    std::size_t power_transfer_origin_step_{0};
     std::size_t spatial_average_samples_{0};
     std::vector<std::vector<double>>
         spatial_density_sums_{};

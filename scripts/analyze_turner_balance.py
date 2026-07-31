@@ -88,30 +88,33 @@ def analyze(
     scalars_path: Path,
     collisions_path: Path,
     boundary_path: Path,
+    power_path: Path | None,
     electron_species: str,
     ion_species: str,
     ionization_channel: str,
     expected_steps: int,
     reported_ion_current: float,
+    reported_electron_power: float,
+    reported_ion_power: float,
 ) -> dict[str, object]:
     scalars = load_csv(scalars_path)
     collisions = load_csv(collisions_path)
     boundaries = load_csv(boundary_path)
+    power = load_csv(power_path) if power_path is not None else None
+    diagnostics = [
+        (scalars, "scalars"),
+        (collisions, "collisions"),
+        (boundaries, "boundary losses"),
+    ]
+    if power is not None:
+        diagnostics.append((power, "power transfer"))
     starts = [
         integer(rows[0], "step", label)
-        for rows, label in (
-            (scalars, "scalars"),
-            (collisions, "collisions"),
-            (boundaries, "boundary losses"),
-        )
+        for rows, label in diagnostics
     ]
     ends = [
         integer(rows[-1], "step", label)
-        for rows, label in (
-            (scalars, "scalars"),
-            (collisions, "collisions"),
-            (boundaries, "boundary losses"),
-        )
+        for rows, label in diagnostics
     ]
     require(len(set(starts)) == 1, "diagnostic start steps do not agree")
     require(len(set(ends)) == 1, "diagnostic end steps do not agree")
@@ -132,6 +135,18 @@ def analyze(
         "boundary counters do not cover the entire diagnostic window",
     )
     counter_origin = counter_origins[0]
+    power_origin: int | None = None
+    if power is not None:
+        power_origins = [
+            integer(row, "counter_origin_step", "power transfer")
+            for row in (power[0], power[-1])
+        ]
+        require(
+            power_origins[0] == power_origins[1]
+            and power_origins[0] <= start_step,
+            "power counters do not cover the entire diagnostic window",
+        )
+        power_origin = power_origins[0]
 
     cumulative_ionization = (
         "cumulative_collisions_" + ionization_channel
@@ -220,8 +235,8 @@ def analyze(
         bool(species_report[name]["balance_exact"])
         for name in (electron_species, ion_species)
     )
-    return {
-        "turner_balance_version": 1,
+    report: dict[str, object] = {
+        "turner_balance_version": 2,
         "scope": "post_benchmark_diagnostic_window",
         "window": {
             "start_step": start_step,
@@ -264,6 +279,36 @@ def analyze(
         "physics_claim":
             "none_post_benchmark_diagnostic_outside_published_duration",
     }
+    if power is not None:
+        electrical_power: dict[str, object] = {}
+        for species, reported in (
+            (electron_species, reported_electron_power),
+            (ion_species, reported_ion_power),
+        ):
+            column = f"electric_work_{species}_J_m-2"
+            work = (
+                number(power[-1], column, "power transfer")
+                - number(power[0], column, "power transfer")
+            )
+            measured = work / duration
+            electrical_power[species] = {
+                "electric_work_J_m2": work,
+                "mean_electrical_power_W_m2": measured,
+                "turner_table_iii_W_m2": reported,
+                "relative_difference": measured / reported - 1.0,
+            }
+        report["window"]["power_counter_origin_step"] = power_origin
+        report["provenance"]["power_transfer"] = {
+            "path": str(power_path.resolve()),
+            "sha256": sha256(power_path),
+        }
+        report["volume_electrical_power_context"] = {
+            "definition":
+                "discrete_species_kinetic_energy_change_due_to_electric_push",
+            "species": electrical_power,
+            "acceptance_gate": "none_diagnostic_context_only",
+        }
+    return report
 
 
 def main() -> int:
@@ -271,6 +316,7 @@ def main() -> int:
     parser.add_argument("--scalars", type=Path, required=True)
     parser.add_argument("--collisions", type=Path, required=True)
     parser.add_argument("--boundary-losses", type=Path, required=True)
+    parser.add_argument("--power-transfer", type=Path)
     parser.add_argument("--electron-species", default="electrons")
     parser.add_argument("--ion-species", default="ions")
     parser.add_argument(
@@ -281,6 +327,12 @@ def main() -> int:
     parser.add_argument(
         "--reported-ion-current", type=float, default=0.219
     )
+    parser.add_argument(
+        "--reported-electron-power", type=float, default=34.3
+    )
+    parser.add_argument(
+        "--reported-ion-power", type=float, default=90.6
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -290,15 +342,25 @@ def main() -> int:
             and args.reported_ion_current > 0.0,
             "reported ion current must be positive and finite",
         )
+        require(
+            math.isfinite(args.reported_electron_power)
+            and args.reported_electron_power > 0.0
+            and math.isfinite(args.reported_ion_power)
+            and args.reported_ion_power > 0.0,
+            "reported powers must be positive and finite",
+        )
         report = analyze(
             args.scalars,
             args.collisions,
             args.boundary_losses,
+            args.power_transfer,
             args.electron_species,
             args.ion_species,
             args.ionization_channel,
             args.expected_steps,
             args.reported_ion_current,
+            args.reported_electron_power,
+            args.reported_ion_power,
         )
         write_report(args.output, report)
     except (BalanceError, OSError) as error:

@@ -3256,6 +3256,14 @@ int main() {
                 losses[1].kinetic_energy_right, 300.0,
                 1e-12,
                 "1D right-wall represented impact energy is wrong");
+            const auto& power =
+                simulation.species_power_transfer();
+            require_near(
+                power[0].electric_work, 0.0, 1e-14,
+                "neutral left-wall particle acquired electric work");
+            require_near(
+                power[1].electric_work, 0.0, 1e-14,
+                "neutral right-wall particle acquired electric work");
 
             const auto diagnostics = read_file_text(
                 output_dir / "boundary_losses.csv");
@@ -3270,6 +3278,15 @@ int main() {
                     != std::string::npos &&
                     count_lines(diagnostics) == 3,
                 "1D wall-loss CSV contract is wrong");
+            const auto power_diagnostics = read_file_text(
+                output_dir / "power_transfer.csv");
+            require(
+                power_diagnostics.find(
+                    "step,time,counter_origin_step,"
+                    "electric_work_left_normalized,"
+                    "electric_work_right_normalized\n") == 0 &&
+                    count_lines(power_diagnostics) == 3,
+                "1D power-transfer CSV contract is wrong");
 
             pic::Simulation restarted(cfg);
             restarted.load_checkpoint(checkpoint_path);
@@ -3290,8 +3307,44 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v6\n") == 0,
-                "1D wall-loss checkpoint did not use v6");
+                    "AuroraPIC-checkpoint-v7\n") == 0,
+                "1D power-transfer checkpoint did not use v7");
+
+            const auto legacy_v6_path =
+                output_dir / "legacy_v6.apc";
+            {
+                std::istringstream input(
+                    read_file_text(checkpoint_path));
+                std::ofstream legacy(legacy_v6_path);
+                std::string line;
+                bool first = true;
+                while (std::getline(input, line)) {
+                    if (first) {
+                        legacy
+                            << "AuroraPIC-checkpoint-v6\n";
+                        first = false;
+                    } else if (
+                        line.starts_with(
+                            "power_transfer")) {
+                        continue;
+                    } else {
+                        legacy << line << '\n';
+                    }
+                }
+            }
+            pic::Simulation legacy_v6_restarted(cfg);
+            legacy_v6_restarted.load_checkpoint(
+                legacy_v6_path);
+            require(
+                legacy_v6_restarted
+                        .boundary_loss_origin_step() == 0 &&
+                    legacy_v6_restarted
+                            .species_boundary_losses()[0]
+                            .absorbed_left == 1 &&
+                    legacy_v6_restarted
+                            .power_transfer_origin_step() == 1,
+                "legacy v6 restart did not preserve wall data or "
+                "expose its power-counter origin");
 
             const auto legacy_path =
                 output_dir / "legacy_v5.apc";
@@ -3308,7 +3361,9 @@ int main() {
                         first = false;
                     } else if (
                         line.starts_with(
-                            "boundary_loss")) {
+                            "boundary_loss") ||
+                        line.starts_with(
+                            "power_transfer")) {
                         continue;
                     } else {
                         legacy << line << '\n';
@@ -3327,6 +3382,69 @@ int main() {
                             .absorbed_right == 0,
                 "legacy v5 restart did not expose its wall-counter "
                 "origin");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
+            const auto output_dir =
+                std::filesystem::path(
+                    "test_output_1d_power_transfer");
+            const auto checkpoint_path =
+                output_dir / "power.apc";
+            std::filesystem::remove_all(output_dir);
+
+            pic::Config cfg;
+            cfg.nx = 17;
+            cfg.length = 1.0;
+            cfg.dt = 1e-4;
+            cfg.steps = 1;
+            cfg.output_interval = 1;
+            cfg.output_dir = output_dir.string();
+            cfg.boundary = pic::Boundary::Dirichlet;
+            cfg.species = {
+                pic::SpeciesConfig{
+                    "electrons", -1.0, 1.0, 1.0, 32, 1.0,
+                    0.0, 0.0, 0.1, 0.9}};
+
+            pic::Simulation continuous(cfg);
+            continuous.initialize();
+            const double initial_energy =
+                continuous.sample().kinetic_energy;
+            continuous.step();
+            const double energy_change =
+                continuous.sample().kinetic_energy -
+                initial_energy;
+            const double electric_work =
+                continuous.species_power_transfer()[0]
+                    .electric_work;
+            require(
+                std::abs(electric_work) > 1e-12,
+                "1D electric-work diagnostic exercised a zero-work "
+                "case");
+            require_near(
+                electric_work, energy_change, 1e-12,
+                "collisionless survivor electric work does not "
+                "equal its kinetic-energy change");
+            continuous.save_checkpoint(checkpoint_path);
+
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            require(
+                restarted.power_transfer_origin_step() == 0,
+                "1D checkpoint lost the power-transfer origin");
+            require_near(
+                restarted.species_power_transfer()[0]
+                    .electric_work,
+                electric_work, 1e-14,
+                "1D checkpoint lost cumulative electric work");
+            continuous.step();
+            restarted.step();
+            require_near(
+                restarted.species_power_transfer()[0]
+                    .electric_work,
+                continuous.species_power_transfer()[0]
+                    .electric_work,
+                1e-14,
+                "1D power transfer is not restart deterministic");
             std::filesystem::remove_all(output_dir);
         }
         {
@@ -3506,8 +3624,8 @@ int main() {
                 "1D3V MCC restart lost collision diagnostics");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v6\n") == 0,
-                "1D3V checkpoint did not use the boundary-loss-aware "
+                    "AuroraPIC-checkpoint-v7\n") == 0,
+                "1D3V checkpoint did not use the power-transfer-aware "
                 "spatial-average velocity format");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
