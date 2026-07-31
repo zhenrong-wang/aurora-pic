@@ -656,6 +656,25 @@ three numerical-equivalence gates currently pass, while the predeclared
 | Source/wall/power balance | `e119c8f8a581b6c238446ee4a2f735bd68e25dfd1a8745efce1832af03323077` |
 | Nine-block analysis | `ac991bbb48605c746e07a3f66a409a1220ac301b7570af87db199577620eadd6` |
 
+Block 10 (cycles 1,602--1,633, steps 640,401--653,200) gives
+`X² = 329.914`, 2.517% relative profile L2 error, and a -0.572%
+line-integrated-density change. Its exact source/loss balance closes and its
+global-observable differences remain within 1.09%. Across ten blocks,
+absolute fitted drift is 0.618%, the split-half shift is 0.649%, maximum
+adjacent profile movement remains 2.030%, and the AR(1) effective count rises
+to 8.29. All numerical stationarity gates now pass; only the predeclared
+16-block horizon is incomplete.
+
+| Block 10 artifact | SHA-256 |
+| --- | --- |
+| Input deck | `6dfe5911b37542646cd6e1bc6a3e33cf423284dc46d9493c54096b941f772089` |
+| Density profile | `b70a3ab23f591b35ea36b4c02a6d9e2ee039b77e17664915bc67dc5e9a9d506f` |
+| Averaging metadata | `1d825788588fd127415535a4d78d82b5d34d25a240c074acd28762879459d72c` |
+| Final step-653,200 checkpoint | `87501112f4ab336ba2e32c32d86543055aaf728c75b18d0a294b99ec36f84dc2` |
+| Density comparison | `49a6cca9fbadcd9c9b655bc975342d548bb130ae8f9d92ed77b04da007260e18` |
+| Source/wall/power balance | `18a4ba5fd2d01aaf2f7a198de7d1d4d2114142f43b47e070262090c04f01d4e8` |
+| Ten-block analysis | `e3a4c9a26256ccce3fb9c0a76e535a952272cea6d596ab70be91a7f54f3bd2af` |
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
