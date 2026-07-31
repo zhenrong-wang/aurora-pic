@@ -636,6 +636,26 @@ failure. If the 16-block screen passes, the stronger next test is an
 independent-seed published-duration ensemble, which costs roughly three full
 1,280-cycle trajectories.
 
+Block 9 (cycles 1,570--1,601, steps 627,601--640,400) was collected only
+after that rule was committed. Its `X² = 513.199`, relative profile L2 error
+is 3.190%, and line-integrated density rises 1.205% from block 8. Exact
+source/loss balance closes; ion current, electron power, and ion power differ
+from Turner by +0.649%, +0.283%, and +0.993%. Across nine blocks, absolute
+fitted drift is 0.655%, the split-half shift is 0.692%, maximum adjacent
+profile movement is 2.030%, and the AR(1) effective count is 7.11. Thus the
+three numerical-equivalence gates currently pass, while the predeclared
+16-block horizon and 8-effective-block gates remain incomplete.
+
+| Block 9 artifact | SHA-256 |
+| --- | --- |
+| Input deck | `68c828c639b72ccee51ef253008e70ce08b6ef4b1bbda831e18a6afd369bf0ad` |
+| Density profile | `d4f5d067485e0a98ae2cf4309b3d4fdc6a464d696b436eca0007a0b91c0e3226` |
+| Averaging metadata | `2ebdd28be609bbbcb17df04482bb16f8a08383c230ef16aace368385cdeb318a` |
+| Final step-640,400 checkpoint | `042b2ab4d88ec7a675f803bfc0ec77a4322a77029d681f34eb175f554439e688` |
+| Density comparison | `a24dc3517d018ee58b525d57bd222023b3fe7da4ea1209cde306d2f1131509fc` |
+| Source/wall/power balance | `e119c8f8a581b6c238446ee4a2f735bd68e25dfd1a8745efce1832af03323077` |
+| Nine-block analysis | `ac991bbb48605c746e07a3f66a409a1220ac301b7570af87db199577620eadd6` |
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
