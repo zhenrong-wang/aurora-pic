@@ -487,6 +487,53 @@ materially stronger than the density comparison alone, but it is not relabeled
 as a formal published-duration pass: the original density-profile `X²` gate
 remains failed and this continuation is diagnostic evidence.
 
+### Post-benchmark density blocks
+
+Commit `826097a` added an explicit
+`spatial_average_reset_on_restart = true` contract. It discards checkpointed
+averaging sums only when requested, rejects a new window whose first sample is
+not after the checkpoint step, records the reset in metadata, and reproduces
+an uninterrupted late window byte-for-byte in regression. The Turner
+comparator's `--post-benchmark-window` mode requires a reset, complete,
+32-cycle window after the published duration and sets
+`published_acceptance_applicable = false`.
+
+Two consecutive 32-cycle blocks were then measured: cycles 1,314--1,345
+(steps 525,201--538,000) and cycles 1,346--1,377
+(steps 538,001--550,800). They follow one trajectory and are non-overlapping,
+but are not statistically independent. Key retained artifact identities are:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Solver executable (commit `826097a`) | `ed6c8c31f73754cbc5851678ade9ef85d2445dd456cefe271cb9e8c0390ef072` |
+| Block 1 deck | `d7fd52a4900f4bc37e4729fd5ef9ef7453b44637672474323ec591ce329ada19` |
+| Block 1 density profile | `f02335735ab7e6f2501daf1aa352d2c0da35d89a2859e00ff9496455b1dfc139` |
+| Block 1 comparison report | `d3aea6cb4e1626444dbf2fb5d923511687f97a40319e409510adc714340f9194` |
+| Step-538,000 v7 checkpoint | `51f26168508bc090274af85b2bd8c3d7e38e09b63ebf1774c9bacdd064ffbaed` |
+| Block 2 deck | `9fa4b7cfb1f361d471e883f462c85ac5c52565cd498f9a9fafffb85d00588eed` |
+| Block 2 density profile | `b648f2496e18adc905ad86310b3fee5df172801b15ea29a5d5ed3856ddfaec2f` |
+| Block 2 comparison report | `58fadc3444f1efdad922c93948f8459cf2524e1355caa10f19964e9bd4543cd0` |
+| Final step-550,800 v7 checkpoint | `d81837888681e7822a22d02d912888e92321a1a1d25bea01102a35c8e20d83b9` |
+
+| 32-cycle window | X² | Relative L2 | Maximum pointwise error | Published gate applicable |
+| --- | ---: | ---: | ---: | --- |
+| Published-duration final block | 574.399 | 2.874% | 4.811% | Yes: failed 99% |
+| Post-benchmark block 1 | 365.343 | 2.362% | 4.638% | No |
+| Post-benchmark block 2 | 849.284 | 3.478% | 5.717% | No |
+
+Block 1 happens to lie inside the published 99% numerical range and block 2
+lies outside it, but neither is an acceptance result. Relative profile
+movement is 1.573% L2 from the published-duration block to block 1 and 1.827%
+from block 1 to block 2. Their line-integrated ion densities change by -0.689%
+and +1.261%, respectively. Thus the original density excess is not a stable,
+monotonic offset over these late windows: stochastic sampling and/or a
+slowly varying discharge state is comparable in size to the reported
+discrepancy. This weakens the case for a gross systematic physics error, but
+does not distinguish correlated noise from insufficient stationarity. A
+formal resolution requires either a multi-seed published-duration ensemble or
+enough consecutive blocks to estimate autocorrelation and effective sample
+size.
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
