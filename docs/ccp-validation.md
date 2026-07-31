@@ -751,6 +751,25 @@ and two blocks remain in the predeclared horizon.
 | Source/wall/power balance | `1bc86c3253e33877c55a9a459bb4f12a50eccf1d58fdbae2a7a6d646f3693a92` |
 | Fourteen-block analysis | `bf5233ef79905d03016721b10ef1f04bb9d1d9e9d4a11d1f787d3d241bc1ddb8` |
 
+Block 15 (cycles 1,762--1,793, steps 704,401--717,200) gives
+`X² = 259.494`, 1.847% relative profile L2 error, and a +0.440%
+line-integrated-density change. Exact source/loss balance closes and all
+global-observable differences remain below 0.87%. Across fifteen blocks,
+absolute fitted drift is 0.957%, the split-half shift is 0.352%, maximum
+adjacent profile movement remains 2.030%, and the AR(1) effective count is
+8.30. The drift and effective-count gates remain narrowly satisfied; one
+block remains in the fixed horizon.
+
+| Block 15 artifact | SHA-256 |
+| --- | --- |
+| Input deck | `41309d525348c3b66fa81276835e33bce0132359215fc1b8192d863ffe0aaefa` |
+| Density profile | `63e989cfd9c9f70f173abb36e12acbf502c108d6b93759c74746e1cf1c2611cf` |
+| Averaging metadata | `31d5cb28789d7a480a51cbc7db9dd5d655d5ec00cd4fbdcd1fa1fcab52b4a7cb` |
+| Final step-717,200 checkpoint | `9ec744e5feca4745497b369250cd2503f4c74aef5e8f8468de5c6f451fe70f29` |
+| Density comparison | `3fa6c31b546d2f68a0e1ffa9a043686564cfb8b6d581db749432bdfb7c121938` |
+| Source/wall/power balance | `ecd038908a0efd79d68f7b1ea358ae5b09db2b79f16abd8d7dccef36ee2efc1d` |
+| Fifteen-block analysis | `d5c08866f0a6345bf0b1053955faa9cd71d33ac8c13893f7441f4d037ee480da` |
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
