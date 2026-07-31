@@ -534,6 +534,59 @@ formal resolution requires either a multi-seed published-duration ensemble or
 enough consecutive blocks to estimate autocorrelation and effective sample
 size.
 
+The restart-safe sequential-block audit is now implemented by
+`scripts/analyze_turner_density_blocks.py`. It rejects profile or metadata
+hash drift, mixed cases/species, incomplete or non-reset windows, changed
+spatial grids, and any gap or overlap between blocks. A minimum of eight
+consecutive 32-cycle blocks is the declared floor before the series is even
+eligible for stationarity interpretation; this is an internal diagnostic
+floor, not a threshold published by Turner et al. The tool always leaves
+`published_acceptance_applicable = false`.
+
+Applied initially to the first two consecutive blocks, the analyzer confirmed
+a 1.827% relative profile movement and a 1.261% rise in line-integrated ion
+density. That two-block audit report has SHA-256
+`77071ae543d658b967d7adb6e273989f4a84243f3f3857fe01b28bcbfac189a9`.
+
+A third low-priority serial continuation then covered cycles 1,378--1,409
+(steps 550,801--563,600). Its comparison gives `X² = 484.785`, 3.335%
+relative profile L2 error, and 6.532% maximum pointwise error. The
+line-integrated density falls 0.526% from block 2 and the adjacent profile
+movement is 1.268%. Across all three blocks the fitted end-to-end integrated
+density drift is +0.723%; the preliminary lag-one correlation is -0.446.
+With only three samples neither value is a reliable stationarity estimate,
+and the analyzer correctly retains `insufficient_consecutive_blocks`.
+
+The third window also has exact integer source/loss closure: 24,744
+ionizations, electron and ion population changes of -74 and -85, and zero
+balance residuals. Its two-electrode mean ion-current magnitude is
+`0.220589 A m^-2`, 0.726% above Turner; electron and ion electrical powers
+are `34.1306 W m^-2` and `91.6173 W m^-2`, respectively 0.494% below and
+1.123% above Turner. These remain diagnostic global-observable comparisons,
+not new acceptance gates.
+
+| Third-block artifact | SHA-256 |
+| --- | --- |
+| Input deck | `c57fc271e8135469aef68a4990494578547e2443c081cdd1f91e23eb471f0d2c` |
+| Density profile | `903cc6b8b608e8cb8f0bbd72d60776c4e171b767839ec248cebe71b9c0cf0145` |
+| Averaging metadata | `5e42146a09e6845b263cd19d5a78a6b8ca1bf90512125f7cbdd4ceaa4dbf0bf0` |
+| Final step-563,600 checkpoint | `bc018fc6ee68db4d8d96908e04454142622a21f6cbfd0b52ad6b6993952d1331` |
+| Density comparison | `df7a898799b5760f95b7ddd8a318065f39063413306a63bf03eb359e305c0810` |
+| Three-block audit | `4e60cd3ce3ce50109d528b1f2ed19d02c714bda7c8dc1757c4b7b3dd1522289a` |
+| Source/wall/power balance | `92ce097d68dcae2121a367aa307fbf54ef509d7d59ac1ca84ff7fc40f41ba67e` |
+
+```sh
+python3 scripts/analyze_turner_density_blocks.py \
+  diagnostic-block-1-comparison.json \
+  diagnostic-block-2-comparison.json \
+  --output density-block-analysis.json
+```
+
+The next bounded campaign action is therefore five additional contiguous
+32-cycle continuations from the step-563,600 checkpoint, one serial process
+at a time. Their purpose is to estimate late-window correlation and drift,
+not to repair or replace the failed published-duration result.
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 

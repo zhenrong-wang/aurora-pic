@@ -54,6 +54,10 @@ manifests directly with `gas_data_file`.
 `compare_turner.py` implements the paper's ion-density `X²` statistic against
 the population standard deviation, locks the local reference through the
 normalization audit, and applies the published 95% and 99% case ranges.
+`analyze_turner_density_blocks.py` hash-checks consecutive reset 32-cycle
+post-benchmark profiles and quantifies density drift, adjacent profile motion,
+lag-one correlation, and an AR(1) effective block count without treating a
+diagnostic continuation as a published benchmark pass.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.

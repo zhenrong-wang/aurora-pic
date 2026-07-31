@@ -176,6 +176,10 @@ def smoke_install_tree(
     )
     require_file(
         prefix / "share" / "aurorapic" / "scripts" /
+        "analyze_turner_density_blocks.py"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
         "digitize_charoy_figure6.py"
     )
     require_file(
