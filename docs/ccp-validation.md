@@ -615,10 +615,26 @@ electron power, and ion power differ from Turner by +0.247%, +0.355%, and
 `23001a2086cae8df032bcd970963e0c34fbb2528646eba4eec79cdf0b33a1d7c`).
 The original published-duration `X² = 574.399` failure remains unchanged.
 
-The next campaign decision must be made before observing more data: either
-predeclare a longer stationarity horizon and stopping rule, or run an
-independent-seed published-duration ensemble. The latter is stronger but costs
-roughly three full 1,280-cycle trajectories.
+Before observing block 9, the longer stationarity horizon and stopping rule
+were predeclared in
+[`benchmarks/ccp/turner-case1-stationarity-rule-20260731.json`](../benchmarks/ccp/turner-case1-stationarity-rule-20260731.json)
+(SHA-256
+`75591319e7e90cc4cbcb35409b348e6b4ef6e413e293a284d5e64df2d7757fdd`).
+The horizon is 16 consecutive blocks. All of these internal gates must pass:
+
+- at least 16 total blocks and 8 AR(1)-effective blocks;
+- no more than 1% absolute fitted integrated-density drift;
+- no more than 1% absolute first-half/second-half integrated-density shift;
+- no adjacent density-profile movement above 2.5% relative L2.
+
+The 1% practical-equivalence scale follows the 1.03% median pointwise
+ion-density population scatter in the locked Turner Case 1 reference. These
+are AuroraPIC diagnostic gates, not thresholds published by Turner et al.
+Passing them would establish a sufficiently stationary continuation for
+interpretation; it would not reclassify the original published-duration
+failure. If the 16-block screen passes, the stronger next test is an
+independent-seed published-duration ensemble, which costs roughly three full
+1,280-cycle trajectories.
 
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:

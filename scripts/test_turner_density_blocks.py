@@ -25,7 +25,9 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def fixture(work: Path, index: int, start: int) -> Path:
+def fixture(
+    work: Path, index: int, start: int, density_offset: float | None = None
+) -> Path:
     profile = work / f"profile-{index}.csv"
     with profile.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
@@ -39,7 +41,14 @@ def fixture(work: Path, index: int, start: int) -> Path:
             ])
             writer.writerow([
                 1, "ions", node, node * 0.01,
-                (1.0 + 0.01 * index + 0.001 * node) * 1.0e14,
+                (
+                    1.0
+                    + (
+                        0.01 * index
+                        if density_offset is None else density_offset
+                    )
+                    + 0.001 * node
+                ) * 1.0e14,
             ])
     metadata = work / f"metadata-{index}.json"
     metadata.write_text(json.dumps({
@@ -97,7 +106,7 @@ def main() -> int:
         value = json.loads(output.read_text(encoding="utf-8"))
         require(
             value["diagnostic_series_ready"] is True
-            and value["classification"].startswith("diagnostic_series_ready")
+            and value["classification"] == "stationarity_horizon_incomplete"
             and len(value["blocks"]) == 4
             and len(value["adjacent_profile_relative_l2"]) == 3
             and value["series_metrics"][
@@ -107,6 +116,66 @@ def main() -> int:
             and value["published_acceptance_applicable"] is False
             and value["physics_claim"].startswith("none_"),
             "density-block analysis or claim boundary is incorrect",
+        )
+
+        stable = work / "stable"
+        stable.mkdir()
+        stable_reports = [
+            fixture(
+                stable, index, 525201 + index * 12800,
+                0.001 if index % 2 else -0.001,
+            )
+            for index in range(16)
+        ]
+        stable_output = work / "stable-analysis.json"
+        stable_run = subprocess.run([
+            sys.executable, str(ANALYZER), *map(str, stable_reports),
+            "--output", str(stable_output),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stable_value = json.loads(
+            stable_output.read_text(encoding="utf-8")
+        )
+        require(
+            stable_run.returncode == 0
+            and stable_value["turner_density_block_analysis_version"] == 2
+            and stable_value["classification"]
+                == "internal_stationarity_screen_passed"
+            and stable_value["stationarity_screen"]["passed"] is True
+            and all(
+                gate["passed"]
+                for gate in stable_value["stationarity_screen"][
+                    "gates"
+                ].values()
+            ),
+            "stationary 16-block fixture did not pass the internal screen",
+        )
+
+        drifting = work / "drifting"
+        drifting.mkdir()
+        drifting_reports = [
+            fixture(
+                drifting, index, 525201 + index * 12800,
+                0.002 * index,
+            )
+            for index in range(16)
+        ]
+        drifting_output = work / "drifting-analysis.json"
+        drifting_run = subprocess.run([
+            sys.executable, str(ANALYZER), *map(str, drifting_reports),
+            "--output", str(drifting_output),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        drifting_value = json.loads(
+            drifting_output.read_text(encoding="utf-8")
+        )
+        require(
+            drifting_run.returncode == 0
+            and drifting_value["classification"]
+                == "internal_stationarity_screen_failed"
+            and drifting_value["stationarity_screen"]["passed"] is False
+            and not drifting_value["stationarity_screen"]["gates"][
+                "maximum_absolute_projected_fractional_drift"
+            ]["passed"],
+            "drifting 16-block fixture did not fail the internal screen",
         )
 
         insufficient = work / "insufficient.json"

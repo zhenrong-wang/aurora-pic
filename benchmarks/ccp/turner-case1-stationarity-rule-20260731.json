@@ -1,0 +1,48 @@
+{
+  "predeclaration_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "predeclared_at_parent_commit": "6a23ff264fa56f23a96ff3d436eb277dfffcfe86",
+  "data_observed_before_predeclaration": {
+    "consecutive_blocks": 8,
+    "last_step": 627600
+  },
+  "future_horizon": {
+    "additional_blocks": 8,
+    "total_blocks": 16,
+    "rf_cycles_per_block": 32,
+    "first_future_step": 627601,
+    "final_future_step": 730000
+  },
+  "internal_stationarity_gates": {
+    "minimum_total_blocks": 16,
+    "minimum_ar1_effective_blocks": 8.0,
+    "maximum_absolute_projected_fractional_drift": 0.01,
+    "maximum_absolute_split_half_fractional_change": 0.01,
+    "maximum_adjacent_profile_relative_l2": 0.025,
+    "combination": "all_gates_must_pass"
+  },
+  "threshold_basis": {
+    "density_equivalence_scale": "one_percent",
+    "reference_observation": "Turner Case 1 reference median pointwise ion-density population relative standard deviation is approximately 1.03 percent",
+    "profile_jump_margin": "2.5 percent is a conservative diagnostic ceiling above the reference population-scatter scale"
+  },
+  "current_eight_block_screen": {
+    "classification": "stationarity_horizon_incomplete",
+    "projected_fractional_drift": -0.011240871578067274,
+    "split_half_fractional_change": -0.007165886063753693,
+    "maximum_adjacent_profile_relative_l2": 0.019082166354119048,
+    "lag_one_integrated_density_correlation": 0.26127852691278314,
+    "ar1_effective_blocks": 4.685540630873195,
+    "analysis_report_sha256": "6c89d624c7767d42a512a8d857a1a382b6b74ac0d5901499a43a849ef9d38c9b"
+  },
+  "implementation": {
+    "script": "scripts/analyze_turner_density_blocks.py",
+    "analysis_version": 2,
+    "script_sha256": "143054b434470b7f4823bc8eef0ad4d48a629550ec6f2303ad759d335ec5fe5d"
+  },
+  "claim_boundary": {
+    "scope": "internal_post_benchmark_stationarity_screen_only",
+    "published_acceptance_applicable": false,
+    "passing_does_not_reclassify_original_turner_result": true
+  }
+}

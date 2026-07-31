@@ -15,6 +15,11 @@ import tempfile
 
 
 STEPS_PER_RF_CYCLE = {1: 400, 2: 800, 3: 1600, 4: 3200}
+STATIONARITY_TARGET_BLOCKS = 16
+MINIMUM_EFFECTIVE_BLOCKS = 8.0
+MAXIMUM_ABSOLUTE_PROJECTED_DRIFT = 0.01
+MAXIMUM_ABSOLUTE_SPLIT_HALF_CHANGE = 0.01
+MAXIMUM_ADJACENT_PROFILE_RELATIVE_L2 = 0.025
 
 
 class BlockError(RuntimeError):
@@ -286,9 +291,76 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
         (right - left) / left
         for left, right in zip(integrals, integrals[1:])
     ]
+    half = len(integrals) // 2
+    split_half_change: float | None = None
+    if half > 0:
+        first_mean = math.fsum(integrals[:half]) / half
+        second_mean = math.fsum(integrals[-half:]) / half
+        split_half_change = (second_mean - first_mean) / mean_integral
+    projected_drift = slope * (len(integrals) - 1) / mean_integral
+    maximum_movement = max(movements) if movements else None
     enough = len(blocks) >= minimum_blocks
+    stationarity_horizon_complete = (
+        len(blocks) >= STATIONARITY_TARGET_BLOCKS
+    )
+    stationarity_gates = {
+        "minimum_total_blocks": {
+            "threshold": STATIONARITY_TARGET_BLOCKS,
+            "value": len(blocks),
+            "passed": stationarity_horizon_complete,
+        },
+        "minimum_ar1_effective_blocks": {
+            "threshold": MINIMUM_EFFECTIVE_BLOCKS,
+            "value": effective_blocks,
+            "passed": (
+                effective_blocks is not None
+                and effective_blocks >= MINIMUM_EFFECTIVE_BLOCKS
+            ),
+        },
+        "maximum_absolute_projected_fractional_drift": {
+            "threshold": MAXIMUM_ABSOLUTE_PROJECTED_DRIFT,
+            "value": abs(projected_drift),
+            "passed": abs(projected_drift)
+                <= MAXIMUM_ABSOLUTE_PROJECTED_DRIFT,
+        },
+        "maximum_absolute_split_half_fractional_change": {
+            "threshold": MAXIMUM_ABSOLUTE_SPLIT_HALF_CHANGE,
+            "value": (
+                abs(split_half_change)
+                if split_half_change is not None else None
+            ),
+            "passed": (
+                split_half_change is not None
+                and abs(split_half_change)
+                    <= MAXIMUM_ABSOLUTE_SPLIT_HALF_CHANGE
+            ),
+        },
+        "maximum_adjacent_profile_relative_l2": {
+            "threshold": MAXIMUM_ADJACENT_PROFILE_RELATIVE_L2,
+            "value": maximum_movement,
+            "passed": (
+                maximum_movement is not None
+                and maximum_movement
+                    <= MAXIMUM_ADJACENT_PROFILE_RELATIVE_L2
+            ),
+        },
+    }
+    stationarity_passed = (
+        stationarity_horizon_complete
+        and all(
+            bool(gate["passed"]) for gate in stationarity_gates.values()
+        )
+    )
+    if not enough:
+        classification = "insufficient_consecutive_blocks"
+    elif not stationarity_horizon_complete:
+        classification = "stationarity_horizon_incomplete"
+    elif stationarity_passed:
+        classification = "internal_stationarity_screen_passed"
+    else:
+        classification = "internal_stationarity_screen_failed"
     return {
-        "turner_density_block_analysis_version": 1,
+        "turner_density_block_analysis_version": 2,
         "case": case,
         "species": species,
         "block_contract": {
@@ -296,6 +368,7 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
             "contiguous": True,
             "reset_on_restart": True,
             "minimum_blocks_for_diagnostic_series": minimum_blocks,
+            "stationarity_target_blocks": STATIONARITY_TARGET_BLOCKS,
         },
         "blocks": blocks,
         "adjacent_profile_relative_l2": movements,
@@ -303,18 +376,25 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
         "series_metrics": {
             "mean_line_integrated_density_m-2": mean_integral,
             "linear_slope_per_block_m-2": slope,
-            "projected_fractional_drift_across_series":
-                slope * (len(integrals) - 1) / mean_integral,
+            "projected_fractional_drift_across_series": projected_drift,
+            "split_half_fractional_change": split_half_change,
             "lag_one_integrated_density_correlation": correlation,
             "ar1_effective_blocks": effective_blocks,
-            "maximum_adjacent_profile_relative_l2":
-                max(movements) if movements else None,
+            "maximum_adjacent_profile_relative_l2": maximum_movement,
         },
         "diagnostic_series_ready": enough,
-        "classification": (
-            "diagnostic_series_ready_for_stationarity_interpretation"
-            if enough else "insufficient_consecutive_blocks"
-        ),
+        "stationarity_screen": {
+            "scope": "internal_post_benchmark_diagnostic_only",
+            "threshold_basis":
+                "predeclared_before_blocks_9_through_16; one-percent "
+                "density-equivalence scale follows the approximately "
+                "one-percent median Turner reference population scatter",
+            "horizon_complete": stationarity_horizon_complete,
+            "gates": stationarity_gates,
+            "passed": stationarity_passed
+                if stationarity_horizon_complete else None,
+        },
+        "classification": classification,
         "published_acceptance_applicable": False,
         "physics_claim": "none_post_benchmark_diagnostic_only",
     }
