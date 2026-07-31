@@ -144,6 +144,7 @@ struct SinusoidalVoltageConfig {
 
 struct SpatialAverage1DConfig {
     bool enabled{false};
+    bool reset_on_restart{false};
     std::size_t interval{1};
     std::size_t start_step{1};
     std::size_t end_step{0};

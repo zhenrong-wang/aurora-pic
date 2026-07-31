@@ -110,6 +110,50 @@ def main() -> int:
             "Turner comparator statistic or claim boundary is incorrect",
         )
 
+        diagnostic_metadata = work / "diagnostic_metadata.json"
+        diagnostic_value = json.loads(
+            metadata.read_text(encoding="utf-8")
+        )
+        diagnostic_value.update({
+            "reset_on_restart": True,
+            "start_step": 525201,
+            "end_step": 538000,
+            "final_step": 538000,
+        })
+        diagnostic_metadata.write_text(
+            json.dumps(diagnostic_value), encoding="utf-8"
+        )
+        diagnostic_report = work / "diagnostic-report.json"
+        diagnostic = subprocess.run([
+            sys.executable, str(COMPARATOR), "--case", "1",
+            "--reference", str(reference), "--candidate", str(candidate),
+            "--candidate-metadata", str(diagnostic_metadata),
+            "--normalization-audit", str(audit),
+            "--post-benchmark-window",
+            "--output", str(diagnostic_report),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(
+            diagnostic.returncode == 0,
+            f"Turner comparator rejected a valid post-benchmark "
+            f"window: {diagnostic.stderr}",
+        )
+        diagnostic_result = json.loads(
+            diagnostic_report.read_text(encoding="utf-8")
+        )
+        require(
+            diagnostic_result["statistic"][
+                "published_acceptance_applicable"
+            ] is False
+            and "accepted_99_percent"
+                not in diagnostic_result["statistic"]
+            and diagnostic_result["comparison_scope"]
+                == "post_benchmark_density_diagnostic_only"
+            and diagnostic_result["physics_claim"].startswith(
+                "none_post_benchmark"
+            ),
+            "post-benchmark comparison overstated its claim",
+        )
+
         changed = reference.read_text(encoding="utf-8").replace(
             "100000000000000.0", "100000000000001.0", 1
         )

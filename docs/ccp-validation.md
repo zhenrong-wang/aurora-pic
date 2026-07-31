@@ -328,13 +328,17 @@ timestep, sample count, species, and a `complete` gate.
 
 1D checkpoint v5 and later stores the averaging contract, sample count, and
 every nodal sum; v6 adds species/side wall count and impact energy, and v7 adds
-species electric work. A changed averaging window is rejected on restart, and
-a legacy v1-v4 checkpoint can restart only when spatial averaging is disabled.
-Older restarts retain the state they support and start each newer,
-explicitly origin-labeled counter at the restart step. Bounded regressions
-prove byte-identical continuous/checkpoint-split profiles, represented-number
-conservation, exact wall accounting, power-work closure, and counter restart
-continuity.
+species electric work. A changed averaging window is rejected by default.
+Setting `spatial_average_reset_on_restart = true` explicitly discards stored
+sums and permits a new averaging contract; its first sample must be after the
+checkpoint step. Metadata records the reset, and the Turner comparator exposes
+a separate post-benchmark mode that never applies the published-duration
+acceptance gate. A legacy v1-v4 checkpoint can otherwise restart only when
+spatial averaging is disabled. Older restarts retain the state they support
+and start each newer, explicitly origin-labeled counter at the restart step.
+Bounded regressions prove byte-identical continuous/checkpoint-split and
+restart-reset profiles, represented-number conservation, exact wall
+accounting, power-work closure, and counter restart continuity.
 
 The baseline statistical comparison uses the original-grid reference, not the
 numerically refined profile. For every mesh node it computes

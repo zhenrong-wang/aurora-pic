@@ -146,7 +146,8 @@ def load_candidate(path: Path, species: str) -> list[dict[str, float]]:
 
 def compare(case: int, reference: Path, candidate: Path,
             audit_path: Path, metadata_path: Path,
-            species: str = "ions") -> dict[str, object]:
+            species: str = "ions",
+            post_benchmark_window: bool = False) -> dict[str, object]:
     try:
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
@@ -173,21 +174,44 @@ def compare(case: int, reference: Path, candidate: Path,
     end_step = steps_per_cycle * TOTAL_RF_CYCLES[case]
     samples = 32 * steps_per_cycle
     start_step = end_step - samples + 1
-    expected_metadata = {
+    common_metadata = {
         "spatial_average_version": 1,
         "unit_system": "si",
-        "start_step": start_step,
-        "end_step": end_step,
         "interval": 1,
         "samples": samples,
         "expected_samples": samples,
-        "final_step": end_step,
         "rf_cycles": 32,
         "complete": True,
     }
-    for key, expected in expected_metadata.items():
+    for key, expected in common_metadata.items():
         require(metadata.get(key) == expected,
                 f"candidate averaging metadata {key!r} must be {expected!r}")
+    if post_benchmark_window:
+        diagnostic_start = metadata.get("start_step")
+        diagnostic_end = metadata.get("end_step")
+        require(
+            isinstance(diagnostic_start, int)
+            and isinstance(diagnostic_end, int)
+            and diagnostic_start > end_step
+            and diagnostic_end - diagnostic_start + 1 == samples
+            and diagnostic_end % steps_per_cycle == 0
+            and metadata.get("final_step") == diagnostic_end
+            and metadata.get("reset_on_restart") is True,
+            "post-benchmark candidate must be a complete reset 32-cycle "
+            "window after the published duration",
+        )
+    else:
+        expected_metadata = {
+            "start_step": start_step,
+            "end_step": end_step,
+            "final_step": end_step,
+        }
+        for key, expected in expected_metadata.items():
+            require(
+                metadata.get(key) == expected,
+                f"candidate averaging metadata {key!r} must be "
+                f"{expected!r}",
+            )
     require(
         math.isclose(
             float(metadata.get("rf_frequency", 0.0)),
@@ -255,6 +279,28 @@ def compare(case: int, reference: Path, candidate: Path,
     statistic = math.fsum(terms)
     interval_95 = RANGES_95[case]
     interval_99 = RANGES_99[case]
+    statistic_report = {
+        "name": "Turner ion-density X-squared",
+        "formula_variance": "population_standard_deviation_squared",
+        "x_squared": statistic,
+        "range_95_percent": list(interval_95),
+        "range_99_percent": list(interval_99),
+    }
+    if post_benchmark_window:
+        statistic_report.update({
+            "published_acceptance_applicable": False,
+            "within_published_95_percent_range":
+                interval_95[0] <= statistic <= interval_95[1],
+            "within_published_99_percent_range":
+                interval_99[0] <= statistic <= interval_99[1],
+        })
+    else:
+        statistic_report.update({
+            "accepted_95_percent":
+                interval_95[0] <= statistic <= interval_95[1],
+            "accepted_99_percent":
+                interval_99[0] <= statistic <= interval_99[1],
+        })
     return {
         "turner_comparison_version": 1,
         "case": case,
@@ -271,15 +317,7 @@ def compare(case: int, reference: Path, candidate: Path,
             "averaging_metadata_sha256": sha256(metadata_path),
         },
         "nodes": expected_nodes,
-        "statistic": {
-            "name": "Turner ion-density X-squared",
-            "formula_variance": "population_standard_deviation_squared",
-            "x_squared": statistic,
-            "accepted_95_percent": interval_95[0] <= statistic <= interval_95[1],
-            "accepted_99_percent": interval_99[0] <= statistic <= interval_99[1],
-            "range_95_percent": list(interval_95),
-            "range_99_percent": list(interval_99),
-        },
+        "statistic": statistic_report,
         "secondary_metrics": {
             "relative_l2": math.sqrt(
                 math.fsum(squared_error) / math.fsum(squared_reference)
@@ -297,9 +335,17 @@ def compare(case: int, reference: Path, candidate: Path,
             "maximum_candidate_error_m":
                 maximum_candidate_coordinate_error,
         },
-        "comparison_scope": "published_baseline_ion_density_statistic_only",
+        "comparison_scope": (
+            "post_benchmark_density_diagnostic_only"
+            if post_benchmark_window
+            else "published_baseline_ion_density_statistic_only"
+        ),
         "averaging_contract_verified": True,
-        "physics_claim": "none_without_complete_solver_run_contract",
+        "physics_claim": (
+            "none_post_benchmark_window_outside_published_duration"
+            if post_benchmark_window
+            else "none_without_complete_solver_run_contract"
+        ),
     }
 
 
@@ -311,13 +357,17 @@ def main() -> int:
     parser.add_argument("--candidate-metadata", type=Path, required=True)
     parser.add_argument("--species", default="ions")
     parser.add_argument("--normalization-audit", type=Path, required=True)
+    parser.add_argument(
+        "--post-benchmark-window", action="store_true",
+        help="compare a reset 32-cycle diagnostic after the published run",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         report = compare(
             args.case, args.reference, args.candidate,
             args.normalization_audit, args.candidate_metadata,
-            args.species,
+            args.species, args.post_benchmark_window,
         )
         write_report(args.output, report)
     except (ComparisonError, OSError) as error:

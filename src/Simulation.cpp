@@ -1115,6 +1115,10 @@ void Simulation::write_spatial_average() const {
     metadata << std::setprecision(17)
              << "{\n"
              << "  \"spatial_average_version\": 1,\n"
+             << "  \"reset_on_restart\": "
+             << (cfg_.spatial_average.reset_on_restart
+                     ? "true" : "false")
+             << ",\n"
              << "  \"unit_system\": "
              << json_string(to_string(cfg_.units.system))
              << ",\n"
@@ -1456,23 +1460,49 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             stored_samples >> stored_species_count >>
             stored_nx;
         const auto& configured = cfg_.spatial_average;
+        const bool reset =
+            configured.reset_on_restart;
+        const bool stored_enabled = enabled == 1;
+        const bool stored_shape_valid =
+            (enabled == 0 || enabled == 1) &&
+            stored_nx == grid_.nx() &&
+            stored_species_count ==
+                (stored_enabled ? species_.size() : 0);
+        std::size_t stored_expected_samples = 0;
+        if (stored_enabled && interval > 0 &&
+            start_step > 0 && end_step >= start_step) {
+            stored_expected_samples =
+                1 + (end_step - start_step) / interval;
+        }
+        const bool stored_state_valid =
+            stored_shape_valid &&
+            std::isfinite(rf_frequency) &&
+            rf_frequency >= 0.0 &&
+            (!stored_enabled ||
+             (interval > 0 && start_step > 0 &&
+              end_step >= start_step &&
+              stored_samples <= stored_expected_samples)) &&
+            (stored_enabled || stored_samples == 0);
+        const bool configured_contract_matches =
+            enabled == (configured.enabled ? 1 : 0) &&
+            interval == configured.interval &&
+            start_step == configured.start_step &&
+            end_step == configured.end_step &&
+            rf_frequency == configured.rf_frequency &&
+            rf_cycles == configured.rf_cycles &&
+            stored_species_count ==
+                spatial_density_sums_.size() &&
+            stored_samples <=
+                expected_spatial_average_samples();
         if (key != "spatial_average" ||
-            enabled != (configured.enabled ? 1 : 0) ||
-            interval != configured.interval ||
-            start_step != configured.start_step ||
-            end_step != configured.end_step ||
-            rf_frequency != configured.rf_frequency ||
-            rf_cycles != configured.rf_cycles ||
-            stored_species_count !=
-                spatial_density_sums_.size() ||
-            stored_nx != grid_.nx() ||
-            stored_samples >
-                expected_spatial_average_samples()) {
+            !stored_state_valid ||
+            (!reset && !configured_contract_matches)) {
             throw std::runtime_error(
                 "checkpoint spatial-average contract does not "
                 "match 1D config");
         }
-        spatial_average_samples_ = stored_samples;
+        spatial_average_samples_ =
+            reset ? 0 : stored_samples;
         for (std::size_t species_id = 0;
              species_id < stored_species_count;
              ++species_id) {
@@ -1486,17 +1516,29 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                     "checkpoint spatial-average species metadata "
                     "does not match 1D config");
             }
-            for (double& value :
-                 spatial_density_sums_[species_id]) {
+            for (std::size_t node = 0;
+                 node < stored_nx; ++node) {
+                double value = 0.0;
                 in >> value;
                 if (!std::isfinite(value) || value < 0.0) {
                     throw std::runtime_error(
                         "checkpoint spatial-average sum is invalid");
                 }
+                if (!reset) {
+                    spatial_density_sums_[species_id][node] =
+                        value;
+                }
+            }
+        }
+        if (reset) {
+            for (auto& sum : spatial_density_sums_) {
+                std::fill(sum.begin(), sum.end(), 0.0);
             }
         }
         in >> key;
-    } else if (cfg_.spatial_average.enabled) {
+    } else if (
+        cfg_.spatial_average.enabled &&
+        !cfg_.spatial_average.reset_on_restart) {
         throw std::runtime_error(
             "legacy checkpoint cannot restore enabled 1D "
             "spatial averaging");
@@ -1511,6 +1553,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     if (cfg_.spatial_average.enabled) {
         const auto& average = cfg_.spatial_average;
+        if (average.reset_on_restart &&
+            average.start_step <= step_) {
+            throw std::runtime_error(
+                "restart-reset spatial average must start after "
+                "the checkpoint step");
+        }
         std::size_t expected_at_step = 0;
         if (step_ >= average.start_step) {
             const std::size_t last =

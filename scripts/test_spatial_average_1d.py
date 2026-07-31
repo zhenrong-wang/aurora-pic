@@ -34,8 +34,12 @@ def run(binary: Path, config: Path) -> subprocess.CompletedProcess[str]:
 
 
 def deck(output: Path, steps: int, restart: Path | None = None,
-         interval: int = 1) -> str:
+         interval: int = 1, start_step: int = 1,
+         end_step: int = 4, reset: bool = False) -> str:
     restart_line = "" if restart is None else f"restart_path = {restart}\n"
+    reset_line = (
+        "spatial_average_reset_on_restart = true\n" if reset else ""
+    )
     return (
         "config_version = 1\n"
         "units = normalized\n"
@@ -55,9 +59,10 @@ def deck(output: Path, steps: int, restart: Path | None = None,
         "checkpoint_output = true\n"
         "checkpoint_interval = 2\n"
         "spatial_average = true\n"
+        f"{reset_line}"
         f"spatial_average_interval = {interval}\n"
-        "spatial_average_start_step = 1\n"
-        "spatial_average_end_step = 4\n"
+        f"spatial_average_start_step = {start_step}\n"
+        f"spatial_average_end_step = {end_step}\n"
         "[species.electrons]\n"
         "charge = -1\n"
         "mass = 1\n"
@@ -157,6 +162,70 @@ def main() -> int:
             mismatched.returncode != 0
             and "spatial-average contract" in mismatched.stderr,
             "checkpoint accepted a changed spatial-average contract",
+        )
+
+        late_direct_output = work / "late-direct-output"
+        late_direct_config = work / "late-direct.cfg"
+        late_direct_config.write_text(
+            deck(
+                late_direct_output, 4,
+                start_step=3, end_step=4,
+            ),
+            encoding="utf-8",
+        )
+        late_direct = run(binary, late_direct_config)
+        require(
+            late_direct.returncode == 0,
+            f"late direct spatial-average run failed: "
+            f"{late_direct.stderr}",
+        )
+        reset_output = work / "reset-output"
+        reset_config = work / "reset.cfg"
+        reset_config.write_text(
+            deck(
+                reset_output, 4, checkpoint,
+                start_step=3, end_step=4, reset=True,
+            ),
+            encoding="utf-8",
+        )
+        reset_run = run(binary, reset_config)
+        require(
+            reset_run.returncode == 0,
+            f"restart-reset spatial-average run failed: "
+            f"{reset_run.stderr}",
+        )
+        require(
+            (late_direct_output / "spatial_average.csv").read_bytes()
+            == (reset_output / "spatial_average.csv").read_bytes(),
+            "restart-reset spatial average differs from direct window",
+        )
+        reset_metadata = json.loads(
+            (reset_output / "spatial_average_metadata.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        require(
+            reset_metadata["reset_on_restart"] is True
+            and reset_metadata["samples"] == 2
+            and reset_metadata["expected_samples"] == 2
+            and reset_metadata["complete"] is True,
+            "restart-reset spatial-average metadata is incorrect",
+        )
+
+        missed_config = work / "missed-reset.cfg"
+        missed_config.write_text(
+            deck(
+                work / "missed-reset-output", 4, checkpoint,
+                start_step=2, end_step=4, reset=True,
+            ),
+            encoding="utf-8",
+        )
+        missed = run(binary, missed_config)
+        require(
+            missed.returncode != 0
+            and "must start after the checkpoint step"
+                in missed.stderr,
+            "restart reset accepted a window with a missed sample",
         )
 
         rf_config = work / "rf.cfg"

@@ -1354,11 +1354,12 @@ void validate_spatial_average_1d(const Config& cfg) {
             "and finite");
     }
     if (!average.enabled) {
-        if (average.rf_cycles != 0 ||
+        if (average.reset_on_restart ||
+            average.rf_cycles != 0 ||
             average.rf_frequency != 0.0) {
             throw std::runtime_error(
-                "disabled spatial_average cannot configure an RF "
-                "contract");
+                "disabled spatial_average cannot configure restart "
+                "reset or an RF contract");
         }
         return;
     }
@@ -1444,7 +1445,8 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "velocity_dimensions", "dt", "steps",
         "output_interval", "output_dir", "seed",
-        "spatial_average", "spatial_average_interval",
+        "spatial_average", "spatial_average_reset_on_restart",
+        "spatial_average_interval",
         "spatial_average_start_step", "spatial_average_end_step",
         "spatial_average_rf_frequency", "spatial_average_rf_cycles",
         "max_particles_per_species",
@@ -1507,6 +1509,9 @@ Config load_config(const std::string& path) {
     cfg.output_interval = as<std::size_t>(global, "output_interval", cfg.output_interval);
     cfg.spatial_average.enabled = parse_bool(
         global, "spatial_average", cfg.spatial_average.enabled);
+    cfg.spatial_average.reset_on_restart = parse_bool(
+        global, "spatial_average_reset_on_restart",
+        cfg.spatial_average.reset_on_restart);
     cfg.spatial_average.interval = as<std::size_t>(
         global, "spatial_average_interval",
         cfg.spatial_average.interval);
