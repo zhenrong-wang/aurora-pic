@@ -603,7 +603,7 @@ The complete series is now eligible for interpretation, but does not
 demonstrate stationarity. The line-integrated density has lag-one correlation
 `0.261`, leaving an AR(1) effective count of only `4.69` blocks, and its fitted
 change across the series is -1.124%. Adjacent profile movement reaches 1.908%.
-Individual windows span `X² = 198--849`; two happen to lie inside the
+Individual windows span `X² = 198--849`; three happen to lie inside the
 published 95% interval, demonstrating why selecting one favorable
 post-benchmark window would be misleading.
 
