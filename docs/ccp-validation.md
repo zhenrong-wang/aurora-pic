@@ -857,6 +857,22 @@ completed seed-13,507 published-duration result to this ensemble manifest.
 Only after that ingestion path is regression-tested should the two new
 multi-hour seeds be launched sequentially.
 
+That attachment gate is now implemented by
+`scripts/attach_turner_ensemble_result.py`. It leaves the immutable preparation
+manifest unchanged, permits the executed deck to differ only in `output_dir`,
+recomputes the complete published-duration comparison from the locked local
+reference, candidate profile, and averaging metadata, and checksum-records the
+final checkpoint. A changed waveform or any other physics/numerical deck field
+is rejected in regression.
+
+The historical seed-13,507 result is attached with classification
+`single_seed_published_density_statistic_failed_99_percent`, preserving
+`X² = 574.399`. The attachment report SHA-256 is
+`034ebae4e31c7b2acdafa3e895afd6f422a70c4229d98843d33b7f5b004c0ee8`.
+This establishes one verified ensemble member, not a complete ensemble. The
+remaining production action is to run seeds 24,680 and 97,531 sequentially,
+then attach each through the same gate before aggregation.
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 

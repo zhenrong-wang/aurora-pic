@@ -62,6 +62,9 @@ diagnostic continuation as a published benchmark pass.
 full-duration Turner decks and preflight reports behind a separate aggregate
 cost acknowledgement. It never launches a run and records a sequential-only
 workstation policy plus aggregate resource floors.
+`attach_turner_ensemble_result.py` admits a completed seed only after proving
+semantic deck equivalence, independently recomputing the locked Turner
+comparison, and checksum-recording its profile, metadata, and final checkpoint.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.

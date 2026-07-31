@@ -86,6 +86,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/verify_turner_source.py scripts/normalize_turner_source.py
   scripts/prepare_turner_case.py
   scripts/prepare_turner_ensemble.py
+  scripts/attach_turner_ensemble_result.py
   scripts/qualify_turner_runtime.py
   scripts/run_turner_startup.py
   scripts/extend_turner_horizon.py
