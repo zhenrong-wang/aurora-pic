@@ -326,14 +326,15 @@ every active electrode-drive frequency. `spatial_average.csv` uses long-form
 species/node rows; `spatial_average_metadata.json` records the window,
 timestep, sample count, species, and a `complete` gate.
 
-1D checkpoint v6 stores the averaging contract, sample count, every nodal sum,
-and species/side wall count and impact energy. A changed averaging window is
-rejected on restart, and a legacy v1-v4 checkpoint can restart only when
-spatial averaging is disabled. A v5 restart retains its averaging state and
-starts explicitly origin-labeled wall counters at the restart step. Bounded
-regressions prove byte-identical continuous/checkpoint-split profiles,
-represented-number conservation, exact wall accounting, and wall-counter
-restart continuity.
+1D checkpoint v5 and later stores the averaging contract, sample count, and
+every nodal sum; v6 adds species/side wall count and impact energy, and v7 adds
+species electric work. A changed averaging window is rejected on restart, and
+a legacy v1-v4 checkpoint can restart only when spatial averaging is disabled.
+Older restarts retain the state they support and start each newer,
+explicitly origin-labeled counter at the restart step. Bounded regressions
+prove byte-identical continuous/checkpoint-split profiles, represented-number
+conservation, exact wall accounting, power-work closure, and counter restart
+continuity.
 
 The baseline statistical comparison uses the original-grid reference, not the
 numerically refined profile. For every mesh node it computes
@@ -442,6 +443,46 @@ wall-loss implementation error. It does not resolve whether the original
 density excess is a seed fluctuation, residual finite-duration drift, or a
 smaller collision/heating discrepancy.
 
+### Species electrical-power continuation
+
+Commit `df8765d` added restart-safe, species-resolved electric-work
+accounting. The diagnostic records represented kinetic-energy change caused
+only by the electric particle push; collision-energy transfer and kinetic
+energy carried into a wall remain separate. A collisionless no-loss regression
+requires this work to equal the particle kinetic-energy change. Ordered
+per-worker reductions preserve deterministic execution, checkpoint v7
+preserves cumulative values and their origin, and a v6 restart begins the new
+counter at its restart step.
+
+A second 32-cycle continuation covered steps 525,200--538,000. Its quantities
+are directly comparable in definition to the line-integrated,
+time-averaged species `J · E` powers reported in
+[Turner et al., Table III](https://arxiv.org/abs/1211.5246), but this window is
+still beyond the published 1,280-cycle duration and has no published
+single-window uncertainty band. The retained local artifact identities are:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Solver executable (commit `df8765d`) | `4ba77160ef71c4f2630139f42c2aa0e77662a2d8f3c11c5aa11d03419849a668` |
+| Input step-525,200 v6 checkpoint | `23c82ef6ce77a8acf9b4465d9c38aab0da38621da0dfd89a1c9e3fc54061cd95` |
+| 32-cycle power deck | `b05efe0002434e3d5e6f9a1c137b57178c7f0783ef1ac8b937f07ce197040659` |
+| Final step-538,000 v7 checkpoint | `b7f67ed11e41611025edb51ab537b6ea6008f721a82fcf9062c25af1b8d3f5ff` |
+| 32-cycle power/balance report | `d010cbcc22a04bd5591a7d705a914b06b80634548aad3f281a52f2f8a8b68b35` |
+
+The measured electron power is `34.2044 W m^-2`, 0.279% below Turner's
+`34.3 W m^-2`. The measured ion power is `91.5628 W m^-2`, 1.063% above
+Turner's `90.6 W m^-2`. The mean two-electrode ion-current magnitude is
+`0.220216 A m^-2`, 0.555% above `0.219 A m^-2`. The window also has exact
+integer source/loss closure for both species: 24,822 ionizations, electron
+population change -14, ion population change +35, and zero balance residuals.
+
+Agreement of three independent global observables at about 1% or better is
+strong evidence that the discharge's field heating, ion acceleration,
+ionization source, and absorbing-wall flux are mutually consistent. It is
+materially stronger than the density comparison alone, but it is not relabeled
+as a formal published-duration pass: the original density-profile `X²` gate
+remains failed and this continuation is diagnostic evidence.
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
@@ -450,14 +491,16 @@ python3 scripts/analyze_turner_balance.py \
   --scalars diagnostic-output/scalars.csv \
   --collisions diagnostic-output/collisions.csv \
   --boundary-losses diagnostic-output/boundary_losses.csv \
+  --power-transfer diagnostic-output/power_transfer.csv \
   --expected-steps 12800 \
   --output diagnostic-balance.json
 ```
 
 The analyzer rejects mismatched step windows, partial wall-counter coverage,
-decreasing counters, non-finite values, and nonzero integer source/loss
-residuals. Its reports retain `physics_claim = none` because a post-benchmark
-continuation is diagnostic evidence rather than the published test.
+partial power-counter coverage, decreasing source/wall counters, non-finite
+values, and nonzero integer source/loss residuals. Its reports retain
+`physics_claim = none` because a post-benchmark continuation is diagnostic
+evidence rather than the published test.
 
 ## Bounded execution ladder
 
@@ -473,8 +516,8 @@ reduced run as a pass:
    constraint are pinned. Exact tables are locally normalized without
    resampling and load through provenance-bearing gas manifests. Restart-safe
    whole-cycle spatial-density averaging and the statistical comparator are
-   complete. Implement the remaining power/current/source observables to
-   complete the broader C1 diagnostic set.
+   complete. Restart-safe source, wall-current, and species-power observables
+   now cover the published global Case 1 quantities.
 3. **C2, bounded startup screening:** run the exact Case 1 grid, timestep,
    particle weight, waveform, and collision model for a small declared number
    of RF periods. Check invariants, collision balance, sheath formation,
