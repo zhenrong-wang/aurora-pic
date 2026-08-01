@@ -99,6 +99,8 @@ jobs:
         run: python3 scripts/test_prepare_turner_ensemble.py
       - name: Validate Turner ensemble result attachment
         run: python3 scripts/test_attach_turner_ensemble_result.py
+      - name: Validate Turner ensemble analysis
+        run: python3 scripts/test_analyze_turner_ensemble.py
       - name: Validate restart-safe 1D spatial averaging
         run: python3 scripts/test_spatial_average_1d.py build/aurorapic_cli
       - name: Validate Hall reference normalization

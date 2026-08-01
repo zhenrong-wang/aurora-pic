@@ -852,11 +852,6 @@ these are observations, not portable performance guarantees.
 | Seed-97,531 deck | `0153288faf1ebb0baaee0be3a4d6e23395175cc22987cf39dbb7d9f518f83f53` |
 | Seed-97,531 preflight | `9af247d3e97de6bcc071f505908175a0f558e283406b60f6bd23c9f8c06a3100` |
 
-The next implementation gate is checksum-verified attachment of the existing
-completed seed-13,507 published-duration result to this ensemble manifest.
-Only after that ingestion path is regression-tested should the two new
-multi-hour seeds be launched sequentially.
-
 That attachment gate is now implemented by
 `scripts/attach_turner_ensemble_result.py`. It leaves the immutable preparation
 manifest unchanged, permits the executed deck to differ only in `output_dir`,
@@ -865,13 +860,40 @@ reference, candidate profile, and averaging metadata, and checksum-records the
 final checkpoint. A changed waveform or any other physics/numerical deck field
 is rejected in regression.
 
-The historical seed-13,507 result is attached with classification
-`single_seed_published_density_statistic_failed_99_percent`, preserving
-`X² = 574.399`. The attachment report SHA-256 is
-`034ebae4e31c7b2acdafa3e895afd6f422a70c4229d98843d33b7f5b004c0ee8`.
-This establishes one verified ensemble member, not a complete ensemble. The
-remaining production action is to run seeds 24,680 and 97,531 sequentially,
-then attach each through the same gate before aggregation.
+All three prepared runs are now complete and attached. The independently
+recomputed individual results are:
+
+| Seed | `X²` | 95% result | 99% result | Integrated ion-density bias |
+| ---: | ---: | :---: | :---: | ---: |
+| 13,507 | 574.399 | fail | fail | +2.483% |
+| 24,680 | 320.601 | fail | pass | +1.730% |
+| 97,531 | 604.587 | fail | fail | +2.497% |
+
+`scripts/analyze_turner_ensemble.py` requires exactly one attachment for every
+prepared seed, revalidates the manifest, executed configs, checkpoints,
+profiles, averaging metadata, normalization audit, and stored comparisons,
+then recomputes every comparison before aggregating. It deliberately declares
+`formal_ensemble_acceptance_rule = none_predeclared`: the published intervals
+apply to individual realizations, and no aggregate threshold was selected
+before observing these runs.
+
+The three-seed mean integrated density bias is +2.237%, with a 0.439%
+between-seed sample standard deviation; all three biases have the same sign.
+Only one member passes the published 99% interval and none passes the 95%
+interval. Under an explicitly diagnostic assumption of independent 1% failure
+probability, observing at least two 99% failures in three trials has probability
+`0.000298`. This is not a new formal pass/fail test, but it makes a purely
+chance explanation implausible and elevates the positive density-amplitude
+offset to a systematic discrepancy requiring isolation.
+
+The nonrestricted aggregate is
+[`benchmarks/ccp/turner-case1-seed-ensemble-3-20260801.json`](../benchmarks/ccp/turner-case1-seed-ensemble-3-20260801.json).
+The complete local analysis report SHA-256 is
+`423b420efdd10ed4bb899ab82ad173a4f94a290e23f2c129d6a85367f49b9254`.
+The next credibility action is therefore a predeclared physics sensitivity
+matrix, not additional unstructured production seeds: isolate collision-table
+interpretation, scattering/ionization choices, and numerical resolution while
+tracking density amplitude, current, and species power together.
 
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:

@@ -65,6 +65,9 @@ workstation policy plus aggregate resource floors.
 `attach_turner_ensemble_result.py` admits a completed seed only after proving
 semantic deck equivalence, independently recomputing the locked Turner
 comparison, and checksum-recording its profile, metadata, and final checkpoint.
+`analyze_turner_ensemble.py` then requires every prepared seed, revalidates all
+artifact hashes and comparisons, and emits a descriptive aggregate without
+inventing a post-hoc ensemble acceptance threshold.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.

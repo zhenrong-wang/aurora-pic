@@ -1,0 +1,63 @@
+{
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "classification": "one_or_more_members_failed_published_99_percent",
+  "density_amplitude": {
+    "all_member_biases_same_sign": true,
+    "ensemble_mean_profile_relative_l2": 0.025230129375570787,
+    "integrated_bias_percent_maximum": 2.4965732523326123,
+    "integrated_bias_percent_mean": 2.236500134372954,
+    "integrated_bias_percent_minimum": 1.729500259228156,
+    "integrated_bias_percent_sample_stddev": 0.43912397081921406
+  },
+  "formal_ensemble_acceptance_rule": "none_predeclared",
+  "local_analysis_report_sha256": "423b420efdd10ed4bb899ab82ad173a4f94a290e23f2c129d6a85367f49b9254",
+  "manifest_sha256": "5ebf633d827403c8fab97c7fabbb04505249bc90fde1dc412f57c929ec338358",
+  "members": [
+    {
+      "accepted_95_percent": false,
+      "accepted_99_percent": false,
+      "attachment_sha256": "034ebae4e31c7b2acdafa3e895afd6f422a70c4229d98843d33b7f5b004c0ee8",
+      "comparison_report_sha256": "5f9f5fb7a50c7e438552e74276f5161438698cde785f2bb1702fb22531f9bc4f",
+      "integrated_ion_density_bias_percent": 2.4834268915580937,
+      "relative_l2": 0.028741105427741283,
+      "seed": 13507,
+      "x_squared": 574.3986511135444
+    },
+    {
+      "accepted_95_percent": false,
+      "accepted_99_percent": true,
+      "attachment_sha256": "dcd671ced2f12a57a8aab6f8683fc207966fe98e67c0848ef7d566b629481af0",
+      "comparison_report_sha256": "7569da7b66efdf335c223673780af30c83c21707e569e8e647d4690348748e91",
+      "integrated_ion_density_bias_percent": 1.729500259228156,
+      "relative_l2": 0.0217056951026481,
+      "seed": 24680,
+      "x_squared": 320.6012353572586
+    },
+    {
+      "accepted_95_percent": false,
+      "accepted_99_percent": false,
+      "attachment_sha256": "90d175e15a3cb25b0d2ae5a8b5b84243240809eb52da29559507a11560332d24",
+      "comparison_report_sha256": "a3bddb45b9e2d7857650b59d6779b5db8308daa47f51e5647672d8ebf92c93ba",
+      "integrated_ion_density_bias_percent": 2.4965732523326123,
+      "relative_l2": 0.029714054756757403,
+      "seed": 97531,
+      "x_squared": 604.5868663047793
+    }
+  ],
+  "nominal_independence_diagnostic": {
+    "assumed_individual_99_percent_failure_probability": 0.01,
+    "interpretation": "diagnostic_only_not_an_ensemble_acceptance_rule",
+    "probability_of_at_least_observed_failures": 0.00029800000000000003
+  },
+  "physics_claim": "independent_seed_descriptive_evidence_only",
+  "published_individual_run_results": {
+    "accepted_95_percent_count": 0,
+    "accepted_99_percent_count": 1,
+    "failed_99_percent_count": 2,
+    "x_squared_maximum": 604.5868663047793,
+    "x_squared_mean": 499.8622509251941,
+    "x_squared_minimum": 320.6012353572586
+  },
+  "turner_ensemble_summary_version": 1,
+  "verified_members": 3
+}
