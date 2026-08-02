@@ -68,6 +68,9 @@ comparison, and checksum-recording its profile, metadata, and final checkpoint.
 `analyze_turner_ensemble.py` then requires every prepared seed, revalidates all
 artifact hashes and comparisons, and emits a descriptive aggregate without
 inventing a post-hoc ensemble acceptance threshold.
+`prepare_turner_sensitivity.py` creates a non-launching, staged refinement
+matrix with predeclared interpretation thresholds after a systematic Turner
+density discrepancy is established.
 `normalize_hall_reference.py` verifies local raw-table and case hashes,
 performs explicit unit conversion and multi-code envelope reduction, and
 produces comparator-ready reference artifacts without interpolation.

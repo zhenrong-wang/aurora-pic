@@ -895,6 +895,47 @@ matrix, not additional unstructured production seeds: isolate collision-table
 interpretation, scattering/ionization choices, and numerical resolution while
 tracking density amplitude, current, and species power together.
 
+## Predeclared discrepancy-isolation matrix
+
+Numerical convergence is tested before changing any prescribed collision
+physics. `scripts/prepare_turner_sensitivity.py` consumes one checksum-verified
+ensemble deck and creates four same-seed, full-1,280-cycle diagnostic variants
+without launching them:
+
+| Stage | Variant | Change | Question |
+| ---: | --- | --- | --- |
+| 1 | `particles_2x` | 1,024 particles/cell/species | Is the density excess driven by macro-particle noise or discrete heating? |
+| 1 | `timestep_2x` | 800 steps/RF cycle | Is the excess sensitive to pushing, RF integration, or MCC time splitting? |
+| 2 | `grid_2x_fixed_particles` | 256 cells, fixed total particles | Isolate field-grid resolution from total particle count. |
+| 2 | `grid_2x_same_ppc` | 256 cells and 512 particles/cell/species | Check joint grid/particle convergence. |
+
+All variants retain the physical duration and final-32-cycle average, but they
+change the published numerical contract. Their published `X²` values may be
+reported descriptively and must not be classified as Turner benchmark passes.
+Only one low-priority serial run is permitted at a time; stage 2 is deferred
+until stage 1 is interpreted.
+
+The primary sensitivity observable is the change in integrated ion-density
+bias relative to the paired seed-13,507 baseline (`+2.483%`). Before running a
+variant, an absolute shift of at least 0.75 percentage points is declared
+material, at most 0.50 percentage points is practical equivalence, and the
+interval between them is ambiguous. The 0.75-point threshold is approximately
+three standard errors of the completed three-seed baseline mean, rounded
+conservatively. Current and species power must be tracked as corroborating
+observables; no variant will be selected merely because it produces a favorable
+`X²`.
+
+```sh
+python3 scripts/prepare_turner_sensitivity.py \
+  tmp/turner-case1-ensemble-v1/ensemble.json \
+  --baseline-seed 13507 \
+  --baseline-density-bias-percent 2.4834268915580937 \
+  --executable build/aurorapic_cli \
+  --output-dir /external/campaign/turner-case1-sensitivity-v1 \
+  --acknowledge-cost \
+    I_UNDERSTAND_THIS_IS_A_PRODUCTION_SCALE_TURNER_SENSITIVITY
+```
+
 Generate a checksum-bearing balance report for any fully covered SI diagnostic
 window with:
 
