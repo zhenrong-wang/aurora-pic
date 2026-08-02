@@ -925,6 +925,22 @@ conservatively. Current and species power must be tracked as corroborating
 observables; no variant will be selected merely because it produces a favorable
 `X²`.
 
+The stage-1 `particles_2x` run completed all 512,000 steps with 1,024
+particles/cell/species. Its integrated ion-density bias is `+2.409%`, versus
+`+2.483%` for the paired seed-13,507 baseline: a shift of only `-0.075`
+percentage points. This is inside the predeclared 0.50-point practical
+equivalence boundary. The relative profile L2 error is essentially unchanged
+(`2.865%` versus `2.874%`). Its descriptive `X² = 428.312` is outside the
+published 99% interval, but cannot be classified as a published Turner result
+because the particle count changed.
+
+The result argues against ordinary macro-particle count noise or discrete
+particle heating as the primary source of the approximately 2.2% ensemble
+density excess. It does not prove infinite-particle convergence from one
+refinement ratio. The retained nonrestricted evidence is
+[`benchmarks/ccp/turner-case1-particles-2x-sensitivity-20260802.json`](../benchmarks/ccp/turner-case1-particles-2x-sensitivity-20260802.json).
+The next stage-1 probe is `timestep_2x`; grid variants remain deferred.
+
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \
   tmp/turner-case1-ensemble-v1/ensemble.json \
