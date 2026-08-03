@@ -1,0 +1,57 @@
+{
+  "artifact_provenance": {
+    "averaging_metadata_sha256": "5469c65f2381e938e3599c0854d3d9e828d3e8e03bbbe2e8d77a697be47e75c1",
+    "comparison_report_sha256": "38fe618d00c0cbb1a8927c09c4382c979176c04b81a90c83023d1d812f0c1464",
+    "final_checkpoint_bytes": 13412513,
+    "final_checkpoint_sha256": "ee3972c756aa6f8d3a9eab153e5592513bb7d0c409b95452bff43ee9fbdd2c48",
+    "profile_sha256": "e20967e17a3fd7f08545aba183e82f7373e58b384a3222cac189fc50e15cc97d",
+    "runtime_config_sha256": "caa0af021a7b73a08e5afef299893f577b625f5e6dbbe159a864f56c4a5ebbb6",
+    "sensitivity_manifest_sha256": "3c815c433956c138a44a21842b705445d4355d9a9488e5ced61d250c43073ee7",
+    "solver_executable_sha256": "ed6c8c31f73754cbc5851678ade9ef85d2445dd456cefe271cb9e8c0390ef072"
+  },
+  "baseline": {
+    "cells": 128,
+    "integrated_ion_density_bias_percent": 2.4834268915580937,
+    "particles_per_cell_per_species": 512,
+    "particles_per_species": 65536,
+    "relative_l2": 0.028741105427741283,
+    "seed": 13507,
+    "x_squared": 574.3986511135444
+  },
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "claim_boundary": {
+    "physics_claim": "paired_numerical_sensitivity_evidence_only",
+    "published_acceptance_applicable": false,
+    "sensitivity_result_is_turner_benchmark_pass": false
+  },
+  "predeclared_interpretation": {
+    "ambiguous_interval_percentage_points": [
+      0.5,
+      0.75
+    ],
+    "material_shift_percentage_points": 0.75,
+    "practical_equivalence_percentage_points": 0.5,
+    "primary_observable": "integrated_ion_density_bias_percent"
+  },
+  "result": {
+    "absolute_paired_shift_percentage_points": 0.4651352388736374,
+    "classification": "practically_equivalent_to_paired_baseline",
+    "integrated_ion_density_bias_percent": 2.0182916526844563,
+    "maximum_pointwise_relative_error": 0.04941301849272605,
+    "paired_shift_percentage_points": -0.4651352388736374,
+    "relative_l2": 0.02480409219236096,
+    "x_squared_descriptive_only": 426.639312007545
+  },
+  "turner_sensitivity_summary_version": 1,
+  "variant": {
+    "averaging_rf_cycles": 32,
+    "cells": 256,
+    "grid_refinement_ratio": 2,
+    "id": "grid_2x_fixed_particles",
+    "particles_per_cell_per_species": 256,
+    "particles_per_species": 65536,
+    "rf_cycles": 1280,
+    "seed": 13507,
+    "steps": 512000
+  }
+}

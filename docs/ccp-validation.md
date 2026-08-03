@@ -959,6 +959,20 @@ The retained nonrestricted evidence is
 Because stage 1 did not isolate the discrepancy, the predeclared next run is
 `grid_2x_fixed_particles`.
 
+The `grid_2x_fixed_particles` run completed 512,000 steps on 256 cells while
+retaining 65,536 particles/species. Its integrated ion-density bias is
+`+2.018%`, a `-0.465` percentage-point shift from the paired baseline and just
+inside the predeclared practical-equivalence boundary. The coincident-node
+relative profile L2 error improves to `2.480%`; its descriptive `X²` is
+`426.639`. The result suggests a modest spatial-resolution contribution, but
+does not classify the density excess as materially grid-sensitive.
+
+Holding total particles fixed halves particles/cell from 512 to 256, coupling
+grid refinement to particle statistics. The retained nonrestricted evidence is
+[`benchmarks/ccp/turner-case1-grid-2x-fixed-particles-sensitivity-20260803.json`](../benchmarks/ccp/turner-case1-grid-2x-fixed-particles-sensitivity-20260803.json).
+The final predeclared variant, `grid_2x_same_ppc`, separates that effect by
+restoring 512 particles/cell on the refined grid.
+
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \
   tmp/turner-case1-ensemble-v1/ensemble.json \
