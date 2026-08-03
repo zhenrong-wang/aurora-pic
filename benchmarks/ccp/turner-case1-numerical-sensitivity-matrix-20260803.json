@@ -1,0 +1,100 @@
+{
+  "baseline": {
+    "integrated_ion_density_bias_percent": 2.4834268915580937,
+    "seed": 13507
+  },
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "claim_boundary": {
+    "formal_turner_acceptance_applicable": false,
+    "physics_claim": "paired_numerical_sensitivity_evidence_only"
+  },
+  "global_observable_ranges": {
+    "electron_power_relative_difference_percent": [
+      0.4547068616026273,
+      1.0248320841185432
+    ],
+    "exact_source_loss_balance_all_variants": true,
+    "ion_current_relative_difference_percent": [
+      0.802715206972171,
+      1.3625499978491051
+    ],
+    "ion_power_relative_difference_percent": [
+      1.128431196395363,
+      1.707896855444102
+    ],
+    "represented_ionization_rate_m-2_s-1": [
+      2.7571674462247255e+18,
+      2.771141264583774e+18
+    ],
+    "represented_ionization_rate_range_about_four_variant_mean_percent": [
+      -0.27027433597256456,
+      0.2351737728592429
+    ]
+  },
+  "interpretation": {
+    "all_refinements_materially_reduce_density_bias": false,
+    "conclusion": "no_tested_refinement_materially_reduced_density_bias",
+    "next_gate": "localize_transport_and_collision_model_differences",
+    "ordinary_grid_timestep_or_particle_resolution_primary_cause_supported": false,
+    "remaining_exact_turner_discrepancy_resolved": false
+  },
+  "predeclared_thresholds_percentage_points": {
+    "ambiguous": [
+      0.5,
+      0.75
+    ],
+    "material": 0.75,
+    "practical_equivalence": 0.5
+  },
+  "turner_sensitivity_matrix_summary_version": 1,
+  "variants": [
+    {
+      "balance_report_sha256": "53cf20f15b7d7282d69b38070fc1f1f61d28b314ff1e5a255a0b5ba85c6944ea",
+      "classification": "practically_equivalent_to_paired_baseline",
+      "density_bias_percent": 2.40864950905737,
+      "density_bias_shift_percentage_points": -0.07477738250072363,
+      "electron_power_relative_difference_percent": 0.7988253817936997,
+      "id": "particles_2x",
+      "ion_current_relative_difference_percent": 0.9305035814497042,
+      "ion_power_relative_difference_percent": 1.3746649873295658,
+      "represented_ionization_rate_m-2_s-1": 2.771141264583774e+18,
+      "summary_sha256": "911f8016e4c368b60ba3357341824dc09eef641892401c11f391026766eb6bef"
+    },
+    {
+      "balance_report_sha256": "23479a7fda124ce1fbbbd827cdbcb34c81cdd0faf2fb642e16a14c7a9964d635",
+      "classification": "ambiguous_paired_shift",
+      "density_bias_percent": 3.117013461337881,
+      "density_bias_shift_percentage_points": 0.6335865697797871,
+      "electron_power_relative_difference_percent": 0.4547068616026273,
+      "id": "timestep_2x",
+      "ion_current_relative_difference_percent": 1.3625499978491051,
+      "ion_power_relative_difference_percent": 1.707896855444102,
+      "represented_ionization_rate_m-2_s-1": 2.7571674462247255e+18,
+      "summary_sha256": "ac497fc51b23567a051bc0256865807b5df4324bd1422adbd86f3009e4ef96d8"
+    },
+    {
+      "balance_report_sha256": "8ab009a50f7dc7a064a3ad37d9967e0b43774f0d8a91e21341c9c1fbcd2da602",
+      "classification": "practically_equivalent_to_paired_baseline",
+      "density_bias_percent": 2.0182916526844563,
+      "density_bias_shift_percentage_points": -0.4651352388736374,
+      "electron_power_relative_difference_percent": 0.8053265311085411,
+      "id": "grid_2x_fixed_particles",
+      "ion_current_relative_difference_percent": 0.802715206972171,
+      "ion_power_relative_difference_percent": 1.128431196395363,
+      "represented_ionization_rate_m-2_s-1": 2.766372421810448e+18,
+      "summary_sha256": "462f69c3e7a89b9dd519936b74bd7bf24e6b1307bf07f03af063bf68050dbdaa"
+    },
+    {
+      "balance_report_sha256": "7e8781ba41cec49f7fd1b289ce221ddd3174a40af38936f15643dfa59eaff723",
+      "classification": "practically_equivalent_to_paired_baseline",
+      "density_bias_percent": 2.3340684232113995,
+      "density_bias_shift_percentage_points": -0.1493584683466942,
+      "electron_power_relative_difference_percent": 1.0248320841185432,
+      "id": "grid_2x_same_ppc",
+      "ion_current_relative_difference_percent": 1.0988596938571016,
+      "ion_power_relative_difference_percent": 1.4117965608346106,
+      "represented_ionization_rate_m-2_s-1": 2.763877097103475e+18,
+      "summary_sha256": "f4c015cf40473ff214a9c78f64ea853b1ae13ef72ba3782b53d6111227846844"
+    }
+  ]
+}

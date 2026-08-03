@@ -96,11 +96,41 @@ def analyze(
     reported_ion_current: float,
     reported_electron_power: float,
     reported_ion_power: float,
+    window_start_step: int | None = None,
+    window_end_step: int | None = None,
+    scope: str = "post_benchmark_diagnostic_window",
 ) -> dict[str, object]:
     scalars = load_csv(scalars_path)
     collisions = load_csv(collisions_path)
     boundaries = load_csv(boundary_path)
     power = load_csv(power_path) if power_path is not None else None
+    require(
+        (window_start_step is None) == (window_end_step is None),
+        "window start and end steps must be provided together",
+    )
+    if window_start_step is not None and window_end_step is not None:
+        require(
+            window_start_step >= 0 and window_end_step > window_start_step,
+            "selected diagnostic window is invalid",
+        )
+        def select(rows: list[dict[str, str]], label: str) -> list[dict[str, str]]:
+            selected = [
+                row for row in rows
+                if window_start_step <= integer(row, "step", label)
+                    <= window_end_step
+            ]
+            require(
+                selected
+                and integer(selected[0], "step", label) == window_start_step
+                and integer(selected[-1], "step", label) == window_end_step,
+                f"{label} does not contain the selected window endpoints",
+            )
+            return selected
+        scalars = select(scalars, "scalars")
+        collisions = select(collisions, "collisions")
+        boundaries = select(boundaries, "boundary losses")
+        if power is not None:
+            power = select(power, "power transfer")
     diagnostics = [
         (scalars, "scalars"),
         (collisions, "collisions"),
@@ -237,7 +267,7 @@ def analyze(
     )
     report: dict[str, object] = {
         "turner_balance_version": 2,
-        "scope": "post_benchmark_diagnostic_window",
+        "scope": scope,
         "window": {
             "start_step": start_step,
             "end_step": end_step,
@@ -276,8 +306,11 @@ def analyze(
         "balance_exact": exact,
         "wall_power_scope":
             "absorbed_particle_kinetic_energy_not_volume_power_transfer",
-        "physics_claim":
-            "none_post_benchmark_diagnostic_outside_published_duration",
+        "physics_claim": (
+            "none_changed_published_numerical_contract"
+            if scope == "published_duration_numerical_sensitivity_window"
+            else "none_post_benchmark_diagnostic_outside_published_duration"
+        ),
     }
     if power is not None:
         electrical_power: dict[str, object] = {}
@@ -324,6 +357,16 @@ def main() -> int:
         default="electron_mcc.ionization",
     )
     parser.add_argument("--expected-steps", type=int, default=400)
+    parser.add_argument("--window-start-step", type=int)
+    parser.add_argument("--window-end-step", type=int)
+    parser.add_argument(
+        "--scope",
+        choices=(
+            "post_benchmark_diagnostic_window",
+            "published_duration_numerical_sensitivity_window",
+        ),
+        default="post_benchmark_diagnostic_window",
+    )
     parser.add_argument(
         "--reported-ion-current", type=float, default=0.219
     )
@@ -361,6 +404,9 @@ def main() -> int:
             args.reported_ion_current,
             args.reported_electron_power,
             args.reported_ion_power,
+            args.window_start_step,
+            args.window_end_step,
+            args.scope,
         )
         write_report(args.output, report)
     except (BalanceError, OSError) as error:

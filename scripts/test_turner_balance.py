@@ -121,6 +121,34 @@ def main() -> int:
             "Turner balance report is incorrect",
         )
 
+        sensitivity_report = work / "sensitivity-report.json"
+        sensitivity = subprocess.run([
+            sys.executable, str(ANALYZER),
+            "--scalars", str(scalars),
+            "--collisions", str(collisions),
+            "--boundary-losses", str(boundaries),
+            "--power-transfer", str(power),
+            "--expected-steps", "400",
+            "--window-start-step", "100",
+            "--window-end-step", "500",
+            "--scope", "published_duration_numerical_sensitivity_window",
+            "--reported-ion-current", "4",
+            "--output", str(sensitivity_report),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(sensitivity.returncode == 0, sensitivity.stderr)
+        sensitivity_value = json.loads(
+            sensitivity_report.read_text(encoding="utf-8")
+        )
+        require(
+            sensitivity_value["scope"]
+                == "published_duration_numerical_sensitivity_window"
+            and sensitivity_value["window"]["start_step"] == 100
+            and sensitivity_value["window"]["end_step"] == 500
+            and sensitivity_value["physics_claim"]
+                == "none_changed_published_numerical_contract",
+            "Turner balance sensitivity window overstated its claim",
+        )
+
         changed = list(csv.reader(boundaries.open(
             newline="", encoding="utf-8"
         )))

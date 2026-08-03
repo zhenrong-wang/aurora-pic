@@ -973,6 +973,27 @@ grid refinement to particle statistics. The retained nonrestricted evidence is
 The final predeclared variant, `grid_2x_same_ppc`, separates that effect by
 restoring 512 particles/cell on the refined grid.
 
+That final variant completed with integrated ion-density bias `+2.334%`, only
+`-0.149` percentage points from the paired baseline. Its coincident-node
+relative L2 error is `2.687%`, and its descriptive `X²` is `429.713`. It is
+therefore practically equivalent under the predeclared rule. The retained
+nonrestricted evidence is
+[`benchmarks/ccp/turner-case1-grid-2x-same-ppc-sensitivity-20260803.json`](../benchmarks/ccp/turner-case1-grid-2x-same-ppc-sensitivity-20260803.json).
+
+The numerical sensitivity matrix is now complete. None of the particle,
+timestep, fixed-particle grid, or fixed-particles-per-cell grid refinements
+materially reduces the density bias. All four final windows have exact source
+and wall-loss balance. Their represented ionization rates span only -0.270% to
++0.235% about the four-variant mean; ion current differs from Turner by
++0.803% to +1.363%, electron power by +0.455% to +1.025%, and ion power by
++1.128% to +1.708%. This combination argues against ordinary resolution or a
+gross ionization/heating error as the primary explanation. It redirects the
+next diagnostic toward spatial transport, sheath structure, collision-model
+conventions, and independent cross-code comparison.
+
+The complete nonrestricted matrix summary is
+[`benchmarks/ccp/turner-case1-numerical-sensitivity-matrix-20260803.json`](../benchmarks/ccp/turner-case1-numerical-sensitivity-matrix-20260803.json).
+
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \
   tmp/turner-case1-ensemble-v1/ensemble.json \
@@ -1002,6 +1023,12 @@ partial power-counter coverage, decreasing source/wall counters, non-finite
 values, and nonzero integer source/loss residuals. Its reports retain
 `physics_claim = none` because a post-benchmark continuation is diagnostic
 evidence rather than the published test.
+
+For a final window embedded in a full numerical-sensitivity output, add exact
+`--window-start-step` and `--window-end-step` endpoints plus
+`--scope published_duration_numerical_sensitivity_window`. The analyzer
+selects matching rows from every diagnostic, requires all endpoints and counter
+coverage, and records that the published numerical contract changed.
 
 ## Bounded execution ladder
 
