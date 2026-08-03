@@ -154,6 +154,66 @@ def main() -> int:
             "post-benchmark comparison overstated its claim",
         )
 
+        refined_candidate = work / "refined-candidate.csv"
+        with refined_candidate.open(
+            "w", newline="", encoding="utf-8"
+        ) as stream:
+            writer = csv.writer(stream)
+            writer.writerow(candidate_header)
+            for index in range(257):
+                x = 0.067 * index / 256
+                writer.writerow([0, "electrons", index, x, 1.0e13])
+                writer.writerow([1, "ions", index, x, 1.001e14])
+        refined_metadata = work / "refined-metadata.json"
+        refined_metadata.write_text(json.dumps({
+            "spatial_average_version": 1,
+            "unit_system": "si",
+            "start_step": 998401,
+            "end_step": 1024000,
+            "interval": 1,
+            "samples": 25600,
+            "expected_samples": 25600,
+            "final_step": 1024000,
+            "dt": 1.0 / (13.56e6 * 800),
+            "rf_frequency": 13.56e6,
+            "rf_cycles": 32,
+            "complete": True,
+            "species": ["electrons", "ions"],
+        }), encoding="utf-8")
+        refined_report = work / "refined-report.json"
+        refined = subprocess.run([
+            sys.executable, str(COMPARATOR), "--case", "1",
+            "--reference", str(reference),
+            "--candidate", str(refined_candidate),
+            "--candidate-metadata", str(refined_metadata),
+            "--normalization-audit", str(audit),
+            "--numerical-sensitivity", "--output", str(refined_report),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(
+            refined.returncode == 0,
+            f"Turner comparator rejected a valid numerical sensitivity: "
+            f"{refined.stderr}",
+        )
+        refined_result = json.loads(
+            refined_report.read_text(encoding="utf-8")
+        )
+        require(
+            abs(refined_result["statistic"]["x_squared"] - 129.0) < 1e-12
+            and refined_result["statistic"]
+                ["published_acceptance_applicable"] is False
+            and "accepted_99_percent" not in refined_result["statistic"]
+            and refined_result["candidate_nodes"] == 257
+            and refined_result["numerical_sensitivity_contract"]
+                ["time_refinement_ratio"] == 2
+            and refined_result["numerical_sensitivity_contract"]
+                ["grid_refinement_ratio"] == 2
+            and refined_result["comparison_scope"]
+                == "numerical_sensitivity_density_diagnostic_only"
+            and refined_result["physics_claim"]
+                == "none_changed_published_numerical_contract",
+            "numerical-sensitivity comparison overstated its claim",
+        )
+
         changed = reference.read_text(encoding="utf-8").replace(
             "100000000000000.0", "100000000000001.0", 1
         )

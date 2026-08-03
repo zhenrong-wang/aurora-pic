@@ -1,7 +1,7 @@
 {
   "artifact_provenance": {
     "averaging_metadata_sha256": "5469c65f2381e938e3599c0854d3d9e828d3e8e03bbbe2e8d77a697be47e75c1",
-    "comparison_report_sha256": "ccb1a04574b596183cf6855e398076aa6da8845617ee5f112c4484ced5bf0cac",
+    "comparison_report_sha256": "37a213cc83cbceb02d3e2417a969d7c1fdcf6db14270df92ebfa8fa2f2c3a744",
     "final_checkpoint_bytes": 26824933,
     "final_checkpoint_sha256": "48bbdf40061c441a7f0d30015184631ffd08696829675f720fdf75b8c68af5b4",
     "profile_sha256": "43635591ab568860ce1c0af56d4b965f2b1e0ca71216bedb44ffd78427517e49",

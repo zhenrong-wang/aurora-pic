@@ -1,0 +1,53 @@
+{
+  "artifact_provenance": {
+    "averaging_metadata_sha256": "d709002553bd1ccdeaf66f015eaecb12c7569315a18b7b874d0a7d33a1ec9920",
+    "comparison_report_sha256": "549b0ac84a6ce195b1eed760751ca69aa1926dce7a4d7c0050f022a1d4b17f8c",
+    "final_checkpoint_bytes": 13409099,
+    "final_checkpoint_sha256": "e8d52b39e00a057f1d2b8a6c486f8ebffee26520cfd6ce4465f706a9dd0ccc4c",
+    "profile_sha256": "5399b56d2232fb9f163d7b63f7c6d0b17f075b84671d3a8c88f407cfad7829d8",
+    "runtime_config_sha256": "84702c909b1d78548d5a39f570b35995daed0931092c732a8e90328b1a727e53",
+    "sensitivity_manifest_sha256": "3c815c433956c138a44a21842b705445d4355d9a9488e5ced61d250c43073ee7",
+    "solver_executable_sha256": "ed6c8c31f73754cbc5851678ade9ef85d2445dd456cefe271cb9e8c0390ef072"
+  },
+  "baseline": {
+    "integrated_ion_density_bias_percent": 2.4834268915580937,
+    "relative_l2": 0.028741105427741283,
+    "seed": 13507,
+    "steps_per_rf_cycle": 400,
+    "x_squared": 574.3986511135444
+  },
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "claim_boundary": {
+    "physics_claim": "paired_numerical_sensitivity_evidence_only",
+    "published_acceptance_applicable": false,
+    "sensitivity_result_is_turner_benchmark_pass": false
+  },
+  "predeclared_interpretation": {
+    "ambiguous_interval_percentage_points": [
+      0.5,
+      0.75
+    ],
+    "material_shift_percentage_points": 0.75,
+    "practical_equivalence_percentage_points": 0.5,
+    "primary_observable": "integrated_ion_density_bias_percent"
+  },
+  "result": {
+    "absolute_paired_shift_percentage_points": 0.6335865697797871,
+    "classification": "ambiguous_paired_shift",
+    "integrated_ion_density_bias_percent": 3.117013461337881,
+    "maximum_pointwise_relative_error": 0.058728600027698766,
+    "paired_shift_percentage_points": 0.6335865697797871,
+    "relative_l2": 0.03725195787980843,
+    "x_squared_descriptive_only": 784.8517027177711
+  },
+  "turner_sensitivity_summary_version": 1,
+  "variant": {
+    "averaging_rf_cycles": 32,
+    "id": "timestep_2x",
+    "rf_cycles": 1280,
+    "seed": 13507,
+    "steps": 1024000,
+    "steps_per_rf_cycle": 800,
+    "time_refinement_ratio": 2
+  }
+}

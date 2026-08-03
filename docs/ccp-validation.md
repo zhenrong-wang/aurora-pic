@@ -912,6 +912,11 @@ without launching them:
 All variants retain the physical duration and final-32-cycle average, but they
 change the published numerical contract. Their published `X²` values may be
 reported descriptively and must not be classified as Turner benchmark passes.
+`compare_turner.py --numerical-sensitivity` enforces this distinction. It
+derives an integer RF timestep-refinement ratio from the averaging metadata,
+accepts only integer-refined grids (mapping coincident nodes without
+interpolation), and always emits
+`published_acceptance_applicable = false`.
 Only one low-priority serial run is permitted at a time; stage 2 is deferred
 until stage 1 is interpreted.
 
@@ -940,6 +945,19 @@ density excess. It does not prove infinite-particle convergence from one
 refinement ratio. The retained nonrestricted evidence is
 [`benchmarks/ccp/turner-case1-particles-2x-sensitivity-20260802.json`](../benchmarks/ccp/turner-case1-particles-2x-sensitivity-20260802.json).
 The next stage-1 probe is `timestep_2x`; grid variants remain deferred.
+
+The `timestep_2x` run then completed 1,024,000 steps at 800 steps/RF cycle.
+Its integrated ion-density bias is `+3.117%`, a `+0.634` percentage-point
+shift from the paired baseline. This lies in the predeclared ambiguous interval
+and moves away from, rather than toward, the reference. Its relative profile
+L2 error is `3.725%`; the descriptive `X²` is `784.852`. Thus straightforward
+timestep error does not explain the positive density offset, but one refinement
+ratio does not establish an asymptotic temporal trend.
+
+The retained nonrestricted evidence is
+[`benchmarks/ccp/turner-case1-timestep-2x-sensitivity-20260803.json`](../benchmarks/ccp/turner-case1-timestep-2x-sensitivity-20260803.json).
+Because stage 1 did not isolate the discrepancy, the predeclared next run is
+`grid_2x_fixed_particles`.
 
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \

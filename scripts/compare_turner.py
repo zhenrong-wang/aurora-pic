@@ -147,7 +147,12 @@ def load_candidate(path: Path, species: str) -> list[dict[str, float]]:
 def compare(case: int, reference: Path, candidate: Path,
             audit_path: Path, metadata_path: Path,
             species: str = "ions",
-            post_benchmark_window: bool = False) -> dict[str, object]:
+            post_benchmark_window: bool = False,
+            numerical_sensitivity: bool = False) -> dict[str, object]:
+    require(
+        not (post_benchmark_window and numerical_sensitivity),
+        "post-benchmark and numerical-sensitivity modes are mutually exclusive",
+    )
     try:
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
@@ -170,7 +175,29 @@ def compare(case: int, reference: Path, candidate: Path,
         raise ComparisonError(
             f"cannot read candidate averaging metadata: {error}"
         ) from error
-    steps_per_cycle = STEPS_PER_RF_CYCLE[case]
+    published_steps_per_cycle = STEPS_PER_RF_CYCLE[case]
+    if numerical_sensitivity:
+        try:
+            metadata_dt = float(metadata.get("dt", 0.0))
+            metadata_frequency = float(metadata.get("rf_frequency", 0.0))
+            steps_per_cycle_value = 1.0 / (metadata_frequency * metadata_dt)
+        except (TypeError, ValueError, ZeroDivisionError) as error:
+            raise ComparisonError(
+                "numerical-sensitivity metadata has invalid RF timing"
+            ) from error
+        steps_per_cycle = int(round(steps_per_cycle_value))
+        require(
+            steps_per_cycle >= published_steps_per_cycle
+            and steps_per_cycle % published_steps_per_cycle == 0
+            and math.isclose(
+                steps_per_cycle_value, steps_per_cycle,
+                rel_tol=1e-12, abs_tol=1e-12,
+            ),
+            "numerical-sensitivity timestep must be an integer refinement "
+            "of the published steps per RF cycle",
+        )
+    else:
+        steps_per_cycle = published_steps_per_cycle
     end_step = steps_per_cycle * TOTAL_RF_CYCLES[case]
     samples = 32 * steps_per_cycle
     start_step = end_step - samples + 1
@@ -234,8 +261,23 @@ def compare(case: int, reference: Path, candidate: Path,
     expected_nodes = EXPECTED_NODES[case]
     require(len(reference_rows) == expected_nodes,
             f"Case {case} reference must have {expected_nodes} nodes")
-    require(len(candidate_rows) == expected_nodes,
-            f"Case {case} candidate must have {expected_nodes} nodes")
+    candidate_nodes = len(candidate_rows)
+    if numerical_sensitivity:
+        require(
+            candidate_nodes >= expected_nodes
+            and (candidate_nodes - 1) % (expected_nodes - 1) == 0,
+            f"Case {case} numerical-sensitivity candidate grid must be an "
+            "integer refinement of the published node grid",
+        )
+        grid_refinement_ratio = (
+            (candidate_nodes - 1) // (expected_nodes - 1)
+        )
+        comparison_rows = candidate_rows[::grid_refinement_ratio]
+    else:
+        require(candidate_nodes == expected_nodes,
+                f"Case {case} candidate must have {expected_nodes} nodes")
+        grid_refinement_ratio = 1
+        comparison_rows = candidate_rows
 
     terms: list[float] = []
     squared_error: list[float] = []
@@ -244,7 +286,7 @@ def compare(case: int, reference: Path, candidate: Path,
     cell_width = GAP_LENGTH_M / (expected_nodes - 1)
     maximum_reference_coordinate_error = 0.0
     maximum_candidate_coordinate_error = 0.0
-    for index, (ref, value) in enumerate(zip(reference_rows, candidate_rows)):
+    for index, (ref, value) in enumerate(zip(reference_rows, comparison_rows)):
         x_ref = ref["x_m"]
         x_value = value["x_m"]
         x_expected = index * cell_width
@@ -286,7 +328,7 @@ def compare(case: int, reference: Path, candidate: Path,
         "range_95_percent": list(interval_95),
         "range_99_percent": list(interval_99),
     }
-    if post_benchmark_window:
+    if post_benchmark_window or numerical_sensitivity:
         statistic_report.update({
             "published_acceptance_applicable": False,
             "within_published_95_percent_range":
@@ -317,6 +359,8 @@ def compare(case: int, reference: Path, candidate: Path,
             "averaging_metadata_sha256": sha256(metadata_path),
         },
         "nodes": expected_nodes,
+        **({"candidate_nodes": candidate_nodes}
+           if numerical_sensitivity else {}),
         "statistic": statistic_report,
         "secondary_metrics": {
             "relative_l2": math.sqrt(
@@ -338,12 +382,26 @@ def compare(case: int, reference: Path, candidate: Path,
         "comparison_scope": (
             "post_benchmark_density_diagnostic_only"
             if post_benchmark_window
+            else "numerical_sensitivity_density_diagnostic_only"
+            if numerical_sensitivity
             else "published_baseline_ion_density_statistic_only"
         ),
+        **({
+            "numerical_sensitivity_contract": {
+                "published_steps_per_rf_cycle": published_steps_per_cycle,
+                "candidate_steps_per_rf_cycle": steps_per_cycle,
+                "time_refinement_ratio":
+                    steps_per_cycle // published_steps_per_cycle,
+                "grid_refinement_ratio": grid_refinement_ratio,
+                "published_numerical_contract_changed": True,
+            }
+        } if numerical_sensitivity else {}),
         "averaging_contract_verified": True,
         "physics_claim": (
             "none_post_benchmark_window_outside_published_duration"
             if post_benchmark_window
+            else "none_changed_published_numerical_contract"
+            if numerical_sensitivity
             else "none_without_complete_solver_run_contract"
         ),
     }
@@ -361,6 +419,10 @@ def main() -> int:
         "--post-benchmark-window", action="store_true",
         help="compare a reset 32-cycle diagnostic after the published run",
     )
+    parser.add_argument(
+        "--numerical-sensitivity", action="store_true",
+        help="compare a complete refined diagnostic without published acceptance",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -368,6 +430,7 @@ def main() -> int:
             args.case, args.reference, args.candidate,
             args.normalization_audit, args.candidate_metadata,
             args.species, args.post_benchmark_window,
+            args.numerical_sensitivity,
         )
         write_report(args.output, report)
     except (ComparisonError, OSError) as error:
