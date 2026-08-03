@@ -323,12 +323,24 @@ This selects 12,800 post-step samples. Configuration validation requires an
 integer number of timesteps per RF cycle, a whole-cycle window ending at the
 time-zero drive phase, an interval that divides the cycle, and agreement with
 every active electrode-drive frequency. `spatial_average.csv` uses long-form
-species/node rows; `spatial_average_metadata.json` records the window,
-timestep, sample count, species, and a `complete` gate.
+species/node density rows. `spatial_kinetic_energy.csv` reports the
+density-weighted mean total kinetic energy and the explicitly labeled
+effective kinetic temperature `2 <K> / velocity_dimensions`; it includes
+directed energy and is not silently presented as a thermodynamic temperature.
+`spatial_field_average.csv` reports nodal mean potential, mean electric field,
+and RMS electric field. These are sheath-localization observables, not an
+automatic sheath-edge definition. `spatial_average_metadata.json` records the
+window, timestep, density and moment sample counts, definitions, species, and
+completeness gates.
 
-1D checkpoint v5 and later stores the averaging contract, sample count, and
-every nodal sum; v6 adds species/side wall count and impact energy, and v7 adds
-species electric work. A changed averaging window is rejected by default.
+1D checkpoint v5 and later stores the density averaging contract, sample
+count, and every nodal density sum; v6 adds species/side wall count and impact
+energy, v7 adds species electric work, and v8 adds kinetic-energy, potential,
+mean-field, and squared-field sums. A changed averaging window is rejected by default.
+When a pre-v8 checkpoint continues an active density window, density remains
+restart-correct but the new moment products remain header-only and
+`moments_complete` is false; use an explicit post-checkpoint reset window to
+obtain complete moment profiles.
 Setting `spatial_average_reset_on_restart = true` explicitly discards stored
 sums and permits a new averaging contract; its first sample must be after the
 checkpoint step. Metadata records the reset, and the Turner comparator exposes

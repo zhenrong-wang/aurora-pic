@@ -21,6 +21,8 @@ public:
     void deposit_charge(Grid& grid) const;
     void deposit_number_density(
         const Grid& grid, std::vector<double>& density) const;
+    void deposit_kinetic_energy_density(
+        const Grid& grid, std::vector<double>& energy_density) const;
     double kinetic_energy() const;
     std::size_t live_count() const;
     std::size_t velocity_dimensions() const {

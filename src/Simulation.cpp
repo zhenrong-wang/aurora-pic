@@ -28,6 +28,7 @@ constexpr const char* kCheckpointMagicV4 = "AuroraPIC-checkpoint-v4";
 constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
+constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -509,6 +510,12 @@ Simulation::Simulation(Config cfg)
             std::vector<double>(grid_.nx(), 0.0));
         spatial_density_scratch_.assign(
             grid_.nx(), 0.0);
+        spatial_kinetic_energy_sums_.assign(
+            species_.size(), std::vector<double>(grid_.nx(), 0.0));
+        spatial_kinetic_energy_scratch_.assign(grid_.nx(), 0.0);
+        spatial_potential_sums_.assign(grid_.nx(), 0.0);
+        spatial_electric_sums_.assign(grid_.nx(), 0.0);
+        spatial_electric_squared_sums_.assign(grid_.nx(), 0.0);
     }
 }
 
@@ -1042,7 +1049,12 @@ void Simulation::accumulate_spatial_average() {
     if (spatial_density_sums_.size() !=
             species_.size() ||
         spatial_density_scratch_.size() !=
-            grid_.nx()) {
+            grid_.nx() ||
+        spatial_kinetic_energy_sums_.size() != species_.size() ||
+        spatial_kinetic_energy_scratch_.size() != grid_.nx() ||
+        spatial_potential_sums_.size() != grid_.nx() ||
+        spatial_electric_sums_.size() != grid_.nx() ||
+        spatial_electric_squared_sums_.size() != grid_.nx()) {
         throw std::logic_error(
             "spatial-average storage does not match simulation state");
     }
@@ -1050,13 +1062,24 @@ void Simulation::accumulate_spatial_average() {
          species_id < species_.size(); ++species_id) {
         species_[species_id].deposit_number_density(
             grid_, spatial_density_scratch_);
+        species_[species_id].deposit_kinetic_energy_density(
+            grid_, spatial_kinetic_energy_scratch_);
         auto& sum = spatial_density_sums_[species_id];
+        auto& energy_sum = spatial_kinetic_energy_sums_[species_id];
         for (std::size_t node = 0;
              node < grid_.nx(); ++node) {
             sum[node] += spatial_density_scratch_[node];
+            energy_sum[node] += spatial_kinetic_energy_scratch_[node];
         }
     }
+    for (std::size_t node = 0; node < grid_.nx(); ++node) {
+        spatial_potential_sums_[node] += grid_.phi()[node];
+        spatial_electric_sums_[node] += grid_.electric()[node];
+        spatial_electric_squared_sums_[node] +=
+            grid_.electric()[node] * grid_.electric()[node];
+    }
     ++spatial_average_samples_;
+    ++spatial_moment_samples_;
 }
 
 void Simulation::write_spatial_average() const {
@@ -1066,6 +1089,8 @@ void Simulation::write_spatial_average() const {
     std::filesystem::create_directories(output_dir);
     const bool si =
         cfg_.units.system == UnitSystem::SI;
+    const bool moments_complete =
+        spatial_moment_samples_ == spatial_average_samples_;
     std::ofstream profile(
         output_dir / "spatial_average.csv");
     if (!profile) {
@@ -1101,6 +1126,70 @@ void Simulation::write_spatial_average() const {
         profile,
         "failed while writing 1D spatial-average profile");
 
+    std::ofstream energy_profile(
+        output_dir / "spatial_kinetic_energy.csv");
+    if (!energy_profile) {
+        throw std::runtime_error(
+            "cannot open 1D spatial kinetic-energy output");
+    }
+    energy_profile << "species_id,species,node,"
+                   << (si ? "x_m" : "x_normalized") << ','
+                   << (si ? "mean_kinetic_energy_eV"
+                          : "mean_kinetic_energy_normalized") << ','
+                   << (si ? "effective_kinetic_temperature_eV"
+                          : "effective_kinetic_temperature_normalized")
+                   << '\n' << std::setprecision(17);
+    if (spatial_moment_samples_ > 0 && moments_complete) {
+        const double energy_scale = si ? ELEMENTARY_CHARGE_SI : 1.0;
+        const double dimensions =
+            static_cast<double>(cfg_.velocity_dimensions);
+        for (std::size_t species_id = 0;
+             species_id < species_.size(); ++species_id) {
+            for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                const double density_sum =
+                    spatial_density_sums_[species_id][node];
+                const double mean_energy = density_sum > 0.0
+                    ? spatial_kinetic_energy_sums_[species_id][node] /
+                          density_sum / energy_scale
+                    : 0.0;
+                energy_profile << species_id << ','
+                    << csv_cell(species_[species_id].name()) << ','
+                    << node << ',' << grid_.node_x(node) << ','
+                    << mean_energy << ','
+                    << 2.0 * mean_energy / dimensions << '\n';
+            }
+        }
+    }
+    require_stream(energy_profile,
+        "failed while writing 1D spatial kinetic-energy output");
+
+    std::ofstream field_profile(
+        output_dir / "spatial_field_average.csv");
+    if (!field_profile) {
+        throw std::runtime_error(
+            "cannot open 1D spatial field-average output");
+    }
+    field_profile << "node," << (si ? "x_m" : "x_normalized")
+                  << ',' << (si ? "potential_mean_V"
+                                   : "potential_mean_normalized")
+                  << ',' << (si ? "electric_field_mean_V_m"
+                                   : "electric_field_mean_normalized")
+                  << ',' << (si ? "electric_field_rms_V_m"
+                                   : "electric_field_rms_normalized")
+                  << '\n' << std::setprecision(17);
+    if (spatial_moment_samples_ > 0 && moments_complete) {
+        const double samples = static_cast<double>(spatial_moment_samples_);
+        for (std::size_t node = 0; node < grid_.nx(); ++node) {
+            field_profile << node << ',' << grid_.node_x(node) << ','
+                << spatial_potential_sums_[node] / samples << ','
+                << spatial_electric_sums_[node] / samples << ','
+                << std::sqrt(spatial_electric_squared_sums_[node] / samples)
+                << '\n';
+        }
+    }
+    require_stream(field_profile,
+        "failed while writing 1D spatial field-average output");
+
     const auto expected =
         expected_spatial_average_samples();
     const bool complete =
@@ -1114,7 +1203,7 @@ void Simulation::write_spatial_average() const {
     }
     metadata << std::setprecision(17)
              << "{\n"
-             << "  \"spatial_average_version\": 1,\n"
+             << "  \"spatial_average_version\": 2,\n"
              << "  \"reset_on_restart\": "
              << (cfg_.spatial_average.reset_on_restart
                      ? "true" : "false")
@@ -1130,6 +1219,10 @@ void Simulation::write_spatial_average() const {
              << cfg_.spatial_average.interval << ",\n"
              << "  \"samples\": "
              << spatial_average_samples_ << ",\n"
+             << "  \"moment_samples\": "
+             << spatial_moment_samples_ << ",\n"
+             << "  \"moments_complete\": "
+             << (moments_complete ? "true" : "false") << ",\n"
              << "  \"expected_samples\": "
              << expected << ",\n"
              << "  \"final_step\": " << step_ << ",\n"
@@ -1140,6 +1233,12 @@ void Simulation::write_spatial_average() const {
              << cfg_.spatial_average.rf_cycles << ",\n"
              << "  \"complete\": "
              << (complete ? "true" : "false") << ",\n"
+             << "  \"effective_kinetic_temperature_definition\": "
+             << json_string("2 * density-weighted mean total kinetic energy / velocity_dimensions; includes directed energy")
+             << ",\n"
+             << "  \"field_statistics\": "
+             << json_string("sampled nodal potential mean, electric-field mean, and electric-field RMS; no sheath edge is inferred")
+             << ",\n"
              << "  \"species\": [";
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
@@ -1157,7 +1256,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV7 << '\n';
+    out << kCheckpointMagicV8 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1229,6 +1328,26 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         }
         out << "\n";
     }
+    out << "spatial_moments " << spatial_moment_samples_ << ' '
+        << spatial_kinetic_energy_sums_.size() << ' '
+        << grid_.nx() << "\n";
+    for (std::size_t species_id = 0;
+         species_id < spatial_kinetic_energy_sums_.size(); ++species_id) {
+        out << "spatial_energy " << species_id << ' '
+            << species_[species_id].name();
+        for (const double value : spatial_kinetic_energy_sums_[species_id]) {
+            out << ' ' << value;
+        }
+        out << "\n";
+    }
+    out << "spatial_fields";
+    for (std::size_t node = 0; node < grid_.nx(); ++node) {
+        const bool stored = node < spatial_potential_sums_.size();
+        out << ' ' << (stored ? spatial_potential_sums_[node] : 0.0)
+            << ' ' << (stored ? spatial_electric_sums_[node] : 0.0)
+            << ' ' << (stored ? spatial_electric_squared_sums_[node] : 0.0);
+    }
+    out << "\n";
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -1258,13 +1377,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v5 = magic == kCheckpointMagicV5;
     const bool checkpoint_v6 = magic == kCheckpointMagicV6;
     const bool checkpoint_v7 = magic == kCheckpointMagicV7;
+    const bool checkpoint_v8 = magic == kCheckpointMagicV8;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
-        checkpoint_v6 || checkpoint_v7;
+        checkpoint_v6 || checkpoint_v7 || checkpoint_v8;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
         !checkpoint_v5 && !checkpoint_v6 &&
-        !checkpoint_v7) {
+        !checkpoint_v7 && !checkpoint_v8) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1280,7 +1400,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> unit_system >> relative_permittivity >> permittivity;
         if ((!checkpoint_v2 && !checkpoint_v3 &&
              !checkpoint_v4 && !checkpoint_v5 &&
-             !checkpoint_v6 && !checkpoint_v7) ||
+             !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1290,7 +1410,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key;
     } else if (checkpoint_v2 || checkpoint_v3 ||
                checkpoint_v4 || checkpoint_v5 ||
-               checkpoint_v6 || checkpoint_v7 ||
+               checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1321,7 +1441,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             collision_signature();
         if ((!checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 &&
-             !checkpoint_v7) ||
+             !checkpoint_v7 && !checkpoint_v8) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1344,14 +1464,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key;
     } else if (checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 || checkpoint_v6 ||
-               checkpoint_v7 ||
+               checkpoint_v7 || checkpoint_v8 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
     }
     const bool checkpoint_has_boundary_losses =
-        checkpoint_v6 || checkpoint_v7;
+        checkpoint_v6 || checkpoint_v7 || checkpoint_v8;
     const bool legacy_boundary_loss_origin =
         !checkpoint_has_boundary_losses;
     if (checkpoint_has_boundary_losses) {
@@ -1402,8 +1522,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             BoundaryLoss1D{});
     }
     const bool legacy_power_transfer_origin =
-        !checkpoint_v7;
-    if (checkpoint_v7) {
+        !checkpoint_v7 && !checkpoint_v8;
+    if (checkpoint_v7 || checkpoint_v8) {
         in >> power_transfer_origin_step_;
         if (key != "power_transfer_origin_step") {
             throw std::runtime_error(
@@ -1445,7 +1565,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             SpeciesPower1D{});
     }
     if (checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7) {
+        checkpoint_v7 || checkpoint_v8) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -1536,6 +1656,86 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             }
         }
         in >> key;
+        if (checkpoint_v8) {
+            std::size_t stored_moment_samples = 0;
+            std::size_t stored_moment_species_count = 0;
+            std::size_t stored_moment_nx = 0;
+            in >> stored_moment_samples >>
+                stored_moment_species_count >> stored_moment_nx;
+            const bool moment_shape_valid =
+                key == "spatial_moments" &&
+                stored_moment_nx == grid_.nx() &&
+                stored_moment_species_count == stored_species_count &&
+                stored_moment_samples == stored_samples &&
+                (stored_enabled || stored_moment_samples == 0);
+            if (!moment_shape_valid) {
+                throw std::runtime_error(
+                    "checkpoint spatial-moment contract is invalid");
+            }
+            spatial_moment_samples_ =
+                reset ? 0 : stored_moment_samples;
+            for (std::size_t species_id = 0;
+                 species_id < stored_moment_species_count; ++species_id) {
+                std::size_t stored_species_id = 0;
+                std::string stored_name;
+                in >> key >> stored_species_id >> stored_name;
+                if (key != "spatial_energy" ||
+                    stored_species_id != species_id ||
+                    stored_name != species_[species_id].name()) {
+                    throw std::runtime_error(
+                        "checkpoint spatial-energy species metadata is invalid");
+                }
+                for (std::size_t node = 0; node < stored_moment_nx; ++node) {
+                    double value = 0.0;
+                    in >> value;
+                    if (!std::isfinite(value) || value < 0.0) {
+                        throw std::runtime_error(
+                            "checkpoint spatial-energy sum is invalid");
+                    }
+                    if (!reset) {
+                        spatial_kinetic_energy_sums_[species_id][node] = value;
+                    }
+                }
+            }
+            in >> key;
+            if (key != "spatial_fields") {
+                throw std::runtime_error(
+                    "checkpoint spatial-field data are missing");
+            }
+            for (std::size_t node = 0; node < stored_moment_nx; ++node) {
+                double potential = 0.0;
+                double electric = 0.0;
+                double electric_squared = 0.0;
+                in >> potential >> electric >> electric_squared;
+                if (!std::isfinite(potential) ||
+                    !std::isfinite(electric) ||
+                    !std::isfinite(electric_squared) ||
+                    electric_squared < 0.0) {
+                    throw std::runtime_error(
+                        "checkpoint spatial-field sum is invalid");
+                }
+                if (!reset && stored_enabled) {
+                    spatial_potential_sums_[node] = potential;
+                    spatial_electric_sums_[node] = electric;
+                    spatial_electric_squared_sums_[node] = electric_squared;
+                }
+            }
+            in >> key;
+        } else {
+            spatial_moment_samples_ = 0;
+        }
+        if (reset) {
+            spatial_moment_samples_ = 0;
+            for (auto& sum : spatial_kinetic_energy_sums_) {
+                std::fill(sum.begin(), sum.end(), 0.0);
+            }
+            std::fill(spatial_potential_sums_.begin(),
+                      spatial_potential_sums_.end(), 0.0);
+            std::fill(spatial_electric_sums_.begin(),
+                      spatial_electric_sums_.end(), 0.0);
+            std::fill(spatial_electric_squared_sums_.begin(),
+                      spatial_electric_squared_sums_.end(), 0.0);
+        }
     } else if (
         cfg_.spatial_average.enabled &&
         !cfg_.spatial_average.reset_on_restart) {

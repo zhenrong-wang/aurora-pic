@@ -233,6 +233,55 @@ void Species::deposit_number_density(
     }
 }
 
+void Species::deposit_kinetic_energy_density(
+    const Grid& grid, std::vector<double>& energy_density) const {
+    if (energy_density.size() != grid.nx()) {
+        throw std::invalid_argument(
+            "kinetic-energy-density output size must match the grid");
+    }
+    std::fill(energy_density.begin(), energy_density.end(), 0.0);
+    const double dx = grid.dx();
+    for (const auto& p : particles_) {
+        if (!p.alive) continue;
+        double speed_squared = p.v * p.v;
+        if (velocity_dimensions_ == 3) {
+            speed_squared += p.velocity_y * p.velocity_y +
+                             p.velocity_z * p.velocity_z;
+        }
+        const double particle_energy =
+            0.5 * cfg_.mass * cfg_.weight * speed_squared;
+        if (grid.boundary() == Boundary::Periodic) {
+            const double xp = std::fmod(
+                std::fmod(p.x, grid.length()) + grid.length(),
+                grid.length());
+            const double coordinate = xp / dx;
+            const auto cell = static_cast<std::size_t>(
+                std::floor(coordinate));
+            const double fraction =
+                coordinate - static_cast<double>(cell);
+            const std::size_t left = cell % grid.nx();
+            const std::size_t right = (cell + 1) % grid.nx();
+            energy_density[left] +=
+                particle_energy * (1.0 - fraction) / dx;
+            energy_density[right] +=
+                particle_energy * fraction / dx;
+        } else {
+            const double xp = std::clamp(p.x, 0.0, grid.length());
+            const double coordinate = xp / dx;
+            const auto cell = static_cast<std::size_t>(
+                std::min<double>(std::floor(coordinate), grid.nx() - 2));
+            const double fraction =
+                coordinate - static_cast<double>(cell);
+            energy_density[cell] +=
+                particle_energy * (1.0 - fraction) /
+                grid.node_volume(cell);
+            energy_density[cell + 1] +=
+                particle_energy * fraction /
+                grid.node_volume(cell + 1);
+        }
+    }
+}
+
 double Species::kinetic_energy() const {
     double e = 0.0;
     for (const auto& p : particles_) {

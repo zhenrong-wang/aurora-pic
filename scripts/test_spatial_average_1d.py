@@ -68,14 +68,14 @@ def deck(output: Path, steps: int, restart: Path | None = None,
         "mass = 1\n"
         "weight = 0.125\n"
         "particles = 8\n"
-        "thermal_velocity = 0\n"
+        "thermal_velocity = 0.2\n"
         "loading = quiet_start\n"
         "[species.ions]\n"
         "charge = 1\n"
         "mass = 40\n"
         "weight = 0.125\n"
         "particles = 8\n"
-        "thermal_velocity = 0\n"
+        "thermal_velocity = 0.05\n"
         "loading = quiet_start\n"
     )
 
@@ -128,6 +128,15 @@ def main() -> int:
             direct_profile.read_bytes() == resumed_profile.read_bytes(),
             "checkpoint continuation changed the spatial average",
         )
+        for filename in (
+            "spatial_kinetic_energy.csv",
+            "spatial_field_average.csv",
+        ):
+            require(
+                (direct_output / filename).read_bytes()
+                == (resumed_output / filename).read_bytes(),
+                f"checkpoint continuation changed {filename}",
+            )
         metadata = json.loads(
             (resumed_output / "spatial_average_metadata.json").read_text(
                 encoding="utf-8"
@@ -136,6 +145,8 @@ def main() -> int:
         require(
             metadata["complete"] is True
             and metadata["samples"] == 4
+            and metadata["moment_samples"] == 4
+            and metadata["moments_complete"] is True
             and metadata["expected_samples"] == 4
             and metadata["final_step"] == 4,
             "completed spatial-average metadata is incorrect",
@@ -150,6 +161,68 @@ def main() -> int:
             set(totals) == {"electrons", "ions"}
             and all(abs(value - 1.0) < 1e-14 for value in totals.values()),
             "spatial-average number density is not conservative",
+        )
+        with (resumed_output / "spatial_kinetic_energy.csv").open(
+            newline="", encoding="utf-8"
+        ) as stream:
+            energy_rows = list(csv.DictReader(stream))
+        require(
+            energy_rows
+            and max(float(row["mean_kinetic_energy_normalized"])
+                    for row in energy_rows) > 0.0,
+            "spatial kinetic-energy profile lost nonzero particle energy",
+        )
+        with (resumed_output / "spatial_field_average.csv").open(
+            newline="", encoding="utf-8"
+        ) as stream:
+            field_rows = list(csv.DictReader(stream))
+        require(
+            len(field_rows) == 5
+            and all(
+                float(row["electric_field_rms_normalized"]) + 1e-14
+                >= abs(float(row["electric_field_mean_normalized"]))
+                for row in field_rows
+            ),
+            "spatial field RMS is inconsistent with its mean",
+        )
+
+        legacy_checkpoint = work / "checkpoint_2_v7.apc"
+        legacy_lines = checkpoint.read_text(encoding="utf-8").splitlines()
+        legacy_lines[0] = "AuroraPIC-checkpoint-v7"
+        legacy_checkpoint.write_text(
+            "\n".join(
+                line for line in legacy_lines
+                if not line.startswith((
+                    "spatial_moments", "spatial_energy", "spatial_fields",
+                ))
+            ) + "\n",
+            encoding="utf-8",
+        )
+        legacy_output = work / "legacy-output"
+        legacy_config = work / "legacy.cfg"
+        legacy_config.write_text(
+            deck(legacy_output, 4, legacy_checkpoint), encoding="utf-8"
+        )
+        legacy = run(binary, legacy_config)
+        require(legacy.returncode == 0,
+                f"legacy v7 continuation failed: {legacy.stderr}")
+        legacy_metadata = json.loads(
+            (legacy_output / "spatial_average_metadata.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        require(
+            legacy_metadata["samples"] == 4
+            and legacy_metadata["moment_samples"] == 2
+            and legacy_metadata["moments_complete"] is False,
+            "legacy v7 continuation did not expose partial moment history",
+        )
+        require(
+            len((legacy_output / "spatial_kinetic_energy.csv")
+                .read_text(encoding="utf-8").splitlines()) == 1
+            and len((legacy_output / "spatial_field_average.csv")
+                    .read_text(encoding="utf-8").splitlines()) == 1,
+            "partial legacy moment history produced misleading profiles",
         )
 
         mismatched_config = work / "mismatched.cfg"
@@ -199,6 +272,15 @@ def main() -> int:
             == (reset_output / "spatial_average.csv").read_bytes(),
             "restart-reset spatial average differs from direct window",
         )
+        for filename in (
+            "spatial_kinetic_energy.csv",
+            "spatial_field_average.csv",
+        ):
+            require(
+                (late_direct_output / filename).read_bytes()
+                == (reset_output / filename).read_bytes(),
+                f"restart-reset {filename} differs from direct window",
+            )
         reset_metadata = json.loads(
             (reset_output / "spatial_average_metadata.json").read_text(
                 encoding="utf-8"
@@ -207,6 +289,8 @@ def main() -> int:
         require(
             reset_metadata["reset_on_restart"] is True
             and reset_metadata["samples"] == 2
+            and reset_metadata["moment_samples"] == 2
+            and reset_metadata["moments_complete"] is True
             and reset_metadata["expected_samples"] == 2
             and reset_metadata["complete"] is True,
             "restart-reset spatial-average metadata is incorrect",

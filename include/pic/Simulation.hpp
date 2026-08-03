@@ -102,6 +102,13 @@ private:
     std::vector<std::vector<double>>
         spatial_density_sums_{};
     std::vector<double> spatial_density_scratch_{};
+    std::size_t spatial_moment_samples_{0};
+    std::vector<std::vector<double>>
+        spatial_kinetic_energy_sums_{};
+    std::vector<double> spatial_kinetic_energy_scratch_{};
+    std::vector<double> spatial_potential_sums_{};
+    std::vector<double> spatial_electric_sums_{};
+    std::vector<double> spatial_electric_squared_sums_{};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

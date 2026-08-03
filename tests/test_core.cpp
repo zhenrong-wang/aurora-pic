@@ -2116,6 +2116,31 @@ int main() {
             require(std::abs(grid.rho()[0] - 8.0) < 1e-12, "1D Dirichlet boundary-node density did not use half control volume");
         }
         {
+            pic::Grid grid(5, 1.0, pic::Boundary::Dirichlet);
+            pic::SpeciesConfig species_cfg;
+            species_cfg.mass = 4.0;
+            species_cfg.weight = 0.5;
+            species_cfg.particles = 1;
+            pic::Species species(species_cfg, 3);
+            species.particles() = {
+                pic::Particle{0.0, 2.0, true, 2.0, 3.0, 4.0}};
+            std::vector<double> energy_density(grid.nx(), 0.0);
+            species.deposit_kinetic_energy_density(
+                grid, energy_density);
+            double deposited_energy = 0.0;
+            for (std::size_t node = 0; node < grid.nx(); ++node) {
+                deposited_energy +=
+                    energy_density[node] * grid.node_volume(node);
+            }
+            require_near(
+                deposited_energy, species.kinetic_energy(), 1e-14,
+                "1D3V kinetic-energy deposition is not conservative");
+            require_near(
+                energy_density[0], 232.0, 1e-14,
+                "1D3V kinetic-energy deposition did not use the "
+                "boundary half-volume");
+        }
+        {
             pic::Mesh2D mesh(5, 5, 1.0, 1.0, pic::Boundary::Dirichlet);
             const std::vector<pic::Particle2D> particles{pic::Particle2D{pic::Vec2{0.0, 0.0}, pic::Vec2{}, true}};
             pic::deposit_charge_cic(mesh, particles, 2.0, 0.5);
@@ -3307,8 +3332,8 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v7\n") == 0,
-                "1D power-transfer checkpoint did not use v7");
+                    "AuroraPIC-checkpoint-v8\n") == 0,
+                "1D spatial-moment checkpoint did not use v8");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3324,8 +3349,10 @@ int main() {
                             << "AuroraPIC-checkpoint-v6\n";
                         first = false;
                     } else if (
-                        line.starts_with(
-                            "power_transfer")) {
+                        line.starts_with("power_transfer") ||
+                        line.starts_with("spatial_moments") ||
+                        line.starts_with("spatial_energy") ||
+                        line.starts_with("spatial_fields")) {
                         continue;
                     } else {
                         legacy << line << '\n';
@@ -3363,7 +3390,10 @@ int main() {
                         line.starts_with(
                             "boundary_loss") ||
                         line.starts_with(
-                            "power_transfer")) {
+                            "power_transfer") ||
+                        line.starts_with("spatial_moments") ||
+                        line.starts_with("spatial_energy") ||
+                        line.starts_with("spatial_fields")) {
                         continue;
                     } else {
                         legacy << line << '\n';
@@ -3624,9 +3654,9 @@ int main() {
                 "1D3V MCC restart lost collision diagnostics");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v7\n") == 0,
-                "1D3V checkpoint did not use the power-transfer-aware "
-                "spatial-average velocity format");
+                    "AuroraPIC-checkpoint-v8\n") == 0,
+                "1D3V checkpoint did not use the spatial-moment-aware "
+                "format");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }
