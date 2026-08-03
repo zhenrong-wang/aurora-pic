@@ -1,0 +1,104 @@
+{
+  "evidence_version": 1,
+  "case": "Turner helium CCP Case 1",
+  "scope": "post_benchmark_diagnostic_window",
+  "claim_boundary": "Diagnostic evidence outside the published 1280-cycle duration; published ion-density acceptance is not applicable.",
+  "run_contract": {
+    "seed": 13507,
+    "restart_step": 730000,
+    "start_step": 730001,
+    "end_step": 742800,
+    "steps": 12800,
+    "rf_cycles": 32,
+    "samples": 12800,
+    "moment_samples": 12800,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "checkpoint_version": 8
+  },
+  "density_comparison": {
+    "ions": {
+      "descriptive_x_squared": 603.8614006847135,
+      "relative_l2_percent": 3.542312181050976,
+      "maximum_pointwise_relative_error_percent": 5.884053011307231,
+      "integrated_density_bias_percent": 2.8865877784911786,
+      "published_acceptance_applicable": false
+    },
+    "electrons": {
+      "descriptive_x_squared": 984.7003392377126,
+      "relative_l2_percent": 4.549947670710322,
+      "maximum_pointwise_relative_error_percent": 6.000719023466729,
+      "integrated_density_bias_percent": 4.203495827927872,
+      "published_acceptance_applicable": false
+    }
+  },
+  "published_scalar_context": {
+    "midplane_ion_density_m-3": 146215051263540.3,
+    "turner_midplane_ion_density_m-3": 140000000000000.0,
+    "midplane_ion_density_relative_difference_percent": 4.439322331100226,
+    "midplane_effective_electron_temperature_eV": 8.835010628699546,
+    "turner_electron_temperature_eV": 9.36,
+    "electron_temperature_relative_difference_percent": -5.608860804492022,
+    "ion_current_relative_difference_percent": 1.301698390950623,
+    "electron_power_relative_difference_percent": 1.1801365766397787,
+    "ion_power_relative_difference_percent": 1.4923998322214693,
+    "acceptance_gate": "none_diagnostic_context_only"
+  },
+  "spatial_structure": {
+    "center_ne_over_ni": 0.9717501033201922,
+    "maximum_ne_over_ni": 0.9879617159953763,
+    "electron_density_symmetry_relative_l2_percent": 0.737972191293353,
+    "ion_density_symmetry_relative_l2_percent": 1.3358925551108538,
+    "mean_field_antisymmetry_relative_l2_percent": 0.21709248471785745,
+    "rms_field_symmetry_relative_l2_percent": 0.16949814028574745,
+    "electron_energy_symmetry_relative_l2_percent": 0.51201072672449,
+    "mean_center_to_electrode_potential_drop_V": 223.08787621913994,
+    "left_peak_rms_field_V_m": 18887.633630415497,
+    "right_peak_rms_field_V_m": 18933.612367512822,
+    "peak_rms_left_right_relative_difference_percent": 0.24313708279120684,
+    "outer_20_percent_field_squared_fraction": 0.8534590269045962,
+    "bulk_density_weighted_effective_electron_temperature_eV": 9.527876735740861,
+    "left_outer_20_percent_effective_electron_temperature_eV": 11.289708734670588,
+    "right_outer_20_percent_effective_electron_temperature_eV": 11.325047250169769,
+    "outer_20_percent_electron_kinetic_energy_fraction": 0.08671671968447262,
+    "node_correlation_ne_vs_rms_field": -0.9093083822646141,
+    "node_correlation_electron_energy_vs_rms_field": 0.6548267744217636,
+    "ne_over_ni_0.90_sheath_proxy_widths_m": [
+      0.02756900664323137,
+      0.027468605959501714
+    ]
+  },
+  "balance": {
+    "source_loss_balance_exact": true,
+    "ionization_macro_events": 25039,
+    "electron_balance_residual_macro_particles": 0,
+    "ion_balance_residual_macro_particles": 0
+  },
+  "interpretation": {
+    "supported": [
+      "The discharge remains globally balanced and its ion current and species electrical powers remain within 1.2-1.5% of the published Case 1 values.",
+      "Density, energy, mean-field parity, and RMS-field structure are left-right symmetric to 0.17-1.34% relative L2.",
+      "The RMS field is strongly edge-localized and electron effective kinetic temperature is higher in both outer regions than in the bulk."
+    ],
+    "not_supported": [
+      "The post-benchmark ion-density profile is not statistically accepted by the published-duration X-squared ranges.",
+      "The data do not establish a unique sheath edge or a causal mechanism for the density excess.",
+      "The effective kinetic temperature is not a drift-subtracted thermodynamic temperature."
+    ],
+    "next_target": "Add phase-resolved, drift-separated electron velocity moments and collision-channel energy-loss profiles, then compare the midplane energy and density response over matched RF phases."
+  },
+  "provenance_sha256": {
+    "solver_executable_commit_11ca230": "d77e61d478b123c524afe3d619577fa5228b296f4011ee6c12c3d081dc055487",
+    "source_checkpoint_730000": "33fd628288ec665369e67a426062489e2923db95f23121ef1d528045c7899a76",
+    "run_config": "63d5c5b75d3b9b4b7d42d49a182c66e7bdbf0ff5595a177c1b579d7cdcd20279",
+    "spatial_average_csv": "0befdf7cc7ef887097e7ba0c239d45be49dc23d77682644d447d98d27e2ffc67",
+    "spatial_kinetic_energy_csv": "7df2150a7e782271bc66289d9a5fb084fea855f868ef50e85b2d502d01ddcf67",
+    "spatial_field_average_csv": "f87f8ef94babba6b472a17781eb0e22caffead7428457934c70882d688894704",
+    "spatial_average_metadata_json": "d45ef1162ad4a40b45688b7bdf06fdbc73faf38015748e761074186305d89296",
+    "final_checkpoint_742800": "5ac5af5dd290df8669b35a6ea1d5694ac0028c93947b6713be7f510f6cfd30b9",
+    "ion_density_comparison_json": "15531c845504ffe67e062e4dbe3cfba02230c0934b8abea76d3a6ccf173bde7a",
+    "electron_density_comparison_json": "eb8922cd51d1d8aa1da984ee8a6024f948672981b63b8d9e5d4d89866e106170",
+    "balance_json": "b3491e94755bb092e071a6565245a41783d4353bfc0550a85533f26655e3c2ce",
+    "spatial_structure_analysis_json": "9fec665a4484f53471dc259b479899452b960c51d0209c55f47a85d25057aadd"
+  }
+}

@@ -72,7 +72,9 @@ def main() -> int:
         }), encoding="utf-8")
         metadata = work / "spatial_average_metadata.json"
         metadata.write_text(json.dumps({
-            "spatial_average_version": 1,
+            "spatial_average_version": 2,
+            "moment_samples": 12800,
+            "moments_complete": True,
             "unit_system": "si",
             "start_step": 499201,
             "end_step": 512000,

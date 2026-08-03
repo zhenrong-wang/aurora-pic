@@ -1025,8 +1025,46 @@ It is not a formal electron-density benchmark pass/fail conclusion.
 
 The retained nonrestricted evidence is
 [`benchmarks/ccp/turner-case1-electron-density-diagnostic-20260803.json`](../benchmarks/ccp/turner-case1-electron-density-diagnostic-20260803.json).
-The next implementation target is a restart-safe final-window electron-energy
-and sheath-structure diagnostic suitable for matched AuroraPIC/WarpX output.
+
+### Electron-energy and sheath-structure localization
+
+Checkpoint v8 now carries the final-window species kinetic-energy density,
+mean potential, mean electric field, and squared electric field. A 32-cycle
+reset window at steps 730001--742800 continued the stationary seed-13507
+trajectory in serial mode. Source/loss balance remained exact. Ion current was
+`+1.302%` above Turner, while electron and ion electrical power were `+1.180%`
+and `+1.492%` above the published Table III values.
+
+The new profiles are strongly left-right consistent: electron energy differs
+from its mirror by `0.512%` relative L2, RMS field by `0.169%`, and the mean
+field satisfies antisymmetry to `0.217%`. The outer 20% regions contain
+`85.35%` of integrated RMS-field squared. Their density-weighted effective
+electron temperatures are `11.290` and `11.325 eV`, versus `9.528 eV` over the
+central half. At the mid-plane the effective temperature is `8.835 eV`,
+`-5.609%` from Turner's `9.36 eV`; mid-plane ion density is `+4.439%` high.
+
+This narrows, but does not close, the credibility gap. Symmetry, exact balance,
+edge-localized field, and near-reference global power argue against a gross
+solver asymmetry or global heating failure. The post-benchmark ion profile
+still has `X² = 603.861`, `3.542%` relative L2 error, and `+2.887%` integrated
+bias. Published acceptance is inapplicable outside the prescribed duration,
+and this result would lie above its 99% range in any case. The next localization
+target is phase-resolved, drift-separated electron moments and spatially
+resolved collision-channel energy loss, followed by matched cross-code output.
+
+Run the deterministic analysis with:
+
+```sh
+python3 scripts/analyze_turner_spatial_structure.py \
+  --density diagnostic-output/spatial_average.csv \
+  --kinetic-energy diagnostic-output/spatial_kinetic_energy.csv \
+  --field diagnostic-output/spatial_field_average.csv \
+  --metadata diagnostic-output/spatial_average_metadata.json \
+  --output spatial-structure.json
+```
+
+The retained checksum-bearing evidence is
+[`benchmarks/ccp/turner-case1-spatial-structure-20260803.json`](../benchmarks/ccp/turner-case1-spatial-structure-20260803.json).
 
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \
