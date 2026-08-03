@@ -1,0 +1,79 @@
+{
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "claim_boundary": {
+    "electron_x_squared_acceptance_published": false,
+    "physics_claim": "published_electron_density_descriptive_evidence_only"
+  },
+  "exact_ensemble": {
+    "electron_integrated_density_bias_percent_mean": 3.1029921735452675,
+    "ion_integrated_density_bias_percent_mean": 2.236500134372954,
+    "mean_electron_minus_ion_bias_percentage_points": 0.8664920391723134,
+    "members": [
+      {
+        "electron_comparison_report_sha256": "1c9d8b3d59333462b93d2af01fb47a5aa822697ed457f90ae5e0946ede4a9690",
+        "electron_integrated_density_bias_percent": 3.5101360981522722,
+        "electron_relative_l2": 0.036702548538565334,
+        "electron_x_squared_descriptive_only": 845.7616867620986,
+        "ion_integrated_density_bias_percent": 2.4834268915580937,
+        "seed": 13507
+      },
+      {
+        "electron_comparison_report_sha256": "344d0f902c9cd1d4ae0c3c00710039d8dce8f3cbc08c648c0eec3440868b9c66",
+        "electron_integrated_density_bias_percent": 2.352148426080869,
+        "electron_relative_l2": 0.025620208601673364,
+        "electron_x_squared_descriptive_only": 360.08866874500535,
+        "ion_integrated_density_bias_percent": 1.729500259228156,
+        "seed": 24680
+      },
+      {
+        "electron_comparison_report_sha256": "5c7f643dfc9889e069782398725bc0ca6e26d6b17d3e309dcdc86ebe8b690b6d",
+        "electron_integrated_density_bias_percent": 3.446691996402662,
+        "electron_relative_l2": 0.03718607222297356,
+        "electron_x_squared_descriptive_only": 744.0607485208523,
+        "ion_integrated_density_bias_percent": 2.4965732523326123,
+        "seed": 97531
+      }
+    ]
+  },
+  "interpretation": {
+    "electron_bias_exceeds_ion_bias_in_every_run": true,
+    "gross_ionization_or_power_error_supported": false,
+    "next_diagnostic": "electron_energy_and_sheath_transport_observables",
+    "turner_case1_verification_complete": false
+  },
+  "numerical_sensitivity_variants": [
+    {
+      "electron_comparison_report_sha256": "2a4353268732b49b86b5b1f032dc689c8490dd00823f0d371a0a72cc7b4a3154",
+      "electron_integrated_density_bias_percent": 3.450324208738076,
+      "electron_relative_l2": 0.03712088877590476,
+      "electron_x_squared_descriptive_only": 643.804963743675,
+      "id": "particles_2x",
+      "ion_integrated_density_bias_percent": 2.40864950905737
+    },
+    {
+      "electron_comparison_report_sha256": "fd6da91077fe4bae553402be20a44b278a8ff81953881c7dfb858d42ba77e46a",
+      "electron_integrated_density_bias_percent": 4.475530226854829,
+      "electron_relative_l2": 0.04768923159447152,
+      "electron_x_squared_descriptive_only": 1128.708241892733,
+      "id": "timestep_2x",
+      "ion_integrated_density_bias_percent": 3.117013461337881
+    },
+    {
+      "electron_comparison_report_sha256": "8a5d300da8256e20331ea1881ca49e47de9a7c8ae5e9968c04b2e44fa515e445",
+      "electron_integrated_density_bias_percent": 2.854270791248692,
+      "electron_relative_l2": 0.029602148556689024,
+      "electron_x_squared_descriptive_only": 586.9717992458759,
+      "id": "grid_2x_fixed_particles",
+      "ion_integrated_density_bias_percent": 2.0182916526844563
+    },
+    {
+      "electron_comparison_report_sha256": "5365df00ca1cf44c9275298044e6d5b2d040d17cb07c91ed98c70492a8f1fe88",
+      "electron_integrated_density_bias_percent": 3.339652975249785,
+      "electron_relative_l2": 0.034977545935609006,
+      "electron_x_squared_descriptive_only": 712.0864397722235,
+      "id": "grid_2x_same_ppc",
+      "ion_integrated_density_bias_percent": 2.3340684232113995
+    }
+  ],
+  "turner_electron_density_diagnostic_version": 1
+}

@@ -53,14 +53,15 @@ def main() -> int:
                 # Match the limited coordinate precision in the publisher
                 # supplement rather than manufacturing exact binary equality.
                 writer.writerow([
-                    f"{x:.6g}", 1, 1, 1, 1.0e14, 1, 1.0e11
+                    f"{x:.6g}", 1.0e14, 1, 1.0e11,
+                    1.0e14, 1, 1.0e11
                 ])
         with candidate.open("w", newline="", encoding="utf-8") as stream:
             writer = csv.writer(stream)
             writer.writerow(candidate_header)
             for index in range(129):
                 x = 0.067 * index / 128
-                writer.writerow([0, "electrons", index, x, 1.0e13])
+                writer.writerow([0, "electrons", index, x, 1.001e14])
                 writer.writerow([1, "ions", index, x, 1.001e14])
         audit = work / "audit.json"
         audit.write_text(json.dumps({
@@ -108,6 +109,30 @@ def main() -> int:
             and value["coordinate_contract"]["maximum_reference_error_m"] > 0
             and value["physics_claim"].startswith("none_"),
             "Turner comparator statistic or claim boundary is incorrect",
+        )
+
+        electron_report = work / "electron-report.json"
+        electron = subprocess.run([
+            sys.executable, str(COMPARATOR), "--case", "1",
+            "--reference", str(reference), "--candidate", str(candidate),
+            "--candidate-metadata", str(metadata),
+            "--normalization-audit", str(audit), "--species", "electrons",
+            "--output", str(electron_report),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(electron.returncode == 0, electron.stderr)
+        electron_result = json.loads(
+            electron_report.read_text(encoding="utf-8")
+        )
+        require(
+            abs(electron_result["statistic"]["x_squared"] - 129.0) < 1e-12
+            and electron_result["statistic"]
+                ["published_acceptance_applicable"] is False
+            and "accepted_99_percent" not in electron_result["statistic"]
+            and electron_result["comparison_scope"]
+                == "published_baseline_electron_density_diagnostic_only"
+            and electron_result["physics_claim"]
+                == "none_published_electron_density_descriptive_only",
+            "electron-density comparison overstated its claim",
         )
 
         diagnostic_metadata = work / "diagnostic_metadata.json"
@@ -162,7 +187,7 @@ def main() -> int:
             writer.writerow(candidate_header)
             for index in range(257):
                 x = 0.067 * index / 256
-                writer.writerow([0, "electrons", index, x, 1.0e13])
+                writer.writerow([0, "electrons", index, x, 1.001e14])
                 writer.writerow([1, "ions", index, x, 1.001e14])
         refined_metadata = work / "refined-metadata.json"
         refined_metadata.write_text(json.dumps({

@@ -53,7 +53,9 @@ or committing the restricted values. Named 1D collision models can load these
 manifests directly with `gas_data_file`.
 `compare_turner.py` implements the paper's ion-density `X²` statistic against
 the population standard deviation, locks the local reference through the
-normalization audit, and applies the published 95% and 99% case ranges.
+normalization audit, and applies the published 95% and 99% case ranges. It can
+also compare the published electron-density distribution descriptively while
+explicitly suppressing the ion-only acceptance ranges.
 `analyze_turner_density_blocks.py` hash-checks consecutive reset 32-cycle
 post-benchmark profiles and quantifies density drift, adjacent profile motion,
 lag-one correlation, and an AR(1) effective block count without treating a

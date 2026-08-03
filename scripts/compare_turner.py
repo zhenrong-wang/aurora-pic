@@ -27,14 +27,6 @@ GAP_LENGTH_M = 0.067
 # significant digits. Their largest Case 1 discrepancy from the prescribed
 # uniform grid is 1.91e-4 cell widths.
 REFERENCE_COORDINATE_TOLERANCE_CELLS = 2.5e-4
-REFERENCE_COLUMNS = (
-    "x_m",
-    "ion_density_mean_m-3",
-    "ion_density_population_stddev_m-3",
-)
-CANDIDATE_COLUMNS = ("x_m", "ion_density_mean_m-3")
-
-
 class ComparisonError(RuntimeError):
     pass
 
@@ -98,12 +90,14 @@ def load_candidate(path: Path, species: str) -> list[dict[str, float]]:
         with path.open(newline="", encoding="utf-8") as stream:
             reader = csv.DictReader(stream)
             require(reader.fieldnames is not None, f"{path} has no CSV header")
-            if all(name in reader.fieldnames for name in CANDIDATE_COLUMNS):
+            prefix = "electron" if species == "electrons" else "ion"
+            direct_density = f"{prefix}_density_mean_m-3"
+            if "x_m" in reader.fieldnames and direct_density in reader.fieldnames:
                 rows = []
                 for line, source in enumerate(reader, 2):
                     try:
                         x = float(source["x_m"])
-                        density = float(source["ion_density_mean_m-3"])
+                        density = float(source[direct_density])
                     except (TypeError, ValueError) as error:
                         raise ComparisonError(
                             f"{path}:{line}: invalid numeric value"
@@ -112,7 +106,7 @@ def load_candidate(path: Path, species: str) -> list[dict[str, float]]:
                             f"{path}:{line}: non-finite numeric value")
                     rows.append({
                         "x_m": x,
-                        "ion_density_mean_m-3": density,
+                        "density_mean_m-3": density,
                     })
                 return rows
 
@@ -136,7 +130,7 @@ def load_candidate(path: Path, species: str) -> list[dict[str, float]]:
                         f"{path}:{line}: non-finite numeric value")
                 rows.append({
                     "x_m": x,
-                    "ion_density_mean_m-3": density,
+                    "density_mean_m-3": density,
                 })
             require(rows, f"{path} has no rows for species {species!r}")
             return rows
@@ -153,6 +147,8 @@ def compare(case: int, reference: Path, candidate: Path,
         not (post_benchmark_window and numerical_sensitivity),
         "post-benchmark and numerical-sensitivity modes are mutually exclusive",
     )
+    require(species in ("electrons", "ions"),
+            "Turner density species must be 'electrons' or 'ions'")
     try:
         audit = json.loads(audit_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
@@ -256,7 +252,14 @@ def compare(case: int, reference: Path, candidate: Path,
     require(isinstance(metadata_species, list) and species in metadata_species,
             f"candidate averaging metadata does not contain species {species!r}")
 
-    reference_rows = load_columns(reference, REFERENCE_COLUMNS)
+    reference_prefix = "electron" if species == "electrons" else "ion"
+    reference_mean_column = f"{reference_prefix}_density_mean_m-3"
+    reference_stddev_column = (
+        f"{reference_prefix}_density_population_stddev_m-3"
+    )
+    reference_rows = load_columns(reference, (
+        "x_m", reference_mean_column, reference_stddev_column,
+    ))
     candidate_rows = load_candidate(candidate, species)
     expected_nodes = EXPECTED_NODES[case]
     require(len(reference_rows) == expected_nodes,
@@ -307,9 +310,9 @@ def compare(case: int, reference: Path, candidate: Path,
             candidate_error <= 1e-12 * max(1.0, abs(x_expected)),
             f"candidate coordinate is off the prescribed grid at node {index}",
         )
-        mean = ref["ion_density_mean_m-3"]
-        sigma = ref["ion_density_population_stddev_m-3"]
-        density = value["ion_density_mean_m-3"]
+        mean = ref[reference_mean_column]
+        sigma = ref[reference_stddev_column]
+        density = value["density_mean_m-3"]
         require(mean > 0.0 and sigma > 0.0 and density >= 0.0,
                 f"invalid density/statistical value at node {index}")
         delta = density - mean
@@ -322,13 +325,30 @@ def compare(case: int, reference: Path, candidate: Path,
     interval_95 = RANGES_95[case]
     interval_99 = RANGES_99[case]
     statistic_report = {
-        "name": "Turner ion-density X-squared",
+        "name": (
+            "Turner electron-density descriptive X-squared"
+            if species == "electrons"
+            else "Turner ion-density X-squared"
+        ),
         "formula_variance": "population_standard_deviation_squared",
         "x_squared": statistic,
-        "range_95_percent": list(interval_95),
-        "range_99_percent": list(interval_99),
     }
-    if post_benchmark_window or numerical_sensitivity:
+    published_ion_acceptance = (
+        species == "ions"
+        and not post_benchmark_window
+        and not numerical_sensitivity
+    )
+    if species == "ions":
+        statistic_report.update({
+            "range_95_percent": list(interval_95),
+            "range_99_percent": list(interval_99),
+        })
+    if species == "electrons":
+        statistic_report.update({
+            "published_acceptance_applicable": False,
+            "acceptance_reason": "published_ranges_are_for_ion_density",
+        })
+    elif not published_ion_acceptance:
         statistic_report.update({
             "published_acceptance_applicable": False,
             "within_published_95_percent_range":
@@ -380,6 +400,9 @@ def compare(case: int, reference: Path, candidate: Path,
                 maximum_candidate_coordinate_error,
         },
         "comparison_scope": (
+            "published_baseline_electron_density_diagnostic_only"
+            if species == "electrons"
+            else
             "post_benchmark_density_diagnostic_only"
             if post_benchmark_window
             else "numerical_sensitivity_density_diagnostic_only"
@@ -398,6 +421,9 @@ def compare(case: int, reference: Path, candidate: Path,
         } if numerical_sensitivity else {}),
         "averaging_contract_verified": True,
         "physics_claim": (
+            "none_published_electron_density_descriptive_only"
+            if species == "electrons"
+            else
             "none_post_benchmark_window_outside_published_duration"
             if post_benchmark_window
             else "none_changed_published_numerical_contract"
@@ -413,7 +439,7 @@ def main() -> int:
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--candidate-metadata", type=Path, required=True)
-    parser.add_argument("--species", default="ions")
+    parser.add_argument("--species", choices=("electrons", "ions"), default="ions")
     parser.add_argument("--normalization-audit", type=Path, required=True)
     parser.add_argument(
         "--post-benchmark-window", action="store_true",

@@ -994,6 +994,28 @@ conventions, and independent cross-code comparison.
 The complete nonrestricted matrix summary is
 [`benchmarks/ccp/turner-case1-numerical-sensitivity-matrix-20260803.json`](../benchmarks/ccp/turner-case1-numerical-sensitivity-matrix-20260803.json).
 
+### Published electron-density diagnostic
+
+The publisher supplement also contains electron-density mean and population
+scatter profiles, although Turner et al. give formal `X²` acceptance ranges for
+the ion-density statistic. `compare_turner.py --species electrons` therefore
+uses the same locked coordinate and uncertainty calculation but always reports
+`published_acceptance_applicable = false`.
+
+Across the three exact seeds, integrated electron-density bias is +3.103% on
+average, versus +2.237% for ions. The electron bias exceeds the ion bias in
+every exact and sensitivity run, by 0.623--1.359 percentage points. The same
+seed ordering appears in both species, while the four sensitivity runs retain
+closely consistent ionization, current, and power. This descriptive evidence
+localizes the remaining discrepancy more toward electron/sheath transport and
+density-profile formation than toward a gross total ionization-source error.
+It is not a formal electron-density benchmark pass/fail conclusion.
+
+The retained nonrestricted evidence is
+[`benchmarks/ccp/turner-case1-electron-density-diagnostic-20260803.json`](../benchmarks/ccp/turner-case1-electron-density-diagnostic-20260803.json).
+The next implementation target is a restart-safe final-window electron-energy
+and sheath-structure diagnostic suitable for matched AuroraPIC/WarpX output.
+
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \
   tmp/turner-case1-ensemble-v1/ensemble.json \
