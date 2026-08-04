@@ -105,6 +105,10 @@ jobs:
         run: python3 scripts/test_prepare_turner_sensitivity.py
       - name: Validate restart-safe 1D spatial averaging
         run: python3 scripts/test_spatial_average_1d.py build/aurorapic_cli
+      - name: Validate Turner spatial-structure analysis
+        run: python3 scripts/test_analyze_turner_spatial_structure.py
+      - name: Validate phase EEDF interchange
+        run: python3 scripts/test_phase_eedf_interchange.py
       - name: Validate Hall reference normalization
         run: python3 scripts/test_normalize_hall_reference.py
       - name: Run bounded Hall micro pilot

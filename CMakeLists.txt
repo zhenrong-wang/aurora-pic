@@ -93,6 +93,12 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/run_turner_startup.py
   scripts/extend_turner_horizon.py
   scripts/analyze_turner_stationarity.py
+  scripts/analyze_turner_spatial_structure.py
+  scripts/analyze_1d_energy_budget.py
+  scripts/analyze_1d_spatial_collision.py
+  scripts/analyze_phase_eedf.py
+  scripts/export_phase_eedf.py
+  scripts/compare_phase_eedf.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py
   scripts/prepare_hall_convergence.py scripts/analyze_hall_convergence.py
   scripts/analyze_hall_flux_stationarity.py
@@ -103,7 +109,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/generate_real_case_mesh.py scripts/import_lxcat.py
   scripts/validate_kinetic_benchmarks.py scripts/validate_hall_case.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
-install(FILES README.md docs/ccp-validation.md docs/collisions.md docs/external-particle-state.md docs/gas-data-workflow.md docs/hall-thruster-validation.md docs/kinetic-validation.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/real-case-validation.md docs/swarm-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(FILES README.md docs/ccp-validation.md docs/collisions.md docs/external-particle-state.md docs/gas-data-workflow.md docs/hall-thruster-validation.md docs/kinetic-validation.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/phase-eedf-interchange.md docs/real-case-validation.md docs/swarm-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 install(EXPORT AuroraPICTargets
   FILE AuroraPICTargets.cmake
   NAMESPACE AuroraPIC::

@@ -570,6 +570,40 @@ next credible discriminator is an independently generated EEDF with identical
 regions and phase bins. Evidence is recorded in
 [`turner-case1-phase-eedf-32cycle-20260804.json`](../benchmarks/ccp/turner-case1-phase-eedf-32cycle-20260804.json).
 
+### Independent cross-code discriminator
+
+The independent comparison now has a code-neutral interchange rather than an
+AuroraPIC-specific CSV contract. `export_phase_eedf.py` converts native
+phase/region histograms to probability mass on explicit energy-bin edges;
+`compare_phase_eedf.py` integrates total variation exactly for the resulting
+piecewise-uniform distributions even when the two solvers use different
+energy grids. Exact mean energy, drift-separated temperature, overflow, and
+optional energetic-tail fractions are reported separately. Formal pass/fail
+is disabled unless all acceptance limits were declared on the command line.
+The format and claim boundary are documented in
+[`phase-eedf-interchange.md`](phase-eedf-interchange.md).
+
+The first external target is eduPIC 1.0, pinned for assessment at upstream
+commit `32050728c961a317d6d6acd6bc86d026da403326`. It is an independently
+implemented, GPL-3.0, transparent 1D3V electrostatic PIC/MCC code whose
+published default argon CCP is intended to reproduce the paper's reference
+figures. Its default contract is 25 mm, 10 Pa argon at 350 K, 250 V amplitude,
+13.56 MHz, 400 nodes, and 4,000 electron steps per RF cycle. It records the
+central 10% EEPF, cycle-averaged density, 200-bin phase-space diagnostics, wall
+flux/ion energy, and species `j E` power.
+
+This is intentionally a second benchmark, not a replacement for Turner helium
+Case 1. The unmodified eduPIC reference is argon, uses analytic Phelps-based
+cross sections and its own collision/scattering conventions, and normally
+requires about 1,500 equilibration plus at least 1,000 measurement cycles.
+Running it immediately would be both physically unmatched to Turner and too
+expensive for the workstation safety policy. The next campaign gate is
+therefore: reproduce eduPIC's unmodified reference in conservative,
+checkpointed blocks; lock its actual stationary window and output hashes;
+then run AuroraPIC under that same argon/collision/boundary contract and feed
+both outputs through the neutral comparator. No cross-code agreement claim is
+made yet.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
