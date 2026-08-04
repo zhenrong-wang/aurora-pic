@@ -728,6 +728,15 @@ leaving the cycle-1,500 and final-100-cycle contract unchanged. Both views say
 the discharge is still substantially transient. Evidence is
 [`edupic-reference-adaptive-through-cycle64-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle64-20260804.json).
 
+Five more two-cycle stages reached cycle 74 in 53.46 s. Population is 76,476.
+The full-history total relative slope is `+0.0225` per cycle and the first two
+25-cycle block means retain a 62.3% range relative to the full-history mean.
+The descriptive recent window, now cycles 50--74, has mean population 67,413,
+relative slope `+0.0116` per cycle, and an endpoint increase equal to 27.8% of
+its mean. The recent rate is declining, but it remains more than two orders of
+magnitude above the formal `1e-4`-per-cycle limit. Evidence is
+[`edupic-reference-adaptive-through-cycle74-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle74-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

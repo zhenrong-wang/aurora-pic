@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_adaptive_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Cycle 74 remains below the predeclared cycle-1500 stationarity eligibility gate. Recent-window trends are descriptive only and prohibit measurement while materially nonzero.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "campaign": {
+    "start_cycle": 64,
+    "target_cycle": 74,
+    "target_reached": true,
+    "completed_stages": 5,
+    "cycles_per_stage": 2,
+    "total_coordinator_wall_seconds": 53.46335974603426,
+    "total_stage_wall_seconds": 53.1718287729891,
+    "maximum_total_wall_seconds": 65,
+    "maximum_stage_wall_seconds": 20,
+    "maximum_stage_initial_particle_steps": 700000000,
+    "campaign_report_sha256": "7ba27f46a482be313fe1213310b75cb8e157776a9f1bdd89f6b99de5ba9f6316"
+  },
+  "stage_progress": [
+    {"cycles": "64-66", "wall_seconds": 10.17601770895999, "final_particles": 70631},
+    {"cycles": "66-68", "wall_seconds": 10.45590245607309, "final_particles": 72132},
+    {"cycles": "68-70", "wall_seconds": 10.55507465894334, "final_particles": 73711},
+    {"cycles": "70-72", "wall_seconds": 11.00095539400354, "final_particles": 74955},
+    {"cycles": "72-74", "wall_seconds": 10.983878555009142, "final_particles": 76476}
+  ],
+  "latest_state": {
+    "cycle": 74,
+    "electrons": 35898,
+    "ions": 40578,
+    "total_particles": 76476,
+    "checkpoint_sha256": "74fdcf491f4851632c21972c47da6383b91646ddb2d14172f12e3de65ac1792a",
+    "convergence_sha256": "b11860b5d2eb7b5170610782f3130e0db21114fb6d37d66f80f6327e6a99b715"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "full_history_total_population_relative_slope_per_cycle": 0.02248812852065276,
+    "full_history_block_mean_range_relative": 0.6233114027750194,
+    "provisional_recent_window": {
+      "claim": "descriptive_only_not_a_stationarity_gate",
+      "cycles": "50-74",
+      "samples": 25,
+      "total_population_mean": 67412.92,
+      "total_population_relative_slope_per_cycle": 0.011551437822989329,
+      "total_population_endpoint_change_relative_to_mean": 0.2780179229738157
+    },
+    "analysis_sha256": "d4e7d09f6cef19ae7f8709837a47a203052c426f26623cc4fc3a073eb8fdc800"
+  }
+}
