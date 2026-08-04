@@ -69,6 +69,18 @@ def main() -> int:
                 "coordinator did not complete exact adaptive stages")
         require(hashlib.sha256((source / "picdata.bin").read_bytes()).hexdigest()
                 == input_hash, "coordinator modified its input checkpoint")
+
+        limited = list(common)
+        limited[4] = str(work / "limited-campaign")
+        limited[limited.index("--max-wall-seconds") + 1] = "5"
+        stopped = subprocess.run([*limited, "--acknowledge-cost", ACK],
+                                 text=True, capture_output=True)
+        require(stopped.returncode == 0, stopped.stderr)
+        stopped_report = json.loads(stopped.stdout)
+        require(stopped_report["completed"] and not stopped_report["target_reached"]
+                and not stopped_report["stages"] and
+                stopped_report["stop_reason"] == "overall_wall_time_exhausted",
+                "coordinator did not stop cleanly at its wall-time reserve")
     print("eduPIC adaptive advancement regression passed")
     return 0
 

@@ -671,6 +671,21 @@ remains strongly positive at `+0.0902` per cycle. It is therefore still early
 equilibration and ineligible for measurement. Evidence is
 [`edupic-reference-adaptive-through-cycle16-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle16-20260804.json).
 
+The next adaptive advance exposed and safely contained a scheduling edge case.
+Seven stages reached cycle 31, after which the residual aggregate wall budget
+reduced the final stage timeout to 3 s, slightly below its required runtime.
+The runner timed out without changing the cycle-31 input. The coordinator now
+predicts the next stage from the preceding measured per-cycle time with a 1.5
+safety factor and stops cleanly before launch unless both aggregate wall time
+and the stage timeout cover that prediction. A regression locks this behavior.
+
+A new hash-locked recovery campaign then advanced the preserved cycle-31 state
+to cycle 32 in 3.08 s. Population is 40,431 and the full-history total
+population slope has fallen to `+0.0509` per cycle, but this is still rapid
+growth and remains ineligible for measurement. The failed attempt, scheduler
+correction, recovery chain, and final hashes are retained in
+[`edupic-reference-adaptive-through-cycle32-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle32-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

@@ -70,7 +70,7 @@ def metric(rows: list[dict[str, int]], field: str, block_cycles: int) -> dict:
         if len(values) == block_cycles:
             block_means.append(sum(values) / len(values))
     block_range = ((max(block_means) - min(block_means)) / mean_y
-                   if mean_y > 0.0 and block_means else None)
+                   if mean_y > 0.0 and len(block_means) >= 2 else None)
     endpoint_change = ((y[-1] - y[0]) / mean_y if mean_y > 0.0 else None)
     return {"mean": mean_y, "linear_slope_particles_per_cycle": slope,
             "relative_slope_per_cycle": relative_slope,

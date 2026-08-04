@@ -98,8 +98,24 @@ def advance(args: argparse.Namespace) -> dict:
             break
         expected_end = current["cycles"] + cycles
         stage_dir = campaign_dir / f"stage-{current['cycles']:06d}-{expected_end:06d}"
+        predicted_seconds = None
+        if report["stages"]:
+            previous = report["stages"][-1]
+            predicted_seconds = (previous["wall_seconds"] /
+                                 previous["cycles"] * cycles * 1.5)
+            if remaining_wall < predicted_seconds + 5.0:
+                report["stop_reason"] = "insufficient_predicted_wall_time"
+                report["next_stage_prediction"] = {
+                    "planned_cycles": cycles,
+                    "predicted_wall_seconds_with_safety_factor": predicted_seconds,
+                    "remaining_campaign_wall_seconds": remaining_wall,
+                }
+                break
         timeout_seconds = min(args.stage_timeout_seconds,
                               max(1, int(math.floor(remaining_wall - 5.0))))
+        if predicted_seconds is not None and timeout_seconds < predicted_seconds:
+            report["stop_reason"] = "insufficient_stage_timeout"
+            break
         command = [
             sys.executable, str(runner), str(executable), str(current_dir),
             str(stage_dir), "--cycles", str(cycles),
@@ -128,6 +144,7 @@ def advance(args: argparse.Namespace) -> dict:
         report["stages"].append({
             "start_cycle": current["cycles"], "end_cycle": final["cycles"],
             "cycles": cycles, "wall_seconds": stage_report["stage"]["wall_seconds"],
+            "predicted_wall_seconds_with_safety_factor": predicted_seconds,
             "initial_total_particles": current["total_particles"],
             "final_total_particles": final["total_particles"],
             "input_checkpoint_sha256": current["sha256"],

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_adaptive_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Cycle 32 is early equilibration and below the predeclared cycle-1500 stationarity eligibility gate. No measurement or cross-code comparison is authorized.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "primary_campaign": {
+    "start_cycle": 16,
+    "planned_target_cycle": 32,
+    "last_completed_cycle": 31,
+    "completed_stages": 7,
+    "completed_stage_wall_seconds": 35.86763370700646,
+    "stop_reason": "final stage timeout was reduced to the residual aggregate budget",
+    "input_preserved": true,
+    "failed_stage_advanced_checkpoint": false,
+    "campaign_report_sha256": "14bf8c10878133539438a23506bbff6b402aa0660cfe921e1aec704a5b0700b5"
+  },
+  "scheduler_correction": {
+    "behavior": "predict next-stage wall time from the previous measured per-cycle time with a 1.5 safety factor and stop before launch when aggregate wall time or stage timeout is insufficient",
+    "regression": "clean wall-reserve stop without a launched stage",
+    "recovery": "new hash-locked campaign from the preserved cycle-31 checkpoint"
+  },
+  "recovery_campaign": {
+    "start_cycle": 31,
+    "target_cycle": 32,
+    "target_reached": true,
+    "wall_seconds": 3.130993167986162,
+    "stage_wall_seconds": 3.078356917016208,
+    "campaign_report_sha256": "20a846170714773bdacd564c9438e0d2eb262a5ed856139dda18c60560e00e04"
+  },
+  "latest_state": {
+    "cycle": 32,
+    "electrons": 18078,
+    "ions": 22353,
+    "total_particles": 40431,
+    "checkpoint_bytes": 1293824,
+    "checkpoint_sha256": "03b492050344d0970148820cf3c6ac775e5b8d0ceff60ce0e7e0bc5ae605fe61",
+    "convergence_sha256": "a4ff2a19d8323f20767a79714eb0b0d0a8c1aaa4ce1f5efe3a0d696196649cd2"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "total_population_relative_slope_per_cycle": 0.05089214338155537,
+    "total_population_endpoint_change_relative_to_mean": 1.5845099931345399,
+    "analysis_sha256": "3a52f1ac70122673e7fdf162cd3d046dd55bcc1c797771e57d7ac4c659fb7b62"
+  }
+}
