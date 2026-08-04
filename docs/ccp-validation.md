@@ -526,6 +526,35 @@ still require a predeclared longer window. The reusable calculation is
 `scripts/analyze_1d_energy_budget.py`, and the checksum-pinned evidence is
 [`turner-case1-energy-ledger-pilot-20260804.json`](../benchmarks/ccp/turner-case1-energy-ledger-pilot-20260804.json).
 
+The predeclared 32-cycle localization window then covered steps
+757,601--770,400 with 16 bins of 800 physical timesteps. Its global kinetic
+ledger closed to `1.18e-11 W m^-2` (`9.41e-14` relative); maximum
+spatial-to-global and phase-to-spatial channel residuals were respectively
+`1.25e-19` and `2.98e-19 J m^-2`. Integer electron and ion source/loss
+balances were exact.
+
+The post-benchmark comparison is especially encouraging but remains outside
+the formal published-duration gate. Ion-density `X^2 = 218.4` lies inside
+Turner's published 95% range, electron and ion electrical powers differ from
+Table III by `-0.17%` and `+0.52%`, and mean ion current differs by `+0.44%`.
+Midplane electron temperature remains `6.50%` low while midplane ion density
+is `3.43%` high. Thus global power deficit is not a plausible explanation for
+the temperature discrepancy.
+
+Electron inelastic losses were `4.713 W m^-2` (triplet excitation),
+`8.404 W m^-2` (singlet excitation), and `10.670 W m^-2` (ionization).
+Approximately 98% of each electron-channel loss occurred outside the two
+predeclared outer-10% geometric regions. Ion-neutral losses were more edge
+weighted: the outer regions contained 50.9% of backward-channel and 41.8% of
+isotropic-channel transfer. Ionization and singlet loss were strongly RF
+modulated (60.9% and 49.3% conditional peak-to-trough over mean) while their
+half-cycle asymmetry remained only 2.55% and 3.35%. These observations point
+next to phase-selected bulk/sheath EEDFs and threshold-resolved moments, not
+another global power diagnostic. The reusable analyzer is
+`scripts/analyze_1d_spatial_collision.py`; the full claim boundaries and
+checksums are in
+[`turner-case1-spatial-collision-32cycle-20260804.json`](../benchmarks/ccp/turner-case1-spatial-collision-32cycle-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

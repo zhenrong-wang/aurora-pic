@@ -1,0 +1,119 @@
+{
+  "evidence_version": 1,
+  "case": "Turner helium CCP Case 1",
+  "scope": "post_benchmark_32_cycle_spatial_collision_diagnostic_window",
+  "claim_boundary": "Diagnostic continuation outside the published duration. Published ranges are shown as credibility context, not as a formal acceptance gate for this later window.",
+  "run_contract": {
+    "solver_commit": "a3d2cc2",
+    "seed": 13507,
+    "restart_step": 757600,
+    "start_step": 757601,
+    "end_step": 770400,
+    "steps": 12800,
+    "rf_cycles": 32,
+    "phase_bins": 16,
+    "timesteps_per_phase_bin": 800,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "checkpoint_version": 11
+  },
+  "numerical_closure": {
+    "tracked_kinetic_budget_residual_W_m-2": -1.1797129245705307e-11,
+    "tracked_kinetic_budget_relative_residual": 9.413941441317344e-14,
+    "maximum_spatial_to_global_channel_residual_J_m-2": 1.2536087619363645e-19,
+    "maximum_phase_sum_to_spatial_channel_residual_J_m-2": 2.981555974335137e-19,
+    "particle_source_loss_balance_exact": true,
+    "passes": true
+  },
+  "power_balance_W_m-2": {
+    "electric_work_total": 125.3155154962858,
+    "collision_tracked_kinetic_transfer_total": -80.33505057908717,
+    "wall_kinetic_loss_total": 44.99952078921399,
+    "tracked_kinetic_energy_rate": -0.01905587202715465,
+    "electron_electric_work": 34.24320650701731,
+    "ion_electric_work": 91.07230898926849,
+    "electron_collision_transfer": -23.910836805535235,
+    "ion_collision_transfer": -56.42421377355194
+  },
+  "turner_context": {
+    "ion_density_x_squared": 218.41644269831556,
+    "ion_density_within_published_95_percent_range": true,
+    "ion_density_relative_l2": 0.024577799317780206,
+    "electron_density_descriptive_x_squared": 230.16421929407412,
+    "electron_density_relative_l2": 0.03041432353970567,
+    "midplane_ion_density_m-3": 144803432195671.62,
+    "midplane_ion_density_relative_difference": 0.03431022996908295,
+    "midplane_electron_temperature_eV": 8.751175849817006,
+    "midplane_electron_temperature_relative_difference": -0.06504531519049073,
+    "electron_electrical_power_relative_difference": -0.001655786967425188,
+    "ion_electrical_power_relative_difference": 0.005213123501859762,
+    "mean_ion_current_A_m-2": 0.21995835620485005,
+    "mean_ion_current_relative_difference": 0.004376055729908845
+  },
+  "collision_channels": {
+    "electron_mcc.elastic": {
+      "mean_power_W_m-2": -0.12390573078000422,
+      "outer_10_percent_each_side_energy_fraction": 0.019834320171846304,
+      "phase_loss_peak_to_trough_over_mean": 0.0934589905332499,
+      "half_cycle_loss_relative_l2": 0.022674001375432594
+    },
+    "electron_mcc.excitation_triplet": {
+      "mean_power_W_m-2": -4.712784507905313,
+      "outer_10_percent_each_side_energy_fraction": 0.023166318962960945,
+      "phase_loss_peak_to_trough_over_mean": 0.24398492882724962,
+      "half_cycle_loss_relative_l2": 0.05032435184386182
+    },
+    "electron_mcc.excitation_singlet": {
+      "mean_power_W_m-2": -8.403776709846749,
+      "outer_10_percent_each_side_energy_fraction": 0.020444606569881816,
+      "phase_loss_peak_to_trough_over_mean": 0.4928653362807033,
+      "half_cycle_loss_relative_l2": 0.03351183558972735
+    },
+    "electron_mcc.ionization": {
+      "mean_power_W_m-2": -10.67036985580349,
+      "outer_10_percent_each_side_energy_fraction": 0.020511078446395867,
+      "phase_loss_peak_to_trough_over_mean": 0.6088841607451175,
+      "half_cycle_loss_relative_l2": 0.025543493830521007
+    },
+    "ion_mcc.isotropic": {
+      "mean_power_W_m-2": -2.669950656709849,
+      "outer_10_percent_each_side_energy_fraction": 0.41784004014587456,
+      "phase_loss_peak_to_trough_over_mean": 0.2825595983571768,
+      "half_cycle_loss_relative_l2": 0.11313599868695157
+    },
+    "ion_mcc.backward": {
+      "mean_power_W_m-2": -53.75426311401105,
+      "outer_10_percent_each_side_energy_fraction": 0.509052974479802,
+      "phase_loss_peak_to_trough_over_mean": 0.06929143911566904,
+      "half_cycle_loss_relative_l2": 0.025498691230662274
+    }
+  },
+  "interpretation": {
+    "supported": [
+      "The independent global, spatial, and phase collision ledgers close to near floating-point precision while integer particle source/loss balance is exact.",
+      "Global electrical power and ion current agree closely with Turner, and this later ion-density window lies inside the published 95 percent X-squared range.",
+      "Approximately 98 percent of electron collision energy loss occurs outside the predeclared outer 10 percent regions, while ion-neutral energy transfer is much more edge weighted.",
+      "Electron ionization and singlet excitation losses are strongly RF modulated but remain approximately half-cycle symmetric."
+    ],
+    "not_supported": [
+      "This post-benchmark window is not a substitute for an independent run ending at the published 1280-cycle horizon.",
+      "The collision-energy localization alone does not explain the persistent 6.5 percent low midplane electron temperature because the global electron electrical power is already within 0.2 percent of Turner.",
+      "The predeclared outer 10 percent regions are geometric reporting regions, not inferred sheath boundaries."
+    ],
+    "next_target": "Add phase-selected bulk and sheath electron energy-distribution functions, then compare EEDF moments and inelastic thresholds against an independent Turner-compatible implementation."
+  },
+  "provenance_sha256": {
+    "solver_executable": "7c27d1df678f8cd9fae32002d00cc2461f6387b9634fc3d1fd8cc2a264bea950",
+    "source_checkpoint_757600": "a15214ab992a55d9148492dba7109b276d8f0a7a76ac01c3d571f4d677f7eac2",
+    "run_config": "903b9a75885c0a396e1bb8714461ad9639aa18655028d6e3b32702c57562ecf9",
+    "final_checkpoint_770400": "594098c8dfd2a525df8815deb7590c1eedfe901343c08b3bf212cc86c8b76734",
+    "spatial_collision_csv": "ebd4fd90f9e695d5f70346e21dc33f600e4b05b8b47dc9c98ac472ff925b5dc3",
+    "phase_collision_csv": "1777d6c2ad02dfd86d6482c7181015b4edd98ee2cfe3e85eadd34db679ed9247",
+    "spatial_collision_analysis": "4e07f386d6dc8685871ef0cac57e7ff128ef0ad0681c8b3239cf62f1a95b1806",
+    "energy_budget_analysis": "fb12ceb1babc231112dfc40a7b5f086f695109ffcbd741e762e349b805fee280",
+    "ion_density_comparison": "e1ce727583c060d585dffebe60f2feaa203fee32e22b9d5a6241af8a3c0e8a80",
+    "electron_density_comparison": "aab543236be372bb88cfb22097d14ab4cd17686eb80e267dc43fb59fbe72e54a",
+    "spatial_structure_analysis": "8de139289fc8143787318e6db6b5134836e700b27ba4e262e1c2fb879cac117e",
+    "balance_analysis": "8ebd313bacba97eff3754c94aa2412a8c07d8aeeccfd2310304790ac9c4f0fce"
+  }
+}
