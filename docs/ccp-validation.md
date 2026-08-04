@@ -472,6 +472,17 @@ smaller collision/heating discrepancy.
 
 ### Species electrical-power continuation
 
+For 1D collision-enabled runs, `collisions.csv` also reports a signed tracked
+particle kinetic-energy change for every collision channel, both per output
+interval and cumulatively. Positive values add kinetic energy to simulated
+charged particles; negative values remove it. SI columns use `J_m-2` because
+a 1D run represents energy per unit transverse area; normalized columns are
+explicitly labeled. Ionization includes the post-collision primary and the
+created electron and ion, so its entry is the net tracked charged-particle
+kinetic-energy change. Neutral kinetic energy, internal excitation energy, and
+ionization potential are outside that tracked-particle ledger and appear as a
+signed channel loss. Checkpoint v10 preserves the cumulative channel totals.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

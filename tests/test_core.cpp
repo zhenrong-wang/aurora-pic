@@ -48,6 +48,18 @@ void require_near(double actual, double expected, double tolerance, const std::s
     }
 }
 
+void require_vector_near(
+    const std::vector<double>& actual,
+    const std::vector<double>& expected,
+    double tolerance,
+    const std::string& message) {
+    require(actual.size() == expected.size(), message + ": size mismatch");
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+        require_near(actual[i], expected[i], tolerance,
+                     message + ": element mismatch");
+    }
+}
+
 std::string read_file_text(const std::filesystem::path& path) {
     std::ifstream in(path);
     if (!in) throw std::runtime_error("cannot read test file: " + path.string());
@@ -600,6 +612,10 @@ int main() {
                           excitation_stats.channel_collisions[0]),
                 1e-13,
                 "excitation MCC removed the wrong threshold energy");
+            require_near(
+                excitation_stats.channel_projectile_energy_change[0],
+                final_energy - initial_energy, 1e-13,
+                "excitation energy ledger does not match projectile change");
             pic::Vec3 excited_vector{2.0, 0.0, 0.0};
             const double initial_vector_energy =
                 0.5 * norm(excited_vector) * norm(excited_vector);
@@ -657,6 +673,14 @@ int main() {
                               ionization_stats.secondaries.size()),
                 ionizing_initial_energy, 1e-12,
                 "ionization energy partition is not conservative");
+            require_near(
+                ionization_stats.channel_projectile_energy_change[0] +
+                    product_energy -
+                    0.5 * norm(ionizing_velocity) * norm(ionizing_velocity),
+                -0.5 * static_cast<double>(
+                           ionization_stats.secondaries.size()),
+                1e-12,
+                "ionization energy ledger does not close with products");
             auto thermal_ionization_config =
                 ionization_config;
             thermal_ionization_config.gas_data_units =
@@ -933,6 +957,10 @@ int main() {
                     expected.channel_collisions ==
                         actual.channel_collisions,
                 "MCC checkpoint did not preserve collision diagnostics");
+            require_vector_near(
+                actual.channel_energy_change,
+                expected.channel_energy_change, 1e-12,
+                "MCC checkpoint did not preserve collision energy");
 
             {
                 std::ofstream changed_table(table_path);
@@ -3350,8 +3378,8 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v9\n") == 0,
-                "1D phase-moment checkpoint did not use v9");
+                    "AuroraPIC-checkpoint-v10\n") == 0,
+                "1D collision-energy checkpoint did not use v10");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3368,6 +3396,7 @@ int main() {
                         first = false;
                     } else if (
                         line.starts_with("power_transfer") ||
+                        line.starts_with("collision_energy_totals") ||
                         line.starts_with("spatial_moments") ||
                         line.starts_with("spatial_energy") ||
                         line.starts_with("spatial_fields") ||
@@ -3413,6 +3442,7 @@ int main() {
                             "boundary_loss") ||
                         line.starts_with(
                             "power_transfer") ||
+                        line.starts_with("collision_energy_totals") ||
                         line.starts_with("spatial_moments") ||
                         line.starts_with("spatial_energy") ||
                         line.starts_with("spatial_fields") ||
@@ -3678,9 +3708,14 @@ int main() {
                 continuous.collision_diagnostics().channel_collisions ==
                     restarted.collision_diagnostics().channel_collisions,
                 "1D3V MCC restart lost collision diagnostics");
+            require_vector_near(
+                restarted.collision_diagnostics().channel_energy_change,
+                continuous.collision_diagnostics().channel_energy_change,
+                1e-12,
+                "1D3V MCC restart lost collision energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v9\n") == 0,
+                    "AuroraPIC-checkpoint-v10\n") == 0,
                 "1D3V checkpoint did not use the spatial-moment-aware "
                 "format");
             std::filesystem::remove_all(output_dir);
@@ -3930,6 +3965,11 @@ int main() {
                     restarted.collision_diagnostics()
                         .channel_collisions,
                 "multi-model 1D restart lost collision diagnostics");
+            require_vector_near(
+                restarted.collision_diagnostics().channel_energy_change,
+                continuous.collision_diagnostics().channel_energy_change,
+                1e-12,
+                "multi-model 1D restart lost collision energy");
 
             auto changed = cfg;
             changed.collision_models[0].config.neutral_density =

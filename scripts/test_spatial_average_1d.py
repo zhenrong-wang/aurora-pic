@@ -199,6 +199,7 @@ def main() -> int:
             "\n".join(
                 line for line in legacy_lines
                 if not line.startswith((
+                    "collision_energy_totals",
                     "spatial_moments", "spatial_energy", "spatial_fields",
                     "spatial_phase", "phase_bin", "phase_species",
                     "phase_fields",

@@ -51,6 +51,7 @@ struct CollisionStepStatistics {
     std::uint64_t candidates{0};
     std::uint64_t null_collisions{0};
     std::vector<std::uint64_t> channel_collisions{};
+    std::vector<double> channel_projectile_energy_change{};
     struct Secondary {
         std::size_t channel{0};
         Vec3 velocity{};
@@ -66,6 +67,7 @@ struct CollisionDiagnostics {
     std::uint64_t null_collisions{0};
     std::vector<std::string> channel_names{};
     std::vector<std::uint64_t> channel_collisions{};
+    std::vector<double> channel_energy_change{};
 };
 
 class NullCollisionModel {

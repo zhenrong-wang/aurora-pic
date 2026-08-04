@@ -850,6 +850,7 @@ CollisionStepStatistics NullCollisionModel::collide(
     }
     CollisionStepStatistics statistics;
     statistics.channel_collisions.assign(channels_.size(), 0);
+    statistics.channel_projectile_energy_change.assign(channels_.size(), 0.0);
     double elapsed = 0.0;
     while (true) {
         validate_frequency_bound(std::abs(velocity));
@@ -880,8 +881,12 @@ CollisionStepStatistics NullCollisionModel::collide(
              channel < channel_rates.size(); ++channel) {
             cumulative += channel_rates[channel];
             if (selection < cumulative) {
+                const double energy_before =
+                    0.5 * particle_mass_ * velocity * velocity;
                 apply_channel(
                     channel, velocity, neutral_velocity, rng);
+                statistics.channel_projectile_energy_change[channel] +=
+                    0.5 * particle_mass_ * velocity * velocity - energy_before;
                 ++statistics.channel_collisions[channel];
                 if (channels_[channel].config.process ==
                     CollisionProcessKind::Attachment) {
@@ -915,6 +920,7 @@ CollisionStepStatistics NullCollisionModel::collide(
     }
     CollisionStepStatistics statistics;
     statistics.channel_collisions.assign(channels_.size(), 0);
+    statistics.channel_projectile_energy_change.assign(channels_.size(), 0.0);
     const auto projectile_speed = [&]() {
         return speed(velocity);
     };
@@ -948,8 +954,15 @@ CollisionStepStatistics NullCollisionModel::collide(
              channel < channel_rates.size(); ++channel) {
             cumulative += channel_rates[channel];
             if (selection < cumulative) {
+                const double energy_before = 0.5 * particle_mass_ *
+                    (velocity.x * velocity.x + velocity.y * velocity.y +
+                     velocity.z * velocity.z);
                 apply_channel(
                     channel, velocity, neutral_velocity, rng);
+                statistics.channel_projectile_energy_change[channel] +=
+                    0.5 * particle_mass_ *
+                        (velocity.x * velocity.x + velocity.y * velocity.y +
+                         velocity.z * velocity.z) - energy_before;
                 if (channels_[channel].config.process ==
                     CollisionProcessKind::Ionization) {
                     const double secondary_speed = speed(

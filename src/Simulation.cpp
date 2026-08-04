@@ -30,6 +30,7 @@ constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
 constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
+constexpr const char* kCheckpointMagicV10 = "AuroraPIC-checkpoint-v10";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -121,11 +122,20 @@ void add_collision_statistics(
         channel_offset + source.channel_collisions.size()) {
         throw std::logic_error("collision diagnostic channel mismatch");
     }
+    if (source.channel_projectile_energy_change.size() !=
+            source.channel_collisions.size() ||
+        destination.channel_energy_change.size() <
+            channel_offset + source.channel_projectile_energy_change.size()) {
+        throw std::logic_error("collision energy diagnostic channel mismatch");
+    }
     for (std::size_t channel = 0;
          channel < source.channel_collisions.size(); ++channel) {
         destination.channel_collisions[
             channel_offset + channel] +=
             source.channel_collisions[channel];
+        destination.channel_energy_change[
+            channel_offset + channel] +=
+            source.channel_projectile_energy_change[channel];
     }
 }
 
@@ -135,18 +145,31 @@ void clear_collision_counts(CollisionDiagnostics& diagnostics) {
     std::fill(
         diagnostics.channel_collisions.begin(),
         diagnostics.channel_collisions.end(), 0);
+    std::fill(
+        diagnostics.channel_energy_change.begin(),
+        diagnostics.channel_energy_change.end(), 0.0);
 }
 
 void write_collision_header(
     std::ofstream& output,
-    const CollisionDiagnostics& diagnostics) {
+    const CollisionDiagnostics& diagnostics,
+    bool si) {
+    const char* energy_suffix = si ? "_J_m-2" : "_normalized";
     output << "step,time,candidates,null_collisions";
     for (const auto& name : diagnostics.channel_names) {
         output << ",collisions_" << name;
     }
+    for (const auto& name : diagnostics.channel_names) {
+        output << ",tracked_kinetic_energy_change_" << name
+               << energy_suffix;
+    }
     output << ",cumulative_candidates,cumulative_null_collisions";
     for (const auto& name : diagnostics.channel_names) {
         output << ",cumulative_collisions_" << name;
+    }
+    for (const auto& name : diagnostics.channel_names) {
+        output << ",cumulative_tracked_kinetic_energy_change_" << name
+               << energy_suffix;
     }
     output << '\n';
 }
@@ -162,10 +185,16 @@ void write_collision_sample(
     for (const auto count : interval.channel_collisions) {
         output << ',' << count;
     }
+    for (const auto energy : interval.channel_energy_change) {
+        output << ',' << energy;
+    }
     output << ',' << totals.candidates << ','
            << totals.null_collisions;
     for (const auto count : totals.channel_collisions) {
         output << ',' << count;
+    }
+    for (const auto energy : totals.channel_energy_change) {
+        output << ',' << energy;
     }
     output << '\n';
     output.flush();
@@ -487,10 +516,14 @@ Simulation::Simulation(Config cfg)
     }
     collision_totals_.channel_collisions.assign(
         collision_totals_.channel_names.size(), 0);
+    collision_totals_.channel_energy_change.assign(
+        collision_totals_.channel_names.size(), 0.0);
     collision_interval_.channel_names =
         collision_totals_.channel_names;
     collision_interval_.channel_collisions.assign(
         collision_totals_.channel_names.size(), 0);
+    collision_interval_.channel_energy_change.assign(
+        collision_totals_.channel_names.size(), 0.0);
     species_boundary_losses_.assign(
         species_.size(), BoundaryLoss1D{});
     boundary_loss_chunks_.assign(
@@ -729,6 +762,13 @@ void Simulation::apply_collisions() {
                     unit(rng_) >= probability) {
                     continue;
                 }
+                const double energy_before = 0.5 * species.mass() *
+                    species.weight() *
+                    (particle.v * particle.v +
+                     (cfg_.velocity_dimensions == 3
+                          ? particle.velocity_y * particle.velocity_y +
+                            particle.velocity_z * particle.velocity_z
+                          : 0.0));
                 particle.v = neutral_velocity(rng_);
                 if (cfg_.velocity_dimensions == 3) {
                     particle.velocity_y =
@@ -740,6 +780,17 @@ void Simulation::apply_collisions() {
                 ++collision_totals_.channel_collisions[0];
                 ++collision_interval_.candidates;
                 ++collision_interval_.channel_collisions[0];
+                const double energy_after = 0.5 * species.mass() *
+                    species.weight() *
+                    (particle.v * particle.v +
+                     (cfg_.velocity_dimensions == 3
+                          ? particle.velocity_y * particle.velocity_y +
+                            particle.velocity_z * particle.velocity_z
+                          : 0.0));
+                collision_totals_.channel_energy_change[0] +=
+                    energy_after - energy_before;
+                collision_interval_.channel_energy_change[0] +=
+                    energy_after - energy_before;
                 initialize_leapfrog_half_step(
                     particle,
                     interpolate_electric(
@@ -780,6 +831,10 @@ void Simulation::apply_collisions() {
                     runtime.model->collide(
                         part.v, cfg_.dt, rng_);
             }
+            for (auto& energy_change :
+                 statistics.channel_projectile_energy_change) {
+                energy_change *= sp.weight();
+            }
             add_collision_statistics(
                 collision_totals_, statistics,
                 runtime.diagnostic_offset);
@@ -801,6 +856,26 @@ void Simulation::apply_collisions() {
                     secondary.ion_velocity,
                     *runtime.ionization_channels[
                         secondary.channel]});
+                const auto& channel = *runtime.ionization_channels[
+                    secondary.channel];
+                const auto product_energy = [](const Vec3& velocity) {
+                    return velocity.x * velocity.x +
+                           velocity.y * velocity.y +
+                           velocity.z * velocity.z;
+                };
+                const double added_energy =
+                    0.5 * species_[channel.secondary_species_id].mass() *
+                        species_[channel.secondary_species_id].weight() *
+                        product_energy(secondary.velocity) +
+                    0.5 * species_[channel.ion_species_id].mass() *
+                        species_[channel.ion_species_id].weight() *
+                        product_energy(secondary.ion_velocity);
+                collision_totals_.channel_energy_change[
+                    runtime.diagnostic_offset + secondary.channel] +=
+                    added_energy;
+                collision_interval_.channel_energy_change[
+                    runtime.diagnostic_offset + secondary.channel] +=
+                    added_energy;
             }
             if (statistics.primary_removal_channel) {
                 throw std::logic_error(
@@ -1400,7 +1475,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV9 << '\n';
+    out << kCheckpointMagicV10 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1420,6 +1495,12 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         << collision_totals_.channel_collisions.size();
     for (const auto count : collision_totals_.channel_collisions) {
         out << ' ' << count;
+    }
+    out << "\n";
+    out << "collision_energy_totals "
+        << collision_totals_.channel_energy_change.size();
+    for (const double energy : collision_totals_.channel_energy_change) {
+        out << ' ' << energy;
     }
     out << "\n";
     out << "boundary_loss_origin_step "
@@ -1547,13 +1628,16 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v7 = magic == kCheckpointMagicV7;
     const bool checkpoint_v8 = magic == kCheckpointMagicV8;
     const bool checkpoint_v9 = magic == kCheckpointMagicV9;
+    const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
-        checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9;
+        checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+        checkpoint_v10;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
         !checkpoint_v5 && !checkpoint_v6 &&
-        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
+        !checkpoint_v10) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1570,7 +1654,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         if ((!checkpoint_v2 && !checkpoint_v3 &&
              !checkpoint_v4 && !checkpoint_v5 &&
              !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8 &&
-             !checkpoint_v9) ||
+             !checkpoint_v9 && !checkpoint_v10) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1581,7 +1665,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     } else if (checkpoint_v2 || checkpoint_v3 ||
                checkpoint_v4 || checkpoint_v5 ||
                checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
-               checkpoint_v9 ||
+               checkpoint_v9 || checkpoint_v10 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1612,7 +1696,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             collision_signature();
         if ((!checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 &&
-             !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9) ||
+             !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
+             !checkpoint_v10) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1633,16 +1718,38 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         clear_collision_counts(collision_interval_);
         in >> key;
+        if (checkpoint_v10) {
+            std::size_t energy_count = 0;
+            in >> energy_count;
+            if (key != "collision_energy_totals" ||
+                energy_count != collision_totals_.channel_energy_change.size()) {
+                throw std::runtime_error(
+                    "checkpoint collision energy diagnostics do not match config");
+            }
+            for (auto& energy : collision_totals_.channel_energy_change) {
+                in >> energy;
+                if (!std::isfinite(energy)) {
+                    throw std::runtime_error(
+                        "checkpoint collision energy diagnostic is invalid");
+                }
+            }
+            in >> key;
+        } else {
+            std::fill(collision_totals_.channel_energy_change.begin(),
+                      collision_totals_.channel_energy_change.end(), 0.0);
+        }
     } else if (checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 || checkpoint_v6 ||
                checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+               checkpoint_v10 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
     }
     const bool checkpoint_has_boundary_losses =
-        checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9;
+        checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
+        checkpoint_v10;
     const bool legacy_boundary_loss_origin =
         !checkpoint_has_boundary_losses;
     if (checkpoint_has_boundary_losses) {
@@ -1693,8 +1800,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             BoundaryLoss1D{});
     }
     const bool legacy_power_transfer_origin =
-        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9;
-    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 && !checkpoint_v10;
+    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
         in >> power_transfer_origin_step_;
         if (key != "power_transfer_origin_step") {
             throw std::runtime_error(
@@ -1736,7 +1843,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             SpeciesPower1D{});
     }
     if (checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
+        checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -1827,7 +1934,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             }
         }
         in >> key;
-        if (checkpoint_v8 || checkpoint_v9) {
+        if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
             std::size_t stored_moment_samples = 0;
             std::size_t stored_moment_species_count = 0;
             std::size_t stored_moment_nx = 0;
@@ -1895,7 +2002,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         } else {
             spatial_moment_samples_ = 0;
         }
-        if (checkpoint_v9) {
+        if (checkpoint_v9 || checkpoint_v10) {
             std::size_t stored_phase_count = 0;
             std::size_t stored_phase_species = 0;
             std::size_t stored_phase_nx = 0;
@@ -2171,7 +2278,8 @@ RunSummary Simulation::run() {
                 "cannot open collision diagnostics output");
         }
         write_collision_header(
-            collision_output, collision_totals_);
+            collision_output, collision_totals_,
+            cfg_.units.system == UnitSystem::SI);
         write_collision_sample(
             collision_output, step_, time_,
             collision_interval_, collision_totals_);
