@@ -604,6 +604,17 @@ then run AuroraPIC under that same argon/collision/boundary contract and feed
 both outputs through the neutral comparator. No cross-code agreement claim is
 made yet.
 
+A one-cycle initialization-only pilot of that exact upstream commit completed
+on one affinity-pinned, low-priority CPU in 0.56 s with 31.6 MiB peak resident
+memory and no swap. The population changed from 1,000 electrons plus 1,000
+ions to 835 electrons plus 3,318 ions. This proves only that the upstream code
+builds and that its checkpoint path works locally. Because the published
+reference approaches roughly 110,000 particles, the startup timing must not
+be extrapolated linearly to the stationary campaign. The next run remains
+gated behind measured checkpoint blocks. The checksum-bearing runtime record
+is
+[`edupic-reference-init-pilot-20260804.json`](../benchmarks/ccp/edupic-reference-init-pilot-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

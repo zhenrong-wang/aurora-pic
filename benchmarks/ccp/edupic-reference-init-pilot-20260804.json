@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "external-code-initialization-runtime-pilot",
+  "physics_claim": "none",
+  "claim_boundary": "One initialization RF cycle only; the discharge is neither converged nor in measurement mode and no AuroraPIC comparison was performed.",
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "implementation": "C/eduPIC.cc",
+    "sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "license": "GPL-3.0"
+  },
+  "build": {
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "flags": ["-std=c++11", "-O2"],
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247"
+  },
+  "execution": {
+    "command": "timeout 60s taskset -c 0 nice -n 10 ./edupic 0",
+    "rf_cycles": 1,
+    "timesteps_per_cycle": 4000,
+    "measurement_mode": false,
+    "elapsed_seconds": 0.56,
+    "user_cpu_seconds": 0.53,
+    "system_cpu_seconds": 0.02,
+    "maximum_resident_kib": 31616,
+    "swaps": 0,
+    "exit_status": 0
+  },
+  "result": {
+    "initial_electron_macroparticles": 1000,
+    "initial_ion_macroparticles": 1000,
+    "final_electron_macroparticles": 835,
+    "final_ion_macroparticles": 3318,
+    "simulated_time_seconds": 7.374631e-08,
+    "checkpoint_sha256": "b3ee5d73ad273a3482fc5fc91b613326f5eb71ec2c880b14ad2051aba1e513ae",
+    "convergence_log_sha256": "b75807dbf88983a2a06ac83a630fde53eda3b3a324b2cb2af6254559303f3c4a"
+  },
+  "resource_policy": {
+    "cpu_affinity_count": 1,
+    "nice_level": 10,
+    "hard_timeout_seconds": 60,
+    "next_gate": "checkpointed non-measurement blocks with measured wall-time and memory limits; do not extrapolate linearly from the low-population initialization cycle"
+  }
+}
