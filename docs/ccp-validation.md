@@ -748,6 +748,14 @@ now below 1% per cycle but remains approximately 95 times the formal slope
 limit. Evidence is
 [`edupic-reference-adaptive-through-cycle84-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle84-20260804.json).
 
+Five further two-cycle stages reached cycle 94 in 66.77 s. Population is
+89,372. The descriptive cycles 70--94 window has mean population 81,671;
+electron, ion, and total relative slopes are `+0.00839`, `+0.00759`, and
+`+0.00797` per cycle. Its endpoint increase is 19.2% of the recent mean.
+Equilibration is consistently decelerating, but the total recent slope remains
+about 80 times the formal limit and no measurement is authorized. Evidence is
+[`edupic-reference-adaptive-through-cycle94-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle94-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
