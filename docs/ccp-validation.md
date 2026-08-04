@@ -1077,6 +1077,23 @@ python3 scripts/analyze_turner_spatial_structure.py \
 The retained checksum-bearing evidence is
 [`benchmarks/ccp/turner-case1-spatial-structure-20260803.json`](../benchmarks/ccp/turner-case1-spatial-structure-20260803.json).
 
+A following 16-bin phase-resolved window completed at step 755600 with 800
+samples in every bin. Mid-plane drift-separated electron temperature spans
+`8.016--9.296 eV`; coherent mean motion contributes only `1.96%` on average
+and at most `3.34%` of mean kinetic energy. Thus RF bulk drift does not explain
+the approximately `6%` low cycle-averaged mid-plane temperature. Half-cycle
+temperature symmetry is `0.480%` relative L2, peak-field symmetry is `0.136%`,
+and the applied voltage satisfies half-cycle antisymmetry to `1.6e-10`
+relative L2. The field maximum correctly transfers between electrodes as the
+voltage polarity reverses.
+
+The density discrepancy persists: the later block has ion `X² = 781.004` and
+`+3.281%` integrated ion bias. Global power/current agreement and exact balance
+remain intact. This moves the next diagnostic toward spatial collision-channel
+energy transfer and phase-selected velocity distributions rather than coherent
+RF drift. The retained evidence is
+[`benchmarks/ccp/turner-case1-phase-structure-20260804.json`](../benchmarks/ccp/turner-case1-phase-structure-20260804.json).
+
 ```sh
 python3 scripts/prepare_turner_sensitivity.py \
   tmp/turner-case1-ensemble-v1/ensemble.json \

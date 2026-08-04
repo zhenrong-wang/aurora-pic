@@ -1,0 +1,78 @@
+{
+  "evidence_version": 1,
+  "case": "Turner helium CCP Case 1",
+  "scope": "post_benchmark_phase_resolved_diagnostic_window",
+  "claim_boundary": "Diagnostic continuation outside the published duration; no published acceptance gate applies.",
+  "run_contract": {
+    "solver_commit": "8909a4e",
+    "seed": 13507,
+    "restart_step": 742800,
+    "start_step": 742801,
+    "end_step": 755600,
+    "steps": 12800,
+    "rf_cycles": 32,
+    "phase_bins": 16,
+    "samples_per_phase_bin": 800,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "checkpoint_version": 9
+  },
+  "phase_resolved_midplane": {
+    "drift_separated_electron_temperature_mean_eV": 8.60105894284461,
+    "drift_separated_electron_temperature_min_eV": 8.015989139870044,
+    "drift_separated_electron_temperature_max_eV": 9.296091521646103,
+    "temperature_half_cycle_relative_l2": 0.004803500993172082,
+    "coherent_drift_energy_fraction_mean": 0.019583690556973732,
+    "coherent_drift_energy_fraction_max": 0.033370654458256266,
+    "electron_to_ion_density_ratio_min": 0.9639664152835103,
+    "electron_to_ion_density_ratio_max": 0.9878453375454475
+  },
+  "phase_resolved_field": {
+    "electrode_voltage_half_cycle_antisymmetry_relative_l2": 1.5762736497064393e-10,
+    "peak_absolute_mean_field_min_V_m": 18683.162323430563,
+    "peak_absolute_mean_field_max_V_m": 29653.92531860082,
+    "peak_field_half_cycle_relative_l2": 0.0013626073568240931,
+    "peak_location": "grounded electrode during the positive driven half-cycle and driven electrode during the negative half-cycle"
+  },
+  "window_average_context": {
+    "ion_density_descriptive_x_squared": 781.0036899374302,
+    "ion_density_relative_l2_percent": 3.958458497501012,
+    "ion_integrated_density_bias_percent": 3.281175158799332,
+    "electron_density_descriptive_x_squared": 1279.3199083702598,
+    "electron_density_relative_l2_percent": 5.111563863748676,
+    "electron_integrated_density_bias_percent": 4.749628305311648,
+    "midplane_effective_electron_temperature_eV": 8.778485839029981,
+    "midplane_temperature_relative_difference_percent": -6.212758130021556,
+    "midplane_ion_density_relative_difference_percent": 5.253593419528091,
+    "ion_current_relative_difference_percent": 1.301698390950623,
+    "electron_power_relative_difference_percent": 0.9947482176256628,
+    "ion_power_relative_difference_percent": 1.7484963437445655,
+    "source_loss_balance_exact": true,
+    "published_acceptance_applicable": false
+  },
+  "interpretation": {
+    "supported": [
+      "Coherent midplane RF drift contributes at most 3.34% of electron kinetic energy, so subtracting bulk drift does not explain the approximately 6% low midplane temperature.",
+      "The half-cycle field response and temperature response are symmetric, and the peak field transfers between electrodes with voltage polarity.",
+      "Global current, power, and exact particle balance remain credible while density and temperature profile discrepancies persist."
+    ],
+    "not_supported": [
+      "The phase-resolved result does not identify which collision channel or velocity-space feature causes the remaining discrepancy.",
+      "The later diagnostic block's larger density bias is not by itself evidence of monotonic secular drift; block-to-block stochastic variation must be quantified."
+    ],
+    "next_target": "Accumulate spatially resolved collision-channel energy loss and energy-resolved electron velocity distributions at selected bulk and sheath phase points."
+  },
+  "provenance_sha256": {
+    "solver_executable": "973e6bf896c3cadca0627559c279561d4888efdea7bddb1f771b8fb7a624895b",
+    "source_checkpoint_742800": "5ac5af5dd290df8669b35a6ea1d5694ac0028c93947b6713be7f510f6cfd30b9",
+    "run_config": "6d231a4daba3be95878ba3291ece7984773788127d08088efc10c12e586a59cc",
+    "phase_moments_csv": "2f9955c2666cb8f4b0002ec35c6edf8bcc5cf5b2eb38246fd9b31249dd4313a5",
+    "phase_fields_csv": "d578e6eb5d6d1003bf201568d2be171c75695d5a85c32da1d908cf2fac090177",
+    "metadata_json": "3848796390e12dd5a4af252e14987fe93e07c3add2203edde0abc7fef8df13a0",
+    "final_checkpoint_755600": "54347bca711d86d225104f964815b62c8c22d890bb736e203bdb6c93ed14002c",
+    "ion_comparison_json": "7be0aed03f333837cbe85a3ac6fe9681ccf93fde1da364282dabf4e08eaa8b61",
+    "electron_comparison_json": "c1cb7cd2fb16d1aa0732402e9ca057cca914ecd314cd0a5d55c44bb7d3e4d3c2",
+    "balance_json": "333df2224dba19b38aa654ccd155042c758e3a42740ec49889e866117d3896b6",
+    "spatial_structure_json": "acc37e61b0399d19e07e26931bb4f7d2f660ae139ae5412bcd92d2ebd20a0a0a"
+  }
+}
