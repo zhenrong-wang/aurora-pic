@@ -686,6 +686,23 @@ growth and remains ineligible for measurement. The failed attempt, scheduler
 correction, recovery chain, and final hashes are retained in
 [`edupic-reference-adaptive-through-cycle32-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle32-20260804.json).
 
+The following campaign advanced cycle 32 to 44 in seven stages totaling 43.62
+s of solver wall time. Population increased from 40,431 to 52,332; the
+full-history total-population slope decreased to `+0.0380` per cycle but is
+still far from stationary. Stage sizing automatically changed from two cycles
+to one as the particle-work ceiling became active.
+
+Observation of the final stage occurred after its immutable report and
+checkpoint existed but before the campaign manifest was known to contain it.
+The coordinator now supports `--resume-existing`: it replays and hashes every
+recorded stage from the original locked checkpoint, then reconciles exactly
+one contiguous completed-but-unrecorded stage directory. Changed, ambiguous,
+or discontinuous chains are rejected. A synthetic interruption regression
+proves incorporation without rerunning the completed stage. The manifest also
+separates accumulated solver-stage wall time from individual coordinator
+invocation overhead. Evidence is
+[`edupic-reference-adaptive-through-cycle44-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle44-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

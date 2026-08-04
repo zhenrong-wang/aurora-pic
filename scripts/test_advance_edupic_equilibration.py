@@ -70,6 +70,29 @@ def main() -> int:
         require(hashlib.sha256((source / "picdata.bin").read_bytes()).hexdigest()
                 == input_hash, "coordinator modified its input checkpoint")
 
+        manifest_path = work / "campaign" / "campaign-report.json"
+        interrupted = json.loads(manifest_path.read_text(encoding="utf-8"))
+        interrupted["stages"].pop()
+        interrupted["latest_state"] = json.loads((
+            work / "campaign" / "stage-000003-000004" / "stage-report.json"
+        ).read_text(encoding="utf-8"))["final_state"]
+        interrupted["completed"] = False
+        interrupted["target_reached"] = False
+        interrupted["stop_reason"] = "stage_completed"
+        interrupted.pop("total_wall_seconds", None)
+        manifest_path.write_text(json.dumps(interrupted), encoding="utf-8")
+        resumed = subprocess.run([
+            *common, "--resume-existing", "--acknowledge-cost", ACK],
+            text=True, capture_output=True)
+        require(resumed.returncode == 0, resumed.stderr)
+        resumed_report = json.loads(resumed.stdout)
+        require(resumed_report["target_reached"] and
+                resumed_report["recovered_unrecorded_stages"] == 1 and
+                resumed_report["stages"][-1].get(
+                    "recovered_after_coordinator_interruption") is True and
+                resumed_report["total_stage_wall_seconds"] > 0.0,
+                "coordinator did not reconcile a completed unrecorded stage")
+
         limited = list(common)
         limited[4] = str(work / "limited-campaign")
         limited[limited.index("--max-wall-seconds") + 1] = "5"

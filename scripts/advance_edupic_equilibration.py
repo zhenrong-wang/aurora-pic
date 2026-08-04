@@ -39,6 +39,43 @@ def atomic_json(path: Path, value: dict) -> None:
     os.replace(temporary, path)
 
 
+def inspect_stage(stage_dir: Path, current: dict, binary_sha256: str) -> tuple[dict, dict]:
+    path = stage_dir / "stage-report.json"
+    try:
+        stage = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise AdvanceError(f"cannot inspect completed stage {stage_dir}: {error}") from error
+    if (stage.get("completed") is not True or
+            stage.get("source_binary", {}).get("sha256") != binary_sha256 or
+            stage.get("initial_state", {}).get("sha256") != current["sha256"]):
+        raise AdvanceError(f"completed stage contract differs in {stage_dir}")
+    final = stage.get("final_state", {})
+    on_disk = checkpoint_state(stage_dir / "picdata.bin")
+    if final != on_disk or final.get("cycles", 0) <= current["cycles"]:
+        raise AdvanceError(f"completed stage final checkpoint differs in {stage_dir}")
+    return stage, final
+
+
+def stage_summary(stage_dir: Path, stage: dict, current: dict,
+                  predicted_seconds: float | None,
+                  recovered: bool = False) -> dict:
+    final = stage["final_state"]
+    result = {
+        "start_cycle": current["cycles"], "end_cycle": final["cycles"],
+        "cycles": final["cycles"] - current["cycles"],
+        "wall_seconds": stage["stage"]["wall_seconds"],
+        "predicted_wall_seconds_with_safety_factor": predicted_seconds,
+        "initial_total_particles": current["total_particles"],
+        "final_total_particles": final["total_particles"],
+        "input_checkpoint_sha256": current["sha256"],
+        "output_checkpoint_sha256": final["sha256"],
+        "stage_report_sha256": sha256(stage_dir / "stage-report.json"),
+    }
+    if recovered:
+        result["recovered_after_coordinator_interruption"] = True
+    return result
+
+
 def advance(args: argparse.Namespace) -> dict:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise AdvanceError("campaign requires --acknowledge-cost " + ACKNOWLEDGEMENT)
@@ -51,8 +88,6 @@ def advance(args: argparse.Namespace) -> dict:
     executable = args.executable.resolve()
     input_dir = args.input_state_dir.resolve()
     campaign_dir = args.campaign_dir.resolve()
-    if campaign_dir.exists():
-        raise AdvanceError(f"refusing to overwrite campaign directory: {campaign_dir}")
     if not executable.is_file() or sha256(executable) != args.expected_binary_sha256.lower():
         raise AdvanceError("external binary is missing or differs from locked SHA-256")
     initial = checkpoint_state(input_dir / "picdata.bin")
@@ -61,25 +96,84 @@ def advance(args: argparse.Namespace) -> dict:
     if args.target_cycle <= initial["cycles"]:
         raise AdvanceError("target cycle must be after the input checkpoint")
 
-    campaign_dir.mkdir(parents=True)
-    report = {
+    expected_limits = {"maximum_total_wall_seconds": args.max_wall_seconds,
+                       "maximum_stage_wall_seconds": args.stage_timeout_seconds,
+                       "maximum_stage_cycles": args.max_stage_cycles,
+                       "maximum_stage_initial_particle_steps":
+                           args.max_stage_initial_particle_steps}
+    new_report = {
         "schema_version": 1, "case_id": "edupic-1.0-default-argon-ccp",
         "scope": "bounded_adaptive_equilibration_advance", "physics_claim": "none",
         "source_binary_sha256": args.expected_binary_sha256.lower(),
         "initial_state": initial, "target_cycle": args.target_cycle,
-        "limits": {"maximum_total_wall_seconds": args.max_wall_seconds,
-                   "maximum_stage_wall_seconds": args.stage_timeout_seconds,
-                   "maximum_stage_cycles": args.max_stage_cycles,
-                   "maximum_stage_initial_particle_steps":
-                       args.max_stage_initial_particle_steps},
+        "limits": expected_limits,
         "stages": [], "completed": False, "target_reached": False,
         "stop_reason": "campaign_started",
     }
     manifest = campaign_dir / "campaign-report.json"
-    atomic_json(manifest, report)
     runner = Path(__file__).resolve().with_name("run_edupic_stage.py")
     current_dir = input_dir
     current = initial
+    if campaign_dir.exists():
+        if not args.resume_existing:
+            raise AdvanceError(f"refusing to overwrite campaign directory: {campaign_dir}")
+        try:
+            report = json.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raise AdvanceError(f"cannot resume campaign manifest: {error}") from error
+        if (report.get("source_binary_sha256") != args.expected_binary_sha256.lower() or
+                report.get("initial_state", {}).get("sha256") != initial["sha256"] or
+                report.get("target_cycle") != args.target_cycle or
+                report.get("limits") != expected_limits):
+            raise AdvanceError("resume arguments differ from the campaign contract")
+        for recorded in report.get("stages", []):
+            if recorded.get("start_cycle") != current["cycles"]:
+                raise AdvanceError("recorded campaign stage chain is discontinuous")
+            stage_dir = campaign_dir / (
+                f"stage-{recorded['start_cycle']:06d}-{recorded['end_cycle']:06d}")
+            stage, final = inspect_stage(stage_dir, current,
+                                         args.expected_binary_sha256.lower())
+            expected = stage_summary(
+                stage_dir, stage, current,
+                recorded.get("predicted_wall_seconds_with_safety_factor"),
+                recovered=recorded.get(
+                    "recovered_after_coordinator_interruption", False))
+            if recorded != expected:
+                raise AdvanceError("recorded stage summary differs from its report")
+            current_dir, current = stage_dir, final
+        recovered = 0
+        while current["cycles"] < args.target_cycle:
+            candidates = sorted(
+                path for path in campaign_dir.glob(
+                    f"stage-{current['cycles']:06d}-*")
+                if (path / "stage-report.json").is_file())
+            if not candidates:
+                break
+            if len(candidates) != 1:
+                raise AdvanceError("multiple unrecorded stages begin at the latest cycle")
+            stage_dir = candidates[0]
+            stage, final = inspect_stage(stage_dir, current,
+                                         args.expected_binary_sha256.lower())
+            if final["cycles"] > args.target_cycle:
+                raise AdvanceError("unrecorded stage extends beyond campaign target")
+            report["stages"].append(stage_summary(
+                stage_dir, stage, current, None, recovered=True))
+            current_dir, current = stage_dir, final
+            report["latest_state"] = current
+            recovered += 1
+            atomic_json(manifest, report)
+        report.pop("failure", None)
+        report["recovered_unrecorded_stages"] = (
+            report.get("recovered_unrecorded_stages", 0) + recovered)
+        report["completed"] = False
+        report["stop_reason"] = "resume_reconciled"
+        atomic_json(manifest, report)
+    else:
+        if args.resume_existing:
+            raise AdvanceError("cannot resume a campaign directory that does not exist")
+        campaign_dir.mkdir(parents=True)
+        report = new_report
+        atomic_json(manifest, report)
     started = time.perf_counter()
     while current["cycles"] < args.target_cycle:
         elapsed = time.perf_counter() - started
@@ -136,27 +230,27 @@ def advance(args: argparse.Namespace) -> dict:
                                  "stderr": stage.stderr[-4000:]}
             atomic_json(manifest, report)
             raise AdvanceError(f"bounded stage failed; retained under {stage_dir}")
-        stage_report_path = stage_dir / "stage-report.json"
-        stage_report = json.loads(stage_report_path.read_text(encoding="utf-8"))
-        final = stage_report["final_state"]
+        stage_report, final = inspect_stage(
+            stage_dir, current, args.expected_binary_sha256.lower())
         if final["cycles"] != expected_end:
             raise AdvanceError("completed stage report has unexpected final cycle")
-        report["stages"].append({
-            "start_cycle": current["cycles"], "end_cycle": final["cycles"],
-            "cycles": cycles, "wall_seconds": stage_report["stage"]["wall_seconds"],
-            "predicted_wall_seconds_with_safety_factor": predicted_seconds,
-            "initial_total_particles": current["total_particles"],
-            "final_total_particles": final["total_particles"],
-            "input_checkpoint_sha256": current["sha256"],
-            "output_checkpoint_sha256": final["sha256"],
-            "stage_report_sha256": sha256(stage_report_path),
-        })
+        report["stages"].append(stage_summary(
+            stage_dir, stage_report, current, predicted_seconds))
         current_dir = stage_dir
         current = final
         report["latest_state"] = current
         report["stop_reason"] = "stage_completed"
         atomic_json(manifest, report)
-    report["total_wall_seconds"] = time.perf_counter() - started
+    invocation_wall_seconds = time.perf_counter() - started
+    report.setdefault("invocations", []).append({
+        "resume_existing": args.resume_existing,
+        "coordinator_wall_seconds": invocation_wall_seconds,
+    })
+    report["total_coordinator_wall_seconds_recorded"] = sum(
+        value["coordinator_wall_seconds"] for value in report["invocations"])
+    report["total_stage_wall_seconds"] = sum(
+        value["wall_seconds"] for value in report["stages"])
+    report["total_wall_seconds"] = invocation_wall_seconds
     report["target_reached"] = current["cycles"] >= args.target_cycle
     report["completed"] = True
     if report["target_reached"]:
@@ -179,6 +273,7 @@ def main() -> int:
     parser.add_argument("--max-stage-initial-particle-steps", type=positive_integer,
                         default=250_000_000)
     parser.add_argument("--acknowledge-cost")
+    parser.add_argument("--resume-existing", action="store_true")
     args = parser.parse_args()
     try:
         report = advance(args)

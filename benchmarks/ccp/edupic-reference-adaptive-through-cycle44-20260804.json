@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_adaptive_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Cycle 44 remains early equilibration and below the predeclared cycle-1500 stationarity eligibility gate. No measurement or cross-code comparison is authorized.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "campaign": {
+    "start_cycle": 32,
+    "target_cycle": 44,
+    "target_reached": true,
+    "completed_stages": 7,
+    "total_stage_wall_seconds": 43.619460262940265,
+    "maximum_total_wall_seconds_per_invocation": 55,
+    "maximum_stage_wall_seconds": 15,
+    "maximum_stage_cycles": 2,
+    "maximum_stage_initial_particle_steps": 400000000,
+    "campaign_report_sha256": "e95a42b66833ac931127d5237b7d0f00c6cf2c642e528d7f935d743db90cf0c9"
+  },
+  "stage_progress": [
+    {"cycles": "32-34", "wall_seconds": 6.563515496905893, "final_particles": 42573},
+    {"cycles": "34-36", "wall_seconds": 6.612978789024055, "final_particles": 44671},
+    {"cycles": "36-38", "wall_seconds": 6.755902767996304, "final_particles": 46627},
+    {"cycles": "38-40", "wall_seconds": 7.03056765103247, "final_particles": 48462},
+    {"cycles": "40-42", "wall_seconds": 7.459019914967939, "final_particles": 50445},
+    {"cycles": "42-43", "wall_seconds": 4.629458370967768, "final_particles": 51434},
+    {"cycles": "43-44", "wall_seconds": 4.568017272045836, "final_particles": 52332}
+  ],
+  "recovery_contract": {
+    "resume_existing": "replay every manifest-recorded stage from the locked initial checkpoint and validate its report and on-disk final checkpoint",
+    "unrecorded_stage_reconciliation": "incorporate exactly one contiguous completed stage-report directory after an interrupted coordinator",
+    "ambiguous_or_changed_chain": "reject",
+    "synthetic_regression_passed": true
+  },
+  "latest_state": {
+    "cycle": 44,
+    "electrons": 23947,
+    "ions": 28385,
+    "total_particles": 52332,
+    "checkpoint_bytes": 1674656,
+    "checkpoint_sha256": "87de322911bcc9630563d3b1335f2acdeca4577825663d189165c424ad2039c6",
+    "convergence_sha256": "11f89c33d1ca034d368a889c9f9df6d9dba00a35abe032a5a21da2819597bcdb"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "total_population_relative_slope_per_cycle": 0.03802598908010775,
+    "total_population_endpoint_change_relative_to_mean": 1.6343775972318808,
+    "analysis_sha256": "67cdda2f5428663ff83a97b68e83993cd610b810a947827d5a959017261be0c0"
+  }
+}
