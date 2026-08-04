@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_adaptive_equilibration_advance",
+  "physics_claim": "none",
+  "claim_boundary": "Cycles 8-16 are early equilibration. The run is below the predeclared minimum cycle and cannot authorize measurement or cross-code comparison.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "campaign": {
+    "start_cycle": 8,
+    "target_cycle": 16,
+    "target_reached": true,
+    "total_wall_seconds": 10.748676015995443,
+    "maximum_total_wall_seconds": 20,
+    "maximum_stage_wall_seconds": 10,
+    "maximum_stage_cycles": 2,
+    "maximum_stage_initial_particle_steps": 200000000,
+    "campaign_report_sha256": "1cd37c25cb362d311fd8e0c64dd198a4095c6e633b80a0ecea90f9dda2a27614"
+  },
+  "stages": [
+    {"cycles": "8-10", "wall_seconds": 2.11604916700162, "initial_particles": 13129, "final_particles": 15558, "report_sha256": "951b734e0bd923b6f4ddfc0d82660ec0f1418dfda98055f273300b3e45ac29e1"},
+    {"cycles": "10-12", "wall_seconds": 2.518148473929614, "initial_particles": 15558, "final_particles": 17897, "report_sha256": "65c63accb581d034ad962b22399a6f7fa15eea17d35778c721dc66820fdd58a7"},
+    {"cycles": "12-14", "wall_seconds": 2.7846709979930893, "initial_particles": 17897, "final_particles": 20258, "report_sha256": "e3be7662c8de4930b37a3b4d2c719b246557b4ac746f3fe74ca0016046f6d8c9"},
+    {"cycles": "14-16", "wall_seconds": 3.127110172994435, "initial_particles": 20258, "final_particles": 22618, "report_sha256": "c2b678585f9aba6b61b15d1481f8ab69771701f5da640c1620fae828ab9bf4b7"}
+  ],
+  "latest_state": {
+    "cycle": 16,
+    "electrons": 9463,
+    "ions": 13155,
+    "total_particles": 22618,
+    "checkpoint_bytes": 723808,
+    "checkpoint_sha256": "2cbd440eace16d5f192896e261d2542ebc258a0bf540e23b3f33a935990c714e",
+    "convergence_sha256": "ba4502b3684e9fd7fbadbfcffe6b44da707e793732afb369daaf03494dcc4118"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "total_population_relative_slope_per_cycle": 0.09022703187402363,
+    "total_population_endpoint_change_relative_to_mean": 1.3581512520054613,
+    "analysis_sha256": "dc5484e97e17b3fdfe519abf333c20bf27af838fa1af1db76d7c4999d20e4da6"
+  }
+}

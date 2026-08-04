@@ -655,6 +655,22 @@ validation. Current status is correctly ineligible and nonstationary. Evidence
 is
 [`edupic-reference-equilibration-through-cycle8-20260804.json`](../benchmarks/ccp/edupic-reference-equilibration-through-cycle8-20260804.json).
 
+`advance_edupic_equilibration.py` now chains these immutable stages without
+manual checkpoint handling. It verifies the initial binary and checkpoint
+hashes, sizes every stage from the current population and a particle-timestep
+budget, limits individual and aggregate wall time, delegates to the one-core
+runner, and atomically updates a recovery manifest after every completed
+stage. A failed or interrupted stage cannot overwrite its input or erase the
+last completed checkpoint; a new bounded campaign can restart from that stage.
+
+The first adaptive campaign used four two-cycle stages to advance cycle 8 to
+16 in 10.75 s under a 20 s aggregate ceiling. Population rose from 13,129 to
+22,618 while per-stage wall time rose from 2.12 to 3.13 s. The relative total
+population slope over all 16 cycles decreased from the cycle-8 diagnostic but
+remains strongly positive at `+0.0902` per cycle. It is therefore still early
+equilibration and ineligible for measurement. Evidence is
+[`edupic-reference-adaptive-through-cycle16-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle16-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

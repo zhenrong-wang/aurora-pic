@@ -19,7 +19,8 @@ import time
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_BOUNDED_EDUPIC_STAGE"
 TIMESTEPS_PER_CYCLE = 4000
 HARD_CYCLE_LIMIT = 16
-HARD_INITIAL_PARTICLE_STEP_LIMIT = 250_000_000
+HARD_INITIAL_PARTICLE_STEP_LIMIT = 1_000_000_000
+HARD_TIMEOUT_SECONDS = 120
 MAX_PARTICLES_PER_SPECIES = 1_000_000
 
 
@@ -132,6 +133,8 @@ def run(args: argparse.Namespace) -> dict:
         raise StageError("stage requires --acknowledge-cost " + ACKNOWLEDGEMENT)
     if args.cycles > HARD_CYCLE_LIMIT:
         raise StageError(f"cycles exceed built-in limit {HARD_CYCLE_LIMIT}")
+    if args.timeout_seconds > HARD_TIMEOUT_SECONDS:
+        raise StageError(f"timeout exceeds built-in limit {HARD_TIMEOUT_SECONDS} seconds")
     executable = args.executable.resolve()
     input_dir = args.input_state_dir.resolve()
     stage_dir = args.stage_dir.resolve()

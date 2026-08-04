@@ -113,6 +113,8 @@ jobs:
         run: python3 scripts/test_edupic_stage.py
       - name: Validate eduPIC convergence analysis
         run: PYTHONPATH=scripts python3 scripts/test_analyze_edupic_convergence.py
+      - name: Validate adaptive eduPIC advancement
+        run: PYTHONPATH=scripts python3 scripts/test_advance_edupic_equilibration.py
       - name: Validate Hall reference normalization
         run: python3 scripts/test_normalize_hall_reference.py
       - name: Run bounded Hall micro pilot
