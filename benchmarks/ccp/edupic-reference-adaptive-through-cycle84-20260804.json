@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_adaptive_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Cycle 84 remains below the predeclared cycle-1500 stationarity eligibility gate. Recent-window trends are descriptive only and still materially nonstationary.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "primary_campaign": {
+    "start_cycle": 74,
+    "planned_target_cycle": 84,
+    "last_completed_cycle": 82,
+    "completed_stages": 4,
+    "stop_reason": "insufficient_stage_timeout",
+    "target_reached": false,
+    "total_coordinator_wall_seconds": 47.146581965032965,
+    "total_stage_wall_seconds": 46.89472145785112,
+    "input_preserved": true,
+    "campaign_report_sha256": "fb98d8e4cad2264327bfced45bb0012c79bd89d18076487fc66acd19d73df1e6"
+  },
+  "completion_campaign": {
+    "start_cycle": 82,
+    "target_cycle": 84,
+    "target_reached": true,
+    "stage_wall_seconds": 12.025638703024015,
+    "coordinator_wall_seconds": 12.081901688943617,
+    "campaign_report_sha256": "62e9e56c689ffcb76f9bb346e83bd009fb7a91b7a7af1581ac565a3517a1facf"
+  },
+  "latest_state": {
+    "cycle": 84,
+    "electrons": 39153,
+    "ions": 43853,
+    "total_particles": 83006,
+    "checkpoint_sha256": "03a7f579120c9c3c8a59f92be1cdc263c0f95b6262831a9d80dd87b9feff3b4f",
+    "convergence_sha256": "e7dc9442d3d079e13637b5a792f991103cdb4adc5a140afe5d1122e2f4f28745"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "full_history_total_population_relative_slope_per_cycle": 0.019626689483552968,
+    "full_history_25cycle_block_means": [18882.32, 46322.4, 68191.36],
+    "provisional_recent_window": {
+      "claim": "descriptive_only_not_a_stationarity_gate",
+      "cycles": "60-84",
+      "samples": 25,
+      "total_population_mean": 74848.68,
+      "total_population_relative_slope_per_cycle": 0.009473976232909057,
+      "total_population_endpoint_change_relative_to_mean": 0.22732531822872495
+    },
+    "analysis_sha256": "d941668807bc08607fb2456bf0a7b1365fb7e6146c708353f065ee00cd25921b"
+  }
+}

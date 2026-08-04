@@ -737,6 +737,17 @@ its mean. The recent rate is declining, but it remains more than two orders of
 magnitude above the formal `1e-4`-per-cycle limit. Evidence is
 [`edupic-reference-adaptive-through-cycle74-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle74-20260804.json).
 
+The next invocation advanced cycle 74 to 82 in four two-cycle stages, then
+stopped cleanly because the safety-adjusted next-stage prediction exceeded the
+remaining stage timeout. A separate hash-locked two-cycle invocation completed
+cycle 84. Population is 83,006. The first three complete 25-cycle block means
+are 18,882, 46,322, and 68,191, showing the long startup trajectory directly.
+The descriptive cycles 60--84 window has mean 74,849, relative slope
+`+0.00947` per cycle, and endpoint change 22.7% of its mean. Current growth is
+now below 1% per cycle but remains approximately 95 times the formal slope
+limit. Evidence is
+[`edupic-reference-adaptive-through-cycle84-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle84-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
