@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_external_equilibration_stage",
+  "physics_claim": "none",
+  "claim_boundary": "Cycles 2-3 continue a low-population initialization state. They verify the guarded stage/checkpoint workflow only and do not establish stationarity or cross-code agreement.",
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247"
+  },
+  "resource_policy": {
+    "cpu_affinity_count": 1,
+    "nice_increment": 10,
+    "timeout_seconds": 10,
+    "initial_particle_step_limit": 40000000,
+    "initial_particle_steps": 33224000
+  },
+  "stage": {
+    "start_cycle": 1,
+    "end_cycle": 3,
+    "requested_cycles": 2,
+    "wall_seconds": 0.8476764520164579,
+    "cycles_per_wall_second": 2.359390773734941
+  },
+  "initial_state": {
+    "electrons": 835,
+    "ions": 3318,
+    "total_particles": 4153,
+    "checkpoint_sha256": "b3ee5d73ad273a3482fc5fc91b613326f5eb71ec2c880b14ad2051aba1e513ae"
+  },
+  "cycle_population": [
+    {"cycle": 2, "electrons": 1326, "ions": 4092, "total_particles": 5418},
+    {"cycle": 3, "electrons": 1951, "ions": 4837, "total_particles": 6788}
+  ],
+  "final_state": {
+    "electrons": 1951,
+    "ions": 4837,
+    "total_particles": 6788,
+    "checkpoint_bytes": 217248,
+    "checkpoint_sha256": "db40ee8872917322be8ae8335427ee091cf9d9fa72c5e1fa702bae898d133a25",
+    "convergence_sha256": "1876a25b39fc3f6e879820d35a4687026b9c4a0e98920da184f1242f19ef94b8"
+  },
+  "completed": true
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_external_equilibration_stage",
+  "physics_claim": "none",
+  "claim_boundary": "One locked continuation cycle verifies the strengthened binary/input hash gates. The low-cycle population is rapidly changing and is not stationary.",
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "binary_locked_before_execution": true
+  },
+  "resource_policy": {
+    "cpu_affinity_count": 1,
+    "nice_increment": 10,
+    "timeout_seconds": 10,
+    "initial_particle_step_limit": 30000000,
+    "initial_particle_steps": 27152000
+  },
+  "stage": {
+    "start_cycle": 3,
+    "end_cycle": 4,
+    "requested_cycles": 1,
+    "wall_seconds": 0.7028677670750767,
+    "cycles_per_wall_second": 1.4227427218087028
+  },
+  "initial_state": {
+    "electrons": 1951,
+    "ions": 4837,
+    "total_particles": 6788,
+    "checkpoint_sha256": "db40ee8872917322be8ae8335427ee091cf9d9fa72c5e1fa702bae898d133a25",
+    "checkpoint_locked_before_execution": true
+  },
+  "final_state": {
+    "electrons": 2564,
+    "ions": 5545,
+    "total_particles": 8109,
+    "checkpoint_bytes": 259520,
+    "checkpoint_sha256": "90032eb352a91b878eadcfa492724f9ae3df30ca543cbfeec3461b3de00f9340",
+    "convergence_sha256": "62ee263d20c1954173f9e30b1f7701ccc559672bbf89421757dfc9fc7746c01d"
+  },
+  "completed": true
+}

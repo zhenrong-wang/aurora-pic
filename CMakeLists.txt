@@ -99,6 +99,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_phase_eedf.py
   scripts/export_phase_eedf.py
   scripts/compare_phase_eedf.py
+  scripts/run_edupic_stage.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py
   scripts/prepare_hall_convergence.py scripts/analyze_hall_convergence.py
   scripts/analyze_hall_flux_stationarity.py

@@ -258,6 +258,15 @@ def smoke_install_tree(
         prefix / "share" / "aurorapic" / "scripts" /
         "validate_kinetic_benchmarks.py"
     )
+    for script in (
+        "export_phase_eedf.py", "compare_phase_eedf.py",
+        "analyze_phase_eedf.py", "run_edupic_stage.py",
+    ):
+        require_file(prefix / "share" / "aurorapic" / "scripts" / script)
+    require_file(
+        prefix / "share" / "doc" / "AuroraPIC" /
+        "phase-eedf-interchange.md"
+    )
     require_file(
         prefix / "share" / "doc" / "AuroraPIC" /
         "kinetic-validation.md"

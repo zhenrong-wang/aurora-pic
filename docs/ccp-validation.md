@@ -615,6 +615,30 @@ gated behind measured checkpoint blocks. The checksum-bearing runtime record
 is
 [`edupic-reference-init-pilot-20260804.json`](../benchmarks/ccp/edupic-reference-init-pilot-20260804.json).
 
+`run_edupic_stage.py` now enforces the external equilibration ladder. Each
+stage copies rather than overwrites its input state, validates the binary
+checkpoint layout against its exact byte count, cross-checks cycle and species
+counts with `conv.dat`, limits requested cycles and initial particle-timesteps,
+pins one CPU, applies low priority and a hard timeout, captures output, and
+writes a hash-bearing report only after exact cycle coverage is proved. The
+synthetic regression also verifies that the input checkpoint is unchanged.
+
+The first guarded continuation advanced only cycles 2--3. It completed in
+0.85 s under a 10 s timeout and a 40 million initial-particle-timestep limit;
+the total population increased from 4,153 to 6,788. This remains rapidly
+evolving initialization, not stationarity. Its purpose is to prove the safe
+stage mechanism before increasing any block size. Evidence is
+[`edupic-reference-equilibration-stage-0001-0003-20260804.json`](../benchmarks/ccp/edupic-reference-equilibration-stage-0001-0003-20260804.json).
+
+The runner was then strengthened to require predeclared executable and input
+checkpoint SHA-256 values. A one-cycle exercise of those gates advanced cycle
+3 to 4 in 0.70 s; population rose again, from 6,788 to 8,109. The preserved
+cycle-4 checkpoint is the only authorized input to the next stage. The result
+also demonstrates why block size must grow from measured state rather than
+startup timing: throughput already fell from 2.36 to 1.42 cycles/s as the
+population increased. Evidence is
+[`edupic-reference-equilibration-stage-0003-0004-20260804.json`](../benchmarks/ccp/edupic-reference-equilibration-stage-0003-0004-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
