@@ -714,6 +714,20 @@ that the default eduPIC discharge is still forming, not merely fluctuating
 around a stationary population. Evidence is
 [`edupic-reference-adaptive-through-cycle54-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle54-20260804.json).
 
+Another five two-cycle stages reached cycle 64 in 48.56 s. Population rose to
+69,145. The full-history total slope is `+0.0262` per cycle and the two
+complete 25-cycle block means still have a 69.5% relative range.
+
+The convergence analyzer now also reports a 25-cycle provisional recent
+window, explicitly labeled descriptive and excluded from the stationarity
+gate. Over cycles 40--64, electron, ion, and total-population relative slopes
+are respectively `+0.0155`, `+0.0136`, and `+0.0145` per cycle; total
+population changes by 34.9% relative to that window's mean. This is a better
+measure of current equilibration speed than the entire startup history, while
+leaving the cycle-1,500 and final-100-cycle contract unchanged. Both views say
+the discharge is still substantially transient. Evidence is
+[`edupic-reference-adaptive-through-cycle64-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle64-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

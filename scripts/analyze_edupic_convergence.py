@@ -81,12 +81,15 @@ def metric(rows: list[dict[str, int]], field: str, block_cycles: int) -> dict:
 
 def analyze(rows: list[dict[str, int]], window_cycles: int, block_cycles: int,
             max_relative_slope: float, max_block_range: float,
-            minimum_cycle: int = 1500) -> dict:
+            minimum_cycle: int = 1500,
+            provisional_recent_cycles: int = 25) -> dict:
     if window_cycles % block_cycles:
         raise ConvergenceError("window cycles must be an integer multiple of block cycles")
     required_blocks = window_cycles // block_cycles
     if required_blocks < 4:
         raise ConvergenceError("stationarity window must contain at least four blocks")
+    if provisional_recent_cycles < 2:
+        raise ConvergenceError("provisional recent window must contain at least two cycles")
     eligible = len(rows) >= window_cycles and rows[-1]["cycle"] >= minimum_cycle
     window = rows[-window_cycles:] if eligible else rows
     metrics = {field: metric(window, field, block_cycles)
@@ -104,6 +107,9 @@ def analyze(rows: list[dict[str, int]], window_cycles: int, block_cycles: int,
     stationary = eligible and all(
         item["relative_slope_passes"] and item["block_range_passes"]
         for item in criteria.values())
+    recent = rows[-min(len(rows), provisional_recent_cycles):]
+    recent_metrics = {field: metric(recent, field, len(recent))
+                      for field in ("electrons", "ions", "total_particles")}
     return {
         "schema_version": 1, "case_id": "edupic-1.0-default-argon-ccp",
         "scope": "population_stationarity_gate", "physics_claim": "none",
@@ -115,12 +121,18 @@ def analyze(rows: list[dict[str, int]], window_cycles: int, block_cycles: int,
                      "block_cycles": block_cycles,
                      "required_blocks": required_blocks,
                      "minimum_cycle": minimum_cycle,
+                     "provisional_recent_cycles": provisional_recent_cycles,
                      "maximum_absolute_relative_slope_per_cycle": max_relative_slope,
                      "maximum_block_mean_range_relative_to_window_mean": max_block_range},
         "window": {"eligible": eligible, "samples": len(window),
                    "first_cycle": window[0]["cycle"],
                    "last_cycle": window[-1]["cycle"]},
         "metrics": metrics, "criteria": criteria, "stationary": stationary,
+        "provisional_recent": {
+            "claim": "descriptive_only_not_a_stationarity_gate",
+            "samples": len(recent), "first_cycle": recent[0]["cycle"],
+            "last_cycle": recent[-1]["cycle"], "metrics": recent_metrics,
+        },
     }
 
 
@@ -130,6 +142,8 @@ def main() -> int:
     parser.add_argument("--window-cycles", type=positive_integer, default=100)
     parser.add_argument("--block-cycles", type=positive_integer, default=25)
     parser.add_argument("--minimum-cycle", type=positive_integer, default=1500)
+    parser.add_argument("--provisional-recent-cycles", type=positive_integer,
+                        default=25)
     parser.add_argument("--max-relative-slope-per-cycle", type=nonnegative,
                         default=1e-4)
     parser.add_argument("--max-block-range-relative", type=nonnegative,
@@ -140,7 +154,8 @@ def main() -> int:
     try:
         report = analyze(read_history(args.convergence), args.window_cycles,
                          args.block_cycles, args.max_relative_slope_per_cycle,
-                         args.max_block_range_relative, args.minimum_cycle)
+                         args.max_block_range_relative, args.minimum_cycle,
+                         args.provisional_recent_cycles)
     except ConvergenceError as error:
         print(f"eduPIC convergence analysis failed: {error}", file=sys.stderr)
         return 2

@@ -37,7 +37,10 @@ def main() -> int:
         rising_report = analyze(read_history(rising), 100, 25, 1e-4, 0.02,
                                 minimum_cycle=100)
         require(not rising_report["stationary"] and not rising_report["criteria"]
-                ["total_particles"]["relative_slope_passes"],
+                ["total_particles"]["relative_slope_passes"] and
+                rising_report["provisional_recent"]["samples"] == 25 and
+                rising_report["provisional_recent"]["metrics"]
+                ["total_particles"]["relative_slope_per_cycle"] > 0.0,
                 "rising synthetic history passed stationarity")
 
         short_report = analyze(read_history(rising)[:8], 100, 25, 1e-4, 0.02)
