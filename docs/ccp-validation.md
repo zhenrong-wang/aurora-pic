@@ -756,6 +756,20 @@ Equilibration is consistently decelerating, but the total recent slope remains
 about 80 times the formal limit and no measurement is authorized. Evidence is
 [`edupic-reference-adaptive-through-cycle94-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle94-20260804.json).
 
+The next five two-cycle stages reached cycle 104 in 67.81 s. Population is
+95,355. This is the first checkpoint with four complete 25-cycle population
+blocks: their total-population means are 18,882, 46,322, 68,191, and 85,535.
+The block range is 118% of the 104-cycle mean, and the full-history relative
+slope is `+0.0155` per cycle. The descriptive cycles 80--104 window has mean
+population 88,040; electron, ion, and total relative slopes are `+0.00743`,
+`+0.00677`, and `+0.00708` per cycle, with an endpoint increase equal to 16.9%
+of its mean. The decreasing recent slope is encouraging for equilibration,
+but it remains about 71 times the formal limit. Cycle 104 is also far below
+the predeclared cycle-1,500 eligibility boundary, so the four-block result is
+diagnostic only and neither measurement nor cross-code comparison is
+authorized. Evidence is
+[`edupic-reference-adaptive-through-cycle104-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle104-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

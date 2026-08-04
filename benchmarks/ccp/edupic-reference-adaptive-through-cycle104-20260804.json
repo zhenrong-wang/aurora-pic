@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_adaptive_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Cycle 104 supplies four complete 25-cycle population blocks but remains below the predeclared cycle-1500 stationarity eligibility gate. Both the full history and descriptive recent window remain materially nonstationary, so no measurement or cross-code comparison is authorized.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "campaign": {
+    "start_cycle": 94,
+    "target_cycle": 104,
+    "target_reached": true,
+    "completed_stages": 5,
+    "cycles_per_stage": 2,
+    "total_coordinator_wall_seconds": 67.81147869804408,
+    "total_stage_wall_seconds": 67.51831480290275,
+    "maximum_total_wall_seconds": 90,
+    "maximum_stage_wall_seconds": 30,
+    "maximum_stage_initial_particle_steps": 1000000000,
+    "campaign_report_sha256": "e6469226e15fa354c266a7ced4f26016cfb0d05256b54893c3c277c3b03d0208"
+  },
+  "stage_progress": [
+    {"cycles": "94-96", "wall_seconds": 13.121735253022052, "final_particles": 90614},
+    {"cycles": "96-98", "wall_seconds": 13.253102718037553, "final_particles": 91778},
+    {"cycles": "98-100", "wall_seconds": 13.343518351903185, "final_particles": 93075},
+    {"cycles": "100-102", "wall_seconds": 13.747568251914345, "final_particles": 94274},
+    {"cycles": "102-104", "wall_seconds": 14.052390228025615, "final_particles": 95355}
+  ],
+  "latest_state": {
+    "cycle": 104,
+    "electrons": 45263,
+    "ions": 50092,
+    "total_particles": 95355,
+    "checkpoint_sha256": "3fe75253f20fa8b3463d70d98de9121d6fda217c17e3839633afe9f88b8a978f",
+    "convergence_sha256": "1176bec232321959ce0da512e2fe87838fd9febda6ee28de4c10a83aa66d5f5e"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "full_history_samples": 104,
+    "full_history_total_population_relative_slope_per_cycle": 0.015537133420370086,
+    "full_history_total_population_block_means": [18882.32, 46322.4, 68191.36, 85534.8],
+    "full_history_total_population_block_mean_range_relative_to_window_mean": 1.1846654661400393,
+    "provisional_recent_window": {
+      "claim": "descriptive_only_not_a_stationarity_gate",
+      "cycles": "80-104",
+      "samples": 25,
+      "total_population_mean": 88040.32,
+      "electron_relative_slope_per_cycle": 0.007429385972852852,
+      "ion_relative_slope_per_cycle": 0.0067737376313437726,
+      "total_population_relative_slope_per_cycle": 0.007083825998046209,
+      "total_population_endpoint_change_relative_to_mean": 0.16860456663492362
+    },
+    "analysis_sha256": "d0726fa9d574f88145847dcdc8f42972e562ac45b503af1501def5d0049dcc1a"
+  }
+}
