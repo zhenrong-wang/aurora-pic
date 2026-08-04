@@ -31,6 +31,7 @@ constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
 constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
 constexpr const char* kCheckpointMagicV10 = "AuroraPIC-checkpoint-v10";
+constexpr const char* kCheckpointMagicV11 = "AuroraPIC-checkpoint-v11";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -566,6 +567,16 @@ Simulation::Simulation(Config cfg)
             bin.electric.assign(grid_.nx(), 0.0);
             bin.electric_squared.assign(grid_.nx(), 0.0);
         }
+        spatial_collision_energy_sums_.assign(
+            collision_totals_.channel_names.size(),
+            std::vector<double>(grid_.nx(), 0.0));
+        spatial_collision_phase_steps_.assign(
+            cfg_.spatial_average.phase_bins, 0);
+        spatial_collision_phase_energy_sums_.assign(
+            cfg_.spatial_average.phase_bins,
+            std::vector<std::vector<double>>(
+                collision_totals_.channel_names.size(),
+                std::vector<double>(grid_.nx(), 0.0)));
     }
 }
 
@@ -787,10 +798,11 @@ void Simulation::apply_collisions() {
                           ? particle.velocity_y * particle.velocity_y +
                             particle.velocity_z * particle.velocity_z
                           : 0.0));
-                collision_totals_.channel_energy_change[0] +=
-                    energy_after - energy_before;
-                collision_interval_.channel_energy_change[0] +=
-                    energy_after - energy_before;
+                const double energy_change = energy_after - energy_before;
+                collision_totals_.channel_energy_change[0] += energy_change;
+                collision_interval_.channel_energy_change[0] += energy_change;
+                deposit_spatial_collision_energy(
+                    particle.x, 0, energy_change);
                 initialize_leapfrog_half_step(
                     particle,
                     interpolate_electric(
@@ -835,6 +847,8 @@ void Simulation::apply_collisions() {
                  statistics.channel_projectile_energy_change) {
                 energy_change *= sp.weight();
             }
+            auto tracked_energy_change =
+                statistics.channel_projectile_energy_change;
             add_collision_statistics(
                 collision_totals_, statistics,
                 runtime.diagnostic_offset);
@@ -876,11 +890,22 @@ void Simulation::apply_collisions() {
                 collision_interval_.channel_energy_change[
                     runtime.diagnostic_offset + secondary.channel] +=
                     added_energy;
+                tracked_energy_change[secondary.channel] +=
+                    added_energy;
             }
             if (statistics.primary_removal_channel) {
                 throw std::logic_error(
                     "1D MCC produced an unsupported primary "
                     "removal event");
+            }
+            for (std::size_t channel = 0;
+                 channel < tracked_energy_change.size(); ++channel) {
+                if (tracked_energy_change[channel] != 0.0) {
+                    deposit_spatial_collision_energy(
+                        part.x,
+                        runtime.diagnostic_offset + channel,
+                        tracked_energy_change[channel]);
+                }
             }
             initialize_leapfrog_half_step(
                 part, interpolate_electric(grid_, part.x), qm,
@@ -1091,6 +1116,7 @@ void Simulation::step() {
                 "became non-finite");
         }
     }
+    begin_spatial_collision_step();
     apply_collisions();
     ++step_;
     time_ += cfg_.dt;
@@ -1126,6 +1152,73 @@ std::size_t Simulation::expected_spatial_average_samples() const {
         (cfg_.spatial_average.end_step -
          cfg_.spatial_average.start_step) /
             cfg_.spatial_average.interval;
+}
+
+void Simulation::deposit_spatial_collision_energy(
+    double position,
+    std::size_t channel,
+    double represented_energy_change) {
+    if (!spatial_collision_step_active_) {
+        return;
+    }
+    if (channel >= spatial_collision_energy_sums_.size() ||
+        spatial_collision_energy_sums_[channel].size() != grid_.nx() ||
+        !std::isfinite(represented_energy_change)) {
+        throw std::logic_error(
+            "spatial collision-energy storage does not match diagnostics");
+    }
+    const auto add = [&](std::size_t node, double shape, double volume) {
+        const double density = represented_energy_change * shape / volume;
+        spatial_collision_energy_sums_[channel][node] += density;
+        if (spatial_collision_active_phase_ <
+            spatial_collision_phase_energy_sums_.size()) {
+            spatial_collision_phase_energy_sums_
+                [spatial_collision_active_phase_][channel][node] += density;
+        }
+    };
+    const double dx = grid_.dx();
+    if (grid_.boundary() == Boundary::Periodic) {
+        const double wrapped = std::fmod(
+            std::fmod(position, grid_.length()) + grid_.length(),
+            grid_.length());
+        const double coordinate = wrapped / dx;
+        const auto cell = static_cast<std::size_t>(std::floor(coordinate));
+        const double fraction = coordinate - static_cast<double>(cell);
+        add(cell % grid_.nx(), 1.0 - fraction, dx);
+        add((cell + 1) % grid_.nx(), fraction, dx);
+    } else {
+        const double bounded = std::clamp(position, 0.0, grid_.length());
+        const double coordinate = bounded / dx;
+        const auto cell = static_cast<std::size_t>(std::min<double>(
+            std::floor(coordinate), grid_.nx() - 2));
+        const double fraction = coordinate - static_cast<double>(cell);
+        add(cell, 1.0 - fraction, grid_.node_volume(cell));
+        add(cell + 1, fraction, grid_.node_volume(cell + 1));
+    }
+}
+
+void Simulation::begin_spatial_collision_step() {
+    const auto& average = cfg_.spatial_average;
+    const std::size_t collision_step = step_ + 1;
+    spatial_collision_step_active_ = false;
+    spatial_collision_active_phase_ =
+        spatial_collision_phase_energy_sums_.size();
+    if (!average.enabled || spatial_collision_energy_sums_.empty() ||
+        collision_step < average.start_step ||
+        collision_step > average.end_step) {
+        return;
+    }
+    spatial_collision_step_active_ = true;
+    ++spatial_collision_steps_;
+    if (!spatial_collision_phase_steps_.empty()) {
+        const auto steps_per_cycle = static_cast<std::size_t>(std::llround(
+            1.0 / (average.rf_frequency * cfg_.dt)));
+        const auto step_in_cycle =
+            (collision_step - average.start_step) % steps_per_cycle;
+        spatial_collision_active_phase_ = step_in_cycle *
+            spatial_collision_phase_steps_.size() / steps_per_cycle;
+        ++spatial_collision_phase_steps_[spatial_collision_active_phase_];
+    }
 }
 
 void Simulation::accumulate_spatial_average() {
@@ -1398,6 +1491,86 @@ void Simulation::write_spatial_average() const {
             "failed while writing 1D phase-resolved field output");
     }
 
+    std::ofstream collision_power(
+        output_dir / "spatial_collision_power.csv");
+    if (!collision_power) {
+        throw std::runtime_error(
+            "cannot open 1D spatial collision-power output");
+    }
+    collision_power
+        << "channel_id,channel,node,"
+        << (si ? "x_m" : "x_normalized")
+        << ",timesteps,"
+        << (si ? "duration_s" : "duration_normalized") << ','
+        << (si ? "energy_density_sum_J_m-3,mean_power_density_W_m-3"
+               : "energy_density_sum_normalized,mean_power_density_normalized")
+        << '\n' << std::setprecision(17);
+    const double collision_duration =
+        static_cast<double>(spatial_collision_steps_) * cfg_.dt;
+    for (std::size_t channel = 0;
+         channel < spatial_collision_energy_sums_.size(); ++channel) {
+        for (std::size_t node = 0; node < grid_.nx(); ++node) {
+            const double energy_density =
+                spatial_collision_energy_sums_[channel][node];
+            collision_power << channel << ','
+                << csv_cell(collision_totals_.channel_names[channel]) << ','
+                << node << ',' << grid_.node_x(node) << ','
+                << spatial_collision_steps_ << ',' << collision_duration << ','
+                << energy_density << ','
+                << (collision_duration > 0.0
+                        ? energy_density / collision_duration
+                        : 0.0)
+                << '\n';
+        }
+    }
+    require_stream(collision_power,
+        "failed while writing 1D spatial collision-power output");
+
+    if (!spatial_collision_phase_energy_sums_.empty()) {
+        std::ofstream phase_collision_power(
+            output_dir / "spatial_phase_collision_power.csv");
+        if (!phase_collision_power) {
+            throw std::runtime_error(
+                "cannot open 1D phase-resolved collision-power output");
+        }
+        phase_collision_power
+            << "phase_bin,phase_fraction,timesteps,"
+            << (si ? "duration_s" : "duration_normalized")
+            << ",channel_id,"
+               "channel,node,"
+            << (si ? "x_m" : "x_normalized") << ','
+            << (si ? "energy_density_sum_J_m-3,mean_power_density_W_m-3"
+                   : "energy_density_sum_normalized,mean_power_density_normalized")
+            << '\n' << std::setprecision(17);
+        for (std::size_t phase = 0;
+             phase < spatial_collision_phase_energy_sums_.size(); ++phase) {
+            const double duration =
+                static_cast<double>(spatial_collision_phase_steps_[phase]) *
+                cfg_.dt;
+            for (std::size_t channel = 0;
+                 channel < spatial_collision_energy_sums_.size(); ++channel) {
+                for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                    const double energy_density =
+                        spatial_collision_phase_energy_sums_[phase]
+                            [channel][node];
+                    phase_collision_power << phase << ','
+                        << (static_cast<double>(phase) + 0.5) /
+                               static_cast<double>(
+                                   spatial_collision_phase_energy_sums_.size())
+                        << ',' << spatial_collision_phase_steps_[phase] << ','
+                        << duration << ',' << channel << ','
+                        << csv_cell(collision_totals_.channel_names[channel])
+                        << ',' << node << ',' << grid_.node_x(node) << ','
+                        << energy_density << ','
+                        << (duration > 0.0 ? energy_density / duration : 0.0)
+                        << '\n';
+                }
+            }
+        }
+        require_stream(phase_collision_power,
+            "failed while writing 1D phase-resolved collision-power output");
+    }
+
     const auto expected =
         expected_spatial_average_samples();
     const bool complete =
@@ -1411,7 +1584,7 @@ void Simulation::write_spatial_average() const {
     }
     metadata << std::setprecision(17)
              << "{\n"
-             << "  \"spatial_average_version\": 3,\n"
+             << "  \"spatial_average_version\": 4,\n"
              << "  \"reset_on_restart\": "
              << (cfg_.spatial_average.reset_on_restart
                      ? "true" : "false")
@@ -1447,6 +1620,15 @@ void Simulation::write_spatial_average() const {
         metadata << spatial_phase_bins_[phase].samples;
     }
     metadata << "],\n"
+             << "  \"collision_timesteps\": "
+             << spatial_collision_steps_ << ",\n"
+             << "  \"collision_phase_timesteps\": [";
+    for (std::size_t phase = 0;
+         phase < spatial_collision_phase_steps_.size(); ++phase) {
+        if (phase != 0) metadata << ", ";
+        metadata << spatial_collision_phase_steps_[phase];
+    }
+    metadata << "],\n"
              << "  \"complete\": "
              << (complete ? "true" : "false") << ",\n"
              << "  \"effective_kinetic_temperature_definition\": "
@@ -1475,7 +1657,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV10 << '\n';
+    out << kCheckpointMagicV11 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1597,6 +1779,37 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         }
         out << "\n";
     }
+    out << "spatial_collision " << spatial_collision_steps_ << ' '
+        << spatial_collision_energy_sums_.size() << ' '
+        << grid_.nx() << ' '
+        << spatial_collision_phase_energy_sums_.size() << "\n";
+    for (std::size_t channel = 0;
+         channel < spatial_collision_energy_sums_.size(); ++channel) {
+        out << "spatial_collision_channel " << channel << ' '
+            << collision_totals_.channel_names[channel];
+        for (const double value : spatial_collision_energy_sums_[channel]) {
+            out << ' ' << value;
+        }
+        out << "\n";
+    }
+    out << "spatial_collision_phase_steps";
+    for (const auto count : spatial_collision_phase_steps_) {
+        out << ' ' << count;
+    }
+    out << "\n";
+    for (std::size_t phase = 0;
+         phase < spatial_collision_phase_energy_sums_.size(); ++phase) {
+        for (std::size_t channel = 0;
+             channel < spatial_collision_energy_sums_.size(); ++channel) {
+            out << "spatial_collision_phase_channel " << phase << ' '
+                << channel;
+            for (const double value :
+                 spatial_collision_phase_energy_sums_[phase][channel]) {
+                out << ' ' << value;
+            }
+            out << "\n";
+        }
+    }
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -1629,15 +1842,16 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v8 = magic == kCheckpointMagicV8;
     const bool checkpoint_v9 = magic == kCheckpointMagicV9;
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
+    const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-        checkpoint_v10;
+        checkpoint_v10 || checkpoint_v11;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
         !checkpoint_v5 && !checkpoint_v6 &&
         !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-        !checkpoint_v10) {
+        !checkpoint_v10 && !checkpoint_v11) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1654,7 +1868,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         if ((!checkpoint_v2 && !checkpoint_v3 &&
              !checkpoint_v4 && !checkpoint_v5 &&
              !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8 &&
-             !checkpoint_v9 && !checkpoint_v10) ||
+             !checkpoint_v9 && !checkpoint_v10 && !checkpoint_v11) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1665,7 +1879,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     } else if (checkpoint_v2 || checkpoint_v3 ||
                checkpoint_v4 || checkpoint_v5 ||
                checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
-               checkpoint_v9 || checkpoint_v10 ||
+               checkpoint_v9 || checkpoint_v10 || checkpoint_v11 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1697,7 +1911,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         if ((!checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 &&
              !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-             !checkpoint_v10) ||
+             !checkpoint_v10 && !checkpoint_v11) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1718,7 +1932,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         clear_collision_counts(collision_interval_);
         in >> key;
-        if (checkpoint_v10) {
+        if (checkpoint_v10 || checkpoint_v11) {
             std::size_t energy_count = 0;
             in >> energy_count;
             if (key != "collision_energy_totals" ||
@@ -1741,7 +1955,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     } else if (checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 || checkpoint_v6 ||
                checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-               checkpoint_v10 ||
+               checkpoint_v10 || checkpoint_v11 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
@@ -1749,7 +1963,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     const bool checkpoint_has_boundary_losses =
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-        checkpoint_v10;
+        checkpoint_v10 || checkpoint_v11;
     const bool legacy_boundary_loss_origin =
         !checkpoint_has_boundary_losses;
     if (checkpoint_has_boundary_losses) {
@@ -1800,8 +2014,10 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             BoundaryLoss1D{});
     }
     const bool legacy_power_transfer_origin =
-        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 && !checkpoint_v10;
-    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
+        !checkpoint_v10 && !checkpoint_v11;
+    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
+        checkpoint_v11) {
         in >> power_transfer_origin_step_;
         if (key != "power_transfer_origin_step") {
             throw std::runtime_error(
@@ -1843,7 +2059,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             SpeciesPower1D{});
     }
     if (checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
+        checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
+        checkpoint_v11) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -1934,7 +2151,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             }
         }
         in >> key;
-        if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10) {
+        if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
+            checkpoint_v11) {
             std::size_t stored_moment_samples = 0;
             std::size_t stored_moment_species_count = 0;
             std::size_t stored_moment_nx = 0;
@@ -2002,8 +2220,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         } else {
             spatial_moment_samples_ = 0;
         }
-        if (checkpoint_v9 || checkpoint_v10) {
-            std::size_t stored_phase_count = 0;
+        std::size_t stored_phase_count = 0;
+        if (checkpoint_v9 || checkpoint_v10 || checkpoint_v11) {
             std::size_t stored_phase_species = 0;
             std::size_t stored_phase_nx = 0;
             in >> stored_phase_count >> stored_phase_species >> stored_phase_nx;
@@ -2127,8 +2345,128 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore phase-resolved spatial moments");
         }
+        if (checkpoint_v11) {
+            std::size_t stored_collision_steps = 0;
+            std::size_t stored_collision_channels = 0;
+            std::size_t stored_collision_nx = 0;
+            std::size_t stored_collision_phases = 0;
+            in >> stored_collision_steps >> stored_collision_channels >>
+                stored_collision_nx >> stored_collision_phases;
+            const std::size_t window_steps = stored_enabled
+                ? end_step - start_step + 1
+                : 0;
+            if (key != "spatial_collision" ||
+                stored_collision_nx != grid_.nx() ||
+                stored_collision_steps > window_steps ||
+                stored_collision_channels !=
+                    (stored_enabled
+                         ? collision_totals_.channel_names.size()
+                         : 0) ||
+                stored_collision_phases != stored_phase_count ||
+                (!reset &&
+                 (stored_collision_channels !=
+                      spatial_collision_energy_sums_.size() ||
+                  stored_collision_phases !=
+                      spatial_collision_phase_energy_sums_.size()))) {
+                throw std::runtime_error(
+                    "checkpoint spatial collision-energy contract is invalid");
+            }
+            spatial_collision_steps_ =
+                reset ? 0 : stored_collision_steps;
+            for (std::size_t channel = 0;
+                 channel < stored_collision_channels; ++channel) {
+                std::size_t stored_channel = 0;
+                std::string stored_name;
+                in >> key >> stored_channel >> stored_name;
+                if (key != "spatial_collision_channel" ||
+                    stored_channel != channel ||
+                    stored_name != collision_totals_.channel_names[channel]) {
+                    throw std::runtime_error(
+                        "checkpoint spatial collision channel is invalid");
+                }
+                for (std::size_t node = 0;
+                     node < stored_collision_nx; ++node) {
+                    double value = 0.0;
+                    in >> value;
+                    if (!std::isfinite(value)) {
+                        throw std::runtime_error(
+                            "checkpoint spatial collision energy is invalid");
+                    }
+                    if (!reset) {
+                        spatial_collision_energy_sums_[channel][node] = value;
+                    }
+                }
+            }
+            in >> key;
+            if (key != "spatial_collision_phase_steps") {
+                throw std::runtime_error(
+                    "checkpoint collision phase counts are missing");
+            }
+            std::size_t phase_step_total = 0;
+            for (std::size_t phase = 0;
+                 phase < stored_collision_phases; ++phase) {
+                std::size_t count = 0;
+                in >> count;
+                if (count > stored_collision_steps) {
+                    throw std::runtime_error(
+                        "checkpoint collision phase count is invalid");
+                }
+                phase_step_total += count;
+                if (!reset) spatial_collision_phase_steps_[phase] = count;
+            }
+            if (phase_step_total !=
+                (stored_collision_phases == 0
+                     ? 0
+                     : stored_collision_steps)) {
+                throw std::runtime_error(
+                    "checkpoint collision phase counts are incomplete");
+            }
+            for (std::size_t phase = 0;
+                 phase < stored_collision_phases; ++phase) {
+                for (std::size_t channel = 0;
+                     channel < stored_collision_channels; ++channel) {
+                    std::size_t stored_phase = 0;
+                    std::size_t stored_channel = 0;
+                    in >> key >> stored_phase >> stored_channel;
+                    if (key != "spatial_collision_phase_channel" ||
+                        stored_phase != phase || stored_channel != channel) {
+                        throw std::runtime_error(
+                            "checkpoint phase collision channel is invalid");
+                    }
+                    for (std::size_t node = 0;
+                         node < stored_collision_nx; ++node) {
+                        double value = 0.0;
+                        in >> value;
+                        if (!std::isfinite(value)) {
+                            throw std::runtime_error(
+                                "checkpoint phase collision energy is invalid");
+                        }
+                        if (!reset) {
+                            spatial_collision_phase_energy_sums_[phase]
+                                [channel][node] = value;
+                        }
+                    }
+                }
+            }
+            in >> key;
+        } else if (!reset && stored_samples != 0 &&
+                   !spatial_collision_energy_sums_.empty()) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore spatial collision energy");
+        }
         if (reset) {
             spatial_moment_samples_ = 0;
+            spatial_collision_steps_ = 0;
+            std::fill(spatial_collision_phase_steps_.begin(),
+                      spatial_collision_phase_steps_.end(), 0);
+            for (auto& channels : spatial_collision_phase_energy_sums_) {
+                for (auto& values : channels) {
+                    std::fill(values.begin(), values.end(), 0.0);
+                }
+            }
+            for (auto& values : spatial_collision_energy_sums_) {
+                std::fill(values.begin(), values.end(), 0.0);
+            }
             for (auto& sum : spatial_kinetic_energy_sums_) {
                 std::fill(sum.begin(), sum.end(), 0.0);
             }
@@ -2148,6 +2486,42 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
+    if (checkpoint_v11 && cfg_.spatial_average.enabled &&
+        !cfg_.spatial_average.reset_on_restart &&
+        !spatial_collision_energy_sums_.empty()) {
+        const auto& average = cfg_.spatial_average;
+        const std::size_t expected_collision_steps =
+            step_ < average.start_step
+                ? 0
+                : std::min(step_, average.end_step) -
+                      average.start_step + 1;
+        if (spatial_collision_steps_ != expected_collision_steps) {
+            throw std::runtime_error(
+                "checkpoint spatial collision timestep count is inconsistent");
+        }
+        if (!spatial_collision_phase_steps_.empty()) {
+            const auto steps_per_cycle = static_cast<std::size_t>(std::llround(
+                1.0 / (average.rf_frequency * cfg_.dt)));
+            const auto steps_per_phase =
+                steps_per_cycle / spatial_collision_phase_steps_.size();
+            const auto complete_cycles =
+                expected_collision_steps / steps_per_cycle;
+            const auto remainder =
+                expected_collision_steps % steps_per_cycle;
+            for (std::size_t phase = 0;
+                 phase < spatial_collision_phase_steps_.size(); ++phase) {
+                const auto phase_start = phase * steps_per_phase;
+                const auto partial = remainder > phase_start
+                    ? std::min(steps_per_phase, remainder - phase_start)
+                    : 0;
+                if (spatial_collision_phase_steps_[phase] !=
+                    complete_cycles * steps_per_phase + partial) {
+                    throw std::runtime_error(
+                        "checkpoint collision phase timestep count is inconsistent");
+                }
+            }
+        }
+    }
     if (legacy_boundary_loss_origin) {
         boundary_loss_origin_step_ = step_;
     }

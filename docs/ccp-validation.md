@@ -481,7 +481,32 @@ explicitly labeled. Ionization includes the post-collision primary and the
 created electron and ion, so its entry is the net tracked charged-particle
 kinetic-energy change. Neutral kinetic energy, internal excitation energy, and
 ionization potential are outside that tracked-particle ledger and appear as a
-signed channel loss. Checkpoint v10 preserves the cumulative channel totals.
+signed channel loss. Checkpoint v11 preserves the cumulative channel totals
+and the spatial/phase collision-energy state.
+
+When spatial averaging is enabled, `spatial_collision_power.csv` deposits each
+signed channel transfer onto the same nodal control volumes and with the same
+linear shape function used for particle moments. Its mean power density uses
+every physical timestep in the declared window, independently of
+`spatial_average_interval`. Consequently, integrating a channel over nodal
+volume exactly recovers its global collision ledger over the same window.
+`spatial_phase_collision_power.csv` performs the same accounting in the
+configured RF bins and records the physical timestep count and duration of
+each bin. Summing phase-bin energy densities recovers the unbinned spatial
+field. SI energy and power densities are `J m^-3` and `W m^-3`; normalized
+runs label both quantities explicitly. The diagnostic is empty when no
+collision channels are configured; when spatial averaging is disabled it
+allocates no deposition state and the event hook returns immediately.
+
+A one-cycle Case 1 smoke window at steps 757,201--757,600 exercised all six
+helium collision channels with 16 RF bins of exactly 25 timesteps each. The
+largest difference between a mesh-integrated spatial channel and its global
+ledger was `3.98e-20 J m^-2`; the largest difference between summed phase bins
+and the unbinned spatial channel was `2.54e-21 J m^-2`. This verifies the real
+Case 1 deposition, phase partition, pre-v11 restart-reset path, and v11 output
+checkpoint. It remains an implementation smoke test rather than a statistically
+converged physics comparison. Evidence and artifact hashes are recorded in
+[`turner-case1-spatial-collision-smoke-20260804.json`](../benchmarks/ccp/turner-case1-spatial-collision-smoke-20260804.json).
 
 The first bounded application was a four-RF-cycle pilot continuing Case 1
 from step 755,600 through 757,200. The independent tracked-particle balance

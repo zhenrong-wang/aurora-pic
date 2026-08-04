@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case": "Turner helium CCP Case 1",
+  "purpose": "One-RF-cycle implementation smoke test of spatial and 16-bin phase-resolved collision-energy deposition; not a published-observable acceptance window.",
+  "window": {
+    "start_step": 757201,
+    "end_step": 757600,
+    "rf_cycles": 1,
+    "phase_bins": 16,
+    "timesteps_per_phase_bin": 25
+  },
+  "channel_energy_J_m-2": {
+    "electron_mcc.elastic": -9.31533127748187e-09,
+    "electron_mcc.excitation_triplet": -3.581866264562452e-07,
+    "electron_mcc.excitation_singlet": -6.023513179740433e-07,
+    "electron_mcc.ionization": -7.822429760311326e-07,
+    "ion_mcc.isotropic": -2.0654359986131766e-07,
+    "ion_mcc.backward": -4.072206723017523e-06
+  },
+  "closure": {
+    "maximum_spatial_to_global_channel_residual_J_m-2": 3.9810548520952116e-20,
+    "maximum_phase_sum_to_spatial_channel_residual_J_m-2": 2.541098841762901e-21,
+    "all_channels_exercised": true,
+    "passes": true
+  },
+  "identity": {
+    "solver_sha256": "7c27d1df678f8cd9fae32002d00cc2461f6387b9634fc3d1fd8cc2a264bea950",
+    "input_checkpoint_757200_sha256": "8ab3db67fdfb5f5679cc8bc896db6deeb9d7cf42fac159524422d4c9e87604c7",
+    "deck_sha256": "46bc76a24d99e920fad8009d3078908a5ac31987555903ffac1d17c1027ce8f0",
+    "output_checkpoint_757600_sha256": "a15214ab992a55d9148492dba7109b276d8f0a7a76ac01c3d571f4d677f7eac2"
+  }
+}

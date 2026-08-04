@@ -70,6 +70,21 @@ public:
     std::size_t power_transfer_origin_step() const {
         return power_transfer_origin_step_;
     }
+    const std::vector<std::vector<double>>&
+    spatial_collision_energy_sums() const {
+        return spatial_collision_energy_sums_;
+    }
+    const std::vector<std::vector<std::vector<double>>>&
+    spatial_collision_phase_energy_sums() const {
+        return spatial_collision_phase_energy_sums_;
+    }
+    std::size_t spatial_collision_steps() const {
+        return spatial_collision_steps_;
+    }
+    const std::vector<std::size_t>&
+    spatial_collision_phase_steps() const {
+        return spatial_collision_phase_steps_;
+    }
 private:
     struct IonizationChannelRuntime {
         std::size_t secondary_species_id{0};
@@ -92,6 +107,11 @@ private:
         const SinusoidalVoltageConfig& drive,
         double field_time) const;
     void accumulate_spatial_average();
+    void deposit_spatial_collision_energy(
+        double position,
+        std::size_t channel,
+        double represented_energy_change);
+    void begin_spatial_collision_step();
     void write_spatial_average() const;
     std::size_t expected_spatial_average_samples() const;
     Config cfg_;
@@ -125,6 +145,14 @@ private:
     std::vector<double> spatial_electric_sums_{};
     std::vector<double> spatial_electric_squared_sums_{};
     std::vector<SpatialPhaseBin1D> spatial_phase_bins_{};
+    std::size_t spatial_collision_steps_{0};
+    std::vector<std::vector<double>>
+        spatial_collision_energy_sums_{};
+    std::vector<std::size_t> spatial_collision_phase_steps_{};
+    std::vector<std::vector<std::vector<double>>>
+        spatial_collision_phase_energy_sums_{};
+    bool spatial_collision_step_active_{false};
+    std::size_t spatial_collision_active_phase_{0};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

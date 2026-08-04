@@ -3378,8 +3378,8 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v10\n") == 0,
-                "1D collision-energy checkpoint did not use v10");
+                    "AuroraPIC-checkpoint-v11\n") == 0,
+                "1D spatial collision-energy checkpoint did not use v11");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3403,6 +3403,7 @@ int main() {
                         line.starts_with("spatial_phase") ||
                         line.starts_with("phase_bin") ||
                         line.starts_with("phase_species") ||
+                        line.starts_with("spatial_collision") ||
                         line.starts_with("phase_fields")) {
                         continue;
                     } else {
@@ -3449,6 +3450,7 @@ int main() {
                         line.starts_with("spatial_phase") ||
                         line.starts_with("phase_bin") ||
                         line.starts_with("phase_species") ||
+                        line.starts_with("spatial_collision") ||
                         line.starts_with("phase_fields")) {
                         continue;
                     } else {
@@ -3651,6 +3653,13 @@ int main() {
             cfg.output_interval = 8;
             cfg.output_dir = output_dir.string();
             cfg.seed = 1307;
+            cfg.spatial_average.enabled = true;
+            cfg.spatial_average.interval = 1;
+            cfg.spatial_average.start_step = 1;
+            cfg.spatial_average.end_step = 8;
+            cfg.spatial_average.rf_frequency = 2.5;
+            cfg.spatial_average.rf_cycles = 2;
+            cfg.spatial_average.phase_bins = 2;
             cfg.collisions.enabled = true;
             cfg.collisions.model =
                 pic::CollisionModelKind::NullCollision;
@@ -3714,10 +3723,70 @@ int main() {
                 1e-12,
                 "1D3V MCC restart lost collision energy");
             require(
+                continuous.spatial_collision_steps() == 8 &&
+                    continuous.spatial_collision_phase_steps() ==
+                        std::vector<std::size_t>{4, 4},
+                "1D3V spatial collision phase timestep accounting is wrong");
+            const auto& spatial_energy =
+                continuous.spatial_collision_energy_sums();
+            const auto& phase_energy =
+                continuous.spatial_collision_phase_energy_sums();
+            require(
+                spatial_energy.size() == 1 &&
+                    phase_energy.size() == 2,
+                "1D3V spatial collision energy has the wrong shape");
+            double integrated_spatial_energy = 0.0;
+            for (std::size_t node = 0; node < cfg.nx; ++node) {
+                integrated_spatial_energy +=
+                    spatial_energy[0][node] *
+                    continuous.grid().node_volume(node);
+                require_near(
+                    phase_energy[0][0][node] +
+                        phase_energy[1][0][node],
+                    spatial_energy[0][node], 1e-12,
+                    "phase collision energy does not sum to its spatial total");
+            }
+            require_near(
+                integrated_spatial_energy,
+                continuous.collision_diagnostics().channel_energy_change[0],
+                1e-12,
+                "spatial collision deposition does not integrate to the channel ledger");
+            require(
+                restarted.spatial_collision_steps() ==
+                    continuous.spatial_collision_steps() &&
+                restarted.spatial_collision_phase_steps() ==
+                    continuous.spatial_collision_phase_steps(),
+                "1D3V restart lost spatial collision timestep state");
+            for (std::size_t phase = 0; phase < phase_energy.size(); ++phase) {
+                require_vector_near(
+                    restarted.spatial_collision_phase_energy_sums()
+                        [phase][0],
+                    phase_energy[phase][0], 1e-12,
+                    "1D3V restart lost phase collision energy");
+            }
+            require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v10\n") == 0,
+                    "AuroraPIC-checkpoint-v11\n") == 0,
                 "1D3V checkpoint did not use the spatial-moment-aware "
                 "format");
+            pic::Simulation output_simulation(cfg);
+            (void)output_simulation.run();
+            const auto spatial_collision_csv = read_file_text(
+                output_dir / "spatial_collision_power.csv");
+            const auto phase_collision_csv = read_file_text(
+                output_dir / "spatial_phase_collision_power.csv");
+            require(
+                spatial_collision_csv.find(
+                    "energy_density_sum_normalized,mean_power_density_normalized") !=
+                        std::string::npos &&
+                    count_lines(spatial_collision_csv) == cfg.nx + 1,
+                "1D spatial collision-power CSV contract is wrong");
+            require(
+                phase_collision_csv.find(
+                    "phase_bin,phase_fraction,timesteps,duration_normalized") == 0 &&
+                    count_lines(phase_collision_csv) ==
+                        2 * cfg.nx + 1,
+                "1D phase collision-power CSV contract is wrong");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }
