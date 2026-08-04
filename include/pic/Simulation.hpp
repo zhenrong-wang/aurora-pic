@@ -40,6 +40,19 @@ struct SpatialPhaseBin1D {
     std::vector<double> electric_squared{};
 };
 
+struct PhaseEedfAccumulator1D {
+    std::uint64_t macro_observations{0};
+    std::uint64_t overflow_macro_observations{0};
+    double represented_observations{0.0};
+    double overflow_represented_observations{0.0};
+    double weighted_energy_sum{0.0};
+    double weighted_energy_squared_sum{0.0};
+    double weighted_velocity_x_sum{0.0};
+    double weighted_velocity_y_sum{0.0};
+    double weighted_velocity_z_sum{0.0};
+    std::vector<double> histogram{};
+};
+
 class Simulation {
 public:
     explicit Simulation(Config cfg);
@@ -85,6 +98,10 @@ public:
     spatial_collision_phase_steps() const {
         return spatial_collision_phase_steps_;
     }
+    const std::vector<std::vector<PhaseEedfAccumulator1D>>&
+    phase_eedf_accumulators() const {
+        return phase_eedf_accumulators_;
+    }
 private:
     struct IonizationChannelRuntime {
         std::size_t secondary_species_id{0};
@@ -107,6 +124,7 @@ private:
         const SinusoidalVoltageConfig& drive,
         double field_time) const;
     void accumulate_spatial_average();
+    void accumulate_phase_eedf(std::size_t phase);
     void deposit_spatial_collision_energy(
         double position,
         std::size_t channel,
@@ -153,6 +171,9 @@ private:
         spatial_collision_phase_energy_sums_{};
     bool spatial_collision_step_active_{false};
     std::size_t spatial_collision_active_phase_{0};
+    std::size_t phase_eedf_species_id_{0};
+    std::vector<std::vector<PhaseEedfAccumulator1D>>
+        phase_eedf_accumulators_{};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

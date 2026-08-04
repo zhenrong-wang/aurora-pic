@@ -118,6 +118,35 @@ bool parse_bool(const KeyValue& kv, const std::string& key, bool def) {
     throw std::runtime_error("invalid boolean value for '" + key + "': '" + it->second + "'");
 }
 
+std::vector<PhaseEedfRegion1DConfig> parse_phase_eedf_regions(
+    const KeyValue& values) {
+    const auto found = values.find("phase_eedf_regions");
+    if (found == values.end()) return {};
+    std::vector<PhaseEedfRegion1DConfig> regions;
+    std::istringstream entries(found->second);
+    std::string entry;
+    while (std::getline(entries, entry, ',')) {
+        std::istringstream fields(trim(entry));
+        PhaseEedfRegion1DConfig region;
+        std::string minimum;
+        std::string maximum;
+        if (!std::getline(fields, region.name, ':') ||
+            !std::getline(fields, minimum, ':') ||
+            !std::getline(fields, maximum, ':') ||
+            fields.rdbuf()->in_avail() != 0) {
+            throw std::runtime_error(
+                "phase_eedf_regions entries must use name:x_min:x_max");
+        }
+        region.name = trim(region.name);
+        KeyValue coordinates{{"minimum", trim(minimum)},
+                             {"maximum", trim(maximum)}};
+        region.x_min = as<double>(coordinates, "minimum", 0.0);
+        region.x_max = as<double>(coordinates, "maximum", 0.0);
+        regions.push_back(std::move(region));
+    }
+    return regions;
+}
+
 std::optional<std::uint64_t> parse_optional_uint64(
     const KeyValue& values, const std::string& key) {
     const auto found = values.find(key);
@@ -1347,6 +1376,51 @@ ParsedBlocks parse_config_blocks(const std::string& path,
 
 void validate_spatial_average_1d(const Config& cfg) {
     const auto& average = cfg.spatial_average;
+    const auto& eedf = cfg.phase_eedf;
+    if (!eedf.enabled) {
+        if (!eedf.species.empty() || eedf.energy_bins != 0 ||
+            eedf.energy_max != 0.0 || !eedf.regions.empty()) {
+            throw std::runtime_error(
+                "disabled phase_eedf cannot configure species, bins, "
+                "energy maximum, or regions");
+        }
+    } else {
+        if (!average.enabled || average.phase_bins == 0) {
+            throw std::runtime_error(
+                "phase_eedf requires spatial averaging with phase bins");
+        }
+        if (eedf.species.empty() || eedf.energy_bins == 0 ||
+            eedf.energy_bins > 1000000 ||
+            !std::isfinite(eedf.energy_max) || eedf.energy_max <= 0.0 ||
+            eedf.regions.empty()) {
+            throw std::runtime_error(
+                "phase_eedf requires a species, 1..1000000 bins, a "
+                "positive energy maximum, and at least one region");
+        }
+        if (std::none_of(cfg.species.begin(), cfg.species.end(),
+                         [&](const auto& species) {
+                             return species.name == eedf.species;
+                         })) {
+            throw std::runtime_error(
+                "phase_eedf species does not exist: " + eedf.species);
+        }
+        std::unordered_set<std::string> names;
+        for (const auto& region : eedf.regions) {
+            if (region.name.empty() || !names.insert(region.name).second ||
+                !std::all_of(region.name.begin(), region.name.end(),
+                    [](unsigned char c) {
+                        return std::isalnum(c) || c == '_' || c == '-';
+                    }) ||
+                !std::isfinite(region.x_min) ||
+                !std::isfinite(region.x_max) ||
+                region.x_min < 0.0 || region.x_max > cfg.length ||
+                region.x_max <= region.x_min) {
+                throw std::runtime_error(
+                    "phase_eedf regions require unique safe names and "
+                    "0 <= x_min < x_max <= length");
+            }
+        }
+    }
     if (!std::isfinite(average.rf_frequency) ||
         average.rf_frequency < 0.0) {
         throw std::runtime_error(
@@ -1459,6 +1533,8 @@ Config load_config(const std::string& path) {
         "spatial_average_start_step", "spatial_average_end_step",
         "spatial_average_rf_frequency", "spatial_average_rf_cycles",
         "spatial_average_phase_bins",
+        "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
+        "phase_eedf_energy_max", "phase_eedf_regions",
         "max_particles_per_species",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
@@ -1540,6 +1616,15 @@ Config load_config(const std::string& path) {
     cfg.spatial_average.phase_bins = as<std::size_t>(
         global, "spatial_average_phase_bins",
         cfg.spatial_average.phase_bins);
+    cfg.phase_eedf.enabled = parse_bool(
+        global, "phase_eedf", cfg.phase_eedf.enabled);
+    cfg.phase_eedf.species = as<std::string>(
+        global, "phase_eedf_species", cfg.phase_eedf.species);
+    cfg.phase_eedf.energy_bins = as<std::size_t>(
+        global, "phase_eedf_energy_bins", cfg.phase_eedf.energy_bins);
+    cfg.phase_eedf.energy_max = as<double>(
+        global, "phase_eedf_energy_max", cfg.phase_eedf.energy_max);
+    cfg.phase_eedf.regions = parse_phase_eedf_regions(global);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir);
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.phi_left = as<double>(global, "phi_left", cfg.phi_left);

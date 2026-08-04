@@ -32,6 +32,7 @@ constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
 constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
 constexpr const char* kCheckpointMagicV10 = "AuroraPIC-checkpoint-v10";
 constexpr const char* kCheckpointMagicV11 = "AuroraPIC-checkpoint-v11";
+constexpr const char* kCheckpointMagicV12 = "AuroraPIC-checkpoint-v12";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -577,6 +578,19 @@ Simulation::Simulation(Config cfg)
             std::vector<std::vector<double>>(
                 collision_totals_.channel_names.size(),
                 std::vector<double>(grid_.nx(), 0.0)));
+    }
+    if (cfg_.phase_eedf.enabled) {
+        phase_eedf_species_id_ = species_id(cfg_.phase_eedf.species);
+        phase_eedf_accumulators_.assign(
+            cfg_.spatial_average.phase_bins,
+            std::vector<PhaseEedfAccumulator1D>(
+                cfg_.phase_eedf.regions.size()));
+        for (auto& phase : phase_eedf_accumulators_) {
+            for (auto& region : phase) {
+                region.histogram.assign(
+                    cfg_.phase_eedf.energy_bins, 0.0);
+            }
+        }
     }
 }
 
@@ -1221,6 +1235,55 @@ void Simulation::begin_spatial_collision_step() {
     }
 }
 
+void Simulation::accumulate_phase_eedf(std::size_t phase) {
+    if (!cfg_.phase_eedf.enabled ||
+        phase >= phase_eedf_accumulators_.size()) return;
+    const auto& species = species_[phase_eedf_species_id_];
+    const double energy_scale =
+        cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
+    const double weight = species.weight();
+    for (const auto& particle : species.particles()) {
+        if (!particle.alive) continue;
+        const double velocity_squared =
+            particle.v * particle.v +
+            (cfg_.velocity_dimensions == 3
+                 ? particle.velocity_y * particle.velocity_y +
+                       particle.velocity_z * particle.velocity_z
+                 : 0.0);
+        const double energy =
+            0.5 * species.mass() * velocity_squared / energy_scale;
+        for (std::size_t region_id = 0;
+             region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+            const auto& configured = cfg_.phase_eedf.regions[region_id];
+            if (particle.x < configured.x_min ||
+                particle.x > configured.x_max) continue;
+            auto& accumulator =
+                phase_eedf_accumulators_[phase][region_id];
+            ++accumulator.macro_observations;
+            accumulator.represented_observations += weight;
+            accumulator.weighted_energy_sum += weight * energy;
+            accumulator.weighted_energy_squared_sum +=
+                weight * energy * energy;
+            accumulator.weighted_velocity_x_sum += weight * particle.v;
+            accumulator.weighted_velocity_y_sum +=
+                weight * particle.velocity_y;
+            accumulator.weighted_velocity_z_sum +=
+                weight * particle.velocity_z;
+            if (energy >= cfg_.phase_eedf.energy_max) {
+                ++accumulator.overflow_macro_observations;
+                accumulator.overflow_represented_observations += weight;
+            } else {
+                const auto bin = std::min(
+                    cfg_.phase_eedf.energy_bins - 1,
+                    static_cast<std::size_t>(
+                        energy / cfg_.phase_eedf.energy_max *
+                        cfg_.phase_eedf.energy_bins));
+                accumulator.histogram[bin] += weight;
+            }
+        }
+    }
+}
+
 void Simulation::accumulate_spatial_average() {
     const auto& average = cfg_.spatial_average;
     if (!average.enabled ||
@@ -1247,6 +1310,7 @@ void Simulation::accumulate_spatial_average() {
             "spatial-average storage does not match simulation state");
     }
     SpatialPhaseBin1D* phase_bin = nullptr;
+    std::size_t phase_id = spatial_phase_bins_.size();
     if (!spatial_phase_bins_.empty()) {
         const auto steps_per_cycle = static_cast<std::size_t>(std::llround(
             1.0 / (average.rf_frequency * cfg_.dt)));
@@ -1254,7 +1318,7 @@ void Simulation::accumulate_spatial_average() {
         const auto sample_in_cycle =
             ((step_ - average.start_step) / average.interval) %
             samples_per_cycle;
-        const auto phase_id =
+        phase_id =
             sample_in_cycle * spatial_phase_bins_.size() /
             samples_per_cycle;
         phase_bin = &spatial_phase_bins_[phase_id];
@@ -1298,6 +1362,9 @@ void Simulation::accumulate_spatial_average() {
         }
     }
     if (phase_bin != nullptr) ++phase_bin->samples;
+    if (phase_id < spatial_phase_bins_.size()) {
+        accumulate_phase_eedf(phase_id);
+    }
     ++spatial_average_samples_;
     ++spatial_moment_samples_;
 }
@@ -1571,6 +1638,88 @@ void Simulation::write_spatial_average() const {
             "failed while writing 1D phase-resolved collision-power output");
     }
 
+    if (cfg_.phase_eedf.enabled) {
+        std::ofstream histogram(output_dir / "phase_eedf.csv");
+        std::ofstream moments(output_dir / "phase_eedf_moments.csv");
+        if (!histogram || !moments) {
+            throw std::runtime_error("cannot open 1D phase EEDF output");
+        }
+        const char* energy_name = si ? "energy_eV" : "energy_normalized";
+        histogram << "phase_bin,phase_fraction,region_id,region,x_min,x_max,"
+                  << "energy_bin," << energy_name
+                  << ",represented_count,probability_density\n"
+                  << std::setprecision(17);
+        moments << "phase_bin,phase_fraction,region_id,region,x_min,x_max,"
+                   "macro_observations,represented_observations,"
+                   "overflow_fraction,mean_energy,energy_standard_deviation,"
+                   "mean_velocity_x,mean_velocity_y,mean_velocity_z,"
+                   "drift_separated_temperature\n"
+                << std::setprecision(17);
+        const double bin_width = cfg_.phase_eedf.energy_max /
+            static_cast<double>(cfg_.phase_eedf.energy_bins);
+        const double energy_scale = si ? ELEMENTARY_CHARGE_SI : 1.0;
+        const double dimensions =
+            static_cast<double>(cfg_.velocity_dimensions);
+        const auto& target = species_[phase_eedf_species_id_];
+        for (std::size_t phase = 0;
+             phase < phase_eedf_accumulators_.size(); ++phase) {
+            const double phase_fraction =
+                (static_cast<double>(phase) + 0.5) /
+                static_cast<double>(phase_eedf_accumulators_.size());
+            for (std::size_t region_id = 0;
+                 region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+                const auto& region = cfg_.phase_eedf.regions[region_id];
+                const auto& accumulator =
+                    phase_eedf_accumulators_[phase][region_id];
+                for (std::size_t bin = 0;
+                     bin < accumulator.histogram.size(); ++bin) {
+                    histogram << phase << ',' << phase_fraction << ','
+                        << region_id << ',' << csv_cell(region.name) << ','
+                        << region.x_min << ',' << region.x_max << ',' << bin
+                        << ',' << (static_cast<double>(bin) + 0.5) * bin_width
+                        << ',' << accumulator.histogram[bin] << ','
+                        << (accumulator.represented_observations > 0.0
+                                ? accumulator.histogram[bin] /
+                                      accumulator.represented_observations /
+                                      bin_width
+                                : 0.0)
+                        << '\n';
+                }
+                const double count = accumulator.represented_observations;
+                const double mean_energy = count > 0.0
+                    ? accumulator.weighted_energy_sum / count : 0.0;
+                const double energy_variance = count > 0.0
+                    ? std::max(0.0,
+                        accumulator.weighted_energy_squared_sum / count -
+                        mean_energy * mean_energy)
+                    : 0.0;
+                const double ux = count > 0.0
+                    ? accumulator.weighted_velocity_x_sum / count : 0.0;
+                const double uy = count > 0.0
+                    ? accumulator.weighted_velocity_y_sum / count : 0.0;
+                const double uz = count > 0.0
+                    ? accumulator.weighted_velocity_z_sum / count : 0.0;
+                const double drift_energy = 0.5 * target.mass() *
+                    (ux * ux + uy * uy + uz * uz) / energy_scale;
+                moments << phase << ',' << phase_fraction << ',' << region_id
+                    << ',' << csv_cell(region.name) << ',' << region.x_min
+                    << ',' << region.x_max << ','
+                    << accumulator.macro_observations << ',' << count << ','
+                    << (count > 0.0
+                            ? accumulator.overflow_represented_observations /
+                                  count
+                            : 0.0)
+                    << ',' << mean_energy << ',' << std::sqrt(energy_variance)
+                    << ',' << ux << ',' << uy << ',' << uz << ','
+                    << 2.0 / dimensions *
+                           std::max(0.0, mean_energy - drift_energy)
+                    << '\n';
+            }
+        }
+        require_stream(histogram, "failed while writing phase EEDF histogram");
+        require_stream(moments, "failed while writing phase EEDF moments");
+    }
+
     const auto expected =
         expected_spatial_average_samples();
     const bool complete =
@@ -1584,7 +1733,7 @@ void Simulation::write_spatial_average() const {
     }
     metadata << std::setprecision(17)
              << "{\n"
-             << "  \"spatial_average_version\": 4,\n"
+             << "  \"spatial_average_version\": 5,\n"
              << "  \"reset_on_restart\": "
              << (cfg_.spatial_average.reset_on_restart
                      ? "true" : "false")
@@ -1629,6 +1778,14 @@ void Simulation::write_spatial_average() const {
         metadata << spatial_collision_phase_steps_[phase];
     }
     metadata << "],\n"
+             << "  \"phase_eedf_enabled\": "
+             << (cfg_.phase_eedf.enabled ? "true" : "false") << ",\n"
+             << "  \"phase_eedf_species\": "
+             << json_string(cfg_.phase_eedf.species) << ",\n"
+             << "  \"phase_eedf_energy_bins\": "
+             << cfg_.phase_eedf.energy_bins << ",\n"
+             << "  \"phase_eedf_energy_max\": "
+             << cfg_.phase_eedf.energy_max << ",\n"
              << "  \"complete\": "
              << (complete ? "true" : "false") << ",\n"
              << "  \"effective_kinetic_temperature_definition\": "
@@ -1657,7 +1814,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV11 << '\n';
+    out << kCheckpointMagicV12 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1810,6 +1967,37 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             out << "\n";
         }
     }
+    out << "phase_eedf " << (cfg_.phase_eedf.enabled ? 1 : 0) << ' '
+        << (cfg_.phase_eedf.species.empty() ? "-" : cfg_.phase_eedf.species)
+        << ' ' << cfg_.phase_eedf.energy_bins << ' '
+        << cfg_.phase_eedf.energy_max << ' '
+        << phase_eedf_accumulators_.size() << ' '
+        << cfg_.phase_eedf.regions.size() << "\n";
+    for (std::size_t region = 0;
+         region < cfg_.phase_eedf.regions.size(); ++region) {
+        const auto& configured = cfg_.phase_eedf.regions[region];
+        out << "phase_eedf_region " << region << ' ' << configured.name << ' '
+            << configured.x_min << ' ' << configured.x_max << "\n";
+    }
+    for (std::size_t phase = 0;
+         phase < phase_eedf_accumulators_.size(); ++phase) {
+        for (std::size_t region = 0;
+             region < phase_eedf_accumulators_[phase].size(); ++region) {
+            const auto& value = phase_eedf_accumulators_[phase][region];
+            out << "phase_eedf_accumulator " << phase << ' ' << region << ' '
+                << value.macro_observations << ' '
+                << value.overflow_macro_observations << ' '
+                << value.represented_observations << ' '
+                << value.overflow_represented_observations << ' '
+                << value.weighted_energy_sum << ' '
+                << value.weighted_energy_squared_sum << ' '
+                << value.weighted_velocity_x_sum << ' '
+                << value.weighted_velocity_y_sum << ' '
+                << value.weighted_velocity_z_sum;
+            for (const double count : value.histogram) out << ' ' << count;
+            out << "\n";
+        }
+    }
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -1843,15 +2031,16 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v9 = magic == kCheckpointMagicV9;
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
+    const bool checkpoint_v12 = magic == kCheckpointMagicV12;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-        checkpoint_v10 || checkpoint_v11;
+        checkpoint_v10 || checkpoint_v11 || checkpoint_v12;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
         !checkpoint_v5 && !checkpoint_v6 &&
         !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-        !checkpoint_v10 && !checkpoint_v11) {
+        !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1868,7 +2057,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         if ((!checkpoint_v2 && !checkpoint_v3 &&
              !checkpoint_v4 && !checkpoint_v5 &&
              !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8 &&
-             !checkpoint_v9 && !checkpoint_v10 && !checkpoint_v11) ||
+             !checkpoint_v9 && !checkpoint_v10 && !checkpoint_v11 &&
+             !checkpoint_v12) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1880,6 +2070,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                checkpoint_v4 || checkpoint_v5 ||
                checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
                checkpoint_v9 || checkpoint_v10 || checkpoint_v11 ||
+               checkpoint_v12 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1911,7 +2102,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         if ((!checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 &&
              !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-             !checkpoint_v10 && !checkpoint_v11) ||
+             !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1932,7 +2123,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         clear_collision_counts(collision_interval_);
         in >> key;
-        if (checkpoint_v10 || checkpoint_v11) {
+        if (checkpoint_v10 || checkpoint_v11 || checkpoint_v12) {
             std::size_t energy_count = 0;
             in >> energy_count;
             if (key != "collision_energy_totals" ||
@@ -1955,7 +2146,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     } else if (checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 || checkpoint_v6 ||
                checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-               checkpoint_v10 || checkpoint_v11 ||
+               checkpoint_v10 || checkpoint_v11 || checkpoint_v12 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
@@ -1963,7 +2154,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     const bool checkpoint_has_boundary_losses =
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-        checkpoint_v10 || checkpoint_v11;
+        checkpoint_v10 || checkpoint_v11 || checkpoint_v12;
     const bool legacy_boundary_loss_origin =
         !checkpoint_has_boundary_losses;
     if (checkpoint_has_boundary_losses) {
@@ -2015,9 +2206,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     const bool legacy_power_transfer_origin =
         !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-        !checkpoint_v10 && !checkpoint_v11;
+        !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12;
     if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
-        checkpoint_v11) {
+        checkpoint_v11 || checkpoint_v12) {
         in >> power_transfer_origin_step_;
         if (key != "power_transfer_origin_step") {
             throw std::runtime_error(
@@ -2060,7 +2251,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     if (checkpoint_v5 || checkpoint_v6 ||
         checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
-        checkpoint_v11) {
+        checkpoint_v11 || checkpoint_v12) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -2152,7 +2343,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         in >> key;
         if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
-            checkpoint_v11) {
+            checkpoint_v11 || checkpoint_v12) {
             std::size_t stored_moment_samples = 0;
             std::size_t stored_moment_species_count = 0;
             std::size_t stored_moment_nx = 0;
@@ -2221,7 +2412,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             spatial_moment_samples_ = 0;
         }
         std::size_t stored_phase_count = 0;
-        if (checkpoint_v9 || checkpoint_v10 || checkpoint_v11) {
+        if (checkpoint_v9 || checkpoint_v10 || checkpoint_v11 ||
+            checkpoint_v12) {
             std::size_t stored_phase_species = 0;
             std::size_t stored_phase_nx = 0;
             in >> stored_phase_count >> stored_phase_species >> stored_phase_nx;
@@ -2345,7 +2537,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore phase-resolved spatial moments");
         }
-        if (checkpoint_v11) {
+        if (checkpoint_v11 || checkpoint_v12) {
             std::size_t stored_collision_steps = 0;
             std::size_t stored_collision_channels = 0;
             std::size_t stored_collision_nx = 0;
@@ -2454,6 +2646,118 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore spatial collision energy");
         }
+        if (checkpoint_v12) {
+            int stored_eedf_enabled = 0;
+            std::string stored_eedf_species;
+            std::size_t stored_eedf_bins = 0;
+            double stored_eedf_max = 0.0;
+            std::size_t stored_eedf_phases = 0;
+            std::size_t stored_eedf_regions = 0;
+            in >> stored_eedf_enabled >> stored_eedf_species >>
+                stored_eedf_bins >> stored_eedf_max >> stored_eedf_phases >>
+                stored_eedf_regions;
+            const bool enabled_shape = stored_eedf_enabled == 1;
+            const bool shape_valid =
+                (stored_eedf_enabled == 0 || stored_eedf_enabled == 1) &&
+                std::isfinite(stored_eedf_max) && stored_eedf_max >= 0.0 &&
+                stored_eedf_phases ==
+                    (enabled_shape ? stored_phase_count : 0) &&
+                (!enabled_shape ||
+                 (stored_eedf_bins > 0 && stored_eedf_max > 0.0 &&
+                  stored_eedf_regions > 0));
+            const bool contract_matches =
+                stored_eedf_enabled == (cfg_.phase_eedf.enabled ? 1 : 0) &&
+                stored_eedf_species ==
+                    (cfg_.phase_eedf.species.empty()
+                         ? "-" : cfg_.phase_eedf.species) &&
+                stored_eedf_bins == cfg_.phase_eedf.energy_bins &&
+                stored_eedf_max == cfg_.phase_eedf.energy_max &&
+                stored_eedf_phases == phase_eedf_accumulators_.size() &&
+                stored_eedf_regions == cfg_.phase_eedf.regions.size();
+            if (key != "phase_eedf" || !shape_valid ||
+                (!reset && !contract_matches)) {
+                throw std::runtime_error(
+                    "checkpoint phase EEDF contract is invalid");
+            }
+            std::vector<PhaseEedfRegion1DConfig> stored_regions(
+                stored_eedf_regions);
+            for (std::size_t region = 0;
+                 region < stored_eedf_regions; ++region) {
+                std::size_t stored_region = 0;
+                in >> key >> stored_region >> stored_regions[region].name >>
+                    stored_regions[region].x_min >> stored_regions[region].x_max;
+                if (key != "phase_eedf_region" || stored_region != region ||
+                    stored_regions[region].name.empty() ||
+                    !std::isfinite(stored_regions[region].x_min) ||
+                    !std::isfinite(stored_regions[region].x_max) ||
+                    stored_regions[region].x_max <=
+                        stored_regions[region].x_min ||
+                    (!reset &&
+                     (stored_regions[region].name !=
+                          cfg_.phase_eedf.regions[region].name ||
+                      stored_regions[region].x_min !=
+                          cfg_.phase_eedf.regions[region].x_min ||
+                      stored_regions[region].x_max !=
+                          cfg_.phase_eedf.regions[region].x_max))) {
+                    throw std::runtime_error(
+                        "checkpoint phase EEDF region is invalid");
+                }
+            }
+            for (std::size_t phase = 0;
+                 phase < stored_eedf_phases; ++phase) {
+                for (std::size_t region = 0;
+                     region < stored_eedf_regions; ++region) {
+                    std::size_t stored_phase = 0;
+                    std::size_t stored_region = 0;
+                    PhaseEedfAccumulator1D value;
+                    in >> key >> stored_phase >> stored_region >>
+                        value.macro_observations >>
+                        value.overflow_macro_observations >>
+                        value.represented_observations >>
+                        value.overflow_represented_observations >>
+                        value.weighted_energy_sum >>
+                        value.weighted_energy_squared_sum >>
+                        value.weighted_velocity_x_sum >>
+                        value.weighted_velocity_y_sum >>
+                        value.weighted_velocity_z_sum;
+                    value.histogram.resize(stored_eedf_bins);
+                    for (auto& count : value.histogram) in >> count;
+                    const bool finite = std::isfinite(
+                            value.represented_observations) &&
+                        std::isfinite(value.overflow_represented_observations) &&
+                        std::isfinite(value.weighted_energy_sum) &&
+                        std::isfinite(value.weighted_energy_squared_sum) &&
+                        std::isfinite(value.weighted_velocity_x_sum) &&
+                        std::isfinite(value.weighted_velocity_y_sum) &&
+                        std::isfinite(value.weighted_velocity_z_sum) &&
+                        std::all_of(value.histogram.begin(),
+                            value.histogram.end(), [](double count) {
+                                return std::isfinite(count) && count >= 0.0;
+                            });
+                    if (key != "phase_eedf_accumulator" ||
+                        stored_phase != phase || stored_region != region ||
+                        value.overflow_macro_observations >
+                            value.macro_observations || !finite ||
+                        value.represented_observations < 0.0 ||
+                        value.overflow_represented_observations < 0.0 ||
+                        value.overflow_represented_observations >
+                            value.represented_observations ||
+                        value.weighted_energy_sum < 0.0 ||
+                        value.weighted_energy_squared_sum < 0.0) {
+                        throw std::runtime_error(
+                            "checkpoint phase EEDF accumulator is invalid");
+                    }
+                    if (!reset) {
+                        phase_eedf_accumulators_[phase][region] =
+                            std::move(value);
+                    }
+                }
+            }
+            in >> key;
+        } else if (!reset && cfg_.phase_eedf.enabled && stored_samples != 0) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore phase EEDF state");
+        }
         if (reset) {
             spatial_moment_samples_ = 0;
             spatial_collision_steps_ = 0;
@@ -2486,7 +2790,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
-    if (checkpoint_v11 && cfg_.spatial_average.enabled &&
+    if ((checkpoint_v11 || checkpoint_v12) &&
+        cfg_.spatial_average.enabled &&
         !cfg_.spatial_average.reset_on_restart &&
         !spatial_collision_energy_sums_.empty()) {
         const auto& average = cfg_.spatial_average;

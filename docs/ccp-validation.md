@@ -555,6 +555,21 @@ another global power diagnostic. The reusable analyzer is
 checksums are in
 [`turner-case1-spatial-collision-32cycle-20260804.json`](../benchmarks/ccp/turner-case1-spatial-collision-32cycle-20260804.json).
 
+Checkpoint v12 adds configurable phase-resolved regional EEDFs. The first
+32-cycle campaign used 0.5 eV bins through 500 eV in the central 20% and both
+outer 20% regions. Overflow and histogram-normalization residual were zero,
+and the independent kinetic ledger remained closed to `2.10e-11 W m^-2`.
+The bulk mean energy was `13.562 eV`; its drift-separated temperature ranged
+from `8.275` to `9.458 eV`, and its half-cycle histogram total variation was
+only `0.79%`. Fractions above triplet, singlet, and ionization thresholds were
+22.38%, 21.50%, and 15.57%. The populated outer-region phases were hotter,
+with approximately 22.4--22.5% above ionization threshold, while complementary
+phase bins were completely electron depleted near opposite electrodes. These
+are well-closed AuroraPIC diagnostics, not a published EEDF validation. The
+next credible discriminator is an independently generated EEDF with identical
+regions and phase bins. Evidence is recorded in
+[`turner-case1-phase-eedf-32cycle-20260804.json`](../benchmarks/ccp/turner-case1-phase-eedf-32cycle-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

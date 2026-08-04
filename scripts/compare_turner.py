@@ -198,8 +198,8 @@ def compare(case: int, reference: Path, candidate: Path,
     samples = 32 * steps_per_cycle
     start_step = end_step - samples + 1
     require(
-        metadata.get("spatial_average_version") in (1, 2, 3, 4),
-        "candidate averaging metadata 'spatial_average_version' must be 1, 2, 3, or 4",
+        metadata.get("spatial_average_version") in (1, 2, 3, 4, 5),
+        "candidate averaging metadata 'spatial_average_version' must be 1, 2, 3, 4, or 5",
     )
     common_metadata = {
         "unit_system": "si",

@@ -202,7 +202,7 @@ def main() -> int:
                     "collision_energy_totals",
                     "spatial_moments", "spatial_energy", "spatial_fields",
                     "spatial_phase", "phase_bin", "phase_species",
-                    "phase_fields", "spatial_collision",
+                    "phase_fields", "spatial_collision", "phase_eedf",
                 ))
             ) + "\n",
             encoding="utf-8",

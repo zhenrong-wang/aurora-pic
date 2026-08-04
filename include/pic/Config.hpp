@@ -153,6 +153,20 @@ struct SpatialAverage1DConfig {
     std::size_t phase_bins{0};
 };
 
+struct PhaseEedfRegion1DConfig {
+    std::string name{};
+    double x_min{0.0};
+    double x_max{0.0};
+};
+
+struct PhaseEedf1DConfig {
+    bool enabled{false};
+    std::string species{};
+    std::size_t energy_bins{0};
+    double energy_max{0.0};
+    std::vector<PhaseEedfRegion1DConfig> regions{};
+};
+
 struct Config {
     UnitSystemConfig units{};
     std::size_t velocity_dimensions{1};
@@ -162,6 +176,7 @@ struct Config {
     std::size_t steps{100};
     std::size_t output_interval{10};
     SpatialAverage1DConfig spatial_average{};
+    PhaseEedf1DConfig phase_eedf{};
     Boundary boundary{Boundary::Periodic};
     RunMode mode{RunMode::Transient};
     double phi_left{0.0};

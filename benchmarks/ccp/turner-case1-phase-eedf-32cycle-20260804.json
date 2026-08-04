@@ -1,0 +1,75 @@
+{
+  "evidence_version": 1,
+  "case": "Turner helium CCP Case 1",
+  "scope": "post_benchmark_32_cycle_phase_resolved_regional_eedf",
+  "claim_boundary": "No published Turner EEDF acceptance data are available; this diagnoses AuroraPIC internally and defines the next cross-code comparison target.",
+  "run_contract": {
+    "solver_parent_commit": "04c03c0",
+    "start_step": 770801,
+    "end_step": 783600,
+    "rf_cycles": 32,
+    "phase_bins": 16,
+    "energy_bins": 1000,
+    "energy_max_eV": 500.0,
+    "regions_m": {
+      "bulk": [0.0268, 0.0402],
+      "left_outer20": [0.0, 0.0134],
+      "right_outer20": [0.0536, 0.067]
+    },
+    "checkpoint_version": 12,
+    "runtime_threads": 1
+  },
+  "quality": {
+    "maximum_overflow_fraction": 0.0,
+    "maximum_histogram_normalization_residual": 0.0,
+    "kinetic_budget_residual_W_m-2": 2.0969531666636954e-11,
+    "kinetic_budget_relative_residual": 1.6643967086914548e-13,
+    "passes": true
+  },
+  "regions": {
+    "bulk": {
+      "mean_energy_eV": 13.561551931518956,
+      "drift_separated_temperature_range_eV": [8.275092770671357, 9.45819202408861],
+      "fraction_above_triplet_threshold": 0.2237933228958565,
+      "fraction_above_singlet_threshold": 0.21497761788231112,
+      "fraction_above_ionization_threshold": 0.1556527616068215,
+      "half_cycle_histogram_total_variation_mean": 0.007904300071156362,
+      "empty_phase_bins": []
+    },
+    "left_outer20": {
+      "mean_energy_eV": 16.87648284206835,
+      "fraction_above_ionization_threshold": 0.22389791803440265,
+      "empty_phase_bins": [3, 4, 5]
+    },
+    "right_outer20": {
+      "mean_energy_eV": 16.908889292461186,
+      "fraction_above_ionization_threshold": 0.22530824883128822,
+      "empty_phase_bins": [11, 12, 13]
+    }
+  },
+  "mirrored_outer_regions": {
+    "populated_phase_pairs": 13,
+    "half_cycle_histogram_total_variation_mean": 0.1662215213977222
+  },
+  "interpretation": {
+    "supported": [
+      "The central bulk EEDF is highly half-cycle symmetric and has no histogram truncation.",
+      "Near-electrode populated phases have higher mean energy and about 22.4 to 22.5 percent of observations above the ionization threshold, versus 15.6 percent in the bulk.",
+      "Opposite near-electrode regions become electron depleted in complementary RF phase bins."
+    ],
+    "not_supported": [
+      "Without an independent phase- and region-matched EEDF, these distributions do not identify a collision or pusher defect.",
+      "Empty near-electrode phase bins are physical zero-observation diagnostics, not zero-temperature plasma measurements."
+    ],
+    "next_target": "Obtain or generate an independent Turner-compatible phase-selected EEDF and compare tail fractions and moments with identical regions and phase bins."
+  },
+  "provenance_sha256": {
+    "solver_executable": "92c46eef2406e5bafb4afab810850e05ed5b74992a5bdded2eef43d0dab22249",
+    "run_config": "4e7c7d5fa9893eb0a20e892cb91ea7943a23e555173809908c4de066bcf29278",
+    "final_checkpoint": "6299e2cc38bd12ecefacfb7cf2ca0e28c6d8e5a071ac78ee69afa53570dfa4a5",
+    "phase_eedf_csv": "c46786f538ef4ba7c1388a6c9e8b7668555bea4cfdbf54e01c6e91f22235a20e",
+    "phase_eedf_moments_csv": "01ea6bf1572850cadb132dd1e75db4478ad5138edb49a713c691ba583059ada8",
+    "phase_eedf_analysis": "51200c5a5209461b9c0deae5ebe6e81915ca5de5208124cd58daaa794a6905e5",
+    "energy_budget_analysis": "b4f24abb870f54a47c0328bfac4d49c36c7b47a8caa3992fa13d95eaded94688"
+  }
+}

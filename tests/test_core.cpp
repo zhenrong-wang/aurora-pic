@@ -31,6 +31,7 @@
 #include <iterator>
 #include <limits>
 #include <numbers>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -3378,8 +3379,8 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v11\n") == 0,
-                "1D spatial collision-energy checkpoint did not use v11");
+                    "AuroraPIC-checkpoint-v12\n") == 0,
+                "1D phase-EEDF checkpoint did not use v12");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3404,6 +3405,7 @@ int main() {
                         line.starts_with("phase_bin") ||
                         line.starts_with("phase_species") ||
                         line.starts_with("spatial_collision") ||
+                        line.starts_with("phase_eedf") ||
                         line.starts_with("phase_fields")) {
                         continue;
                     } else {
@@ -3451,6 +3453,7 @@ int main() {
                         line.starts_with("phase_bin") ||
                         line.starts_with("phase_species") ||
                         line.starts_with("spatial_collision") ||
+                        line.starts_with("phase_eedf") ||
                         line.starts_with("phase_fields")) {
                         continue;
                     } else {
@@ -3660,6 +3663,12 @@ int main() {
             cfg.spatial_average.rf_frequency = 2.5;
             cfg.spatial_average.rf_cycles = 2;
             cfg.spatial_average.phase_bins = 2;
+            cfg.phase_eedf.enabled = true;
+            cfg.phase_eedf.species = "electrons";
+            cfg.phase_eedf.energy_bins = 10;
+            cfg.phase_eedf.energy_max = 10.0;
+            cfg.phase_eedf.regions = {
+                {"left", 0.0, 0.5}, {"right", 0.5, 1.0}};
             cfg.collisions.enabled = true;
             cfg.collisions.model =
                 pic::CollisionModelKind::NullCollision;
@@ -3764,9 +3773,43 @@ int main() {
                     phase_energy[phase][0], 1e-12,
                     "1D3V restart lost phase collision energy");
             }
+            const auto& eedf = continuous.phase_eedf_accumulators();
+            const auto& restarted_eedf =
+                restarted.phase_eedf_accumulators();
+            require(
+                eedf.size() == 2 && eedf[0].size() == 2,
+                "1D phase EEDF has the wrong shape");
+            for (std::size_t phase = 0; phase < eedf.size(); ++phase) {
+                for (std::size_t region = 0;
+                     region < eedf[phase].size(); ++region) {
+                    const auto& expected_eedf = eedf[phase][region];
+                    const auto& actual_eedf = restarted_eedf[phase][region];
+                    require(
+                        expected_eedf.macro_observations ==
+                            actual_eedf.macro_observations &&
+                        expected_eedf.overflow_macro_observations ==
+                            actual_eedf.overflow_macro_observations,
+                        "1D restart lost phase EEDF integer state");
+                    require_vector_near(
+                        actual_eedf.histogram, expected_eedf.histogram,
+                        1e-12, "1D restart lost phase EEDF histogram");
+                    require_near(
+                        actual_eedf.weighted_energy_sum,
+                        expected_eedf.weighted_energy_sum, 1e-12,
+                        "1D restart lost phase EEDF energy moment");
+                    const double histogram_total = std::accumulate(
+                        expected_eedf.histogram.begin(),
+                        expected_eedf.histogram.end(), 0.0);
+                    require_near(
+                        histogram_total +
+                            expected_eedf.overflow_represented_observations,
+                        expected_eedf.represented_observations, 1e-12,
+                        "1D phase EEDF histogram does not close");
+                }
+            }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v11\n") == 0,
+                    "AuroraPIC-checkpoint-v12\n") == 0,
                 "1D3V checkpoint did not use the spatial-moment-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -3775,6 +3818,10 @@ int main() {
                 output_dir / "spatial_collision_power.csv");
             const auto phase_collision_csv = read_file_text(
                 output_dir / "spatial_phase_collision_power.csv");
+            const auto eedf_csv = read_file_text(
+                output_dir / "phase_eedf.csv");
+            const auto eedf_moments_csv = read_file_text(
+                output_dir / "phase_eedf_moments.csv");
             require(
                 spatial_collision_csv.find(
                     "energy_density_sum_normalized,mean_power_density_normalized") !=
@@ -3787,6 +3834,10 @@ int main() {
                     count_lines(phase_collision_csv) ==
                         2 * cfg.nx + 1,
                 "1D phase collision-power CSV contract is wrong");
+            require(
+                count_lines(eedf_csv) == 2 * 2 * 10 + 1 &&
+                    count_lines(eedf_moments_csv) == 2 * 2 + 1,
+                "1D phase EEDF CSV contract is wrong");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }
