@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case": "Turner helium CCP Case 1",
+  "purpose": "Four-RF-cycle implementation check of the independent tracked-particle kinetic-energy ledger; not a published-observable acceptance window.",
+  "window": {
+    "start_step": 755600,
+    "end_step": 757200,
+    "rf_cycles": 4,
+    "duration_s": 2.9498525072266246e-07
+  },
+  "power_W_m-2": {
+    "electric_total": 127.06113251122471,
+    "collision_tracked_kinetic_total": -81.68879545323355,
+    "wall_kinetic_total": 46.29015131323776,
+    "tracked_kinetic_energy_rate": -0.9178142552363505,
+    "ledger_prediction": -0.9178142552465971,
+    "closure_residual": 1.0246581361172957e-11,
+    "relative_closure_residual": 8.064292485562226e-14
+  },
+  "collision_channel_power_W_m-2": {
+    "electron_mcc.elastic": -0.12572180647079964,
+    "electron_mcc.excitation_triplet": -4.814915621337906,
+    "electron_mcc.excitation_singlet": -8.683618277762077,
+    "electron_mcc.ionization": -10.883715100022991,
+    "ion_mcc.isotropic": -2.6121687962926026,
+    "ion_mcc.backward": -54.568655851347174
+  },
+  "wall_kinetic_power_W_m-2": {
+    "electrons_left": 5.155502890732395,
+    "electrons_right": 5.220069376563002,
+    "ions_left": 17.681509047663685,
+    "ions_right": 18.23306999827868
+  },
+  "identity": {
+    "solver_sha256": "d5217e7f26a7628164537f31c6d112640270faa48b48e06bb3fee11eab96ecc9",
+    "input_checkpoint_755600_sha256": "54347bca711d86d225104f964815b62c8c22d890bb736e203bdb6c93ed14002c",
+    "deck_sha256": "ecec74040464ebb176651ba51bfd9a1cd3dcfdfeff31c6e09aeb969168fcbead",
+    "output_checkpoint_757200_sha256": "8ab3db67fdfb5f5679cc8bc896db6deeb9d7cf42fac159524422d4c9e87604c7"
+  },
+  "acceptance": {
+    "absolute_residual_tolerance_W_m-2": 1e-08,
+    "passes": true
+  }
+}

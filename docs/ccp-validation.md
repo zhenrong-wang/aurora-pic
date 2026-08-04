@@ -483,6 +483,24 @@ kinetic-energy change. Neutral kinetic energy, internal excitation energy, and
 ionization potential are outside that tracked-particle ledger and appear as a
 signed channel loss. Checkpoint v10 preserves the cumulative channel totals.
 
+The first bounded application was a four-RF-cycle pilot continuing Case 1
+from step 755,600 through 757,200. The independent tracked-particle balance
+
+```text
+dK/dt = electric work + collision kinetic transfer - wall kinetic loss
+```
+
+closed with a residual of `1.02e-11 W m^-2` (`8.06e-14` relative). Electric
+work was `127.061 W m^-2`, collisions removed `81.689 W m^-2`, walls removed
+`46.290 W m^-2`, and the measured kinetic-energy rate was
+`-0.917814 W m^-2`. Every configured electron and ion channel was exercised
+and had the physically expected negative tracked-particle kinetic transfer.
+This is a strong implementation-level conservation result, but the four-cycle
+channel powers are not a new Turner acceptance comparison; production means
+still require a predeclared longer window. The reusable calculation is
+`scripts/analyze_1d_energy_budget.py`, and the checksum-pinned evidence is
+[`turner-case1-energy-ledger-pilot-20260804.json`](../benchmarks/ccp/turner-case1-energy-ledger-pilot-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
