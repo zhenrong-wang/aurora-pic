@@ -639,6 +639,22 @@ startup timing: throughput already fell from 2.36 to 1.42 cycles/s as the
 population increased. Evidence is
 [`edupic-reference-equilibration-stage-0003-0004-20260804.json`](../benchmarks/ccp/edupic-reference-equilibration-stage-0003-0004-20260804.json).
 
+Two further two-cycle stages reached cycle 8 under respective 70 and 90
+million initial-particle-timestep ceilings. Population rose from 8,109 to
+10,685 and then 13,129; throughput decreased to 1.13 cycles/s. The complete
+eight-cycle trace still has a total-population relative linear slope of
+`+0.148` per cycle and an endpoint change of `+1.032` relative to its mean.
+
+`analyze_edupic_convergence.py` now makes the equilibration gate objective and
+predeclared. It cannot become eligible before cycle 1,500 and requires the
+last 100 cycles split into four 25-cycle blocks. Electron, ion, and total
+population must each have absolute relative linear slope no greater than
+`1e-4` per cycle and block-mean range no greater than 2% of the window mean.
+Passing this gate authorizes a measurement window; it is not itself a physics
+validation. Current status is correctly ineligible and nonstationary. Evidence
+is
+[`edupic-reference-equilibration-through-cycle8-20260804.json`](../benchmarks/ccp/edupic-reference-equilibration-through-cycle8-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

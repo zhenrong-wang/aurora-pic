@@ -46,6 +46,7 @@ python3 scripts/test_spatial_average_1d.py build/aurorapic_cli
 python3 scripts/test_analyze_turner_spatial_structure.py
 python3 scripts/test_phase_eedf_interchange.py
 python3 scripts/test_edupic_stage.py
+PYTHONPATH=scripts python3 scripts/test_analyze_edupic_convergence.py
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
 python3 scripts/validate_pushers.py
 python3 scripts/test_kinetic_benchmarks.py

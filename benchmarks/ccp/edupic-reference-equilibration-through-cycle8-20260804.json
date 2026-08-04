@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_external_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Only eight initialization cycles are available. The predeclared stationarity gate is ineligible before cycle 1500 and a final 100-cycle window.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "stages": [
+    {
+      "start_cycle": 4,
+      "end_cycle": 6,
+      "wall_seconds": 1.4541653919732198,
+      "initial_particle_steps": 64872000,
+      "initial_total_particles": 8109,
+      "final_total_particles": 10685,
+      "stage_report_sha256": "71b7a8eaf578b17d953168d671ee8b0d8d3a7e6fa35d0dd3b528031d674ffc9f"
+    },
+    {
+      "start_cycle": 6,
+      "end_cycle": 8,
+      "wall_seconds": 1.7677630839170888,
+      "initial_particle_steps": 85480000,
+      "initial_total_particles": 10685,
+      "final_total_particles": 13129,
+      "stage_report_sha256": "5aef13f02b2f4a95ff0978d5c93c516173d8bdfb3bae0e982f3aacadda3809c3"
+    }
+  ],
+  "latest_state": {
+    "cycle": 8,
+    "electrons": 4943,
+    "ions": 8186,
+    "total_particles": 13129,
+    "checkpoint_sha256": "ee2dd038aa66a76b6905e42afb922e71fdb82671dd040a59211dcf84069ee9b1",
+    "convergence_sha256": "3e24eaeee16af40971cd7ca19bdf4f6c995135e4fe171af8f69a77bcaa2ff4e2"
+  },
+  "stationarity_contract": {
+    "minimum_cycle": 1500,
+    "window_cycles": 100,
+    "block_cycles": 25,
+    "maximum_absolute_relative_slope_per_cycle": 0.0001,
+    "maximum_block_mean_range_relative_to_window_mean": 0.02,
+    "applies_to": ["electrons", "ions", "total_particles"]
+  },
+  "current_stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "total_population_relative_slope_per_cycle": 0.14811363547732279,
+    "total_population_endpoint_change_relative_to_mean": 1.0317093145213432,
+    "analysis_sha256": "aa5feb7f43b4105e58ca59013ab26009964ad7967b3a2000b9f7001dff8465e1"
+  }
+}

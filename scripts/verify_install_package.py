@@ -261,6 +261,7 @@ def smoke_install_tree(
     for script in (
         "export_phase_eedf.py", "compare_phase_eedf.py",
         "analyze_phase_eedf.py", "run_edupic_stage.py",
+        "analyze_edupic_convergence.py",
     ):
         require_file(prefix / "share" / "aurorapic" / "scripts" / script)
     require_file(
