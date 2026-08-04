@@ -703,6 +703,17 @@ separates accumulated solver-stage wall time from individual coordinator
 invocation overhead. Evidence is
 [`edupic-reference-adaptive-through-cycle44-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle44-20260804.json).
 
+Five further two-cycle stages advanced cycle 44 to 54 in 41.48 s of
+coordinator wall time. Population increased from 52,332 to 61,136, while the
+total relative slope decreased to `+0.0311` per cycle. Fifty-four samples now
+contain two complete 25-cycle blocks, whose total-population means are 18,882
+and 46,322. Their range is 79.3% of the full-history mean, far above the
+predeclared 2% limit. Electron and ion relative slopes are independently
+positive at `+0.0341` and `+0.0288` per cycle. This quantitatively confirms
+that the default eduPIC discharge is still forming, not merely fluctuating
+around a stationary population. Evidence is
+[`edupic-reference-adaptive-through-cycle54-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle54-20260804.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
