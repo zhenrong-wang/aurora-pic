@@ -28,6 +28,18 @@ struct SpeciesPower1D {
     double electric_work{0.0};
 };
 
+struct SpatialPhaseBin1D {
+    std::size_t samples{0};
+    std::vector<std::vector<double>> density{};
+    std::vector<std::vector<double>> velocity_x_density{};
+    std::vector<std::vector<double>> velocity_y_density{};
+    std::vector<std::vector<double>> velocity_z_density{};
+    std::vector<std::vector<double>> kinetic_energy_density{};
+    std::vector<double> potential{};
+    std::vector<double> electric{};
+    std::vector<double> electric_squared{};
+};
+
 class Simulation {
 public:
     explicit Simulation(Config cfg);
@@ -106,9 +118,13 @@ private:
     std::vector<std::vector<double>>
         spatial_kinetic_energy_sums_{};
     std::vector<double> spatial_kinetic_energy_scratch_{};
+    std::vector<double> spatial_velocity_x_scratch_{};
+    std::vector<double> spatial_velocity_y_scratch_{};
+    std::vector<double> spatial_velocity_z_scratch_{};
     std::vector<double> spatial_potential_sums_{};
     std::vector<double> spatial_electric_sums_{};
     std::vector<double> spatial_electric_squared_sums_{};
+    std::vector<SpatialPhaseBin1D> spatial_phase_bins_{};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

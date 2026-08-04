@@ -150,6 +150,7 @@ struct SpatialAverage1DConfig {
     std::size_t end_step{0};
     double rf_frequency{0.0};
     std::size_t rf_cycles{0};
+    std::size_t phase_bins{0};
 };
 
 struct Config {

@@ -35,10 +35,15 @@ def run(binary: Path, config: Path) -> subprocess.CompletedProcess[str]:
 
 def deck(output: Path, steps: int, restart: Path | None = None,
          interval: int = 1, start_step: int = 1,
-         end_step: int = 4, reset: bool = False) -> str:
+         end_step: int = 4, reset: bool = False,
+         phase_bins: int = 0) -> str:
     restart_line = "" if restart is None else f"restart_path = {restart}\n"
     reset_line = (
         "spatial_average_reset_on_restart = true\n" if reset else ""
+    )
+    phase_line = (
+        f"spatial_average_phase_bins = {phase_bins}\n"
+        if phase_bins else ""
     )
     return (
         "config_version = 1\n"
@@ -63,6 +68,7 @@ def deck(output: Path, steps: int, restart: Path | None = None,
         f"spatial_average_interval = {interval}\n"
         f"spatial_average_start_step = {start_step}\n"
         f"spatial_average_end_step = {end_step}\n"
+        f"{phase_line}"
         "[species.electrons]\n"
         "charge = -1\n"
         "mass = 1\n"
@@ -194,6 +200,8 @@ def main() -> int:
                 line for line in legacy_lines
                 if not line.startswith((
                     "spatial_moments", "spatial_energy", "spatial_fields",
+                    "spatial_phase", "phase_bin", "phase_species",
+                    "phase_fields",
                 ))
             ) + "\n",
             encoding="utf-8",
@@ -314,7 +322,7 @@ def main() -> int:
 
         rf_config = work / "rf.cfg"
         rf_config.write_text(
-            deck(work / "rf-output", 4)
+            deck(work / "rf-output", 4, phase_bins=2)
             .replace("dt = 0.01", "dt = 0.25")
             .replace(
                 "spatial_average_end_step = 4\n",
@@ -327,6 +335,67 @@ def main() -> int:
         rf = run(binary, rf_config)
         require(rf.returncode == 0,
                 f"whole-cycle RF averaging was rejected: {rf.stderr}")
+        rf_output = work / "rf-output"
+        rf_metadata = json.loads(
+            (rf_output / "spatial_average_metadata.json").read_text(
+                encoding="utf-8"))
+        require(
+            rf_metadata["phase_bins"] == 2
+            and rf_metadata["phase_bin_samples"] == [2, 2],
+            "RF phase-bin sample allocation is wrong",
+        )
+        with (rf_output / "spatial_phase_moments.csv").open(
+            newline="", encoding="utf-8") as stream:
+            phase_rows = list(csv.DictReader(stream))
+        require(
+            phase_rows
+            and all(float(row["drift_separated_temperature_normalized"])
+                    >= 0.0 for row in phase_rows)
+            and all(
+                float(row["drift_separated_temperature_normalized"])
+                <= 2.0 * float(row["mean_kinetic_energy_normalized"])
+                   + 1e-14
+                for row in phase_rows
+            ),
+            "drift-separated phase temperature is invalid",
+        )
+
+        rf_split_output = work / "rf-split-output"
+        rf_split_config = work / "rf-split.cfg"
+        rf_split_config.write_text(
+            deck(rf_split_output, 2, phase_bins=2)
+            .replace("dt = 0.01", "dt = 0.25")
+            .replace(
+                "spatial_average_end_step = 4\n",
+                "spatial_average_end_step = 4\n"
+                "spatial_average_rf_frequency = 1\n"
+                "spatial_average_rf_cycles = 1\n",
+            ), encoding="utf-8")
+        rf_split = run(binary, rf_split_config)
+        require(rf_split.returncode == 0,
+                f"phase-bin split run failed: {rf_split.stderr}")
+        rf_resumed_output = work / "rf-resumed-output"
+        rf_resumed_config = work / "rf-resumed.cfg"
+        rf_resumed_config.write_text(
+            deck(rf_resumed_output, 4,
+                 rf_split_output / "checkpoint_2.apc", phase_bins=2)
+            .replace("dt = 0.01", "dt = 0.25")
+            .replace(
+                "spatial_average_end_step = 4\n",
+                "spatial_average_end_step = 4\n"
+                "spatial_average_rf_frequency = 1\n"
+                "spatial_average_rf_cycles = 1\n",
+            ), encoding="utf-8")
+        rf_resumed = run(binary, rf_resumed_config)
+        require(rf_resumed.returncode == 0,
+                f"phase-bin resumed run failed: {rf_resumed.stderr}")
+        for filename in ("spatial_phase_moments.csv",
+                         "spatial_phase_fields.csv"):
+            require(
+                (rf_output / filename).read_bytes()
+                == (rf_resumed_output / filename).read_bytes(),
+                f"checkpoint continuation changed {filename}",
+            )
 
         invalid_rf_config = work / "invalid-rf.cfg"
         invalid_rf_config.write_text(
@@ -341,6 +410,19 @@ def main() -> int:
             invalid_rf.returncode != 0
             and "whole RF cycles" in invalid_rf.stderr,
             "non-whole-cycle RF averaging window was accepted",
+        )
+
+        invalid_phase_config = work / "invalid-phase.cfg"
+        invalid_phase_config.write_text(
+            rf_config.read_text(encoding="utf-8").replace(
+                "spatial_average_phase_bins = 2",
+                "spatial_average_phase_bins = 3"),
+            encoding="utf-8")
+        invalid_phase = run(binary, invalid_phase_config)
+        require(
+            invalid_phase.returncode != 0
+            and "phase_bins must divide" in invalid_phase.stderr,
+            "non-divisor RF phase-bin count was accepted",
         )
 
     print("restart-safe 1D spatial averaging passed")

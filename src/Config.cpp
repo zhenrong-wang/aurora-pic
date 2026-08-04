@@ -1356,7 +1356,8 @@ void validate_spatial_average_1d(const Config& cfg) {
     if (!average.enabled) {
         if (average.reset_on_restart ||
             average.rf_cycles != 0 ||
-            average.rf_frequency != 0.0) {
+            average.rf_frequency != 0.0 ||
+            average.phase_bins != 0) {
             throw std::runtime_error(
                 "disabled spatial_average cannot configure restart "
                 "reset or an RF contract");
@@ -1373,7 +1374,7 @@ void validate_spatial_average_1d(const Config& cfg) {
             "spatial_average requires 1 <= start_step <= end_step");
     }
     if (average.rf_frequency == 0.0) {
-        if (average.rf_cycles != 0) {
+        if (average.rf_cycles != 0 || average.phase_bins != 0) {
             throw std::runtime_error(
                 "spatial_average_rf_cycles requires positive "
                 "spatial_average_rf_frequency");
@@ -1427,6 +1428,14 @@ void validate_spatial_average_1d(const Config& cfg) {
         throw std::runtime_error(
             "spatial_average_interval must divide RF steps per cycle");
     }
+    const std::size_t samples_per_cycle =
+        steps_per_cycle / average.interval;
+    if (average.phase_bins > samples_per_cycle ||
+        (average.phase_bins != 0 &&
+         samples_per_cycle % average.phase_bins != 0)) {
+        throw std::runtime_error(
+            "spatial_average_phase_bins must divide the sampled RF cycle");
+    }
     for (const auto& drive :
          {cfg.phi_left_drive, cfg.phi_right_drive}) {
         if (drive.amplitude == 0.0) continue;
@@ -1449,6 +1458,7 @@ Config load_config(const std::string& path) {
         "spatial_average_interval",
         "spatial_average_start_step", "spatial_average_end_step",
         "spatial_average_rf_frequency", "spatial_average_rf_cycles",
+        "spatial_average_phase_bins",
         "max_particles_per_species",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
@@ -1527,6 +1537,9 @@ Config load_config(const std::string& path) {
     cfg.spatial_average.rf_cycles = as<std::size_t>(
         global, "spatial_average_rf_cycles",
         cfg.spatial_average.rf_cycles);
+    cfg.spatial_average.phase_bins = as<std::size_t>(
+        global, "spatial_average_phase_bins",
+        cfg.spatial_average.phase_bins);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir);
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.phi_left = as<double>(global, "phi_left", cfg.phi_left);

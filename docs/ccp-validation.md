@@ -317,6 +317,7 @@ spatial_average_start_step = 499201
 spatial_average_end_step = 512000
 spatial_average_rf_frequency = 13.56e6
 spatial_average_rf_cycles = 32
+spatial_average_phase_bins = 16
 ```
 
 This selects 12,800 post-step samples. Configuration validation requires an
@@ -333,10 +334,20 @@ automatic sheath-edge definition. `spatial_average_metadata.json` records the
 window, timestep, density and moment sample counts, definitions, species, and
 completeness gates.
 
+Optional `spatial_average_phase_bins` must divide the number of sampled steps
+per RF cycle. It writes `spatial_phase_moments.csv` with species-resolved
+density, mean three-velocity, mean kinetic energy, and drift-separated
+temperature in each phase bin, plus `spatial_phase_fields.csv` with matching
+potential and electric-field statistics. The drift-separated definition is
+`2/d * (<K> - m|<v>|^2/2)`, where `d` is the configured velocity dimension.
+Checkpoint v9 preserves every phase-bin accumulator and sample count; bounded
+regressions require byte-identical continuous and checkpoint-split products.
+
 1D checkpoint v5 and later stores the density averaging contract, sample
 count, and every nodal density sum; v6 adds species/side wall count and impact
-energy, v7 adds species electric work, and v8 adds kinetic-energy, potential,
-mean-field, and squared-field sums. A changed averaging window is rejected by default.
+energy, v7 adds species electric work, v8 adds kinetic-energy, potential,
+mean-field, and squared-field sums, and v9 adds phase-binned velocity and field
+moments. A changed averaging window is rejected by default.
 When a pre-v8 checkpoint continues an active density window, density remains
 restart-correct but the new moment products remain header-only and
 `moments_complete` is false; use an explicit post-checkpoint reset window to

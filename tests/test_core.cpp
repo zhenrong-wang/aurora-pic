@@ -2139,6 +2139,24 @@ int main() {
                 energy_density[0], 232.0, 1e-14,
                 "1D3V kinetic-energy deposition did not use the "
                 "boundary half-volume");
+            std::vector<double> density(grid.nx(), 0.0);
+            std::vector<double> velocity_x(grid.nx(), 0.0);
+            std::vector<double> velocity_y(grid.nx(), 0.0);
+            std::vector<double> velocity_z(grid.nx(), 0.0);
+            std::vector<double> moment_energy(grid.nx(), 0.0);
+            species.deposit_velocity_moments(
+                grid, density, velocity_x, velocity_y, velocity_z,
+                moment_energy);
+            require_near(density[0] * grid.node_volume(0), 0.5, 1e-14,
+                         "1D3V velocity moments lost represented number");
+            require_near(velocity_x[0] / density[0], 2.0, 1e-14,
+                         "1D3V x velocity moment is wrong");
+            require_near(velocity_y[0] / density[0], 3.0, 1e-14,
+                         "1D3V y velocity moment is wrong");
+            require_near(velocity_z[0] / density[0], 4.0, 1e-14,
+                         "1D3V z velocity moment is wrong");
+            require_near(moment_energy[0], energy_density[0], 1e-14,
+                         "unified velocity moments changed kinetic energy");
         }
         {
             pic::Mesh2D mesh(5, 5, 1.0, 1.0, pic::Boundary::Dirichlet);
@@ -3332,8 +3350,8 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v8\n") == 0,
-                "1D spatial-moment checkpoint did not use v8");
+                    "AuroraPIC-checkpoint-v9\n") == 0,
+                "1D phase-moment checkpoint did not use v9");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3352,7 +3370,11 @@ int main() {
                         line.starts_with("power_transfer") ||
                         line.starts_with("spatial_moments") ||
                         line.starts_with("spatial_energy") ||
-                        line.starts_with("spatial_fields")) {
+                        line.starts_with("spatial_fields") ||
+                        line.starts_with("spatial_phase") ||
+                        line.starts_with("phase_bin") ||
+                        line.starts_with("phase_species") ||
+                        line.starts_with("phase_fields")) {
                         continue;
                     } else {
                         legacy << line << '\n';
@@ -3393,7 +3415,11 @@ int main() {
                             "power_transfer") ||
                         line.starts_with("spatial_moments") ||
                         line.starts_with("spatial_energy") ||
-                        line.starts_with("spatial_fields")) {
+                        line.starts_with("spatial_fields") ||
+                        line.starts_with("spatial_phase") ||
+                        line.starts_with("phase_bin") ||
+                        line.starts_with("phase_species") ||
+                        line.starts_with("phase_fields")) {
                         continue;
                     } else {
                         legacy << line << '\n';
@@ -3654,7 +3680,7 @@ int main() {
                 "1D3V MCC restart lost collision diagnostics");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v8\n") == 0,
+                    "AuroraPIC-checkpoint-v9\n") == 0,
                 "1D3V checkpoint did not use the spatial-moment-aware "
                 "format");
             std::filesystem::remove_all(output_dir);

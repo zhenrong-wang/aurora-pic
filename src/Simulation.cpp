@@ -29,6 +29,7 @@ constexpr const char* kCheckpointMagicV5 = "AuroraPIC-checkpoint-v5";
 constexpr const char* kCheckpointMagicV6 = "AuroraPIC-checkpoint-v6";
 constexpr const char* kCheckpointMagicV7 = "AuroraPIC-checkpoint-v7";
 constexpr const char* kCheckpointMagicV8 = "AuroraPIC-checkpoint-v8";
+constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -513,9 +514,25 @@ Simulation::Simulation(Config cfg)
         spatial_kinetic_energy_sums_.assign(
             species_.size(), std::vector<double>(grid_.nx(), 0.0));
         spatial_kinetic_energy_scratch_.assign(grid_.nx(), 0.0);
+        spatial_velocity_x_scratch_.assign(grid_.nx(), 0.0);
+        spatial_velocity_y_scratch_.assign(grid_.nx(), 0.0);
+        spatial_velocity_z_scratch_.assign(grid_.nx(), 0.0);
         spatial_potential_sums_.assign(grid_.nx(), 0.0);
         spatial_electric_sums_.assign(grid_.nx(), 0.0);
         spatial_electric_squared_sums_.assign(grid_.nx(), 0.0);
+        spatial_phase_bins_.resize(cfg_.spatial_average.phase_bins);
+        for (auto& bin : spatial_phase_bins_) {
+            const auto species_nodes = std::vector<std::vector<double>>(
+                species_.size(), std::vector<double>(grid_.nx(), 0.0));
+            bin.density = species_nodes;
+            bin.velocity_x_density = species_nodes;
+            bin.velocity_y_density = species_nodes;
+            bin.velocity_z_density = species_nodes;
+            bin.kinetic_energy_density = species_nodes;
+            bin.potential.assign(grid_.nx(), 0.0);
+            bin.electric.assign(grid_.nx(), 0.0);
+            bin.electric_squared.assign(grid_.nx(), 0.0);
+        }
     }
 }
 
@@ -1052,24 +1069,52 @@ void Simulation::accumulate_spatial_average() {
             grid_.nx() ||
         spatial_kinetic_energy_sums_.size() != species_.size() ||
         spatial_kinetic_energy_scratch_.size() != grid_.nx() ||
+        spatial_velocity_x_scratch_.size() != grid_.nx() ||
+        spatial_velocity_y_scratch_.size() != grid_.nx() ||
+        spatial_velocity_z_scratch_.size() != grid_.nx() ||
         spatial_potential_sums_.size() != grid_.nx() ||
         spatial_electric_sums_.size() != grid_.nx() ||
         spatial_electric_squared_sums_.size() != grid_.nx()) {
         throw std::logic_error(
             "spatial-average storage does not match simulation state");
     }
+    SpatialPhaseBin1D* phase_bin = nullptr;
+    if (!spatial_phase_bins_.empty()) {
+        const auto steps_per_cycle = static_cast<std::size_t>(std::llround(
+            1.0 / (average.rf_frequency * cfg_.dt)));
+        const auto samples_per_cycle = steps_per_cycle / average.interval;
+        const auto sample_in_cycle =
+            ((step_ - average.start_step) / average.interval) %
+            samples_per_cycle;
+        const auto phase_id =
+            sample_in_cycle * spatial_phase_bins_.size() /
+            samples_per_cycle;
+        phase_bin = &spatial_phase_bins_[phase_id];
+    }
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
-        species_[species_id].deposit_number_density(
-            grid_, spatial_density_scratch_);
-        species_[species_id].deposit_kinetic_energy_density(
-            grid_, spatial_kinetic_energy_scratch_);
+        species_[species_id].deposit_velocity_moments(
+            grid_, spatial_density_scratch_,
+            spatial_velocity_x_scratch_, spatial_velocity_y_scratch_,
+            spatial_velocity_z_scratch_, spatial_kinetic_energy_scratch_);
         auto& sum = spatial_density_sums_[species_id];
         auto& energy_sum = spatial_kinetic_energy_sums_[species_id];
         for (std::size_t node = 0;
              node < grid_.nx(); ++node) {
             sum[node] += spatial_density_scratch_[node];
             energy_sum[node] += spatial_kinetic_energy_scratch_[node];
+            if (phase_bin != nullptr) {
+                phase_bin->density[species_id][node] +=
+                    spatial_density_scratch_[node];
+                phase_bin->velocity_x_density[species_id][node] +=
+                    spatial_velocity_x_scratch_[node];
+                phase_bin->velocity_y_density[species_id][node] +=
+                    spatial_velocity_y_scratch_[node];
+                phase_bin->velocity_z_density[species_id][node] +=
+                    spatial_velocity_z_scratch_[node];
+                phase_bin->kinetic_energy_density[species_id][node] +=
+                    spatial_kinetic_energy_scratch_[node];
+            }
         }
     }
     for (std::size_t node = 0; node < grid_.nx(); ++node) {
@@ -1077,7 +1122,14 @@ void Simulation::accumulate_spatial_average() {
         spatial_electric_sums_[node] += grid_.electric()[node];
         spatial_electric_squared_sums_[node] +=
             grid_.electric()[node] * grid_.electric()[node];
+        if (phase_bin != nullptr) {
+            phase_bin->potential[node] += grid_.phi()[node];
+            phase_bin->electric[node] += grid_.electric()[node];
+            phase_bin->electric_squared[node] +=
+                grid_.electric()[node] * grid_.electric()[node];
+        }
     }
+    if (phase_bin != nullptr) ++phase_bin->samples;
     ++spatial_average_samples_;
     ++spatial_moment_samples_;
 }
@@ -1190,6 +1242,87 @@ void Simulation::write_spatial_average() const {
     require_stream(field_profile,
         "failed while writing 1D spatial field-average output");
 
+    if (!spatial_phase_bins_.empty()) {
+        std::ofstream phase_moments(
+            output_dir / "spatial_phase_moments.csv");
+        if (!phase_moments) {
+            throw std::runtime_error(
+                "cannot open 1D phase-resolved moment output");
+        }
+        phase_moments
+            << "phase_bin,phase_fraction,samples,species_id,species,node,"
+            << (si ? "x_m" : "x_normalized") << ','
+            << (si ? "number_density_mean_m-3"
+                   : "number_density_mean_normalized")
+            << ",mean_velocity_x,mean_velocity_y,mean_velocity_z,"
+            << (si ? "mean_kinetic_energy_eV,drift_separated_temperature_eV"
+                   : "mean_kinetic_energy_normalized,drift_separated_temperature_normalized")
+            << '\n' << std::setprecision(17);
+        const double energy_scale = si ? ELEMENTARY_CHARGE_SI : 1.0;
+        const double dimensions = static_cast<double>(cfg_.velocity_dimensions);
+        for (std::size_t phase = 0; phase < spatial_phase_bins_.size(); ++phase) {
+            const auto& bin = spatial_phase_bins_[phase];
+            for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+                for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                    const double density_sum = bin.density[species_id][node];
+                    const double ux = density_sum > 0.0
+                        ? bin.velocity_x_density[species_id][node] / density_sum : 0.0;
+                    const double uy = density_sum > 0.0
+                        ? bin.velocity_y_density[species_id][node] / density_sum : 0.0;
+                    const double uz = density_sum > 0.0
+                        ? bin.velocity_z_density[species_id][node] / density_sum : 0.0;
+                    const double mean_energy = density_sum > 0.0
+                        ? bin.kinetic_energy_density[species_id][node] /
+                              density_sum / energy_scale : 0.0;
+                    const double drift_energy = 0.5 * species_[species_id].mass() *
+                        (ux * ux + uy * uy + uz * uz) / energy_scale;
+                    const double temperature = 2.0 / dimensions *
+                        std::max(0.0, mean_energy - drift_energy);
+                    phase_moments << phase << ','
+                        << (static_cast<double>(phase) + 0.5) /
+                               static_cast<double>(spatial_phase_bins_.size())
+                        << ',' << bin.samples << ',' << species_id << ','
+                        << csv_cell(species_[species_id].name()) << ','
+                        << node << ',' << grid_.node_x(node) << ','
+                        << (bin.samples > 0 ? density_sum /
+                               static_cast<double>(bin.samples) : 0.0)
+                        << ',' << ux << ',' << uy << ',' << uz << ','
+                        << mean_energy << ',' << temperature << '\n';
+                }
+            }
+        }
+        require_stream(phase_moments,
+            "failed while writing 1D phase-resolved moment output");
+
+        std::ofstream phase_fields(
+            output_dir / "spatial_phase_fields.csv");
+        if (!phase_fields) {
+            throw std::runtime_error(
+                "cannot open 1D phase-resolved field output");
+        }
+        phase_fields << "phase_bin,phase_fraction,samples,node,"
+            << (si ? "x_m,potential_mean_V,electric_field_mean_V_m,electric_field_rms_V_m"
+                   : "x_normalized,potential_mean_normalized,electric_field_mean_normalized,electric_field_rms_normalized")
+            << '\n' << std::setprecision(17);
+        for (std::size_t phase = 0; phase < spatial_phase_bins_.size(); ++phase) {
+            const auto& bin = spatial_phase_bins_[phase];
+            const double samples = static_cast<double>(bin.samples);
+            for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                phase_fields << phase << ','
+                    << (static_cast<double>(phase) + 0.5) /
+                           static_cast<double>(spatial_phase_bins_.size())
+                    << ',' << bin.samples << ',' << node << ','
+                    << grid_.node_x(node) << ','
+                    << (bin.samples > 0 ? bin.potential[node] / samples : 0.0) << ','
+                    << (bin.samples > 0 ? bin.electric[node] / samples : 0.0) << ','
+                    << (bin.samples > 0 ? std::sqrt(
+                           bin.electric_squared[node] / samples) : 0.0) << '\n';
+            }
+        }
+        require_stream(phase_fields,
+            "failed while writing 1D phase-resolved field output");
+    }
+
     const auto expected =
         expected_spatial_average_samples();
     const bool complete =
@@ -1203,7 +1336,7 @@ void Simulation::write_spatial_average() const {
     }
     metadata << std::setprecision(17)
              << "{\n"
-             << "  \"spatial_average_version\": 2,\n"
+             << "  \"spatial_average_version\": 3,\n"
              << "  \"reset_on_restart\": "
              << (cfg_.spatial_average.reset_on_restart
                      ? "true" : "false")
@@ -1231,10 +1364,21 @@ void Simulation::write_spatial_average() const {
              << cfg_.spatial_average.rf_frequency << ",\n"
              << "  \"rf_cycles\": "
              << cfg_.spatial_average.rf_cycles << ",\n"
+             << "  \"phase_bins\": "
+             << cfg_.spatial_average.phase_bins << ",\n"
+             << "  \"phase_bin_samples\": [";
+    for (std::size_t phase = 0; phase < spatial_phase_bins_.size(); ++phase) {
+        if (phase != 0) metadata << ", ";
+        metadata << spatial_phase_bins_[phase].samples;
+    }
+    metadata << "],\n"
              << "  \"complete\": "
              << (complete ? "true" : "false") << ",\n"
              << "  \"effective_kinetic_temperature_definition\": "
              << json_string("2 * density-weighted mean total kinetic energy / velocity_dimensions; includes directed energy")
+             << ",\n"
+             << "  \"phase_temperature_definition\": "
+             << json_string("2 / velocity_dimensions * (mean kinetic energy - mass * squared mean velocity / 2); clipped at zero")
              << ",\n"
              << "  \"field_statistics\": "
              << json_string("sampled nodal potential mean, electric-field mean, and electric-field RMS; no sheath edge is inferred")
@@ -1256,7 +1400,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV8 << '\n';
+    out << kCheckpointMagicV9 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1348,6 +1492,30 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             << ' ' << (stored ? spatial_electric_squared_sums_[node] : 0.0);
     }
     out << "\n";
+    out << "spatial_phase " << spatial_phase_bins_.size() << ' '
+        << species_.size() << ' ' << grid_.nx() << "\n";
+    for (std::size_t phase = 0; phase < spatial_phase_bins_.size(); ++phase) {
+        const auto& bin = spatial_phase_bins_[phase];
+        out << "phase_bin " << phase << ' ' << bin.samples << "\n";
+        for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
+            out << "phase_species " << phase << ' ' << species_id << ' '
+                << species_[species_id].name();
+            for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                out << ' ' << bin.density[species_id][node]
+                    << ' ' << bin.velocity_x_density[species_id][node]
+                    << ' ' << bin.velocity_y_density[species_id][node]
+                    << ' ' << bin.velocity_z_density[species_id][node]
+                    << ' ' << bin.kinetic_energy_density[species_id][node];
+            }
+            out << "\n";
+        }
+        out << "phase_fields " << phase;
+        for (std::size_t node = 0; node < grid_.nx(); ++node) {
+            out << ' ' << bin.potential[node] << ' ' << bin.electric[node]
+                << ' ' << bin.electric_squared[node];
+        }
+        out << "\n";
+    }
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -1378,13 +1546,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v6 = magic == kCheckpointMagicV6;
     const bool checkpoint_v7 = magic == kCheckpointMagicV7;
     const bool checkpoint_v8 = magic == kCheckpointMagicV8;
+    const bool checkpoint_v9 = magic == kCheckpointMagicV9;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
-        checkpoint_v6 || checkpoint_v7 || checkpoint_v8;
+        checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
         !checkpoint_v5 && !checkpoint_v6 &&
-        !checkpoint_v7 && !checkpoint_v8) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -1400,7 +1569,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> unit_system >> relative_permittivity >> permittivity;
         if ((!checkpoint_v2 && !checkpoint_v3 &&
              !checkpoint_v4 && !checkpoint_v5 &&
-             !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8) ||
+             !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8 &&
+             !checkpoint_v9) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -1411,6 +1581,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     } else if (checkpoint_v2 || checkpoint_v3 ||
                checkpoint_v4 || checkpoint_v5 ||
                checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
+               checkpoint_v9 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -1441,7 +1612,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             collision_signature();
         if ((!checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 &&
-             !checkpoint_v7 && !checkpoint_v8) ||
+             !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -1464,14 +1635,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         in >> key;
     } else if (checkpoint_v3 || checkpoint_v4 ||
                checkpoint_v5 || checkpoint_v6 ||
-               checkpoint_v7 || checkpoint_v8 ||
+               checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
             "null-collision MCC");
     }
     const bool checkpoint_has_boundary_losses =
-        checkpoint_v6 || checkpoint_v7 || checkpoint_v8;
+        checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9;
     const bool legacy_boundary_loss_origin =
         !checkpoint_has_boundary_losses;
     if (checkpoint_has_boundary_losses) {
@@ -1522,8 +1693,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             BoundaryLoss1D{});
     }
     const bool legacy_power_transfer_origin =
-        !checkpoint_v7 && !checkpoint_v8;
-    if (checkpoint_v7 || checkpoint_v8) {
+        !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9;
+    if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
         in >> power_transfer_origin_step_;
         if (key != "power_transfer_origin_step") {
             throw std::runtime_error(
@@ -1565,7 +1736,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             SpeciesPower1D{});
     }
     if (checkpoint_v5 || checkpoint_v6 ||
-        checkpoint_v7 || checkpoint_v8) {
+        checkpoint_v7 || checkpoint_v8 || checkpoint_v9) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -1656,7 +1827,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             }
         }
         in >> key;
-        if (checkpoint_v8) {
+        if (checkpoint_v8 || checkpoint_v9) {
             std::size_t stored_moment_samples = 0;
             std::size_t stored_moment_species_count = 0;
             std::size_t stored_moment_nx = 0;
@@ -1723,6 +1894,131 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             in >> key;
         } else {
             spatial_moment_samples_ = 0;
+        }
+        if (checkpoint_v9) {
+            std::size_t stored_phase_count = 0;
+            std::size_t stored_phase_species = 0;
+            std::size_t stored_phase_nx = 0;
+            in >> stored_phase_count >> stored_phase_species >> stored_phase_nx;
+            if (key != "spatial_phase" ||
+                stored_phase_species != species_.size() ||
+                stored_phase_nx != grid_.nx() ||
+                (!reset && stored_phase_count != spatial_phase_bins_.size())) {
+                throw std::runtime_error(
+                    "checkpoint spatial-phase contract does not match config");
+            }
+            std::size_t stored_samples_per_cycle = 0;
+            std::size_t stored_samples_per_bin = 0;
+            if (stored_phase_count != 0) {
+                if (!(rf_frequency > 0.0) || interval == 0) {
+                    throw std::runtime_error(
+                        "checkpoint phase bins require a valid RF contract");
+                }
+                const double stored_steps_per_cycle_value =
+                    1.0 / (rf_frequency * cfg_.dt);
+                if (!std::isfinite(stored_steps_per_cycle_value) ||
+                    stored_steps_per_cycle_value < 1.0) {
+                    throw std::runtime_error(
+                        "checkpoint phase-bin RF period is invalid");
+                }
+                const auto stored_steps_per_cycle =
+                    static_cast<std::size_t>(std::llround(
+                        stored_steps_per_cycle_value));
+                stored_samples_per_cycle = stored_steps_per_cycle / interval;
+                if (stored_samples_per_cycle % stored_phase_count != 0) {
+                    throw std::runtime_error(
+                        "checkpoint phase bins do not divide its RF cycle");
+                }
+                stored_samples_per_bin =
+                    stored_samples_per_cycle / stored_phase_count;
+            }
+            std::size_t phase_sample_total = 0;
+            for (std::size_t phase = 0; phase < stored_phase_count; ++phase) {
+                std::size_t stored_phase = 0;
+                std::size_t stored_phase_samples = 0;
+                in >> key >> stored_phase >> stored_phase_samples;
+                if (key != "phase_bin" || stored_phase != phase ||
+                    stored_phase_samples > stored_samples) {
+                    throw std::runtime_error(
+                        "checkpoint phase-bin metadata is invalid");
+                }
+                const std::size_t complete_cycles =
+                    stored_samples / stored_samples_per_cycle;
+                const std::size_t remainder =
+                    stored_samples % stored_samples_per_cycle;
+                const std::size_t bin_start = phase * stored_samples_per_bin;
+                const std::size_t partial = remainder > bin_start
+                    ? std::min(stored_samples_per_bin, remainder - bin_start)
+                    : 0;
+                if (stored_phase_samples !=
+                    complete_cycles * stored_samples_per_bin + partial) {
+                    throw std::runtime_error(
+                        "checkpoint phase-bin sample count is inconsistent");
+                }
+                phase_sample_total += stored_phase_samples;
+                if (!reset) spatial_phase_bins_[phase].samples = stored_phase_samples;
+                for (std::size_t species_id = 0;
+                     species_id < stored_phase_species; ++species_id) {
+                    std::size_t row_phase = 0;
+                    std::size_t stored_species_id = 0;
+                    std::string stored_name;
+                    in >> key >> row_phase >> stored_species_id >> stored_name;
+                    if (key != "phase_species" || row_phase != phase ||
+                        stored_species_id != species_id ||
+                        stored_name != species_[species_id].name()) {
+                        throw std::runtime_error(
+                            "checkpoint phase species metadata is invalid");
+                    }
+                    for (std::size_t node = 0; node < stored_phase_nx; ++node) {
+                        double density = 0.0, vx = 0.0, vy = 0.0, vz = 0.0;
+                        double energy = 0.0;
+                        in >> density >> vx >> vy >> vz >> energy;
+                        if (!std::isfinite(density) || density < 0.0 ||
+                            !std::isfinite(vx) || !std::isfinite(vy) ||
+                            !std::isfinite(vz) || !std::isfinite(energy) ||
+                            energy < 0.0) {
+                            throw std::runtime_error(
+                                "checkpoint phase velocity moments are invalid");
+                        }
+                        if (!reset) {
+                            auto& bin = spatial_phase_bins_[phase];
+                            bin.density[species_id][node] = density;
+                            bin.velocity_x_density[species_id][node] = vx;
+                            bin.velocity_y_density[species_id][node] = vy;
+                            bin.velocity_z_density[species_id][node] = vz;
+                            bin.kinetic_energy_density[species_id][node] = energy;
+                        }
+                    }
+                }
+                std::size_t field_phase = 0;
+                in >> key >> field_phase;
+                if (key != "phase_fields" || field_phase != phase) {
+                    throw std::runtime_error(
+                        "checkpoint phase field metadata is invalid");
+                }
+                for (std::size_t node = 0; node < stored_phase_nx; ++node) {
+                    double potential = 0.0, electric = 0.0, squared = 0.0;
+                    in >> potential >> electric >> squared;
+                    if (!std::isfinite(potential) || !std::isfinite(electric) ||
+                        !std::isfinite(squared) || squared < 0.0) {
+                        throw std::runtime_error(
+                            "checkpoint phase field moments are invalid");
+                    }
+                    if (!reset) {
+                        spatial_phase_bins_[phase].potential[node] = potential;
+                        spatial_phase_bins_[phase].electric[node] = electric;
+                        spatial_phase_bins_[phase].electric_squared[node] = squared;
+                    }
+                }
+            }
+            if (phase_sample_total != (stored_phase_count == 0 ? 0 : stored_samples)) {
+                throw std::runtime_error(
+                    "checkpoint phase-bin sample counts are incomplete");
+            }
+            in >> key;
+        } else if (!reset && !spatial_phase_bins_.empty()) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore phase-resolved spatial moments");
         }
         if (reset) {
             spatial_moment_samples_ = 0;

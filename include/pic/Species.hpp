@@ -23,6 +23,13 @@ public:
         const Grid& grid, std::vector<double>& density) const;
     void deposit_kinetic_energy_density(
         const Grid& grid, std::vector<double>& energy_density) const;
+    void deposit_velocity_moments(
+        const Grid& grid,
+        std::vector<double>& density,
+        std::vector<double>& velocity_x_density,
+        std::vector<double>& velocity_y_density,
+        std::vector<double>& velocity_z_density,
+        std::vector<double>& energy_density) const;
     double kinetic_energy() const;
     std::size_t live_count() const;
     std::size_t velocity_dimensions() const {
