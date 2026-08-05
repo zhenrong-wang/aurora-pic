@@ -798,6 +798,17 @@ rate remains about 54 times the formal limit. Equilibration and the explicit
 no-measurement boundary therefore remain in force. Evidence is
 [`edupic-reference-adaptive-through-cycle124-20260805.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle124-20260805.json).
 
+The first host-guarded campaign then reached cycle 134 in five two-cycle
+stages and 82.85 s. All ten pre/post-stage checks passed: normalized one-minute
+load peaked at 0.289 against a 0.5 limit, available memory bottomed at 4,879
+MiB against a 4,096 MiB floor, and swap I/O remained zero. Population is
+110,577. The new fifth complete 25-cycle block has mean population 100,155,
+still well above the preceding block's 85,535. The descriptive cycles 110--134
+window has mean 104,794 and total relative slope `+0.00478` per cycle, about
+48 times the formal limit. The campaign establishes the operational guard but
+does not change the no-measurement physics boundary. Evidence is
+[`edupic-reference-guarded-through-cycle134-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle134-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
