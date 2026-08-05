@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "host_guarded_adaptive_equilibration_progress",
+  "physics_claim": "none",
+  "claim_boundary": "Cycle 528 remains below the predeclared cycle-1500 stationarity eligibility gate. Recent population growth is approaching but still exceeds the slope limit, so no measurement or cross-code comparison is authorized.",
+  "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+  "campaign": {
+    "start_cycle": 174,
+    "snapshot_cycle": 528,
+    "target_cycle": 1500,
+    "target_reached": false,
+    "completed_stages": 354,
+    "cycles_per_stage": 1,
+    "invocations": 14,
+    "total_coordinator_wall_seconds": 4493.448598577874,
+    "total_stage_wall_seconds": 4464.461238270276,
+    "minimum_stage_wall_seconds": 9.500180274015293,
+    "maximum_stage_wall_seconds": 16.76502153405454,
+    "mean_stage_wall_seconds": 12.611472424492305,
+    "campaign_report_snapshot_sha256": "32f15892fa0a61df0a450efeaa84fd1c9a2a5887d579f271ef681526abad73fa"
+  },
+  "host_health_guard": {
+    "checks": 709,
+    "maximum_load_per_cpu": 0.5,
+    "observed_maximum_load_per_cpu": 0.563201904296875,
+    "minimum_available_memory_mib": 4096.0,
+    "observed_minimum_available_memory_mib": 3717.09765625,
+    "maximum_swap_io_pages_per_stage": 0,
+    "observed_maximum_swap_io_pages_per_stage": 0,
+    "memory_guard_stops": 8,
+    "load_guard_stops": 2,
+    "interpretation": "Each host-pressure violation was detected at a stage boundary and prevented the next stage from launching. No failed or partial solver stage entered the checkpoint chain."
+  },
+  "latest_state": {
+    "cycle": 528,
+    "electrons": 95240,
+    "ions": 100563,
+    "total_particles": 195803,
+    "checkpoint_sha256": "41d80500eecba232edee411e7ff7bcfc77f6272e5aa1609d994b5c23125a731d",
+    "convergence_sha256": "75728340e8be43efe0bb28eca9e8880c9bd823823bf43796d5726e468f8aadbd"
+  },
+  "stationarity": {
+    "eligible": false,
+    "stationary": false,
+    "full_history_samples": 528,
+    "full_history_total_population_relative_slope_per_cycle": 0.002206415214900261,
+    "last_four_complete_total_population_block_means": [186453.32, 189554.72, 192251.96, 194632.6],
+    "provisional_recent_window": {
+      "claim": "descriptive_only_not_a_stationarity_gate",
+      "cycles": "504-528",
+      "samples": 25,
+      "total_population_mean": 194870.28,
+      "electron_relative_slope_per_cycle": 0.0004109095019912545,
+      "ion_relative_slope_per_cycle": 0.00039476165599321644,
+      "total_population_relative_slope_per_cycle": 0.0004026149719069132,
+      "total_population_endpoint_change_relative_to_mean": 0.009519152946257377
+    },
+    "analysis_sha256": "5dca4304d1c1a3b088977c1d60947e83055be473c4aeeacb32bb41521bf0f0aa"
+  }
+}

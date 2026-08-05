@@ -842,6 +842,18 @@ limit. This materially advances equilibration and exercises recovery under
 real host pressure, but remains ineligible for measurement. Evidence is
 [`edupic-reference-guarded-through-cycle250-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle250-20260805.json).
 
+Continued guarded execution reached cycle 528 through 354 immutable one-cycle
+stages and 14 coordinator invocations. Eight memory and two load violations
+were detected only at stage boundaries and prevented subsequent launches; no
+failed or partial stage entered the chain. Population is 195,803. The last
+four complete 25-cycle block means are 186,453, 189,555, 192,252, and 194,633.
+The descriptive cycles 504--528 window has total relative slope
+`+0.000403` per cycle and endpoint change 0.952% of its mean. This is a major
+reduction from cycle 250 and only about four times the formal slope limit, but
+cycle 528 remains below the cycle-1,500 eligibility boundary and is not an
+authorized measurement window. Evidence is
+[`edupic-reference-guarded-through-cycle528-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle528-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
