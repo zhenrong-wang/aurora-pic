@@ -831,6 +831,17 @@ Adaptive stage reduction worked as intended, while the scientific state
 remains equilibration rather than measurement. Evidence is
 [`edupic-reference-guarded-through-cycle174-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle174-20260805.json).
 
+The long-horizon guarded campaign subsequently reached cycle 250 through 76
+immutable one-cycle stages and three coordinator invocations. Two invocations
+stopped after valid stages when available memory crossed the 4,096 MiB floor;
+neither launched more work, and the checkpoint chain contains no failed or
+partial stage. Population is 151,437. The ninth and tenth complete 25-cycle
+block means are 140,671 and 148,071. The descriptive cycles 226--250 window
+has total relative slope `+0.00191` per cycle, about 19 times the formal
+limit. This materially advances equilibration and exercises recovery under
+real host pressure, but remains ineligible for measurement. Evidence is
+[`edupic-reference-guarded-through-cycle250-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle250-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
