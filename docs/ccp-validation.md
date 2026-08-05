@@ -770,6 +770,16 @@ diagnostic only and neither measurement nor cross-code comparison is
 authorized. Evidence is
 [`edupic-reference-adaptive-through-cycle104-20260804.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle104-20260804.json).
 
+Five more two-cycle stages reached cycle 114 in 71.75 s. Population is
+100,799. The full-history total relative slope decreased to `+0.0140` per
+cycle. Over the descriptive cycles 90--114 window, mean population is 94,015;
+electron, ion, and total relative slopes are `+0.00644`, `+0.00588`, and
+`+0.00614` per cycle. Its endpoint increase is 14.9% of the recent mean. The
+recent rate continues to decline, but remains about 61 times the formal limit.
+The run is therefore still equilibration rather than an authorized measurement
+window. Evidence is
+[`edupic-reference-adaptive-through-cycle114-20260805.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle114-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
