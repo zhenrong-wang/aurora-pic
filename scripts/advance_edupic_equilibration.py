@@ -32,6 +32,92 @@ def positive_integer(text: str) -> int:
     return value
 
 
+def positive_float(text: str) -> float:
+    value = float(text)
+    if not math.isfinite(value) or value <= 0.0:
+        raise argparse.ArgumentTypeError("value must be finite and positive")
+    return value
+
+
+def nonnegative_integer(text: str) -> int:
+    value = int(text)
+    if value < 0:
+        raise argparse.ArgumentTypeError("value must be nonnegative")
+    return value
+
+
+def host_health_snapshot(policy: dict) -> dict:
+    """Read only the host metrics required by an enabled guard policy."""
+    sample: dict = {}
+    if policy.get("maximum_load_per_cpu") is not None:
+        try:
+            load_one_minute = os.getloadavg()[0]
+        except (AttributeError, OSError) as error:
+            raise AdvanceError(f"cannot read host load average: {error}") from error
+        logical_cpus = os.cpu_count() or 1
+        sample.update({
+            "load_one_minute": load_one_minute,
+            "logical_cpus": logical_cpus,
+            "load_one_minute_per_cpu": load_one_minute / logical_cpus,
+        })
+    if policy.get("minimum_available_memory_mib") is not None:
+        try:
+            fields = {}
+            for line in Path("/proc/meminfo").read_text(encoding="ascii").splitlines():
+                key, value = line.split(":", 1)
+                fields[key] = int(value.strip().split()[0])
+            available_kib = fields["MemAvailable"]
+        except (OSError, UnicodeError, ValueError, KeyError, IndexError) as error:
+            raise AdvanceError(f"cannot read available host memory: {error}") from error
+        sample["available_memory_mib"] = available_kib / 1024.0
+    if policy.get("maximum_swap_io_pages_per_stage") is not None:
+        try:
+            fields = {}
+            for line in Path("/proc/vmstat").read_text(encoding="ascii").splitlines():
+                key, value = line.split()
+                if key in {"pswpin", "pswpout"}:
+                    fields[key] = int(value)
+            sample["swap_pages_in_total"] = fields["pswpin"]
+            sample["swap_pages_out_total"] = fields["pswpout"]
+            sample["swap_io_pages_total"] = fields["pswpin"] + fields["pswpout"]
+        except (OSError, UnicodeError, ValueError, KeyError) as error:
+            raise AdvanceError(f"cannot read host swap activity: {error}") from error
+    return sample
+
+
+def host_guard_violations(sample: dict, policy: dict) -> list[str]:
+    violations = []
+    maximum_load = policy.get("maximum_load_per_cpu")
+    if (maximum_load is not None and
+            sample["load_one_minute_per_cpu"] > maximum_load):
+        violations.append("host_load_above_maximum")
+    minimum_memory = policy.get("minimum_available_memory_mib")
+    if (minimum_memory is not None and
+            sample["available_memory_mib"] < minimum_memory):
+        violations.append("host_available_memory_below_minimum")
+    maximum_swap = policy.get("maximum_swap_io_pages_per_stage")
+    swap_delta = sample.get("swap_io_pages_since_previous_check")
+    if (maximum_swap is not None and swap_delta is not None and
+            swap_delta > maximum_swap):
+        violations.append("host_swap_activity_above_maximum")
+    return violations
+
+
+def inspect_host_guard(report: dict, policy: dict, phase: str, cycle: int,
+                       previous_swap_total: int | None) -> tuple[list[str], int | None]:
+    sample = host_health_snapshot(policy)
+    sample.update({"phase": phase, "cycle": cycle})
+    swap_total = sample.get("swap_io_pages_total")
+    if swap_total is not None:
+        sample["swap_io_pages_since_previous_check"] = (
+            None if previous_swap_total is None else
+            max(0, swap_total - previous_swap_total))
+    violations = host_guard_violations(sample, policy)
+    sample["violations"] = violations
+    report.setdefault("host_health_checks", []).append(sample)
+    return violations, swap_total
+
+
 def atomic_json(path: Path, value: dict) -> None:
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n",
@@ -96,11 +182,20 @@ def advance(args: argparse.Namespace) -> dict:
     if args.target_cycle <= initial["cycles"]:
         raise AdvanceError("target cycle must be after the input checkpoint")
 
+    host_policy = {
+        "maximum_load_per_cpu": args.max_host_load_per_cpu,
+        "minimum_available_memory_mib": args.min_available_memory_mib,
+        "maximum_swap_io_pages_per_stage": args.max_swap_io_pages_per_stage,
+    }
+    host_policy = {key: value for key, value in host_policy.items()
+                   if value is not None}
     expected_limits = {"maximum_total_wall_seconds": args.max_wall_seconds,
                        "maximum_stage_wall_seconds": args.stage_timeout_seconds,
                        "maximum_stage_cycles": args.max_stage_cycles,
                        "maximum_stage_initial_particle_steps":
                            args.max_stage_initial_particle_steps}
+    if host_policy:
+        expected_limits["host_health_guard"] = host_policy
     new_report = {
         "schema_version": 1, "case_id": "edupic-1.0-default-argon-ccp",
         "scope": "bounded_adaptive_equilibration_advance", "physics_claim": "none",
@@ -175,6 +270,10 @@ def advance(args: argparse.Namespace) -> dict:
         report = new_report
         atomic_json(manifest, report)
     started = time.perf_counter()
+    previous_swap_total = None
+    if report.get("host_health_checks"):
+        previous_swap_total = report["host_health_checks"][-1].get(
+            "swap_io_pages_total")
     while current["cycles"] < args.target_cycle:
         elapsed = time.perf_counter() - started
         remaining_wall = args.max_wall_seconds - elapsed
@@ -210,6 +309,14 @@ def advance(args: argparse.Namespace) -> dict:
         if predicted_seconds is not None and timeout_seconds < predicted_seconds:
             report["stop_reason"] = "insufficient_stage_timeout"
             break
+        if host_policy:
+            violations, previous_swap_total = inspect_host_guard(
+                report, host_policy, "before_stage", current["cycles"],
+                previous_swap_total)
+            atomic_json(manifest, report)
+            if violations:
+                report["stop_reason"] = violations[0]
+                break
         command = [
             sys.executable, str(runner), str(executable), str(current_dir),
             str(stage_dir), "--cycles", str(cycles),
@@ -241,6 +348,14 @@ def advance(args: argparse.Namespace) -> dict:
         report["latest_state"] = current
         report["stop_reason"] = "stage_completed"
         atomic_json(manifest, report)
+        if host_policy:
+            violations, previous_swap_total = inspect_host_guard(
+                report, host_policy, "after_stage", current["cycles"],
+                previous_swap_total)
+            atomic_json(manifest, report)
+            if violations:
+                report["stop_reason"] = violations[0]
+                break
     invocation_wall_seconds = time.perf_counter() - started
     report.setdefault("invocations", []).append({
         "resume_existing": args.resume_existing,
@@ -272,6 +387,9 @@ def main() -> int:
     parser.add_argument("--max-stage-cycles", type=positive_integer, default=4)
     parser.add_argument("--max-stage-initial-particle-steps", type=positive_integer,
                         default=250_000_000)
+    parser.add_argument("--max-host-load-per-cpu", type=positive_float)
+    parser.add_argument("--min-available-memory-mib", type=positive_float)
+    parser.add_argument("--max-swap-io-pages-per-stage", type=nonnegative_integer)
     parser.add_argument("--acknowledge-cost")
     parser.add_argument("--resume-existing", action="store_true")
     args = parser.parse_args()

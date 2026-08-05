@@ -663,6 +663,14 @@ runner, and atomically updates a recovery manifest after every completed
 stage. A failed or interrupted stage cannot overwrite its input or erase the
 last completed checkpoint; a new bounded campaign can restart from that stage.
 
+Longer campaigns may additionally declare `--max-host-load-per-cpu`,
+`--min-available-memory-mib`, and `--max-swap-io-pages-per-stage`. The
+coordinator samples only the enabled Linux host metrics before and after every
+immutable stage, records each sample and any violation in the campaign
+manifest, and stops before launching more work when a threshold is crossed.
+These guards complement rather than replace CPU affinity, reduced priority,
+particle-work limits, stage timeouts, and the aggregate wall-time ceiling.
+
 The first adaptive campaign used four two-cycle stages to advance cycle 8 to
 16 in 10.75 s under a 20 s aggregate ceiling. Population rose from 13,129 to
 22,618 while per-stage wall time rose from 2.12 to 3.13 s. The relative total

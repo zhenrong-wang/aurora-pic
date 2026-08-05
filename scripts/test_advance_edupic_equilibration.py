@@ -11,6 +11,8 @@ import subprocess
 import sys
 import tempfile
 
+from advance_edupic_equilibration import host_guard_violations
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ADVANCE = ROOT / "scripts/advance_edupic_equilibration.py"
@@ -30,6 +32,22 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
+    policy = {"maximum_load_per_cpu": 0.5,
+              "minimum_available_memory_mib": 2048.0,
+              "maximum_swap_io_pages_per_stage": 0}
+    require(host_guard_violations({
+        "load_one_minute_per_cpu": 0.75,
+        "available_memory_mib": 1024.0,
+        "swap_io_pages_since_previous_check": 2,
+    }, policy) == ["host_load_above_maximum",
+                   "host_available_memory_below_minimum",
+                   "host_swap_activity_above_maximum"],
+            "host guard did not identify all pressure signals")
+    require(not host_guard_violations({
+        "load_one_minute_per_cpu": 0.25,
+        "available_memory_mib": 4096.0,
+        "swap_io_pages_since_previous_check": 0,
+    }, policy), "host guard rejected a healthy synthetic sample")
     (ROOT / "tmp").mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="aurorapic_edupic_advance_",
                                      dir=ROOT / "tmp") as tmp:
@@ -104,6 +122,23 @@ def main() -> int:
                 and not stopped_report["stages"] and
                 stopped_report["stop_reason"] == "overall_wall_time_exhausted",
                 "coordinator did not stop cleanly at its wall-time reserve")
+
+        if Path("/proc/meminfo").is_file():
+            guarded = list(common)
+            guarded[4] = str(work / "guarded-campaign")
+            guarded.extend(["--min-available-memory-mib", "1000000000000"])
+            stopped = subprocess.run([*guarded, "--acknowledge-cost", ACK],
+                                     text=True, capture_output=True)
+            require(stopped.returncode == 0, stopped.stderr)
+            guarded_report = json.loads(stopped.stdout)
+            require(guarded_report["completed"] and
+                    not guarded_report["target_reached"] and
+                    not guarded_report["stages"] and
+                    guarded_report["stop_reason"] ==
+                        "host_available_memory_below_minimum" and
+                    guarded_report["host_health_checks"][0]["phase"] ==
+                        "before_stage",
+                    "coordinator did not stop cleanly at its memory guard")
     print("eduPIC adaptive advancement regression passed")
     return 0
 
