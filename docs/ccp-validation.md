@@ -780,6 +780,16 @@ The run is therefore still equilibration rather than an authorized measurement
 window. Evidence is
 [`edupic-reference-adaptive-through-cycle114-20260805.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle114-20260805.json).
 
+The next bounded advance reached cycle 124 in five two-cycle stages and 87.00
+s. Population is 105,966. The full-history total relative slope is `+0.0128`
+per cycle. The descriptive cycles 100--124 window has mean population 99,619;
+electron, ion, and total relative slopes are `+0.00563`, `+0.00518`, and
+`+0.00539` per cycle, and its endpoint increase is 12.9% of the recent mean.
+This is the third consecutive decrease in recent-window growth, but the total
+rate remains about 54 times the formal limit. Equilibration and the explicit
+no-measurement boundary therefore remain in force. Evidence is
+[`edupic-reference-adaptive-through-cycle124-20260805.json`](../benchmarks/ccp/edupic-reference-adaptive-through-cycle124-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
