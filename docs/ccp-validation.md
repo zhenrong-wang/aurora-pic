@@ -854,6 +854,16 @@ cycle 528 remains below the cycle-1,500 eligibility boundary and is not an
 authorized measurement window. Evidence is
 [`edupic-reference-guarded-through-cycle528-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle528-20260805.json).
 
+The guarded campaign then reached cycle 763 through 589 immutable one-cycle
+stages and 20 coordinator invocations. Population is 210,644. The last four
+complete 25-cycle block means are 205,754, 207,234, 208,480, and 209,622. The
+descriptive cycles 739--763 window has total relative slope `+0.000197` per
+cycle and endpoint change 0.460% of its mean. This is about half the cycle-528
+rate and roughly twice the formal slope limit. The trend is approaching
+stationarity, but it is still above threshold and cycle 763 remains below the
+cycle-1,500 eligibility boundary. Evidence is
+[`edupic-reference-guarded-through-cycle763-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle763-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
