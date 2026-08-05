@@ -864,6 +864,18 @@ stationarity, but it is still above threshold and cycle 763 remains below the
 cycle-1,500 eligibility boundary. Evidence is
 [`edupic-reference-guarded-through-cycle763-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle763-20260805.json).
 
+The campaign next reached cycle 1,022 through 848 immutable one-cycle stages
+and 27 coordinator invocations. Population is 216,805. The descriptive cycles
+998--1,022 window has electron, ion, and total relative slopes of
+`+8.32e-5`, `+7.45e-5`, and `+7.88e-5` per cycle. This is the first checkpoint
+where all three descriptive slopes lie below the formal `1e-4` limit, and its
+total endpoint change is 0.261% of the recent mean. It is encouraging evidence
+that equilibration is approaching completion, but the diagnostic is only 25
+cycles, cycle 1,022 remains below the cycle-1,500 eligibility boundary, and
+the required final 100 cycles have not yet been split into and tested as four
+25-cycle blocks. No measurement is authorized. Evidence is
+[`edupic-reference-guarded-through-cycle1022-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle1022-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
