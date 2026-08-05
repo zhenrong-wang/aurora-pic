@@ -809,6 +809,17 @@ window has mean 104,794 and total relative slope `+0.00478` per cycle, about
 does not change the no-measurement physics boundary. Evidence is
 [`edupic-reference-guarded-through-cycle134-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle134-20260805.json).
 
+A larger guarded window advanced cycle 134 to 154 in ten two-cycle stages and
+171.57 s. All 20 host checks passed: normalized load stayed below 0.273,
+available memory stayed above 6,074 MiB, and swap I/O stayed zero. Population
+is 119,430. The sixth complete 25-cycle block has mean population 112,395,
+compared with 100,155 in the fifth. The descriptive cycles 130--154 window has
+mean population 114,195 and total relative slope `+0.00390` per cycle, about
+39 times the formal limit. Safe campaign scaling is demonstrated, but the
+continued block-to-block growth retains the no-measurement boundary. Evidence
+is
+[`edupic-reference-guarded-through-cycle154-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle154-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
