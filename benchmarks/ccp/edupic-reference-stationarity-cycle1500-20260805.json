@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "population_stationarity_gate_result",
+  "physics_claim": "none",
+  "claim_boundary": "The predeclared population-stationarity gate passed and authorizes an eduPIC measurement window. Population stationarity is necessary but does not validate plasma observables, AuroraPIC physics, or cross-code agreement.",
+  "source": {
+    "upstream_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "initial_cycle174_checkpoint_sha256": "5de8f273e36e929c57c3480cdbe7d0b309ddb95796f0869b843d38f00e3e4947"
+  },
+  "campaign": {
+    "start_cycle": 174,
+    "target_cycle": 1500,
+    "target_reached": true,
+    "completed": true,
+    "stop_reason": "target_cycle_reached",
+    "completed_stages": 1326,
+    "cycles_per_stage": 1,
+    "invocations": 41,
+    "recovered_unrecorded_stages": 0,
+    "total_coordinator_wall_seconds_recorded": 19701.67198097019,
+    "total_stage_wall_seconds": 19533.728092482314,
+    "minimum_stage_wall_seconds": 9.500180274015293,
+    "maximum_stage_wall_seconds": 18.855986395967193,
+    "mean_stage_wall_seconds": 14.731318320122408,
+    "campaign_report_snapshot_sha256": "7e94acfe3bf4cebaf5a28350c026e677ac0f53a5a7974c55fa83c6c54a5384ab"
+  },
+  "execution_contract": {
+    "maximum_stage_cycles": 2,
+    "actual_cycles_per_stage": 1,
+    "maximum_stage_initial_particle_steps": 1000000000,
+    "maximum_stage_wall_seconds": 45,
+    "maximum_coordinator_wall_seconds_per_invocation": 600,
+    "cpu_threads": 1,
+    "low_priority": true
+  },
+  "host_health_guard": {
+    "checks": 2653,
+    "maximum_load_per_cpu": 0.5,
+    "observed_maximum_load_per_cpu": 0.563201904296875,
+    "minimum_available_memory_mib": 4096.0,
+    "observed_minimum_available_memory_mib": 3717.09765625,
+    "maximum_swap_io_pages_per_stage": 0,
+    "observed_maximum_swap_io_pages_per_stage": 0,
+    "memory_guard_stops": 8,
+    "load_guard_stops": 2,
+    "interpretation": "Every host-pressure violation was detected at a stage boundary and prevented the next stage from launching. No failed or partial solver stage entered the checkpoint chain."
+  },
+  "final_state": {
+    "cycle": 1500,
+    "simulation_time_seconds": 0.00011061946901064254,
+    "electrons": 108177,
+    "ions": 113542,
+    "total_particles": 221719,
+    "checkpoint_sha256": "beccd8c0ad3f17ac8e6e9c16060b38220ea752379bc67cb65226d0194b99fa76",
+    "convergence_sha256": "f24263f603704a1b5b3f404f299d97cf7522516c089cbbee6b9079d6645d4de8"
+  },
+  "stationarity": {
+    "eligible": true,
+    "stationary": true,
+    "measurement_authorized": true,
+    "window": {
+      "first_cycle": 1401,
+      "last_cycle": 1500,
+      "samples": 100,
+      "block_cycles": 25,
+      "required_blocks": 4
+    },
+    "limits": {
+      "maximum_absolute_relative_slope_per_cycle": 0.0001,
+      "maximum_block_mean_range_relative_to_window_mean": 0.02
+    },
+    "electrons": {
+      "mean": 108128.32,
+      "relative_slope_per_cycle": 0.000011198926350739665,
+      "block_means": [108082.4, 108118.56, 108137.92, 108174.4],
+      "block_mean_range_relative_to_window_mean": 0.0008508409267803291,
+      "relative_slope_passes": true,
+      "block_range_passes": true
+    },
+    "ions": {
+      "mean": 113549.16,
+      "relative_slope_per_cycle": 0.000009519437153117125,
+      "block_means": [113503.4, 113540.84, 113567.92, 113584.48],
+      "block_mean_range_relative_to_window_mean": 0.0007140519577599847,
+      "relative_slope_passes": true,
+      "block_range_passes": true
+    },
+    "total_particles": {
+      "mean": 221677.48,
+      "relative_slope_per_cycle": 0.000010338646868948763,
+      "block_means": [221585.8, 221659.4, 221705.84, 221758.88],
+      "block_mean_range_relative_to_window_mean": 0.0007807739423960264,
+      "relative_slope_passes": true,
+      "block_range_passes": true
+    },
+    "analysis_sha256": "ad1fa5a4f4fd2291e9be1776fdb19fcf523083a960a0851f6b35cc3b83a445e9"
+  },
+  "next_step": "Run the upstream eduPIC measurement phase from the cycle-1500 checkpoint under the same guarded execution contract, retain native observable hashes, and only then compare code-neutral observables against a matched AuroraPIC argon case."
+}

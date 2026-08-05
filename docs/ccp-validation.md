@@ -876,6 +876,25 @@ the required final 100 cycles have not yet been split into and tested as four
 25-cycle blocks. No measurement is authorized. Evidence is
 [`edupic-reference-guarded-through-cycle1022-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle1022-20260805.json).
 
+The guarded reference campaign has now completed the predeclared cycle-1,500
+stationarity milestone. From the locked cycle-174 input, 1,326 immutable
+one-cycle stages completed across 41 bounded coordinator invocations. The
+accepted chain contains no failed or recovered-unrecorded stage. Its 2,653
+host-health checks recorded zero swap I/O. Eight low-memory and two high-load
+checks stopped further work only at stage boundaries; no partial result
+entered the chain.
+
+The formal cycles 1,401--1,500 window is eligible and passes all six locked
+criteria. Electron, ion, and total-population relative slopes are
+`1.12e-5`, `9.52e-6`, and `1.03e-5` per cycle, respectively, against the
+`1e-4` absolute limit. Their four 25-cycle block-mean ranges are `0.0851%`,
+`0.0714%`, and `0.0781%`, respectively, against the `2%` limit. This is the
+first formal authorization to begin the upstream eduPIC measurement phase.
+It establishes population stationarity only: it does not yet validate
+eduPIC observables, AuroraPIC physics, or cross-code agreement. Checksum-bearing
+evidence is
+[`edupic-reference-stationarity-cycle1500-20260805.json`](../benchmarks/ccp/edupic-reference-stationarity-cycle1500-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
