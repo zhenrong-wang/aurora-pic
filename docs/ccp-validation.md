@@ -820,6 +820,17 @@ continued block-to-block growth retains the no-measurement boundary. Evidence
 is
 [`edupic-reference-guarded-through-cycle154-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle154-20260805.json).
 
+The next guarded campaign reached cycle 174 in 186.88 s. The particle-work
+guard automatically reduced stage size from two cycles to one after cycle 168
+as population crossed 125,000; all 13 stages remained below one billion
+initial particle-steps. All 26 host checks passed, with normalized load below
+0.170, available memory above 5,395 MiB, and zero swap I/O. Population is
+127,760. The descriptive cycles 150--174 window has mean population 122,895
+and total relative slope `+0.00347` per cycle, about 35 times the formal limit.
+Adaptive stage reduction worked as intended, while the scientific state
+remains equilibration rather than measurement. Evidence is
+[`edupic-reference-guarded-through-cycle174-20260805.json`](../benchmarks/ccp/edupic-reference-guarded-through-cycle174-20260805.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
