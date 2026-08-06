@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "eligible_short_horizon_native_measurement_block_analysis",
+  "physics_claim": "none",
+  "claim_boundary": "Four equal contiguous blocks satisfy the predeclared 16-cycle analysis eligibility contract and quantify short-horizon consistency. They do not establish autocorrelation-corrected uncertainty, the upstream recommended measurement duration, AuroraPIC agreement, or independent physical validation.",
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "implementation": "C/eduPIC.cc",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "cycle1500_checkpoint_sha256": "beccd8c0ad3f17ac8e6e9c16060b38220ea752379bc67cb65226d0194b99fa76"
+  },
+  "tools": {
+    "measurement_coordinator_sha256": "17f5ceb646f9a91eaf3580c6eb34d8db7acda9b3dc63caa23591a2a44bd37f7f",
+    "measurement_block_analyzer_sha256": "841231ccaa6fdf6c4645baa65938750e2c80bea22018b3d2a21884cf041030d1"
+  },
+  "campaign": {
+    "start_cycle": 1500,
+    "end_cycle": 1516,
+    "completed_measurement_cycles": 16,
+    "target_reached": true,
+    "stop_reason": "target_cycle_reached",
+    "blocks": 4,
+    "cycles_per_block": 4,
+    "invocations": 4,
+    "stage_wall_seconds": [
+      93.36108717205934,
+      92.82376678101718,
+      92.83113021508325,
+      90.95923603908159
+    ],
+    "total_stage_wall_seconds": 369.97522020724136,
+    "final_checkpoint_sha256": "5cabcd4385eaf9b7ba31bf704555ad28bdc3bc052ac13f6b6539df0ea7b5c5d8",
+    "campaign_report_snapshot_sha256": "325d5fa1c6af640d09c60acbcbefa8fba49dd0888af2e0ee070ddb931bb287c0",
+    "stage_report_sha256": [
+      "cd7971df355ad2dc68c5450d6f68b100e89397ea69997c40325ecba82039fbcf",
+      "8222844858c068191437f90ee4a44feafd2444bcebdcc718015856f4c95deb4e",
+      "9ced7d68f40c714ef09d00b244b2004fc6f599b9189355774ee837cfcd4bb12d",
+      "4a5a83e9cb2921b0693530e128a7286d5c5616e403a6748a69f4059aad95fc26"
+    ]
+  },
+  "host_health_guard": {
+    "checks": 8,
+    "maximum_load_per_cpu": 0.5,
+    "observed_maximum_load_per_cpu": 0.36151123046875,
+    "minimum_available_memory_mib": 4096.0,
+    "observed_minimum_available_memory_mib": 4734.95703125,
+    "maximum_swap_io_pages_per_stage": 0,
+    "observed_maximum_swap_io_pages_per_stage": 0,
+    "violations": 0
+  },
+  "analysis": {
+    "eligible": true,
+    "minimum_blocks": 4,
+    "equal_block_cycles": true,
+    "campaign_target_reached": true,
+    "analysis_sha256": "fae2f1398e680dee6885d6d8505da834264e0e6da13776a7eabf9c9d35ab87bb",
+    "density_csv_sha256": "01fab635134dfecf91395f2a0ad1d5eddf3cf893b10d6a7d22dab8b8f272c14f",
+    "eepf_csv_sha256": "6cae1274529ac3cf1806828b0f16db5df66bd4a426e8f2488de90274bf3b35a5",
+    "ifed_csv_sha256": "0fa64fc19700234f2b4bf5239964aeacf16070acfba46a697d3dab18b3d7552a"
+  },
+  "aggregation_contract": {
+    "exact_duration_weighted": [
+      "density.dat",
+      "pot_xt.dat",
+      "efield_xt.dat",
+      "ne_xt.dat",
+      "ni_xt.dat",
+      "je_xt.dat",
+      "ji_xt.dat",
+      "ioniz_xt.dat"
+    ],
+    "equal_time_normalized_mixture_not_native_pooled": [
+      "eepf.dat",
+      "ifed.dat"
+    ],
+    "blockwise_only_missing_raw_weights_or_nonlinear": [
+      "meanee_xt.dat",
+      "meanei_xt.dat",
+      "powere_xt.dat",
+      "poweri_xt.dat",
+      "mean ion energies",
+      "plasma characteristics",
+      "collision frequencies"
+    ],
+    "uncertainty_boundary": "Naive block standard errors treat contiguous blocks as independent and are not corrected for autocorrelation."
+  },
+  "short_horizon_consistency": {
+    "electron_density_profile_block_relative_l2_to_aggregate": [
+      0.004059765689797743,
+      0.0030652627828064447,
+      0.00370729543525532,
+      0.0032815791445281804
+    ],
+    "ion_density_profile_block_relative_l2_to_aggregate": [
+      0.011429701756798267,
+      0.010974587464494888,
+      0.010395006953381141,
+      0.010885140495688105
+    ],
+    "eepf_block_total_variation_to_mixture": [
+      0.0041823188778986236,
+      0.004765535768285452,
+      0.004158272805625579,
+      0.005739008364239335
+    ],
+    "ifed_powered_block_total_variation_to_mixture": [
+      0.12191637500000001,
+      0.10652287499999999,
+      0.097874875,
+      0.111588125
+    ],
+    "ifed_grounded_block_total_variation_to_mixture": [
+      0.10809500000000001,
+      0.10205175000000001,
+      0.108442,
+      0.10958725
+    ],
+    "electron_density_center_m3": {
+      "mean": 7544750000000000.0,
+      "sample_standard_deviation": 36618529007411.9,
+      "naive_block_standard_error": 18309264503705.95,
+      "range_relative_to_mean": 0.010470857218595713
+    },
+    "total_power_density_w_m3": {
+      "mean": 4868.5,
+      "sample_standard_deviation": 28.45464226917405,
+      "naive_block_standard_error": 14.227321134587026,
+      "range_relative_to_mean": 0.01211872239909623
+    }
+  },
+  "interpretation": "Density and EEPF are already consistent over this short horizon, while IFED remains visibly noisy. The contrast is physically plausible for lower-count wall-flux histograms and demonstrates why observable-specific convergence is required.",
+  "next_gate": "Extend the same immutable four-cycle block chain to at least 16 blocks (64 measurement cycles), add autocorrelation and effective-sample-size diagnostics, and predeclare the production horizon toward the upstream approximately 1000-cycle recommendation before any AuroraPIC comparison."
+}

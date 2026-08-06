@@ -935,6 +935,28 @@ arrays also require an explicit aggregation definition; they must not be
 silently treated as raw pooled accumulators. Evidence is
 [`edupic-reference-measurement-blocks-through-cycle1508-20260806.json`](../benchmarks/ccp/edupic-reference-measurement-blocks-through-cycle1508-20260806.json).
 
+The predeclared short-horizon qualification subsequently reached cycle 1,516:
+four equal four-cycle measurement blocks, four invocations, and 369.98 s of
+solver time. Eight host checks passed with available memory above 4,735 MiB,
+normalized load below 0.362, and zero swap. A new analyzer replays the complete
+hash chain and makes the upstream aggregation semantics explicit. Density,
+potential, field, species density/current, and ionization-rate arrays are
+linear duration averages. EEPF and IFED are equal-time mixtures of already
+normalized block distributions rather than native pooled histograms.
+Conditional mean energies and products of separately averaged current and
+field remain blockwise because the necessary raw weights are absent.
+
+Across the four blocks, electron density profiles differ from their exact
+duration aggregate by 0.31--0.41% relative L2 and ion profiles by 1.04--1.14%.
+EEPF total variation from the normalized mixture is 0.42--0.57%. Total power
+density has a 1.21% range around its block mean. In contrast, powered IFED
+variation is 9.79--12.19% and grounded IFED variation is 10.21--10.96%, so
+wall-energy statistics clearly require a longer horizon. Naive block standard
+errors are retained but explicitly not corrected for autocorrelation. This is
+an eligible short-horizon consistency analysis, not cross-code or physical
+validation. Evidence is
+[`edupic-reference-measurement-block-analysis-cycle1516-20260806.json`](../benchmarks/ccp/edupic-reference-measurement-block-analysis-cycle1516-20260806.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
