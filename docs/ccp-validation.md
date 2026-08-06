@@ -957,6 +957,20 @@ an eligible short-horizon consistency analysis, not cross-code or physical
 validation. Evidence is
 [`edupic-reference-measurement-block-analysis-cycle1516-20260806.json`](../benchmarks/ccp/edupic-reference-measurement-block-analysis-cycle1516-20260806.json).
 
+Before collecting any later native measurement block, the next sampling rule
+was frozen in
+[`edupic-native-measurement-stationarity-rule-20260806.json`](../benchmarks/ccp/edupic-native-measurement-stationarity-rule-20260806.json).
+It requires 16 contiguous four-cycle blocks (64 measured cycles), at least
+eight AR(1)-effective blocks for each species' line-integrated density, no
+more than 1% projected or split-half density drift, and no adjacent density
+profile movement above 2.5% relative L2. These are internal sampling-readiness
+gates aligned with the existing Turner density-series audit, not published
+eduPIC thresholds. EEPF and IFED remain descriptive because the upstream
+files discard the raw observation counts needed for a defensible pooled
+uncertainty estimate. The analyzer can now join separately immutable campaign
+directories only when their source-binary and checkpoint hashes form a
+continuous chain.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

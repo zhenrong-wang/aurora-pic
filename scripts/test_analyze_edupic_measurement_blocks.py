@@ -12,6 +12,7 @@ import sys
 import tempfile
 
 from test_edupic_measurement_stage import checkpoint, fake_source
+from analyze_edupic_measurement_blocks import lag_one
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -80,6 +81,45 @@ def main() -> int:
                 "density aggregate is invalid")
         require(all(path.is_file() for path in (density, eepf, ifed, output)),
                 "analyzer omitted an output")
+
+        continuation = work / "continuation"
+        latest = campaign / "stage-000007-000009"
+        continuation_input_hash = hashlib.sha256(
+            (latest / "picdata.bin").read_bytes()).hexdigest()
+        continued = subprocess.run([
+            sys.executable, str(COORDINATOR), str(fake), str(latest),
+            str(continuation), "--expected-binary-sha256", binary_hash,
+            "--expected-input-sha256", continuation_input_hash,
+            "--target-measurement-cycles", "8", "--block-cycles", "2",
+            "--qualified-seconds-per-cycle", "0.01",
+            "--max-wall-seconds", "30", "--stage-timeout-seconds", "10",
+            "--max-stage-initial-particle-steps", "1000000",
+            "--max-stages-per-invocation", "4",
+            "--acknowledge-cost", ADVANCE_ACK,
+        ], text=True, capture_output=True)
+        require(continued.returncode == 0, continued.stderr)
+        joined = subprocess.run([
+            sys.executable, str(ANALYZER), str(campaign),
+            "--continuation-campaign-dir", str(continuation),
+            "--minimum-blocks", "8", "--require-eligible",
+        ], text=True, capture_output=True)
+        require(joined.returncode == 0, joined.stderr)
+        joined_report = json.loads(joined.stdout)
+        electron_series = joined_report["density_profile"]["electron_series"]
+        require(joined_report["campaign"]["block_count"] == 8 and
+                len(joined_report["campaign"]["continuations"]) == 1 and
+                "ar1_effective_blocks" in electron_series and
+                len(electron_series["adjacent_profile_relative_l2"]) == 7,
+                "continuation campaign series analysis is invalid")
+        require(abs(lag_one([1.0, 0.0, 1.0, 0.0]) + 1.0) < 1e-15,
+                "lag-one correlation calculation is invalid")
+        rejected = subprocess.run([
+            sys.executable, str(ANALYZER), str(continuation),
+            "--continuation-campaign-dir", str(campaign),
+        ], text=True, capture_output=True)
+        require(rejected.returncode == 2 and
+                "does not begin at the prior checkpoint" in rejected.stderr,
+                "analyzer accepted a discontinuous campaign chain")
     print("eduPIC measurement-block analysis regression passed")
     return 0
 

@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_internal_native_measurement_stationarity_screen",
+  "declared_before_continuation": true,
+  "baseline_evidence": {
+    "path": "benchmarks/ccp/edupic-reference-measurement-block-analysis-cycle1516-20260806.json",
+    "sha256": "5f8917c64394dae337306283a899ad5b90ef6beb5fcae6938f81b3e6cf315c83",
+    "completed_blocks": 4,
+    "completed_measurement_cycles": 16,
+    "end_cycle": 1516
+  },
+  "continuation_contract": {
+    "input_checkpoint_sha256": "5cabcd4385eaf9b7ba31bf704555ad28bdc3bc052ac13f6b6539df0ea7b5c5d8",
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "additional_measurement_cycles": 48,
+    "cycles_per_block": 4,
+    "additional_blocks": 12,
+    "final_cycle": 1564,
+    "serial": true,
+    "maximum_stages_per_invocation": 1,
+    "host_health_guard": {
+      "maximum_load_per_cpu": 0.5,
+      "minimum_available_memory_mib": 4096.0,
+      "maximum_swap_io_pages_per_stage": 0
+    }
+  },
+  "analysis_contract": {
+    "required_total_contiguous_blocks": 16,
+    "required_total_measurement_cycles": 64,
+    "aggregation": "join separately immutable campaigns only when source-binary identity and checkpoint hashes form a continuous chain",
+    "density_observables": [
+      "electron line-integrated density",
+      "ion line-integrated density",
+      "electron density profile",
+      "ion density profile"
+    ],
+    "distribution_observables_reported_without_acceptance_thresholds": [
+      "EEPF equal-time normalized mixture",
+      "powered-electrode IFED equal-time normalized mixture",
+      "grounded-electrode IFED equal-time normalized mixture"
+    ]
+  },
+  "internal_density_stationarity_gates": {
+    "minimum_total_blocks": 16,
+    "minimum_ar1_effective_blocks_per_species": 8.0,
+    "maximum_absolute_projected_fractional_drift_per_species": 0.01,
+    "maximum_absolute_split_half_fractional_change_per_species": 0.01,
+    "maximum_adjacent_profile_relative_l2_per_species": 0.025
+  },
+  "threshold_basis": "These are internal sampling-readiness gates, aligned with the existing AuroraPIC Turner density-series screen. They are not thresholds from the eduPIC authors or an experimental publication. EEPF and IFED remain descriptive until observation-count-preserving uncertainty estimates are available.",
+  "claim_if_passed": "The 64-cycle native measurement series is sufficiently stationary for an initial diagnostic comparison of density observables.",
+  "claims_not_established_if_passed": [
+    "independent physical validation",
+    "AuroraPIC-to-eduPIC agreement",
+    "convergence of EEPF or IFED",
+    "the upstream approximately 1000-cycle production measurement recommendation",
+    "experimental agreement"
+  ],
+  "physics_claim": "none_predeclared_internal_sampling_readiness_only"
+}

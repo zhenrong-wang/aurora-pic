@@ -99,6 +99,78 @@ def relative_l2(candidate: list[float], reference: list[float]) -> float | None:
                      denominator)
 
 
+def trapezoid(coordinates: list[float], values: list[float]) -> float:
+    if len(coordinates) != len(values) or len(coordinates) < 2:
+        raise BlockAnalysisError("profile integration requires at least two points")
+    return math.fsum(
+        0.5 * (left_value + right_value) * (right_x - left_x)
+        for left_x, right_x, left_value, right_value in zip(
+            coordinates, coordinates[1:], values, values[1:]))
+
+
+def linear_slope(values: list[float]) -> float:
+    center = (len(values) - 1) / 2.0
+    denominator = math.fsum((index - center) ** 2
+                            for index in range(len(values)))
+    if denominator == 0.0:
+        return 0.0
+    mean = statistics.fmean(values)
+    return math.fsum(
+        (index - center) * (value - mean)
+        for index, value in enumerate(values)) / denominator
+
+
+def lag_one(values: list[float]) -> float | None:
+    if len(values) < 3:
+        return None
+    mean = statistics.fmean(values)
+    centered = [value - mean for value in values]
+    denominator = math.sqrt(
+        math.fsum(value * value for value in centered[:-1]) *
+        math.fsum(value * value for value in centered[1:]))
+    if denominator == 0.0:
+        return None
+    return math.fsum(left * right for left, right in zip(
+        centered, centered[1:])) / denominator
+
+
+def profile_series_statistics(coordinates: list[float],
+                              profiles: list[list[float]]) -> dict:
+    integrals = [trapezoid(coordinates, profile) for profile in profiles]
+    mean_integral = statistics.fmean(integrals)
+    if mean_integral == 0.0:
+        raise BlockAnalysisError("mean line-integrated density is zero")
+    correlation = lag_one(integrals)
+    effective_blocks: float | None = None
+    if correlation is not None:
+        bounded = min(0.99, max(-0.99, correlation))
+        effective_blocks = min(
+            float(len(integrals)),
+            max(1.0, len(integrals) * (1.0 - bounded) / (1.0 + bounded)))
+    half = len(integrals) // 2
+    split_half_change: float | None = None
+    if half:
+        split_half_change = (
+            statistics.fmean(integrals[-half:]) -
+            statistics.fmean(integrals[:half])) / mean_integral
+    projected_drift = (
+        linear_slope(integrals) * (len(integrals) - 1) / mean_integral)
+    adjacent = [relative_l2(left, right) for left, right in zip(
+        profiles, profiles[1:])]
+    return {
+        "line_integrated_density_m-2_by_block": integrals,
+        "mean_line_integrated_density_m-2": mean_integral,
+        "projected_fractional_drift_across_series": projected_drift,
+        "split_half_fractional_change": split_half_change,
+        "lag_one_integrated_density_correlation": correlation,
+        "ar1_effective_blocks": effective_blocks,
+        "adjacent_profile_relative_l2": adjacent,
+        "maximum_adjacent_profile_relative_l2": (
+            max(value for value in adjacent if value is not None)
+            if any(value is not None for value in adjacent) else None),
+    }
+
+
 def atomic_csv(path: Path, header: list[str], rows: list[list[float]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
@@ -157,19 +229,46 @@ def load_blocks(campaign_dir: Path) -> tuple[dict, list[Path], list[dict]]:
     return campaign, stage_dirs, stages
 
 
-def analyze(campaign_dir: Path, minimum_blocks: int,
+def analyze(campaign_dirs: list[Path], minimum_blocks: int,
             density_csv: Path | None, eepf_csv: Path | None,
             ifed_csv: Path | None) -> dict:
-    campaign, stage_dirs, stages = load_blocks(campaign_dir)
+    if not campaign_dirs:
+        raise BlockAnalysisError("at least one campaign is required")
+    campaigns: list[dict] = []
+    stage_dirs: list[Path] = []
+    stages: list[dict] = []
+    previous_latest: dict | None = None
+    binary_sha256: str | None = None
+    for index, campaign_dir in enumerate(campaign_dirs, 1):
+        campaign, campaign_stage_dirs, campaign_stages = load_blocks(
+            campaign_dir)
+        if binary_sha256 is None:
+            binary_sha256 = campaign["source_binary_sha256"]
+        elif campaign.get("source_binary_sha256") != binary_sha256:
+            raise BlockAnalysisError(
+                f"continuation campaign {index} changes the source binary")
+        if (previous_latest is not None and
+                campaign.get("initial_state") != previous_latest):
+            raise BlockAnalysisError(
+                f"continuation campaign {index} does not begin at the prior "
+                "checkpoint")
+        campaigns.append(campaign)
+        stage_dirs.extend(campaign_stage_dirs)
+        stages.extend(campaign_stages)
+        previous_latest = campaign.get("latest_state")
     block_cycles = [stage["stage"]["requested_cycles"] for stage in stages]
     equal_block_cycles = len(set(block_cycles)) == 1
-    target_reached = campaign.get("target_reached") is True
+    target_reached = all(campaign.get("target_reached") is True
+                         for campaign in campaigns)
     eligible = (len(stages) >= minimum_blocks and equal_block_cycles and
                 target_reached)
 
     density_tables = [read_table(path / "density.dat", N_GRID, 3)
                       for path in stage_dirs]
     x = require_common_axis(density_tables, "density.dat")
+    electron_profiles = [[row[1] for row in table]
+                         for table in density_tables]
+    ion_profiles = [[row[2] for row in table] for table in density_tables]
     electron_density = duration_mixture(density_tables, 1, block_cycles)
     ion_density = duration_mixture(density_tables, 2, block_cycles)
     density_rows: list[list[float]] = []
@@ -282,11 +381,21 @@ def analyze(campaign_dir: Path, minimum_blocks: int,
             "upstream normalization boundaries. It does not establish "
             "cross-code agreement or independent physical validation."),
         "campaign": {
-            "path": str(campaign_dir.resolve()),
-            "campaign_report_sha256": sha256(campaign_dir / "campaign-report.json"),
+            "path": str(campaign_dirs[0].resolve()),
+            "campaign_report_sha256": sha256(
+                campaign_dirs[0] / "campaign-report.json"),
+            "continuations": [
+                {
+                    "path": str(path.resolve()),
+                    "campaign_report_sha256": sha256(
+                        path / "campaign-report.json"),
+                }
+                for path in campaign_dirs[1:]
+            ],
             "target_reached": target_reached,
             "completed_measurement_cycles":
-                campaign.get("completed_measurement_cycles"),
+                sum(int(campaign.get("completed_measurement_cycles", 0))
+                    for campaign in campaigns),
             "block_count": len(stages),
             "block_cycles": block_cycles,
             "equal_block_cycles": equal_block_cycles,
@@ -325,11 +434,13 @@ def analyze(campaign_dir: Path, minimum_blocks: int,
         "density_profile": {
             "aggregation": "exact_duration_weighted",
             "electron_block_relative_l2_to_aggregate": [
-                relative_l2([row[1] for row in table], electron_density)
-                for table in density_tables],
+                relative_l2(profile, electron_density)
+                for profile in electron_profiles],
             "ion_block_relative_l2_to_aggregate": [
-                relative_l2([row[2] for row in table], ion_density)
-                for table in density_tables],
+                relative_l2(profile, ion_density) for profile in ion_profiles],
+            "electron_series": profile_series_statistics(
+                x, electron_profiles),
+            "ion_series": profile_series_statistics(x, ion_profiles),
         },
         "eepf": {
             "aggregation": "equal_time_normalized_mixture_not_native_pooled",
@@ -354,6 +465,8 @@ def analyze(campaign_dir: Path, minimum_blocks: int,
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("campaign_dir", type=Path)
+    parser.add_argument("--continuation-campaign-dir", type=Path,
+                        action="append", default=[])
     parser.add_argument("--minimum-blocks", type=positive_integer, default=4)
     parser.add_argument("--density-csv", type=Path)
     parser.add_argument("--eepf-csv", type=Path)
@@ -362,7 +475,8 @@ def main() -> int:
     parser.add_argument("--require-eligible", action="store_true")
     args = parser.parse_args()
     try:
-        report = analyze(args.campaign_dir, args.minimum_blocks,
+        report = analyze([args.campaign_dir] + args.continuation_campaign_dir,
+                         args.minimum_blocks,
                          args.density_csv, args.eepf_csv, args.ifed_csv)
     except (BlockAnalysisError, OSError, json.JSONDecodeError) as error:
         print(f"eduPIC measurement-block analysis failed: {error}", file=sys.stderr)
