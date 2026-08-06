@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "incomplete_predeclared_native_measurement_stationarity_continuation",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-measurement-stationarity-rule-20260806.json",
+    "sha256": "0032b634a2569067e4ef87f34ae282872dbf7ef15075ae514ed695a987a82f22",
+    "committed_before_continuation": true,
+    "commit": "868a772"
+  },
+  "continuation": {
+    "start_cycle": 1516,
+    "current_cycle": 1520,
+    "target_cycle": 1564,
+    "completed_additional_blocks": 1,
+    "target_additional_blocks": 12,
+    "cycles_per_block": 4,
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "input_checkpoint_sha256": "5cabcd4385eaf9b7ba31bf704555ad28bdc3bc052ac13f6b6539df0ea7b5c5d8",
+    "current_checkpoint_sha256": "78ff0d51d548a99565d1175832bdf5288b5c1d5490676defe93a8bd4632f3e66",
+    "stage_report_sha256": "993db582dc518f42239d6a7024ba60b222ad86ae2516183d3b106d2e7aec7f0c",
+    "campaign_report_at_milestone_sha256": "c7f36a290cecd6cdd1a8eb51291823ab2f815bd5b693ec2785fc3d348b9a368a",
+    "stage_wall_seconds": 91.29239994601812
+  },
+  "host_health": {
+    "minimum_available_memory_mib": 5739.9296875,
+    "maximum_load_per_cpu": 0.26849365234375,
+    "swap_io_pages": 0,
+    "violations": 0
+  },
+  "joined_series": {
+    "analysis_sha256": "49316826935bd0d8df7eb25deff5006a0dcd3cd4f4d9c20b8bda3107ddc94cee",
+    "analyzer_sha256": "ea0d29f2d07c17e93b2b951a8821a2cf18f6c2344ca3bd5361e4dde2da3231f8",
+    "total_blocks": 5,
+    "total_measurement_cycles": 20,
+    "eligible": false,
+    "electron_density": {
+      "lag_one_integrated_correlation": -0.5940114514712316,
+      "ar1_effective_blocks": 5.0,
+      "projected_fractional_drift": 0.00033961832983086225,
+      "split_half_fractional_change": 0.00016996778321545878,
+      "maximum_adjacent_profile_relative_l2": 0.00585278050150083
+    },
+    "ion_density": {
+      "lag_one_integrated_correlation": -0.35739569418268496,
+      "ar1_effective_blocks": 5.0,
+      "projected_fractional_drift": 0.0004491061962330804,
+      "split_half_fractional_change": 0.0002526984828141356,
+      "maximum_adjacent_profile_relative_l2": 0.01798885556058772
+    },
+    "latest_block_total_variation_to_joined_mixture": {
+      "eepf": 0.006695150108218702,
+      "ifed_powered": 0.1121509,
+      "ifed_grounded": 0.1280918
+    }
+  },
+  "interpretation": "All density thresholds happen to pass at five blocks, but the predeclared 16-block horizon is incomplete and the short-series AR(1) estimates are not stable. IFED remains visibly noisy.",
+  "claim_boundary": "This is restart and sampling-progress evidence only; it establishes neither stationarity nor physical validation.",
+  "physics_claim": "none_incomplete_sampling_series"
+}

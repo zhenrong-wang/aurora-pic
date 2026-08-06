@@ -971,6 +971,17 @@ uncertainty estimate. The analyzer can now join separately immutable campaign
 directories only when their source-binary and checkpoint hashes form a
 continuous chain.
 
+The first predeclared continuation block then reached cycle 1,520 in 91.29 s.
+Its single-core host checks retained at least 5,740 MiB available memory,
+normalized load at or below 0.269, and zero swap I/O. Joined with the original
+four blocks, the five-block density series remains well inside the numerical
+drift and profile-movement thresholds, but it is explicitly ineligible because
+the 16-block horizon is incomplete. The current negative lag-one estimates cap
+the nominal AR(1) count at five and are not reliable at this sample count.
+Latest-block EEPF total variation is 0.67%, while powered and grounded IFED
+variation remains 11.22% and 12.81%. Progress evidence is
+[`edupic-native-measurement-continuation-cycle1520-20260806.json`](../benchmarks/ccp/edupic-native-measurement-continuation-cycle1520-20260806.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
