@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "external_native_measurement_runtime_and_output_pilot",
+  "physics_claim": "none",
+  "claim_boundary": "One measurement RF cycle from the stationary cycle-1500 checkpoint qualifies native output, stability, resource, and restart contracts. Its observables are descriptive only and do not establish converged measurement statistics or cross-code agreement.",
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "implementation": "C/eduPIC.cc",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247"
+  },
+  "execution": {
+    "start_cycle": 1500,
+    "end_cycle": 1501,
+    "measurement_cycles": 1,
+    "measurement_mode": true,
+    "wall_seconds": 23.384932881919667,
+    "cycles_per_wall_second": 0.0427625772992131,
+    "initial_particle_steps": 886876000,
+    "initial_particle_step_limit": 1000000000,
+    "cpu_affinity_count": 1,
+    "nice_increment": 10,
+    "hard_timeout_seconds": 60,
+    "output_bytes": 19720024,
+    "stage_report_sha256": "e1274bb5adebda637ce82e7132dffd0882d2f8e73c1435defc3d3f36975d25f9"
+  },
+  "state": {
+    "input_checkpoint_sha256": "beccd8c0ad3f17ac8e6e9c16060b38220ea752379bc67cb65226d0194b99fa76",
+    "final_checkpoint_sha256": "3df3155d18588401c9e549867efacaa7e249df9e227c5cbc51dba60d797a08ae",
+    "convergence_sha256": "2b441b67b2651078502f6558088161ba585a2c98c4b7d332802220a32ddc1c82",
+    "initial_electrons": 108177,
+    "initial_ions": 113542,
+    "final_electrons": 108200,
+    "final_ions": 113586
+  },
+  "native_output_validation": {
+    "all_expected_outputs_present": true,
+    "all_values_finite": true,
+    "all_shapes_pass": true,
+    "eepf_weighted_normalization": 0.9999999672883132,
+    "ifed_powered_normalization": 1.000003,
+    "ifed_grounded_normalization": 0.9999899999999999,
+    "stability_conditions_pass": true,
+    "plasma_frequency_dt_e": 0.09,
+    "dx_over_debye_length": 0.723,
+    "maximum_electron_collision_frequency_dt_e": 0.013,
+    "maximum_ion_collision_frequency_dt_i": 0.02
+  },
+  "descriptive_observables": {
+    "electron_density_center_m3": 7539000000000000.0,
+    "electron_power_density_w_m3": 1623.0,
+    "ion_power_density_w_m3": 3266.0,
+    "total_power_density_w_m3": 4889.0,
+    "mean_ion_energy_powered_ev": 29.4,
+    "mean_ion_energy_grounded_ev": 33.49,
+    "ion_flux_powered_m2_s1": 2.174e18,
+    "ion_flux_grounded_m2_s1": 2.079e18,
+    "electron_flux_powered_m2_s1": 1.889e18,
+    "electron_flux_grounded_m2_s1": 2.563e18
+  },
+  "diagnostic_sha256": {
+    "density.dat": "6dfadea1ee22df445fe9c617b7221d8c4405a189cfee13395171cd372966ca18",
+    "eepf.dat": "11e764e95a567da1b5113e8caa3f67afad1c1ef1105f95cfdfb73b0b8f840541",
+    "ifed.dat": "a6773c18158cfe94d1b3e64fd4705c73819012827cd97048b9f3d2b7c9a37182",
+    "pot_xt.dat": "c44792990ccab971a352f33f0437266e01c0e38a08379ae261fb45e2069d5dec",
+    "efield_xt.dat": "085afd915368acd49403eca6632e4e7d8f094178f042469e1d75e2488e1e2b09",
+    "ne_xt.dat": "b18fc6f440faa76e730bb5bb7163f9f20a1867818374f3fe8e512853000cb144",
+    "ni_xt.dat": "1816b415df4873a88f4de769582ff77aef54a7b30282c62cfedba8703bb93335",
+    "je_xt.dat": "36204e4943857540e1695f37286147a5e563cfcd0d7fc1c5bc5d17153b4d366c",
+    "ji_xt.dat": "a09ccdc1420b0bf2fee209ad0ccdf4720f8b340c9d7744ae09f46be67c5a887d",
+    "powere_xt.dat": "0448d381a646e369acee58159becf9c85100e6d7464bcb6b0aa629e1e383bdd1",
+    "poweri_xt.dat": "86e8910228c17fc442600c73195f1a749fd6a3f9456c42a5f4f665779e513032",
+    "meanee_xt.dat": "191deaf22a6893491772601b2098b7ff7afe18069f5e5bcdee44de3aee2737e6",
+    "meanei_xt.dat": "8aa3c0830777e34cf3baf8c9f1bd992412f296a9b700b4f3ddaaf4ba8a58059e",
+    "ioniz_xt.dat": "c2633c40beff95bb92643a3661b1f8dffbe97c466f0c591a749bffebb78cfb5d",
+    "info.txt": "aa3062e7b2101e782afb41b9f630c576b0c22e0ae062f17610f630cafc1195e4"
+  },
+  "next_gate": "Implement a host-guarded immutable block coordinator and code-neutral block aggregator. Qualify block duration from the measured 23.38 seconds per cycle before advancing toward the upstream approximately 1000-cycle measurement recommendation."
+}

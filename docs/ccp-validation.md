@@ -895,6 +895,27 @@ eduPIC observables, AuroraPIC physics, or cross-code agreement. Checksum-bearing
 evidence is
 [`edupic-reference-stationarity-cycle1500-20260805.json`](../benchmarks/ccp/edupic-reference-stationarity-cycle1500-20260805.json).
 
+The first native measurement-mode pilot then advanced the immutable
+cycle-1,500 checkpoint by exactly one RF cycle. The external process was
+pinned to one low-priority CPU, bounded by 886,876,000 initial
+particle-timesteps and a 60 s timeout, and completed in 23.38 s. It produced
+all expected density, EEPF, IFED, phase-resolved field, density, current,
+power, energy, and ionization outputs. Every table has its upstream shape and
+finite values. EEPF normalization is `0.99999997`; powered and grounded IFED
+normalizations are `1.000003` and `0.999990`.
+
+All four upstream stability checks pass: plasma-frequency times electron
+timestep is `0.090`, grid spacing over central Debye length is `0.723`, and
+maximum electron and ion collision-frequency products are `0.013` and
+`0.020`. The reported one-cycle density, flux, energy, and power values are
+descriptive runtime/output qualification only; one RF cycle cannot supply the
+recommended measurement statistics or support cross-code agreement. The
+upstream accumulators are process-local and absent from `picdata.bin`, so the
+next safety gate is an immutable measurement-block coordinator plus an
+explicit block aggregation/uncertainty contract, rather than an uncheckpointed
+multi-hour process. Evidence is
+[`edupic-reference-measurement-pilot-cycle1501-20260806.json`](../benchmarks/ccp/edupic-reference-measurement-pilot-cycle1501-20260806.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
