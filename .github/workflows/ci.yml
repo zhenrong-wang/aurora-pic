@@ -111,6 +111,8 @@ jobs:
         run: python3 scripts/test_phase_eedf_interchange.py
       - name: Validate bounded eduPIC stage runner
         run: python3 scripts/test_edupic_stage.py
+      - name: Validate bounded eduPIC measurement runner
+        run: PYTHONPATH=scripts python3 scripts/test_edupic_measurement_stage.py
       - name: Validate eduPIC convergence analysis
         run: PYTHONPATH=scripts python3 scripts/test_analyze_edupic_convergence.py
       - name: Validate adaptive eduPIC advancement
