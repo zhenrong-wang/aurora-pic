@@ -113,6 +113,8 @@ jobs:
         run: python3 scripts/test_edupic_stage.py
       - name: Validate bounded eduPIC measurement runner
         run: PYTHONPATH=scripts python3 scripts/test_edupic_measurement_stage.py
+      - name: Validate adaptive eduPIC measurement advancement
+        run: PYTHONPATH=scripts python3 scripts/test_advance_edupic_measurement.py
       - name: Validate eduPIC convergence analysis
         run: PYTHONPATH=scripts python3 scripts/test_analyze_edupic_convergence.py
       - name: Validate adaptive eduPIC advancement

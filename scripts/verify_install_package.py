@@ -262,6 +262,7 @@ def smoke_install_tree(
         "export_phase_eedf.py", "compare_phase_eedf.py",
         "analyze_phase_eedf.py", "run_edupic_stage.py",
         "run_edupic_measurement_stage.py",
+        "advance_edupic_measurement.py",
         "analyze_edupic_convergence.py",
         "advance_edupic_equilibration.py",
     ):

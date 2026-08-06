@@ -45,7 +45,7 @@ def fake_source(valid_diagnostics: bool) -> str:
         "#!/usr/bin/env python3\n"
         "import math, pathlib, struct, sys\n"
         "assert len(sys.argv)==3 and sys.argv[2]=='m'\n"
-        "p=pathlib.Path('picdata.bin'); d=p.read_bytes(); cycle=int(struct.unpack_from('=d',d,8)[0]); n=int(sys.argv[1]); e=3+n; i=4+2*n\n"
+        "p=pathlib.Path('picdata.bin'); d=p.read_bytes(); cycle=int(struct.unpack_from('=d',d,8)[0]); n=int(sys.argv[1]); e=3+cycle-1+n; i=4+2*(cycle-1+n)\n"
         "v=[(cycle+n)/13.56e6,float(cycle+n),float(e)]+[0.0]*(4*e)+[float(i)]+[0.0]*(4*i); p.write_bytes(struct.pack(f'={len(v)}d',*v))\n"
         "with open('conv.dat','a') as f:\n"
         "  for c in range(cycle+1,cycle+n+1): f.write(f'{c} {3+c-1} {4+2*(c-1)}\\n')\n"

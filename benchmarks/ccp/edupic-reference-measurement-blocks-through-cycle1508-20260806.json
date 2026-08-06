@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "guarded_native_measurement_block_coordinator_qualification",
+  "physics_claim": "none",
+  "claim_boundary": "Two contiguous four-cycle native measurement blocks qualify immutable execution, resume, output-integrity, timing-prediction, and host-guard contracts. Two blocks do not establish measurement convergence, uncertainty, or cross-code agreement.",
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "implementation": "C/eduPIC.cc",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "cycle1500_checkpoint_sha256": "beccd8c0ad3f17ac8e6e9c16060b38220ea752379bc67cb65226d0194b99fa76"
+  },
+  "tools": {
+    "measurement_stage_runner_sha256": "1117fc704e142bdbae43179ba7f207f61dfc4c273f19ee406c63fe878725a43d",
+    "measurement_coordinator_sha256": "17f5ceb646f9a91eaf3580c6eb34d8db7acda9b3dc63caa23591a2a44bd37f7f"
+  },
+  "campaign": {
+    "start_cycle": 1500,
+    "snapshot_cycle": 1508,
+    "completed_measurement_cycles": 8,
+    "campaign_target_measurement_cycles": 16,
+    "campaign_target_reached": false,
+    "stop_reason": "stage_count_limit_reached",
+    "completed_blocks": 2,
+    "cycles_per_block": 4,
+    "invocations": 2,
+    "recovered_unrecorded_stages": 0,
+    "campaign_report_snapshot_sha256": "6e63b9a22d8890775bd727e94ab1729e4165872a3db4b606ad883ef0dc08c610",
+    "final_checkpoint_sha256": "c47c0fdeec2cf4b1396395f9d512a2de6d974a8c6aa6d7af3a5b055eaf753d1f",
+    "retained_stage_file_bytes": 39440424
+  },
+  "execution_contract": {
+    "qualified_seconds_per_cycle": 23.384932881919667,
+    "wall_prediction_safety_factor": 1.5,
+    "predicted_seconds_per_four_cycle_block": 140.309597291518,
+    "maximum_stage_wall_seconds": 240,
+    "maximum_coordinator_wall_seconds_per_invocation": 300,
+    "maximum_stages_per_invocation": 1,
+    "maximum_initial_particle_steps_per_stage": 4000000000,
+    "cpu_affinity_count": 1,
+    "nice_increment": 10,
+    "mean_observed_block_wall_seconds": 93.09242697653826,
+    "observed_seconds_per_cycle": 23.273106744134566
+  },
+  "blocks": [
+    {
+      "start_cycle": 1500,
+      "end_cycle": 1504,
+      "wall_seconds": 93.36108717205934,
+      "initial_particle_steps": 3547504000,
+      "stage_report_sha256": "cd7971df355ad2dc68c5450d6f68b100e89397ea69997c40325ecba82039fbcf",
+      "output_checkpoint_sha256": "503a17f1ce2c8c5e54cf197e3b97a7c608a63647cc1bcca8d9123087f1bd7ff0",
+      "eepf_weighted_normalization": 1.000000000306482,
+      "ifed_powered_normalization": 0.999999,
+      "ifed_grounded_normalization": 1.0000040000000001,
+      "electron_density_center_m3": 7568000000000000.0,
+      "total_power_density_w_m3": 4833.0
+    },
+    {
+      "start_cycle": 1504,
+      "end_cycle": 1508,
+      "wall_seconds": 92.82376678101718,
+      "initial_particle_steps": 3548688000,
+      "stage_report_sha256": "8222844858c068191437f90ee4a44feafd2444bcebdcc718015856f4c95deb4e",
+      "output_checkpoint_sha256": "c47c0fdeec2cf4b1396395f9d512a2de6d974a8c6aa6d7af3a5b055eaf753d1f",
+      "eepf_weighted_normalization": 1.0000000079582636,
+      "ifed_powered_normalization": 1.000005,
+      "ifed_grounded_normalization": 0.999997,
+      "electron_density_center_m3": 7548000000000000.0,
+      "total_power_density_w_m3": 4891.0
+    }
+  ],
+  "host_health_guard": {
+    "checks": 4,
+    "maximum_load_per_cpu": 0.5,
+    "observed_maximum_load_per_cpu": 0.36151123046875,
+    "minimum_available_memory_mib": 4096.0,
+    "observed_minimum_available_memory_mib": 4734.95703125,
+    "maximum_swap_io_pages_per_stage": 0,
+    "observed_maximum_swap_io_pages_per_stage": 0,
+    "violations": 0
+  },
+  "descriptive_block_consistency": {
+    "electron_density_center_mean_m3": 7558000000000000.0,
+    "electron_density_center_range_relative_to_mean": 0.0026462026991267533,
+    "total_power_density_mean_w_m3": 4862.0,
+    "total_power_density_range_relative_to_mean": 0.01192924722336487,
+    "interpretation": "The two blocks are operationally consistent, but a two-block range is not a convergence or uncertainty estimate."
+  },
+  "next_gate": "Complete the predeclared 16-cycle coordinator qualification, then implement a code-neutral block analyzer that distinguishes exactly duration-aggregable quantities from process-normalized EEPF, IFED, conditional-moment, and derived-power quantities."
+}

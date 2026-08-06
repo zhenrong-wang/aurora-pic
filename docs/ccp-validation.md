@@ -916,6 +916,25 @@ explicit block aggregation/uncertainty contract, rather than an uncheckpointed
 multi-hour process. Evidence is
 [`edupic-reference-measurement-pilot-cycle1501-20260806.json`](../benchmarks/ccp/edupic-reference-measurement-pilot-cycle1501-20260806.json).
 
+The new measurement coordinator has qualified real immutable resume through
+cycle 1,508. Two independent four-cycle measurement processes form one
+contiguous checkpoint chain from the original stationary cycle-1,500 state.
+They completed in 93.36 and 92.82 s, compared with a conservative 140.31 s
+prediction, and each invocation stopped after its declared single-stage cap.
+Every stage is replayed against its checkpoint, convergence history, native
+diagnostic hashes, binary hash, and input-state hash before resume.
+
+Four pre/post-stage host checks all passed. Available memory remained above
+4,735 MiB, normalized one-minute load remained below 0.362, and swap I/O was
+zero. The two blocks retain valid EEPF and powered/grounded IFED normalization.
+Their central electron densities differ by 0.264% relative to their mean and
+total power densities by 1.19%. These two-block ranges are encouraging
+operational consistency, not measurement convergence or uncertainty. The
+upstream process-normalized EEPF, IFED, conditional moments, and derived power
+arrays also require an explicit aggregation definition; they must not be
+silently treated as raw pooled accumulators. Evidence is
+[`edupic-reference-measurement-blocks-through-cycle1508-20260806.json`](../benchmarks/ccp/edupic-reference-measurement-blocks-through-cycle1508-20260806.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
