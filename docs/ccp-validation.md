@@ -1027,6 +1027,15 @@ is applied. The correct next step is a predeclared longer horizon, not a
 physical-validation claim. Complete evidence is
 [`edupic-native-measurement-stationarity-cycle1564-20260807.json`](../benchmarks/ccp/edupic-native-measurement-stationarity-cycle1564-20260807.json).
 
+Before collecting cycle 1,565 or later, a follow-up rule was committed in
+[`edupic-native-measurement-extension-rule-20260807.json`](../benchmarks/ccp/edupic-native-measurement-extension-rule-20260807.json).
+It retains the four-cycle blocks and every density threshold, but extends the
+checkpoint to 24 total blocks and 96 measured cycles through cycle 1,596. At
+the observed electron lag-one correlation of 0.439, the AR(1) approximation
+requires about 21 total blocks to reach eight effective blocks; 24 provides
+some margin without being a guarantee of passage. The original 64-cycle
+failure remains unchanged regardless of the extension outcome.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_internal_native_measurement_stationarity_screen",
+  "campaign_phase": "post_failed_64_cycle_effective_sample_extension",
+  "declared_before_extension": true,
+  "baseline_evidence": {
+    "path": "benchmarks/ccp/edupic-native-measurement-stationarity-cycle1564-20260807.json",
+    "sha256": "d0f450759f5334b0fdc147b2a23151e0466caff4f80e93ffaf735eb619ad150a",
+    "commit": "2da7daf",
+    "classification": "internal_density_stationarity_screen_failed",
+    "completed_blocks": 16,
+    "completed_measurement_cycles": 64,
+    "end_cycle": 1564,
+    "failed_gates": [
+      "electron minimum AR(1) effective blocks",
+      "ion minimum AR(1) effective blocks"
+    ]
+  },
+  "extension_contract": {
+    "input_checkpoint_sha256": "018443c4dae66cd1a6eb0218c659efbb116e7e462f6ae60e80262afd8eb8dec0",
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "additional_measurement_cycles": 32,
+    "cycles_per_block": 4,
+    "additional_blocks": 8,
+    "final_cycle": 1596,
+    "serial": true,
+    "maximum_stages_per_invocation": 1,
+    "host_health_guard": {
+      "maximum_load_per_cpu": 0.5,
+      "minimum_available_memory_mib": 4096.0,
+      "maximum_swap_io_pages_per_stage": 0
+    }
+  },
+  "analysis_contract": {
+    "required_total_contiguous_blocks": 24,
+    "required_total_measurement_cycles": 96,
+    "aggregation": "join all separately immutable campaigns only when source-binary identity and checkpoint hashes form a continuous chain",
+    "density_observables": [
+      "electron line-integrated density",
+      "ion line-integrated density",
+      "electron density profile",
+      "ion density profile"
+    ],
+    "distribution_observables_reported_without_acceptance_thresholds": [
+      "EEPF equal-time normalized mixture",
+      "powered-electrode IFED equal-time normalized mixture",
+      "grounded-electrode IFED equal-time normalized mixture"
+    ]
+  },
+  "internal_density_stationarity_gates": {
+    "minimum_total_blocks": 24,
+    "minimum_ar1_effective_blocks_per_species": 8.0,
+    "maximum_absolute_projected_fractional_drift_per_species": 0.01,
+    "maximum_absolute_split_half_fractional_change_per_species": 0.01,
+    "maximum_adjacent_profile_relative_l2_per_species": 0.025
+  },
+  "horizon_basis": "At 16 blocks the electron lag-one correlation was 0.4386, implying approximately 20.5 blocks for an AR(1) effective count of eight if correlation remains unchanged. A 24-block checkpoint provides margin without changing the four-cycle block definition. This is a predeclared checkpoint, not a guarantee of passage.",
+  "threshold_basis": "The density thresholds are unchanged from the failed 64-cycle screen. They are internal sampling-readiness gates, not published eduPIC or experimental acceptance limits.",
+  "claim_if_passed": "The 96-cycle native density measurement series passes the predeclared internal sampling-readiness screen.",
+  "claims_not_established_if_passed": [
+    "independent physical validation",
+    "AuroraPIC-to-eduPIC agreement",
+    "convergence of EEPF or IFED",
+    "the upstream approximately 1000-cycle production measurement recommendation",
+    "experimental agreement"
+  ],
+  "physics_claim": "none_predeclared_internal_sampling_readiness_only"
+}
