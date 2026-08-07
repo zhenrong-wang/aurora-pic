@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "post_hoc_multiscale_uncertainty_diagnostic",
+  "trigger": "The 19-block raw AR(1) fit reported high serial correlation despite sub-0.1-percent density fluctuations and negligible fitted drift.",
+  "method_change": {
+    "analyzer_sha256": "7118587eb724e5254ec30ed014e5f4d107bb914636dca5a0888cc24fb1afa3c8",
+    "analysis_sha256": "68a3de574847deb0356f82c41ac1a427e8a44cd0483155462ea5bbfc7bb1a88d",
+    "added_outputs": [
+      "AR(1)-corrected standard error",
+      "AR(1) variance inflation relative to independent blocks",
+      "non-overlapping power-of-two batch-mean diagnostics"
+    ],
+    "frozen_gate_changed": false
+  },
+  "electron_line_integrated_density": {
+    "naive_standard_error_relative_to_mean": 0.00007957736113798023,
+    "ar1_corrected_standard_error_relative_to_mean": 0.0001794250476584659,
+    "ar1_variance_inflation": 5.083783809386025,
+    "two_block_batch": {
+      "represented_cycles_per_batch": 8,
+      "batch_count": 9,
+      "dropped_trailing_blocks": 1,
+      "lag_one_correlation": 0.15979806440156147,
+      "standard_error_relative_to_mean": 0.00010074660410937483
+    },
+    "four_block_batch": {
+      "represented_cycles_per_batch": 16,
+      "batch_count": 4,
+      "dropped_trailing_blocks": 3,
+      "lag_one_correlation": -0.5651405632905714,
+      "standard_error_relative_to_mean": 0.00009550237650543318
+    }
+  },
+  "ion_line_integrated_density": {
+    "naive_standard_error_relative_to_mean": 0.00008578030823986665,
+    "ar1_corrected_standard_error_relative_to_mean": 0.00018035462028255536,
+    "ar1_variance_inflation": 4.420580869837288,
+    "two_block_batch": {
+      "represented_cycles_per_batch": 8,
+      "batch_count": 9,
+      "dropped_trailing_blocks": 1,
+      "lag_one_correlation": 0.061994566703836886,
+      "standard_error_relative_to_mean": 0.00010540442840448402
+    },
+    "four_block_batch": {
+      "represented_cycles_per_batch": 16,
+      "batch_count": 4,
+      "dropped_trailing_blocks": 3,
+      "lag_one_correlation": -0.661773100196866,
+      "standard_error_relative_to_mean": 0.00009184597716437662
+    }
+  },
+  "interpretation": "Serial correlation materially increases uncertainty relative to the naive independent-block estimate, but the density-mean uncertainty remains below 0.02 percent. Eight-cycle batch means substantially reduce residual lag correlation and give stable order-0.01-percent standard errors. Four 16-cycle batches are too few for a reliable correlation estimate.",
+  "problem_classification": {
+    "identified_solver_numerical_defect": false,
+    "identified_physics_model_defect": false,
+    "identified_measurement_analysis_defect": true,
+    "remedy": "Report autocorrelation-aware and multiscale batch uncertainty instead of treating four-cycle blocks as independent or relying on AR(1) effective count alone."
+  },
+  "histogram_boundary": "The external eduPIC EEPF and IFED files discard raw observation counts, so their pooling uncertainty cannot be repaired after execution. AuroraPIC's native phase-EEDF path already retains macro and represented observation counts; external IFED remains descriptive until count-preserving source output is available.",
+  "claim_boundary": "This post-hoc diagnostic does not alter the predeclared 64-cycle failure or the active 96-cycle extension rule, and it does not establish physical validation.",
+  "physics_claim": "none_statistical_diagnostic_only"
+}

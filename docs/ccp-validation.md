@@ -1047,6 +1047,27 @@ only 0.038% and 0.050%, and adjacent-profile movement remains below 0.69% and
 The 24-block rule remains incomplete and is not assumed to pass. Evidence is
 [`edupic-native-measurement-extension-cycle1576-20260807.json`](../benchmarks/ccp/edupic-native-measurement-extension-cycle1576-20260807.json).
 
+The high AR(1) correlation was then triaged as a measurement-analysis issue,
+not assumed to be a solver defect. Across 19 blocks the line-integrated
+density varies by less than +/-0.08%. AR(1) correction raises the relative
+standard error from 0.0080% to 0.0179% for electrons and from 0.0086% to
+0.0180% for ions. Non-overlapping eight-cycle batches reduce lag-one
+correlation to 0.160 and 0.062, with relative standard errors of 0.0101% and
+0.0105%. Thus correlation matters, but absolute density-mean uncertainty is
+still very small. The analyzer now reports AR(1)-corrected uncertainty,
+variance inflation, and power-of-two reblocking diagnostics. This additional
+post-hoc view does not change either frozen gate. Evidence is
+[`edupic-native-measurement-reblocking-diagnostic-cycle1576-20260807.json`](../benchmarks/ccp/edupic-native-measurement-reblocking-diagnostic-cycle1576-20260807.json).
+
+No faulty field equation, particle mover, collision model, or boundary model
+has been identified by this result. Changing one would be scientifically
+unjustified. The remaining external IFED limitation is different: eduPIC's
+normalized output omits raw observation counts, so defensible pooled
+uncertainty cannot be reconstructed afterward. AuroraPIC's native phase-EEDF
+diagnostics already preserve macro and represented observation counts; the
+external IFED comparison remains descriptive until count-preserving source
+output is available.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

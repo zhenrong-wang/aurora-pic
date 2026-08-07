@@ -134,6 +134,42 @@ def lag_one(values: list[float]) -> float | None:
         centered, centered[1:])) / denominator
 
 
+def ar1_effective_count(count: int, correlation: float | None) -> float | None:
+    if correlation is None:
+        return None
+    bounded = min(0.99, max(-0.99, correlation))
+    return min(float(count), max(
+        1.0, count * (1.0 - bounded) / (1.0 + bounded)))
+
+
+def batch_mean_diagnostics(values: list[float]) -> list[dict]:
+    """Report non-overlapping power-of-two batches with at least four means."""
+    result: list[dict] = []
+    batch_size = 1
+    while len(values) // batch_size >= 4:
+        batch_count = len(values) // batch_size
+        used = batch_count * batch_size
+        means = [statistics.fmean(values[start:start + batch_size])
+                 for start in range(0, used, batch_size)]
+        mean = statistics.fmean(means)
+        sample_stddev = statistics.stdev(means)
+        standard_error = sample_stddev / math.sqrt(batch_count)
+        correlation = lag_one(means)
+        result.append({
+            "batch_size_blocks": batch_size,
+            "batch_count": batch_count,
+            "used_blocks": used,
+            "dropped_trailing_blocks": len(values) - used,
+            "lag_one_batch_mean_correlation": correlation,
+            "sample_standard_deviation": sample_stddev,
+            "standard_error": standard_error,
+            "standard_error_relative_to_absolute_mean": (
+                standard_error / abs(mean) if mean != 0.0 else None),
+        })
+        batch_size *= 2
+    return result
+
+
 def profile_series_statistics(coordinates: list[float],
                               profiles: list[list[float]]) -> dict:
     integrals = [trapezoid(coordinates, profile) for profile in profiles]
@@ -141,12 +177,12 @@ def profile_series_statistics(coordinates: list[float],
     if mean_integral == 0.0:
         raise BlockAnalysisError("mean line-integrated density is zero")
     correlation = lag_one(integrals)
-    effective_blocks: float | None = None
-    if correlation is not None:
-        bounded = min(0.99, max(-0.99, correlation))
-        effective_blocks = min(
-            float(len(integrals)),
-            max(1.0, len(integrals) * (1.0 - bounded) / (1.0 + bounded)))
+    effective_blocks = ar1_effective_count(len(integrals), correlation)
+    sample_stddev = statistics.stdev(integrals)
+    naive_standard_error = sample_stddev / math.sqrt(len(integrals))
+    ar1_standard_error = (
+        sample_stddev / math.sqrt(effective_blocks)
+        if effective_blocks is not None else None)
     half = len(integrals) // 2
     split_half_change: float | None = None
     if half:
@@ -164,10 +200,23 @@ def profile_series_statistics(coordinates: list[float],
         "split_half_fractional_change": split_half_change,
         "lag_one_integrated_density_correlation": correlation,
         "ar1_effective_blocks": effective_blocks,
+        "sample_standard_deviation_m-2": sample_stddev,
+        "naive_standard_error_m-2": naive_standard_error,
+        "ar1_corrected_standard_error_m-2": ar1_standard_error,
+        "naive_standard_error_relative_to_absolute_mean":
+            naive_standard_error / abs(mean_integral),
+        "ar1_corrected_standard_error_relative_to_absolute_mean": (
+            ar1_standard_error / abs(mean_integral)
+            if ar1_standard_error is not None else None),
+        "ar1_variance_inflation_relative_to_independent_blocks": (
+            len(integrals) / effective_blocks
+            if effective_blocks is not None else None),
         "adjacent_profile_relative_l2": adjacent,
         "maximum_adjacent_profile_relative_l2": (
             max(value for value in adjacent if value is not None)
             if any(value is not None for value in adjacent) else None),
+        "nonoverlapping_batch_mean_diagnostics":
+            batch_mean_diagnostics(integrals),
     }
 
 

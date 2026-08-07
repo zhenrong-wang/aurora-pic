@@ -12,7 +12,7 @@ import sys
 import tempfile
 
 from test_edupic_measurement_stage import checkpoint, fake_source
-from analyze_edupic_measurement_blocks import lag_one
+from analyze_edupic_measurement_blocks import batch_mean_diagnostics, lag_one
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,6 +113,11 @@ def main() -> int:
                 "continuation campaign series analysis is invalid")
         require(abs(lag_one([1.0, 0.0, 1.0, 0.0]) + 1.0) < 1e-15,
                 "lag-one correlation calculation is invalid")
+        batches = batch_mean_diagnostics([float(value) for value in range(19)])
+        require([value["batch_size_blocks"] for value in batches] == [1, 2, 4]
+                and batches[-1]["batch_count"] == 4
+                and batches[-1]["dropped_trailing_blocks"] == 3,
+                "non-overlapping batch diagnostics are invalid")
         rejected = subprocess.run([
             sys.executable, str(ANALYZER), str(continuation),
             "--continuation-campaign-dir", str(campaign),
