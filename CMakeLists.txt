@@ -103,6 +103,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/run_edupic_measurement_stage.py
   scripts/advance_edupic_measurement.py
   scripts/analyze_edupic_measurement_blocks.py
+  scripts/evaluate_edupic_measurement_stationarity.py
   scripts/analyze_edupic_convergence.py
   scripts/advance_edupic_equilibration.py
   scripts/normalize_hall_reference.py scripts/prepare_hall_ensemble.py

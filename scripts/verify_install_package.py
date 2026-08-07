@@ -264,6 +264,7 @@ def smoke_install_tree(
         "run_edupic_measurement_stage.py",
         "advance_edupic_measurement.py",
         "analyze_edupic_measurement_blocks.py",
+        "evaluate_edupic_measurement_stationarity.py",
         "analyze_edupic_convergence.py",
         "advance_edupic_equilibration.py",
     ):

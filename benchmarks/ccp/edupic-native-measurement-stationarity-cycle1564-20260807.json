@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_predeclared_native_measurement_stationarity_evaluation",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-measurement-stationarity-rule-20260806.json",
+    "sha256": "0032b634a2569067e4ef87f34ae282872dbf7ef15075ae514ed695a987a82f22",
+    "commit": "868a772",
+    "committed_before_continuation": true
+  },
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "cycle1500_checkpoint_sha256": "beccd8c0ad3f17ac8e6e9c16060b38220ea752379bc67cb65226d0194b99fa76",
+    "cycle1564_checkpoint_sha256": "018443c4dae66cd1a6eb0218c659efbb116e7e462f6ae60e80262afd8eb8dec0"
+  },
+  "campaign": {
+    "start_cycle": 1500,
+    "end_cycle": 1564,
+    "measurement_cycles": 64,
+    "blocks": 16,
+    "cycles_per_block": 4,
+    "target_reached": true,
+    "original_campaign_report_sha256": "325d5fa1c6af640d09c60acbcbefa8fba49dd0888af2e0ee070ddb931bb287c0",
+    "continuation_campaign_report_sha256": "de46b507acb68659401ec9a82ee46785487180c09ab178a6a6c3168832c51811",
+    "total_stage_wall_seconds": 1488.0100723971846,
+    "stage_report_sha256": [
+      "cd7971df355ad2dc68c5450d6f68b100e89397ea69997c40325ecba82039fbcf",
+      "8222844858c068191437f90ee4a44feafd2444bcebdcc718015856f4c95deb4e",
+      "9ced7d68f40c714ef09d00b244b2004fc6f599b9189355774ee837cfcd4bb12d",
+      "4a5a83e9cb2921b0693530e128a7286d5c5616e403a6748a69f4059aad95fc26",
+      "993db582dc518f42239d6a7024ba60b222ad86ae2516183d3b106d2e7aec7f0c",
+      "4029a35ce8da403e46ac637b5ca3a009d7a49196263585e1d93db15bdd37ea83",
+      "f8f180a73fbf329109c2fe9ea81aa62d58e2b09281d77aa4516fac95f126647c",
+      "3a2dfb5f09268f21e903df5ffb91930a8fb65d0d271350657c5074984c280883",
+      "92fb3fc62e778e162b87aa427955e7f84ef2b3bc2857f4a992ce872f81508385",
+      "feca3468111c9358d2f0ff189bfcbe8e28b2820ce90b6482d48ddc0e97df9a87",
+      "99941ae762954c453da7e5210247b0b702616d15ad6073e343ded1153e6de3be",
+      "efcbf3f7db25c95e1f8aa21b003c9002ab2c41b007096cd994471ed9d9986223",
+      "7c3ab478308be1d1c4018f5663e89cfb38d745884277bee8ac0cffae52e3c521",
+      "e373af8f6d8e1c52bdaf3e3d41d8f8da064b127f0011b2ca2f9c0a71b107d7c9",
+      "d829373b4a37e1e139a8718b8ab59d7469bbb2a9626ab595562834fe3c85082c",
+      "34e7669d33825ae2bb92f8a99881275fef688e8b9d284f63cd4c13f19b08df64"
+    ]
+  },
+  "host_health": {
+    "checks": 32,
+    "minimum_available_memory_mib": 4522.03125,
+    "maximum_load_per_cpu": 0.6273193359375,
+    "swap_io_pages": 0,
+    "violations": 1,
+    "handling": "One completed stage was followed by a host-load violation. Advancement paused and later resumed only after a new pre-stage check passed; no stage was discarded or rerun."
+  },
+  "analysis_artifacts": {
+    "analyzer_sha256": "ea0d29f2d07c17e93b2b951a8821a2cf18f6c2344ca3bd5361e4dde2da3231f8",
+    "analysis_sha256": "0da1bfc631c1f5b8e50346f51285d0cba3ecc05a8633294b0c6c8161818b7fe0",
+    "density_csv_sha256": "f184eb608f2ada68c57f5f19340ff4b5e0244bb5d314f50ad6de131c4d62a89f",
+    "eepf_csv_sha256": "d99e0ea66f834a8ac1ba00d70db669d6e26dd2135a74fe9974e1f141b8936d67",
+    "ifed_csv_sha256": "260143889be618cb2f6034821bccdc31ad293d870af27f4c32070278bef4b37a",
+    "evaluator_sha256": "eeeb74c3c90ddb786c7c33affa222647cf3d9898de0cc7e60969228a75885bb0",
+    "evaluation_sha256": "d1e7687470b82b844373d3301708f6c68287fb13c4e609a210a57d0f5920f732"
+  },
+  "stationarity_screen": {
+    "horizon_complete": true,
+    "passed": false,
+    "classification": "internal_density_stationarity_screen_failed",
+    "electron_density": {
+      "ar1_effective_blocks": {"threshold": 8.0, "value": 6.244362231899981, "passed": false},
+      "absolute_projected_fractional_drift": {"threshold": 0.01, "value": 0.00015261864854556096, "passed": true},
+      "absolute_split_half_fractional_change": {"threshold": 0.01, "value": 0.00020989407931447832, "passed": true},
+      "maximum_adjacent_profile_relative_l2": {"threshold": 0.025, "value": 0.006866608989814733, "passed": true}
+    },
+    "ion_density": {
+      "ar1_effective_blocks": {"threshold": 8.0, "value": 7.531313410491862, "passed": false},
+      "absolute_projected_fractional_drift": {"threshold": 0.01, "value": 0.0000921251966584396, "passed": true},
+      "absolute_split_half_fractional_change": {"threshold": 0.01, "value": 0.00016844988692373976, "passed": true},
+      "maximum_adjacent_profile_relative_l2": {"threshold": 0.025, "value": 0.01933461328620205, "passed": true}
+    }
+  },
+  "distribution_diagnostics": {
+    "eepf_block_total_variation_range": [0.004907018087974827, 0.0075003821739894495],
+    "powered_ifed_block_total_variation_range": [0.104389625, 0.1405909375],
+    "grounded_ifed_block_total_variation_range": [0.11568925000000001, 0.14544275],
+    "acceptance_thresholds_applied": false
+  },
+  "interpretation": "The density series has very small drift and bounded adjacent profile motion, but four-cycle block means remain correlated. The frozen screen therefore fails solely on effective sample count. This is evidence for extending sampling, not evidence of a physics defect or successful physical validation.",
+  "next_action": "Predeclare a longer hash-chained horizon before collecting more data. If the observed electron correlation remains near 0.44, at least 21 total blocks are needed even for an AR(1) effective count of eight; a 24-block checkpoint provides margin while retaining the four-cycle block definition.",
+  "claim_boundary": "The completed screen evaluates internal density sampling readiness only. It does not establish AuroraPIC-to-eduPIC agreement, EEPF or IFED convergence, experimental agreement, or independent physical validation.",
+  "physics_claim": "none_internal_sampling_readiness_failed"
+}

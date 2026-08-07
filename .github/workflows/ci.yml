@@ -117,6 +117,8 @@ jobs:
         run: PYTHONPATH=scripts python3 scripts/test_advance_edupic_measurement.py
       - name: Validate eduPIC measurement-block analysis
         run: PYTHONPATH=scripts python3 scripts/test_analyze_edupic_measurement_blocks.py
+      - name: Validate eduPIC stationarity-rule evaluation
+        run: PYTHONPATH=scripts python3 scripts/test_evaluate_edupic_measurement_stationarity.py
       - name: Validate eduPIC convergence analysis
         run: PYTHONPATH=scripts python3 scripts/test_analyze_edupic_convergence.py
       - name: Validate adaptive eduPIC advancement

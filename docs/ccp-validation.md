@@ -1009,6 +1009,24 @@ ineligible: five blocks remain, and neither species has reached the frozen
 eight-effective-block gate. IFED variation remains 12.2--13.9%. Evidence is
 [`edupic-native-measurement-continuation-cycle1544-20260807.json`](../benchmarks/ccp/edupic-native-measurement-continuation-cycle1544-20260807.json).
 
+Five final guarded stages completed the frozen horizon at cycle 1,564: 16
+contiguous four-cycle blocks and 64 measured cycles. A dedicated evaluator now
+applies the committed rule without manual threshold interpretation. The
+horizon, drift, split-half, and adjacent-profile gates all pass. Electron and
+ion effective counts are only 6.24 and 7.53, however, below the required eight
+for both species. The formal classification is therefore
+`internal_density_stationarity_screen_failed`.
+
+This is a useful negative result rather than a solver failure. Projected
+density changes are only -0.015% and -0.009%; split-half changes are -0.021%
+and -0.017%; maximum adjacent-profile movement is 0.69% and 1.93%. The failed
+effective-count gates instead show that four-cycle block means remain
+correlated. EEPF block variation is 0.49--0.75%, while powered and grounded
+IFED ranges remain 10.4--14.1% and 11.6--14.5%; no IFED acceptance threshold
+is applied. The correct next step is a predeclared longer horizon, not a
+physical-validation claim. Complete evidence is
+[`edupic-native-measurement-stationarity-cycle1564-20260807.json`](../benchmarks/ccp/edupic-native-measurement-stationarity-cycle1564-20260807.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

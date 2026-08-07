@@ -49,6 +49,7 @@ python3 scripts/test_edupic_stage.py
 PYTHONPATH=scripts python3 scripts/test_edupic_measurement_stage.py
 PYTHONPATH=scripts python3 scripts/test_advance_edupic_measurement.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_measurement_blocks.py
+PYTHONPATH=scripts python3 scripts/test_evaluate_edupic_measurement_stationarity.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_convergence.py
 PYTHONPATH=scripts python3 scripts/test_advance_edupic_equilibration.py
 ctest --test-dir build --parallel "$TEST_JOBS" --output-on-failure
