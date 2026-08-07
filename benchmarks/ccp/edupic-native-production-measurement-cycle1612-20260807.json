@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "first_stage_of_predeclared_1024_cycle_production_measurement",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-production-measurement-rule-20260807.json",
+    "sha256": "bcb6b391c6f23bb0b16b5d7fef9077f5aecce20cb014da1b79f0f9709d81ba4c",
+    "commit": "2a50bcf"
+  },
+  "campaign": {
+    "start_cycle": 1596,
+    "current_cycle": 1612,
+    "target_cycle": 2620,
+    "completed_cycles": 16,
+    "target_cycles": 1024,
+    "completed_stages": 1,
+    "target_stages": 64,
+    "cycles_per_stage": 16,
+    "target_reached": false,
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "input_checkpoint_sha256": "4903827ff00a915df67239a5f7dd3186a582573eb57fa2bc36ea701a6304245d",
+    "current_checkpoint_sha256": "422399605a1f3fa09d61c3917f65147d6ffdcc08825467560c35598e102924ef",
+    "campaign_report_sha256": "ffb29ebd59429f0b81f5adf09482cb7c939f571582eef21d12627507793e9812",
+    "stage_report_sha256": "f3d86776b1f636812b36070e2ff8474e46269cd14fa9af6b51348994acf6b436",
+    "stage_wall_seconds": 362.10600221098866,
+    "observed_seconds_per_cycle": 22.63162513818679,
+    "projected_total_solver_hours_at_observed_rate": 6.437440039306465,
+    "retained_campaign_mib_rounded": 19
+  },
+  "host_health": {
+    "checks": 3,
+    "pre_execution_refusals": 1,
+    "refusal_reason": "host_available_memory_below_minimum",
+    "refusal_changed_simulation_state": false,
+    "admitted_stage_minimum_available_memory_mib": 5234.33203125,
+    "admitted_stage_maximum_load_per_cpu": 0.452117919921875,
+    "admitted_stage_minimum_free_disk_mib": 47889.328125,
+    "swap_io_pages": 0,
+    "stage_violations": 0
+  },
+  "single_block_preview": {
+    "analysis_sha256": "1c734731fb41f95dbb2f0a42ac15cc3efb8e19434db2ebfa008de27ff511e52b",
+    "analyzer_sha256": "488aa3a3d671f38671ccbe0a03b51d342b922e33b44a05a82ba928fee978d708",
+    "analysis_eligible": false,
+    "electron_line_integrated_density_m-2": 75852105642015.0,
+    "ion_line_integrated_density_m-2": 79650604479500.0,
+    "eepf_normalization": 0.9999999780508375,
+    "powered_ifed_normalization": 0.999998,
+    "grounded_ifed_normalization": 1.00001,
+    "uncertainty_fields": null,
+    "uncertainty_boundary": "A single production block cannot estimate variance, correlation, or standard error."
+  },
+  "implementation_correction": "The analyzer now represents single-block uncertainty fields as null and emits no reblocking series, instead of calling a multi-sample standard-deviation operation.",
+  "claim_boundary": "This qualifies the production stage duration, resource guards, checkpoint chain, and native output structure. It does not establish production stationarity or physical validation.",
+  "physics_claim": "none_incomplete_production_measurement"
+}

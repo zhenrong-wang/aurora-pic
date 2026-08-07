@@ -178,11 +178,14 @@ def profile_series_statistics(coordinates: list[float],
         raise BlockAnalysisError("mean line-integrated density is zero")
     correlation = lag_one(integrals)
     effective_blocks = ar1_effective_count(len(integrals), correlation)
-    sample_stddev = statistics.stdev(integrals)
-    naive_standard_error = sample_stddev / math.sqrt(len(integrals))
+    sample_stddev = (statistics.stdev(integrals)
+                     if len(integrals) >= 2 else None)
+    naive_standard_error = (
+        sample_stddev / math.sqrt(len(integrals))
+        if sample_stddev is not None else None)
     ar1_standard_error = (
         sample_stddev / math.sqrt(effective_blocks)
-        if effective_blocks is not None else None)
+        if sample_stddev is not None and effective_blocks is not None else None)
     half = len(integrals) // 2
     split_half_change: float | None = None
     if half:
@@ -203,8 +206,9 @@ def profile_series_statistics(coordinates: list[float],
         "sample_standard_deviation_m-2": sample_stddev,
         "naive_standard_error_m-2": naive_standard_error,
         "ar1_corrected_standard_error_m-2": ar1_standard_error,
-        "naive_standard_error_relative_to_absolute_mean":
-            naive_standard_error / abs(mean_integral),
+        "naive_standard_error_relative_to_absolute_mean": (
+            naive_standard_error / abs(mean_integral)
+            if naive_standard_error is not None else None),
         "ar1_corrected_standard_error_relative_to_absolute_mean": (
             ar1_standard_error / abs(mean_integral)
             if ar1_standard_error is not None else None),

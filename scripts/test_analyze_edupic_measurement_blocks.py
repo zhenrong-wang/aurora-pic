@@ -12,7 +12,11 @@ import sys
 import tempfile
 
 from test_edupic_measurement_stage import checkpoint, fake_source
-from analyze_edupic_measurement_blocks import batch_mean_diagnostics, lag_one
+from analyze_edupic_measurement_blocks import (
+    batch_mean_diagnostics,
+    lag_one,
+    profile_series_statistics,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,6 +122,12 @@ def main() -> int:
                 and batches[-1]["batch_count"] == 4
                 and batches[-1]["dropped_trailing_blocks"] == 3,
                 "non-overlapping batch diagnostics are invalid")
+        one_profile = profile_series_statistics(
+            [0.0, 1.0], [[1.0, 1.0]])
+        require(one_profile["sample_standard_deviation_m-2"] is None and
+                one_profile["naive_standard_error_m-2"] is None and
+                one_profile["nonoverlapping_batch_mean_diagnostics"] == [],
+                "single-block preview invented an uncertainty estimate")
         rejected = subprocess.run([
             sys.executable, str(ANALYZER), str(continuation),
             "--continuation-campaign-dir", str(campaign),

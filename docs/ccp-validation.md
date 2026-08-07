@@ -1101,6 +1101,21 @@ in addition to the existing one-core, 4 GiB available-memory, normalized-load
 0.5, zero-swap, 600 s timeout, and one-stage-per-invocation guards. This closes
 a production-safety gap on the currently 88%-used workspace filesystem.
 
+The first production invocation was refused before execution when available
+memory fell to 3,655 MiB; no simulation state changed. After the unrelated
+host workload released memory, the identical immutable contract completed
+cycles 1,597--1,612 in 362.11 s. The admitted stage retained at least 5,234
+MiB available memory and 47,889 MiB free disk, with normalized load no higher
+than 0.453 and zero swap. The observed 22.63 s/cycle projects to about 6.44
+solver hours for the full campaign.
+
+The single-block preview has valid EEPF and powered/grounded IFED
+normalizations, but is correctly ineligible for statistics. An analyzer edge
+case discovered by this preview was fixed: single-block variance,
+autocorrelation, and standard-error fields are now `null`, and no batch series
+is invented. Evidence is
+[`edupic-native-production-measurement-cycle1612-20260807.json`](../benchmarks/ccp/edupic-native-production-measurement-cycle1612-20260807.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
