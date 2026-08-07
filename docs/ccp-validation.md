@@ -982,6 +982,22 @@ Latest-block EEPF total variation is 0.67%, while powered and grounded IFED
 variation remains 11.22% and 12.81%. Progress evidence is
 [`edupic-native-measurement-continuation-cycle1520-20260806.json`](../benchmarks/ccp/edupic-native-measurement-continuation-cycle1520-20260806.json).
 
+Three further single-stage invocations reached the eight-block midpoint at
+cycle 1,532. Density drift remains small: projected series changes are 0.026%
+for electrons and 0.033% for ions, while maximum adjacent-profile movement is
+0.59% and 1.93%, respectively. The longer series exposes positive serial
+correlation, however. Lag-one values of 0.303 and 0.344 reduce the nominal
+AR(1) counts to only 4.28 electron and 3.91 ion blocks. Thus treating the
+eight block means as independent would materially overstate confidence.
+Latest-block EEPF variation is 0.54%; IFED remains near 11.5%.
+
+The cycle-1,532 stage itself completed and passed all output and checkpoint
+checks. Its after-stage host check then measured normalized load 0.627, above
+the frozen 0.5 limit, while unrelated host workloads were active. The
+coordinator stopped with `host_load_above_maximum`; no process was terminated
+and no ninth block was attempted. Midpoint evidence is
+[`edupic-native-measurement-continuation-cycle1532-20260807.json`](../benchmarks/ccp/edupic-native-measurement-continuation-cycle1532-20260807.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

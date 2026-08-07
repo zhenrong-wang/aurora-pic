@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "eight_block_midpoint_of_predeclared_native_measurement_stationarity_continuation",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-measurement-stationarity-rule-20260806.json",
+    "sha256": "0032b634a2569067e4ef87f34ae282872dbf7ef15075ae514ed695a987a82f22",
+    "commit": "868a772"
+  },
+  "continuation": {
+    "start_cycle": 1516,
+    "current_cycle": 1532,
+    "target_cycle": 1564,
+    "completed_additional_blocks": 4,
+    "target_additional_blocks": 12,
+    "total_joined_blocks": 8,
+    "cycles_per_block": 4,
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "input_checkpoint_sha256": "5cabcd4385eaf9b7ba31bf704555ad28bdc3bc052ac13f6b6539df0ea7b5c5d8",
+    "current_checkpoint_sha256": "57ceaf85abc8084f50d17741ee0aa87fc3a27b6c3f6b684479bc0fc79a023146",
+    "campaign_report_at_milestone_sha256": "c0e7810da8ce6574a193aab16fb27e59fe703ed356c0e6da12021bee4e31059f",
+    "stage_wall_seconds": [
+      91.29239994601812,
+      90.99765582603868,
+      92.57703776296694,
+      105.27055923605803
+    ],
+    "total_stage_wall_seconds": 380.1376527710818,
+    "stage_report_sha256": [
+      "993db582dc518f42239d6a7024ba60b222ad86ae2516183d3b106d2e7aec7f0c",
+      "4029a35ce8da403e46ac637b5ca3a009d7a49196263585e1d93db15bdd37ea83",
+      "f8f180a73fbf329109c2fe9ea81aa62d58e2b09281d77aa4516fac95f126647c",
+      "3a2dfb5f09268f21e903df5ffb91930a8fb65d0d271350657c5074984c280883"
+    ]
+  },
+  "host_health": {
+    "checks": 8,
+    "minimum_available_memory_mib": 4654.69140625,
+    "maximum_load_per_cpu": 0.6273193359375,
+    "swap_io_pages": 0,
+    "violations": 1,
+    "stop_reason": "host_load_above_maximum",
+    "stage_integrity_after_violation": "cycle-1532 stage completed and validated before the after-stage guard stopped further advancement",
+    "interpretation": "The load spike coincided with other host workloads. No unrelated process was modified, and campaign advancement remains paused."
+  },
+  "joined_series": {
+    "analysis_sha256": "fcf290ffe9cc1466275691cb0af0690a47cc7a47cc5a54011b28d7b98cac6def",
+    "analyzer_sha256": "ea0d29f2d07c17e93b2b951a8821a2cf18f6c2344ca3bd5361e4dde2da3231f8",
+    "total_blocks": 8,
+    "total_measurement_cycles": 32,
+    "eligible": false,
+    "electron_density": {
+      "lag_one_integrated_correlation": 0.30303895037490636,
+      "ar1_effective_blocks": 4.278988279971623,
+      "projected_fractional_drift": 0.00025902528796308217,
+      "split_half_fractional_change": 0.0003193597523216309,
+      "maximum_adjacent_profile_relative_l2": 0.005887765465660654
+    },
+    "ion_density": {
+      "lag_one_integrated_correlation": 0.3435417264027479,
+      "ar1_effective_blocks": 3.9088225438587885,
+      "projected_fractional_drift": 0.0003320009410362559,
+      "split_half_fractional_change": 0.00034786231316556596,
+      "maximum_adjacent_profile_relative_l2": 0.01933461328620205
+    },
+    "latest_block_total_variation_to_joined_mixture": {
+      "eepf": 0.005366859345637619,
+      "ifed_powered": 0.116602,
+      "ifed_grounded": 0.115216125
+    }
+  },
+  "interpretation": "At the eight-block midpoint, density drift and adjacent-profile gates happen to pass, but positive serial correlation leaves only 4.28 electron and 3.91 ion effective blocks. The 16-block horizon and eight-effective-block gates are incomplete. IFED remains noisy.",
+  "claim_boundary": "This midpoint supports the need for autocorrelation-aware sampling; it establishes neither stationarity nor physical validation.",
+  "physics_claim": "none_incomplete_sampling_series"
+}
