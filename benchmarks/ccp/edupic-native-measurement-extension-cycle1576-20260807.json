@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "nineteen_block_progress_of_predeclared_native_measurement_extension",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-measurement-extension-rule-20260807.json",
+    "sha256": "e666173128397ad44c2864dd7bcaee2d844b75466e44eaee0bc24109e893fde6",
+    "commit": "427eb9f"
+  },
+  "extension": {
+    "start_cycle": 1564,
+    "current_cycle": 1576,
+    "target_cycle": 1596,
+    "completed_extension_blocks": 3,
+    "target_extension_blocks": 8,
+    "total_joined_blocks": 19,
+    "total_joined_measurement_cycles": 76,
+    "cycles_per_block": 4,
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "input_checkpoint_sha256": "018443c4dae66cd1a6eb0218c659efbb116e7e462f6ae60e80262afd8eb8dec0",
+    "current_checkpoint_sha256": "543869387fd94b76a039df8d4a03d4032ee6dbbfbcaaf4d14ace5875dd52bb7f",
+    "campaign_report_at_milestone_sha256": "0d10fe0ef7ffbfe162ffe686bec819e3621a1086985446a2db81e38d863b39a4",
+    "stage_wall_seconds": [
+      92.67624712898396,
+      91.21055356692523,
+      93.0012794380309
+    ],
+    "total_stage_wall_seconds": 276.8880801339401,
+    "stage_report_sha256": [
+      "e1445469811affa8da5eff1e97ac9b3eb836bc47b74b6668b7f2a1703f3d3495",
+      "87b5a63dffd69ba40f326773bbeaf9e6be6219f3fd51e3ea721877ff4ada3e39",
+      "9c7c3205845089cb9ec451bfa8df0aff67ad5b13426b1f11919b4c0ecbe16c8b"
+    ]
+  },
+  "host_health": {
+    "checks": 6,
+    "minimum_available_memory_mib": 4518.94921875,
+    "maximum_load_per_cpu": 0.330078125,
+    "swap_io_pages": 0,
+    "violations": 0
+  },
+  "joined_series": {
+    "analysis_sha256": "6436a6db62fe6f719881d7739e3815a5d2f3b496171a25422ce74a8cf36377bc",
+    "evaluation_sha256": "39b12d9440b68d5e3e0c0ee0e8146584a00f61fbce366630caa72bdf27e5bfae",
+    "total_blocks": 19,
+    "total_measurement_cycles": 76,
+    "eligible": false,
+    "classification": "stationarity_horizon_incomplete",
+    "electron_density": {
+      "lag_one_integrated_correlation": 0.671257220397212,
+      "ar1_effective_blocks": 3.737373718552098,
+      "projected_fractional_drift": 0.00038216947784674093,
+      "split_half_fractional_change": 0.000040979311005397036,
+      "maximum_adjacent_profile_relative_l2": 0.006866608989814733
+    },
+    "ion_density": {
+      "lag_one_integrated_correlation": 0.6310358524251599,
+      "ar1_effective_blocks": 4.298077686948718,
+      "projected_fractional_drift": 0.0005013114998379502,
+      "split_half_fractional_change": 0.00009129202823477215,
+      "maximum_adjacent_profile_relative_l2": 0.020528790128981976
+    },
+    "latest_block_total_variation_to_joined_mixture": {
+      "eepf": 0.005569978802420467,
+      "ifed_powered": 0.11037097368421053,
+      "ifed_grounded": 0.12168899999999999
+    }
+  },
+  "interpretation": "The longer series increased the fitted lag-one correlation instead of preserving the cycle-1564 estimate, so nominal effective counts fell despite three additional blocks. Density drift and profile movement remain small. The predeclared 24-block endpoint must still be completed and must not be assumed to pass.",
+  "claim_boundary": "This is incomplete extension evidence. It establishes neither stationarity nor a physics defect or physical-validation result.",
+  "physics_claim": "none_incomplete_sampling_extension"
+}

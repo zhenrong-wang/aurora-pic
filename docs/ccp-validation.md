@@ -1036,6 +1036,17 @@ requires about 21 total blocks to reach eight effective blocks; 24 provides
 some margin without being a guarantee of passage. The original 64-cycle
 failure remains unchanged regardless of the extension outcome.
 
+The first three extension blocks reached cycle 1,576 and 19 total blocks.
+Every host check passed, with at least 4,519 MiB available memory, normalized
+load no higher than 0.331, and zero swap. Contrary to the extension's planning
+estimate, lag-one correlation increased to 0.671 for electron density and
+0.631 for ion density. Nominal effective counts consequently fell to 3.74 and
+4.30 even though three blocks were added. Projected density changes remain
+only 0.038% and 0.050%, and adjacent-profile movement remains below 0.69% and
+2.06%. This is evidence of longer correlation, not observed density drift.
+The 24-block rule remains incomplete and is not assumed to pass. Evidence is
+[`edupic-native-measurement-extension-cycle1576-20260807.json`](../benchmarks/ccp/edupic-native-measurement-extension-cycle1576-20260807.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
