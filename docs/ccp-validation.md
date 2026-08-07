@@ -998,6 +998,17 @@ coordinator stopped with `host_load_above_maximum`; no process was terminated
 and no ninth block was attempted. Midpoint evidence is
 [`edupic-native-measurement-continuation-cycle1532-20260807.json`](../benchmarks/ccp/edupic-native-measurement-continuation-cycle1532-20260807.json).
 
+After host load returned below policy, three guarded invocations advanced the
+series through cycle 1,544 and 11 total blocks. All six surrounding host
+checks passed, with at least 4,764 MiB available memory, normalized load no
+higher than 0.225, and zero swap. Electron and ion lag-one correlations are
+now 0.282 and 0.256, giving 6.16 and 6.52 AR(1)-effective blocks. Projected
+density changes remain only -0.015% and -0.009%, and maximum adjacent-profile
+movement remains below 0.69% and 1.94%. The result is encouraging but still
+ineligible: five blocks remain, and neither species has reached the frozen
+eight-effective-block gate. IFED variation remains 12.2--13.9%. Evidence is
+[`edupic-native-measurement-continuation-cycle1544-20260807.json`](../benchmarks/ccp/edupic-native-measurement-continuation-cycle1544-20260807.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

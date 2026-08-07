@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "eleven_block_progress_of_predeclared_native_measurement_stationarity_continuation",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-measurement-stationarity-rule-20260806.json",
+    "sha256": "0032b634a2569067e4ef87f34ae282872dbf7ef15075ae514ed695a987a82f22",
+    "commit": "868a772"
+  },
+  "continuation": {
+    "start_cycle": 1516,
+    "current_cycle": 1544,
+    "target_cycle": 1564,
+    "completed_additional_blocks": 7,
+    "target_additional_blocks": 12,
+    "total_joined_blocks": 11,
+    "cycles_per_block": 4,
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "current_checkpoint_sha256": "1183d3cc92477eace0c139df321b0e25a75ae77d5cc062bc04efaaa7afd50684",
+    "campaign_report_at_milestone_sha256": "ab75854974a43ad54a6e35b87ff7b806e3141cb148994e3de324cdd9fff41e2a",
+    "new_stage_wall_seconds": [
+      91.28488836390898,
+      89.75986590399407,
+      90.0795041610254
+    ],
+    "cumulative_stage_wall_seconds": 651.2619112000102,
+    "new_stage_report_sha256": [
+      "92fb3fc62e778e162b87aa427955e7f84ef2b3bc2857f4a992ce872f81508385",
+      "feca3468111c9358d2f0ff189bfcbe8e28b2820ce90b6482d48ddc0e97df9a87",
+      "99941ae762954c453da7e5210247b0b702616d15ad6073e343ded1153e6de3be"
+    ]
+  },
+  "recent_host_health": {
+    "checks": 6,
+    "minimum_available_memory_mib": 4763.68359375,
+    "maximum_load_per_cpu": 0.224365234375,
+    "swap_io_pages": 0,
+    "violations": 0
+  },
+  "joined_series": {
+    "analysis_sha256": "081b1af93f2ff9e326f2e504262adc685beb8bfa3f48b08652593a39c9aff9e7",
+    "analyzer_sha256": "ea0d29f2d07c17e93b2b951a8821a2cf18f6c2344ca3bd5361e4dde2da3231f8",
+    "total_blocks": 11,
+    "total_measurement_cycles": 44,
+    "eligible": false,
+    "electron_density": {
+      "lag_one_integrated_correlation": 0.2822055219146266,
+      "ar1_effective_blocks": 6.1579357786175795,
+      "projected_fractional_drift": -0.00014979126026766625,
+      "split_half_fractional_change": -0.00010661432480533593,
+      "maximum_adjacent_profile_relative_l2": 0.006866608989814733
+    },
+    "ion_density": {
+      "lag_one_integrated_correlation": 0.25564801867463827,
+      "ar1_effective_blocks": 6.520833603688909,
+      "projected_fractional_drift": -0.00009095386725225453,
+      "split_half_fractional_change": -0.0000774504213155477,
+      "maximum_adjacent_profile_relative_l2": 0.01933461328620205
+    },
+    "latest_block_total_variation_to_joined_mixture": {
+      "eepf": 0.005182518684124868,
+      "ifed_powered": 0.12217663636363638,
+      "ifed_grounded": 0.13889340909090908
+    }
+  },
+  "interpretation": "Density stability remains encouraging, and effective counts have risen above six for both species. The 16-block horizon and eight-effective-block gates remain incomplete. IFED is still noisy and has no acceptance threshold.",
+  "claim_boundary": "This is sampling-progress evidence, not a stationarity decision or physical-validation result.",
+  "physics_claim": "none_incomplete_sampling_series"
+}
