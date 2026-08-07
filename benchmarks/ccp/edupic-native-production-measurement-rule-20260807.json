@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_internal_native_measurement_stationarity_screen",
+  "campaign_phase": "production_scale_measurement",
+  "declared_before_production_measurement": true,
+  "basis": {
+    "upstream_contract": "approximately 1500 equilibration cycles followed by at least 1000 measurement cycles",
+    "baseline_evidence_path": "benchmarks/ccp/edupic-native-measurement-extension-cycle1596-20260807.json",
+    "baseline_evidence_sha256": "dbbec2615371f2ffe68fe00b9fb7913d8ada27306ef6b83cb234defdac736ac9",
+    "baseline_commit": "7e8e873",
+    "baseline_classification": "internal_density_stationarity_screen_failed",
+    "reason_for_new_design": "Four-cycle and reblocked 16-cycle means remained correlated across the 96-cycle pilot, so further short-window extensions are not statistically efficient."
+  },
+  "execution_contract": {
+    "input_cycle": 1596,
+    "input_checkpoint_sha256": "4903827ff00a915df67239a5f7dd3186a582573eb57fa2bc36ea701a6304245d",
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "additional_measurement_cycles": 1024,
+    "cycles_per_native_stage": 16,
+    "native_stages": 64,
+    "final_cycle": 2620,
+    "serial": true,
+    "maximum_stages_per_invocation": 1,
+    "maximum_stage_wall_seconds": 600,
+    "maximum_total_wall_seconds_per_invocation": 600,
+    "maximum_stage_initial_particle_steps": 20000000000,
+    "qualified_seconds_per_cycle": 23.384932881919667,
+    "wall_prediction_safety_factor": 1.5,
+    "host_health_guard": {
+      "maximum_load_per_cpu": 0.5,
+      "minimum_available_memory_mib": 4096.0,
+      "maximum_swap_io_pages_per_stage": 0,
+      "minimum_free_disk_mib": 32768.0
+    },
+    "measurement_coordinator_sha256": "067c185d6096ca21dde4f668ba369c908d4693c43628eff3f98294805110bc96"
+  },
+  "cost_envelope": {
+    "estimated_solver_hours": 6.651714241968261,
+    "estimated_retained_campaign_gib": 1.3,
+    "initial_particle_steps_per_stage": 14229056000,
+    "prediction_is_not_a_guarantee": true
+  },
+  "analysis_contract": {
+    "production_segment_only": true,
+    "prior_96_cycles_used_for_checkpoint_provenance_not_formal_statistics": true,
+    "required_total_contiguous_blocks": 64,
+    "required_total_measurement_cycles": 1024,
+    "cycles_per_analysis_block": 16,
+    "exact_duration_weighted_observables": [
+      "density.dat",
+      "pot_xt.dat",
+      "efield_xt.dat",
+      "ne_xt.dat",
+      "ni_xt.dat",
+      "je_xt.dat",
+      "ji_xt.dat",
+      "ioniz_xt.dat"
+    ],
+    "reblocking_cycles": [32, 64, 128],
+    "normalized_distribution_observables_reported_without_acceptance_thresholds": [
+      "EEPF",
+      "powered-electrode IFED",
+      "grounded-electrode IFED"
+    ]
+  },
+  "internal_density_stationarity_gates": {
+    "minimum_total_blocks": 64,
+    "minimum_ar1_effective_blocks_per_species": 8.0,
+    "maximum_absolute_projected_fractional_drift_per_species": 0.01,
+    "maximum_absolute_split_half_fractional_change_per_species": 0.01,
+    "maximum_adjacent_profile_relative_l2_per_species": 0.025
+  },
+  "threshold_basis": "Density thresholds remain unchanged from the two failed pilot screens. They are internal sampling-readiness gates, not published eduPIC or experimental limits.",
+  "claim_if_passed": "The standalone 1024-cycle production segment passes the predeclared internal density sampling-readiness screen and may supply the external density reference for a matched AuroraPIC comparison.",
+  "claims_not_established_if_passed": [
+    "AuroraPIC-to-eduPIC agreement",
+    "independent physical validation",
+    "EEPF or IFED convergence",
+    "experimental agreement"
+  ],
+  "physics_claim": "none_predeclared_production_sampling_readiness_only"
+}

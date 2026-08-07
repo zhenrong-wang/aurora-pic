@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -131,6 +132,7 @@ def expected_limits(args: argparse.Namespace) -> dict:
         "maximum_load_per_cpu": args.max_host_load_per_cpu,
         "minimum_available_memory_mib": args.min_available_memory_mib,
         "maximum_swap_io_pages_per_stage": args.max_swap_io_pages_per_stage,
+        "minimum_free_disk_mib": args.min_free_disk_mib,
     }
     host_policy = {key: value for key, value in host_policy.items()
                    if value is not None}
@@ -147,6 +149,27 @@ def expected_limits(args: argparse.Namespace) -> dict:
     if host_policy:
         limits["host_health_guard"] = host_policy
     return limits
+
+
+def inspect_campaign_host_guard(
+        report: dict, policy: dict, phase: str, cycle: int,
+        previous_swap_total: int | None,
+        campaign_dir: Path) -> tuple[list[str], int | None]:
+    violations, swap_total = inspect_host_guard(
+        report, policy, phase, cycle, previous_swap_total)
+    sample = report["host_health_checks"][-1]
+    minimum_disk = policy.get("minimum_free_disk_mib")
+    if minimum_disk is not None:
+        try:
+            free_disk_mib = shutil.disk_usage(campaign_dir).free / (1024.0 ** 2)
+        except OSError as error:
+            raise MeasurementAdvanceError(
+                f"cannot read campaign filesystem capacity: {error}") from error
+        sample["free_disk_mib"] = free_disk_mib
+        if free_disk_mib < minimum_disk:
+            violations.append("host_free_disk_below_minimum")
+            sample["violations"] = violations
+    return violations, swap_total
 
 
 def advance(args: argparse.Namespace) -> dict:
@@ -310,9 +333,9 @@ def advance(args: argparse.Namespace) -> dict:
             report["stop_reason"] = "insufficient_stage_timeout"
             break
         if host_policy:
-            violations, previous_swap_total = inspect_host_guard(
+            violations, previous_swap_total = inspect_campaign_host_guard(
                 report, host_policy, "before_stage", current["cycles"],
-                previous_swap_total)
+                previous_swap_total, campaign_dir)
             atomic_json(manifest, report)
             if violations:
                 report["stop_reason"] = violations[0]
@@ -353,9 +376,9 @@ def advance(args: argparse.Namespace) -> dict:
         stages_this_invocation += 1
         atomic_json(manifest, report)
         if host_policy:
-            violations, previous_swap_total = inspect_host_guard(
+            violations, previous_swap_total = inspect_campaign_host_guard(
                 report, host_policy, "after_stage", current["cycles"],
-                previous_swap_total)
+                previous_swap_total, campaign_dir)
             atomic_json(manifest, report)
             if violations:
                 report["stop_reason"] = violations[0]
@@ -408,6 +431,7 @@ def main() -> int:
     parser.add_argument("--max-host-load-per-cpu", type=positive_float)
     parser.add_argument("--min-available-memory-mib", type=positive_float)
     parser.add_argument("--max-swap-io-pages-per-stage", type=nonnegative_integer)
+    parser.add_argument("--min-free-disk-mib", type=positive_float)
     parser.add_argument("--acknowledge-cost")
     parser.add_argument("--resume-existing", action="store_true")
     args = parser.parse_args()

@@ -48,6 +48,7 @@ def main() -> int:
             "--max-wall-seconds", "30", "--stage-timeout-seconds", "10",
             "--max-stage-initial-particle-steps", "1000000",
             "--max-stages-per-invocation", "1",
+            "--min-free-disk-mib", "1",
             "--acknowledge-cost", ACK,
         ]
         first = subprocess.run(common, text=True, capture_output=True)
@@ -74,6 +75,19 @@ def main() -> int:
         require(rejected.returncode == 2 and
                 "output hash differs" in rejected.stderr,
                 "resume accepted a changed native measurement output")
+        disk_campaign = work / "disk-campaign"
+        disk_common = list(common)
+        disk_common[4] = str(disk_campaign)
+        minimum_index = disk_common.index("--min-free-disk-mib") + 1
+        disk_common[minimum_index] = "1000000000000"
+        disk_rejected = subprocess.run(
+            disk_common, text=True, capture_output=True)
+        disk_report = json.loads(disk_rejected.stdout)
+        require(disk_rejected.returncode == 0 and
+                disk_report["completed_measurement_cycles"] == 0 and
+                disk_report["stop_reason"] == "host_free_disk_below_minimum" and
+                disk_report["host_health_checks"][-1]["free_disk_mib"] > 0,
+                "measurement campaign ignored its free-disk guard")
     print("eduPIC measurement advancement regression passed")
     return 0
 

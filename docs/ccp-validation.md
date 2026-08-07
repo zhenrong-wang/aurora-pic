@@ -1085,6 +1085,22 @@ eduPIC's approximately 1,000-cycle recommendation. The completed negative
 result is recorded in
 [`edupic-native-measurement-extension-cycle1596-20260807.json`](../benchmarks/ccp/edupic-native-measurement-extension-cycle1596-20260807.json).
 
+The production-scale replacement was frozen before cycle 1,597 in
+[`edupic-native-production-measurement-rule-20260807.json`](../benchmarks/ccp/edupic-native-production-measurement-rule-20260807.json).
+It starts a statistically separate 1,024-cycle segment at the cycle-1,596
+checkpoint, satisfying the upstream at-least-1,000-cycle measurement guidance.
+Sixty-four native 16-cycle stages support exact density aggregation and
+power-of-two reblocking through 128-cycle means. Prior short windows retain
+checkpoint provenance but are excluded from the formal production statistics.
+At the qualified rate the campaign costs approximately 6.65 serial solver
+hours and 1.3 GiB of retained evidence.
+
+The measurement coordinator now also samples free filesystem capacity before
+and after every stage. The production contract requires at least 32 GiB free,
+in addition to the existing one-core, 4 GiB available-memory, normalized-load
+0.5, zero-swap, 600 s timeout, and one-stage-per-invocation guards. This closes
+a production-safety gap on the currently 88%-used workspace filesystem.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
