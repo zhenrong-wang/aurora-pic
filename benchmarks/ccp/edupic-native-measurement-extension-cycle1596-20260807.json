@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_predeclared_96_cycle_native_measurement_stationarity_evaluation",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-measurement-extension-rule-20260807.json",
+    "sha256": "e666173128397ad44c2864dd7bcaee2d844b75466e44eaee0bc24109e893fde6",
+    "commit": "427eb9f",
+    "committed_before_extension": true
+  },
+  "source": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247",
+    "cycle1500_checkpoint_sha256": "beccd8c0ad3f17ac8e6e9c16060b38220ea752379bc67cb65226d0194b99fa76",
+    "cycle1596_checkpoint_sha256": "4903827ff00a915df67239a5f7dd3186a582573eb57fa2bc36ea701a6304245d"
+  },
+  "campaign": {
+    "start_cycle": 1500,
+    "end_cycle": 1596,
+    "measurement_cycles": 96,
+    "blocks": 24,
+    "cycles_per_block": 4,
+    "target_reached": true,
+    "campaign_report_sha256": [
+      "325d5fa1c6af640d09c60acbcbefa8fba49dd0888af2e0ee070ddb931bb287c0",
+      "de46b507acb68659401ec9a82ee46785487180c09ab178a6a6c3168832c51811",
+      "18e55089763af75a2705ceccabfe0f728da26c15cc23cae5df48f7de22f66b44"
+    ],
+    "extension_stage_wall_seconds": 730.4780849579256,
+    "total_stage_wall_seconds": 2218.4881573551103,
+    "extension_stage_report_sha256": [
+      "e1445469811affa8da5eff1e97ac9b3eb836bc47b74b6668b7f2a1703f3d3495",
+      "87b5a63dffd69ba40f326773bbeaf9e6be6219f3fd51e3ea721877ff4ada3e39",
+      "9c7c3205845089cb9ec451bfa8df0aff67ad5b13426b1f11919b4c0ecbe16c8b",
+      "ad3b10653b283d8ea1a7acd61136a681338adf81b1b4cb95deaa288d56560085",
+      "afafbaed998350fe8e2b5c069efba2606cddc8eade61310388ce1fdccf4b306e",
+      "5b0e619d903ed16f7538892b6f55b508d313536394181810cf2413d228d42683",
+      "bece7c171754cbee3e48bea7079f9762a9ea995dc06d5e94fb473f188bacbb80",
+      "01aaef955b68962af47df4a39a2ed94293154d6063c3157d15783d620e268193"
+    ]
+  },
+  "host_health": {
+    "extension_checks": 16,
+    "all_campaign_checks": 48,
+    "minimum_available_memory_mib": 4518.94921875,
+    "maximum_load_per_cpu": 0.6273193359375,
+    "swap_io_pages": 0,
+    "all_campaign_violations": 1,
+    "extension_violations": 0
+  },
+  "analysis_artifacts": {
+    "analyzer_sha256": "7118587eb724e5254ec30ed014e5f4d107bb914636dca5a0888cc24fb1afa3c8",
+    "analysis_sha256": "7c1e78db9d21cd6be6737c06c2fdf01fb6b48974e9949c0a88e4d9502f50f1c2",
+    "evaluation_sha256": "483acb583020a8e8acdc1cc72f49c8655581f3d2c681a2d24796b35e5d3751e3",
+    "density_csv_sha256": "d4ee5b16f303bbac7d0805114ba3776cf64567a955b2fe4389a17c33680b8ae8",
+    "eepf_csv_sha256": "eedb7a5268a9c4ecbe522dcd549dbd883314b4c9497a5ed13a50002ef33f181c",
+    "ifed_csv_sha256": "4904c1b28e6beee540bed9987933b9b2744f35e8dadfe50c8913488efb80c683"
+  },
+  "stationarity_screen": {
+    "horizon_complete": true,
+    "passed": false,
+    "classification": "internal_density_stationarity_screen_failed",
+    "electron_density": {
+      "ar1_effective_blocks": {"threshold": 8.0, "value": 1.0, "passed": false},
+      "absolute_projected_fractional_drift": {"threshold": 0.01, "value": 0.0018079931933612352, "passed": true},
+      "absolute_split_half_fractional_change": {"threshold": 0.01, "value": 0.0008437167343344243, "passed": true},
+      "maximum_adjacent_profile_relative_l2": {"threshold": 0.025, "value": 0.007547660248899442, "passed": true},
+      "ar1_corrected_standard_error_relative_to_mean": 0.0007607436482290384
+    },
+    "ion_density": {
+      "ar1_effective_blocks": {"threshold": 8.0, "value": 1.5664430561582434, "passed": false},
+      "absolute_projected_fractional_drift": {"threshold": 0.01, "value": 0.001747318117163113, "passed": true},
+      "absolute_split_half_fractional_change": {"threshold": 0.01, "value": 0.0008295353147153925, "passed": true},
+      "maximum_adjacent_profile_relative_l2": {"threshold": 0.025, "value": 0.020528790128981976, "passed": true},
+      "ar1_corrected_standard_error_relative_to_mean": 0.0005757738479416012
+    }
+  },
+  "reblocking_diagnostic": {
+    "electron_16_cycle_batches": {
+      "batch_count": 6,
+      "lag_one_correlation": 0.4528139033911069,
+      "standard_error_relative_to_mean": 0.0003171782650893508
+    },
+    "ion_16_cycle_batches": {
+      "batch_count": 6,
+      "lag_one_correlation": 0.5028182086986699,
+      "standard_error_relative_to_mean": 0.000294077130830253
+    }
+  },
+  "distribution_diagnostics": {
+    "eepf_block_total_variation_range": [0.0050062834643940825, 0.007162162926250666],
+    "powered_ifed_block_total_variation_range": [0.1064101875, 0.13913635416666667],
+    "grounded_ifed_block_total_variation_range": [0.11498872916666666, 0.14688197916666668],
+    "acceptance_thresholds_applied": false
+  },
+  "interpretation": "The unchanged 96-cycle extension rule fails only its effective-sample gates. Density drift, split-half change, and adjacent-profile motion remain comfortably below their limits, but correlation persists even after reblocking to 16-cycle means. Further arbitrary four-cycle extensions are not an efficient remedy.",
+  "next_action": "Replace short-window extension with a predeclared production-scale measurement design using substantially longer batches and a horizon informed by the upstream approximately 1000-cycle recommendation. Preserve count-bearing native diagnostics and keep external normalized IFED descriptive.",
+  "claim_boundary": "This internal sampling-readiness failure is not evidence of a faulty solver kernel, and it does not establish physical validation or AuroraPIC-to-eduPIC agreement.",
+  "physics_claim": "none_internal_sampling_readiness_failed"
+}

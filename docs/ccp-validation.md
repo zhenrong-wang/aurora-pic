@@ -1068,6 +1068,23 @@ diagnostics already preserve macro and represented observation counts; the
 external IFED comparison remains descriptive until count-preserving source
 output is available.
 
+The extension subsequently completed its frozen endpoint at cycle 1,596: 24
+four-cycle blocks and 96 measured cycles. It fails the effective-count gates
+again, now with raw AR(1) counts of 1.00 electron and 1.57 ion blocks. Every
+other frozen gate passes. Projected density changes are 0.181% and 0.175%,
+split-half changes are 0.084% and 0.083%, and maximum adjacent-profile
+movement is 0.75% and 2.06%. AR(1)-corrected density-mean standard errors
+remain below 0.077% and 0.058%.
+
+Reblocking confirms that the long component is not removed by merely pairing
+four-cycle windows: even six non-overlapping 16-cycle means retain lag-one
+correlations of 0.453 and 0.503. Therefore another arbitrary short extension
+would be methodologically weak. The next measurement design must use
+substantially longer batches and a production-scale horizon informed by
+eduPIC's approximately 1,000-cycle recommendation. The completed negative
+result is recorded in
+[`edupic-native-measurement-extension-cycle1596-20260807.json`](../benchmarks/ccp/edupic-native-measurement-extension-cycle1596-20260807.json).
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
