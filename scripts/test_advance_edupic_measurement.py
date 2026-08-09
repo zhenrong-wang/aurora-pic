@@ -88,6 +88,37 @@ def main() -> int:
                 disk_report["stop_reason"] == "host_free_disk_below_minimum" and
                 disk_report["host_health_checks"][-1]["free_disk_mib"] > 0,
                 "measurement campaign ignored its free-disk guard")
+
+        amendment_campaign = work / "amendment-campaign"
+        amendment_common = list(common)
+        amendment_common[4] = str(amendment_campaign)
+        amendment_common.extend(["--min-available-memory-mib", "1"])
+        amendment_first = subprocess.run(
+            amendment_common, text=True, capture_output=True)
+        require(amendment_first.returncode == 0, amendment_first.stderr)
+        lower_memory = list(amendment_common)
+        lower_memory[lower_memory.index("--min-available-memory-mib") + 1] = "0.5"
+        unacknowledged = subprocess.run(
+            [*lower_memory, "--resume-existing"], text=True,
+            capture_output=True)
+        require(unacknowledged.returncode == 2 and
+                "requires --acknowledge-memory-guard-amendment" in
+                unacknowledged.stderr,
+                "campaign silently accepted a lower memory guard")
+        amended = subprocess.run([
+            *lower_memory, "--resume-existing",
+            "--acknowledge-memory-guard-amendment",
+            "I_UNDERSTAND_THIS_RELAXES_AN_EXISTING_CAMPAIGN_MEMORY_GUARD",
+            "--memory-guard-amendment-reason", "synthetic regression",
+        ], text=True, capture_output=True)
+        require(amended.returncode == 0, amended.stderr)
+        amended_report = json.loads(amended.stdout)
+        amendments = amended_report.get("operational_policy_amendments", [])
+        require(amended_report["target_reached"] and len(amendments) == 1 and
+                amendments[0]["previous_value_mib"] == 1.0 and
+                amendments[0]["new_value_mib"] == 0.5 and
+                amendments[0]["scientific_analysis_contract_changed"] is False,
+                "acknowledged memory-guard amendment was not audited")
     print("eduPIC measurement advancement regression passed")
     return 0
 

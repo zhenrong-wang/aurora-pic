@@ -1109,6 +1109,15 @@ MiB available memory and 47,889 MiB free disk, with normalized load no higher
 than 0.453 and zero swap. The observed 22.63 s/cycle projects to about 6.44
 solver hours for the full campaign.
 
+After 25 valid stages (400 production cycles), the operational available-memory
+floor was reduced from 4,096 to 3,072 MiB. This was an audited safety-policy
+amendment, not a change to the checkpoint chain or scientific analysis contract.
+The solver remained pinned to one CPU with approximately 45 MiB resident memory,
+zero swap I/O, and a 600 s stage timeout. Across those stages, available memory
+bottomed at 3,701 MiB and the largest observed within-stage decline was about
+1,180 MiB. The revised 3 GiB floor therefore avoids repeated false-positive
+stops while retaining margin for unrelated host-memory variability.
+
 The single-block preview has valid EEPF and powered/grounded IFED
 normalizations, but is correctly ineligible for statistics. An analyzer edge
 case discovered by this preview was fixed: single-block variance,

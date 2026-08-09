@@ -32,12 +32,58 @@ from run_edupic_stage import (
 
 
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_ADVANCES_BOUNDED_EDUPIC_MEASUREMENT"
+HOST_GUARD_AMENDMENT_ACKNOWLEDGEMENT = (
+    "I_UNDERSTAND_THIS_RELAXES_AN_EXISTING_CAMPAIGN_MEMORY_GUARD")
 HARD_TOTAL_WALL_SECONDS = 600
 HARD_STAGES_PER_INVOCATION = 16
 
 
 class MeasurementAdvanceError(RuntimeError):
     pass
+
+
+def apply_memory_guard_amendment(report: dict, limits: dict,
+                                 args: argparse.Namespace) -> bool:
+    """Audit an explicitly acknowledged reduction of only the RAM floor."""
+    old_limits = report.get("limits")
+    if not isinstance(old_limits, dict):
+        return False
+    old_guard = old_limits.get("host_health_guard")
+    new_guard = limits.get("host_health_guard")
+    if not isinstance(old_guard, dict) or not isinstance(new_guard, dict):
+        return False
+    old_memory = old_guard.get("minimum_available_memory_mib")
+    new_memory = new_guard.get("minimum_available_memory_mib")
+    if (not isinstance(old_memory, (int, float)) or
+            not isinstance(new_memory, (int, float)) or
+            new_memory >= old_memory):
+        return False
+    expected = json.loads(json.dumps(old_limits))
+    expected["host_health_guard"]["minimum_available_memory_mib"] = new_memory
+    if expected != limits:
+        return False
+    if (args.acknowledge_memory_guard_amendment !=
+            HOST_GUARD_AMENDMENT_ACKNOWLEDGEMENT):
+        raise MeasurementAdvanceError(
+            "lowering an existing memory guard requires "
+            "--acknowledge-memory-guard-amendment " +
+            HOST_GUARD_AMENDMENT_ACKNOWLEDGEMENT)
+    reason = args.memory_guard_amendment_reason
+    if reason is None or not reason.strip():
+        raise MeasurementAdvanceError(
+            "lowering an existing memory guard requires a nonempty "
+            "--memory-guard-amendment-reason")
+    latest = report.get("latest_state", report.get("initial_state", {}))
+    report.setdefault("operational_policy_amendments", []).append({
+        "kind": "minimum_available_memory_mib_reduction",
+        "applied_at_cycle": latest.get("cycles"),
+        "previous_value_mib": old_memory,
+        "new_value_mib": new_memory,
+        "reason": reason.strip(),
+        "scientific_analysis_contract_changed": False,
+    })
+    report["limits"] = limits
+    return True
 
 
 def positive_integer(text: str) -> int:
@@ -230,15 +276,21 @@ def advance(args: argparse.Namespace) -> dict:
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise MeasurementAdvanceError(
                 f"cannot resume campaign manifest: {error}") from error
-        if (report.get("scope") != new_report["scope"] or
+        fixed_contract_differs = (
+                report.get("scope") != new_report["scope"] or
                 report.get("source_binary_sha256") != binary_sha256 or
                 report.get("initial_state", {}).get("sha256") != initial["sha256"] or
                 report.get("target_measurement_cycles") !=
                     args.target_measurement_cycles or
-                report.get("target_cycle") != target_cycle or
-                report.get("limits") != limits):
+                report.get("target_cycle") != target_cycle)
+        if fixed_contract_differs:
             raise MeasurementAdvanceError(
                 "resume arguments differ from the measurement campaign contract")
+        if report.get("limits") != limits:
+            if not apply_memory_guard_amendment(report, limits, args):
+                raise MeasurementAdvanceError(
+                    "resume arguments differ from the measurement campaign contract")
+            atomic_json(manifest, report)
         for recorded in report.get("stages", []):
             if recorded.get("start_cycle") != current["cycles"]:
                 raise MeasurementAdvanceError(
@@ -432,6 +484,8 @@ def main() -> int:
     parser.add_argument("--min-available-memory-mib", type=positive_float)
     parser.add_argument("--max-swap-io-pages-per-stage", type=nonnegative_integer)
     parser.add_argument("--min-free-disk-mib", type=positive_float)
+    parser.add_argument("--acknowledge-memory-guard-amendment")
+    parser.add_argument("--memory-guard-amendment-reason")
     parser.add_argument("--acknowledge-cost")
     parser.add_argument("--resume-existing", action="store_true")
     args = parser.parse_args()

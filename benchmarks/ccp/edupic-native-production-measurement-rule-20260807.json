@@ -29,12 +29,21 @@
     "wall_prediction_safety_factor": 1.5,
     "host_health_guard": {
       "maximum_load_per_cpu": 0.5,
-      "minimum_available_memory_mib": 4096.0,
+      "minimum_available_memory_mib": 3072.0,
       "maximum_swap_io_pages_per_stage": 0,
       "minimum_free_disk_mib": 32768.0
     },
-    "measurement_coordinator_sha256": "067c185d6096ca21dde4f668ba369c908d4693c43628eff3f98294805110bc96"
+    "measurement_coordinator_sha256": "fda149c78ab4f94b5bb60ac8b84b826a49bd472e3cac78faa25ac562f2e5986a"
   },
+  "operational_policy_amendments": [
+    {
+      "applied_after_completed_measurement_cycles": 400,
+      "previous_minimum_available_memory_mib": 4096.0,
+      "new_minimum_available_memory_mib": 3072.0,
+      "basis": "The first 25 production stages used one pinned CPU, zero swap I/O, and approximately 45 MiB solver RSS. Available memory ranged from 3701 to 6452 MiB, while the largest observed within-stage decline was approximately 1180 MiB. A 3072 MiB floor retains headroom for that host variability without repeatedly stopping a low-memory solver.",
+      "scientific_analysis_contract_changed": false
+    }
+  ],
   "cost_envelope": {
     "estimated_solver_hours": 6.651714241968261,
     "estimated_retained_campaign_gib": 1.3,
