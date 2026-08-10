@@ -111,3 +111,7 @@ and generate only a bounded, non-production AuroraPIC preflight deck. Passing
 `--steps 4000 --startup-diagnostics` requires exactly one RF period and adds
 40 scalar samples plus every-step spatial and 16-bin phase collision-energy
 diagnostics. It still does not authorize production or attach a physics claim.
+`scripts/run_aurorapic_edupic_pilot.py` can then consume the locked cycle-1
+checkpoint and advance only through cycle 4 under built-in population, field,
+energy-closure, memory, and timeout gates. Its output is an equilibration trend
+record, not an equilibrium comparison.

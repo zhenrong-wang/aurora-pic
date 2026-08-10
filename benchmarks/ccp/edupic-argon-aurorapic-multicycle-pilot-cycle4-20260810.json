@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "bounded_aurorapic_multicycle_startup_pilot_through_cycle_4",
+  "claim_boundary": "Four startup RF cycles test checkpoint continuity, bounded trends, and internal closure. They do not establish periodic steady state or comparison with an equilibrated eduPIC measurement.",
+  "inputs": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "reference_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
+    "base_cycle_1_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "cycle_1_checkpoint_sha256": "97e94584a1bd8c721fb7438d1f8386ec9f50058fd0feb2be9849942738f2c261",
+    "cycle_1_evidence": "benchmarks/ccp/edupic-argon-aurorapic-startup-cycle1-20260810.json"
+  },
+  "workflow": {
+    "runner_sha256": "9656df91ae3e990179ec2c044ed379797eabbb0e7ac8f57c34065b91460c4009",
+    "runner_regression_sha256": "579d84df42163da6ee8f3a5fcdf6e0fbc7bf90b8face5c671cc3d6b871e264b5",
+    "pilot_report_sha256": "5b6f74089805cb4681f1e51becf19eff33e7513b847176f69ab057c11db7c5d5",
+    "stage_report_sha256": {
+      "cycle_2": "71e33154b33ba264b2c00f690fef309225f515b1e85204a6b31fa60349763138",
+      "cycle_3": "3e53194ecc94fe6669a5275965da355653092ca9ab3c25b896fab7e6c2c67f2a",
+      "cycle_4": "e20792945447a52b3d3bc05ccc392d465840945471b2abbb11c1fdeacf108f9a"
+    },
+    "checkpoint_chain_sha256": [
+      "97e94584a1bd8c721fb7438d1f8386ec9f50058fd0feb2be9849942738f2c261",
+      "9e2866fdf82a4ac2bc5576da81dc33f1cf05cd1196c9792e4cd6c41dfaeb7510",
+      "68590910742678decfa5c05e57b920d017ebd24e85c17795e8c2260678e02b3d",
+      "c8f9161fcceddbe13f05ebd2633c9d384a003d3210c56a12443af4efd4a93b8e"
+    ],
+    "runtime_backend": "serial",
+    "runtime_threads": 1
+  },
+  "hard_gates": {
+    "maximum_end_cycle": 4,
+    "timeout_seconds_per_cycle": 60,
+    "minimum_available_memory_kib": 524288,
+    "maximum_particle_growth_factor_per_cycle": 4.0,
+    "maximum_total_particle_cap_fraction": 0.25,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "maximum_spatial_phase_residual_J_m-2": 1e-15
+  },
+  "cycles": [
+    {
+      "cycle": 2,
+      "wall_seconds": 9.869779811939225,
+      "peak_resident_set_kib": 171880,
+      "initial_electrons": 863,
+      "initial_ions": 3369,
+      "ionization_pairs": 766,
+      "electron_wall_losses": 300,
+      "ion_wall_losses": 58,
+      "final_electrons": 1329,
+      "final_ions": 4077,
+      "total_particle_growth_factor": 1.2774102079395084,
+      "total_particle_cap_fraction": 0.002703,
+      "collision_candidates": 102018,
+      "electron_excitations": 982,
+      "electron_ionizations": 766,
+      "final_field_energy_J_m-2": 2.501604874084609e-05,
+      "maximum_sampled_absolute_field_V_m": 31175.050827729494,
+      "relative_energy_closure_residual": 7.76462399727193e-15,
+      "maximum_spatial_phase_residual_J_m-2": 3.8116482626443515e-21,
+      "all_gates_passed": true
+    },
+    {
+      "cycle": 3,
+      "wall_seconds": 11.219018321018666,
+      "peak_resident_set_kib": 171772,
+      "initial_electrons": 1329,
+      "initial_ions": 4077,
+      "ionization_pairs": 780,
+      "electron_wall_losses": 223,
+      "ion_wall_losses": 56,
+      "final_electrons": 1886,
+      "final_ions": 4801,
+      "total_particle_growth_factor": 1.2369589345172032,
+      "total_particle_cap_fraction": 0.0033435,
+      "collision_candidates": 148471,
+      "electron_excitations": 990,
+      "electron_ionizations": 780,
+      "final_field_energy_J_m-2": 2.7190644671117916e-05,
+      "maximum_sampled_absolute_field_V_m": 33587.49851823079,
+      "relative_energy_closure_residual": 1.8992088738321177e-14,
+      "maximum_spatial_phase_residual_J_m-2": 5.929230630780102e-21,
+      "all_gates_passed": true
+    },
+    {
+      "cycle": 4,
+      "wall_seconds": 11.78599309315905,
+      "peak_resident_set_kib": 171820,
+      "initial_electrons": 1886,
+      "initial_ions": 4801,
+      "ionization_pairs": 792,
+      "electron_wall_losses": 195,
+      "ion_wall_losses": 87,
+      "final_electrons": 2483,
+      "final_ions": 5506,
+      "total_particle_growth_factor": 1.1947061462539255,
+      "total_particle_cap_fraction": 0.0039945,
+      "collision_candidates": 196288,
+      "electron_excitations": 1091,
+      "electron_ionizations": 792,
+      "final_field_energy_J_m-2": 2.8888602013268428e-05,
+      "maximum_sampled_absolute_field_V_m": 35188.68441627027,
+      "relative_energy_closure_residual": 2.7896815690067388e-14,
+      "maximum_spatial_phase_residual_J_m-2": 9.740878893424454e-21,
+      "all_gates_passed": true
+    }
+  ],
+  "trend": {
+    "particle_growth_factor_decreased_each_cycle": true,
+    "field_energy_increased_each_cycle": true,
+    "maximum_field_increased_each_cycle": true,
+    "ionization_pairs_per_cycle": [2381, 766, 780, 792],
+    "final_electrons_by_cycle": [863, 1329, 1886, 2483],
+    "final_ions_by_cycle": [3369, 4077, 4801, 5506],
+    "interpretation": "The initial avalanche moderated strongly after cycle 1, and cycles 2-4 remained bounded with exact population accounting. Continued field-energy and inventory growth show that periodic equilibrium has not been reached."
+  },
+  "all_gates_passed": true,
+  "physics_claim": "none_equilibration_trend_only",
+  "production_launch_authorized": false,
+  "next_step": "Implement a separately authorized blockwise horizon extension and stationarity screen; do not compare equilibrium observables yet."
+}

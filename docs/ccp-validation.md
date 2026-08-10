@@ -1219,6 +1219,31 @@ record is
 The next authorized development slice is a checkpointed multi-cycle pilot with
 per-cycle population, field, collision, energy-closure, and resource gates.
 
+That pilot is now implemented by `run_aurorapic_edupic_pilot.py`. It accepts
+only the checksum-locked cycle-1 deck, executable, and checkpoint; runs one
+low-priority serial process per cycle; resets the complete spatial/phase window
+at each restart; and has non-relaxable limits of cycle 4, 60 seconds per cycle,
+512 MiB available-memory launch floor, 4x per-cycle particle growth, 25% of the
+configured particle cap, `10^7 V m^-1`, `10^-10` relative energy residual, and
+`10^-15 J m^-2` spatial/phase residual. Every stage preserves its input/output
+checkpoint hashes and population/event balance.
+
+The cycle-2 through cycle-4 continuation passed every gate. Total-particle
+growth moderated from 1.277x to 1.237x to 1.195x; electron counts at the cycle
+boundaries were 1,329, 1,886, and 2,483, while ion counts were 4,077, 4,801,
+and 5,506. Ionization settled near 766--792 events per cycle after the 2,381
+event first-cycle avalanche. Peak sampled field still rose from 31.2 to 33.6
+to 35.2 kV/m, and field energy rose each cycle. Relative energy closure stayed
+below `2.8e-14`, spatial/phase residuals below `9.8e-21 J m^-2`, peak resident
+memory near 172 MiB, and each continuation completed in under 12 seconds.
+
+This is a bounded, credible equilibration trend—not stationarity. The retained
+record is
+[`edupic-argon-aurorapic-multicycle-pilot-cycle4-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-multicycle-pilot-cycle4-20260810.json).
+The next step must be a separately authorized blockwise horizon extension with
+cycle-boundary stationarity gates; equilibrium observable comparison remains
+premature.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
