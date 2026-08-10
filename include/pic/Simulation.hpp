@@ -117,6 +117,8 @@ private:
     };
     void apply_collisions();
     void deposit_and_solve(double field_time);
+    bool species_due(std::size_t species_id) const;
+    double species_timestep(std::size_t species_id) const;
     std::uint64_t collision_signature() const;
     std::string collision_identity() const;
     double electrode_potential(

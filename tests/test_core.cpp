@@ -2890,6 +2890,7 @@ int main() {
                     << "drift_velocity_z = -0.5\n"
                     << "thermal_velocity_y = 0.1\n"
                     << "thermal_velocity_z = 0.2\n"
+                    << "timestep_multiplier = 20\n"
                     << "init_x_min = 0.5\n"
                     << "init_x_max = 1.5\n";
             }
@@ -2945,6 +2946,9 @@ int main() {
                 *cfg.species[0].initialization.thermal_velocity_z,
                 0.2, 1e-15,
                 "1D3V config did not load thermal_velocity_z");
+            require(
+                cfg.species[0].timestep_multiplier == 20,
+                "1D config did not load timestep_multiplier");
             require(std::abs(cfg.species[0].weight - 0.5) < 1e-15, "density-derived macro-particle weight is wrong");
             std::filesystem::remove(config_path);
 
@@ -2979,6 +2983,11 @@ int main() {
                 "nx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_weight\ncharge = -1\nmass = 1\nweight = inf\nparticles = 10\n",
                 [](const std::string& path) { return pic::load_config(path); },
                 "1D non-finite species weight validation did not throw");
+            require_config_rejects(
+                "test_invalid_timestep_multiplier_1d.ini",
+                "nx = 16\nlength = 1\ndt = 0.01\n[species]\nname = bad_timestep\ncharge = -1\nmass = 1\nweight = 1\nparticles = 10\ntimestep_multiplier = 0\n",
+                [](const std::string& path) { return pic::load_config(path); },
+                "1D zero timestep_multiplier validation did not throw");
             require_config_rejects(
                 "test_invalid_runtime_threads.ini",
                 "nx = 16\nlength = 1\ndt = 0.01\nruntime_threads = 0\n[species]\nname = bad_runtime\ncharge = -1\nmass = 1\nweight = 1\nparticles = 10\n",
@@ -3397,6 +3406,131 @@ int main() {
             require(std::filesystem::exists(output_dir / "fields_4.csv"), "simulation did not write final field diagnostics");
         }
         {
+            const auto checkpoint_path =
+                std::filesystem::path(
+                    "test_output_1d_species_subcycling.apc");
+            std::filesystem::remove(checkpoint_path);
+
+            pic::Config cfg;
+            cfg.nx = 3;
+            cfg.length = 100.0;
+            cfg.dt = 0.1;
+            cfg.boundary = pic::Boundary::Periodic;
+            pic::SpeciesConfig slow;
+            slow.name = "slow";
+            slow.charge = 0.0;
+            slow.mass = 1.0;
+            slow.weight = 1.0;
+            slow.particles = 1;
+            slow.density = 1.0;
+            slow.drift_velocity = 2.0;
+            slow.thermal_velocity = 0.0;
+            slow.timestep_multiplier = 3;
+            cfg.species = {slow};
+
+            pic::Simulation continuous(cfg);
+            continuous.initialize();
+            const double initial_x =
+                continuous.species()[0].particles()[0].x;
+            continuous.step();
+            const double first_x =
+                continuous.species()[0].particles()[0].x;
+            require_near(
+                first_x - initial_x, 0.6, 1e-12,
+                "subcycled species did not advance with its full timestep on step zero");
+            continuous.step();
+            const double second_x =
+                continuous.species()[0].particles()[0].x;
+            require_near(
+                second_x, first_x, 0.0,
+                "subcycled species moved on an inactive base step");
+            continuous.save_checkpoint(checkpoint_path);
+            continuous.step();
+            require_near(
+                continuous.species()[0].particles()[0].x,
+                first_x, 0.0,
+                "subcycled species moved before its next scheduled step");
+            continuous.step();
+            require_near(
+                continuous.species()[0].particles()[0].x - first_x,
+                0.6, 1e-12,
+                "subcycled species did not repeat at its configured cadence");
+
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            restarted.step();
+            restarted.step();
+            require_near(
+                restarted.species()[0].particles()[0].x,
+                continuous.species()[0].particles()[0].x,
+                0.0,
+                "species subcycling restart changed the trajectory");
+
+            auto mismatched = cfg;
+            mismatched.species[0].timestep_multiplier = 2;
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(mismatched);
+                    invalid.load_checkpoint(checkpoint_path);
+                },
+                "checkpoint accepted a changed species timestep multiplier");
+
+            const auto legacy_checkpoint_path =
+                std::filesystem::path(
+                    "test_output_1d_species_subcycling_v12.apc");
+            {
+                std::istringstream input(
+                    read_file_text(checkpoint_path));
+                std::ofstream legacy(legacy_checkpoint_path);
+                std::string line;
+                bool first = true;
+                while (std::getline(input, line)) {
+                    if (first) {
+                        legacy << "AuroraPIC-checkpoint-v12\n";
+                        first = false;
+                    } else if (!line.starts_with(
+                                   "species_timestep_multipliers")) {
+                        legacy << line << '\n';
+                    }
+                }
+            }
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(cfg);
+                    invalid.load_checkpoint(legacy_checkpoint_path);
+                },
+                "legacy checkpoint accepted an unrecorded species timestep multiplier");
+
+            auto collision_cfg = cfg;
+            collision_cfg.species.push_back(slow);
+            collision_cfg.species[0].name = "fast";
+            collision_cfg.species[0].timestep_multiplier = 1;
+            collision_cfg.species[1].name = "slow";
+            collision_cfg.collisions.enabled = true;
+            collision_cfg.collisions.model =
+                pic::CollisionModelKind::BGK;
+            collision_cfg.collisions.frequency = 1.0e6;
+            collision_cfg.collisions.neutral_temperature_velocity = 0.0;
+            pic::Simulation collision_schedule(collision_cfg);
+            collision_schedule.initialize();
+            collision_schedule.step();
+            require(
+                collision_schedule.collision_diagnostics().candidates == 2,
+                "species collision schedules were not active on step zero");
+            collision_schedule.step();
+            collision_schedule.step();
+            require(
+                collision_schedule.collision_diagnostics().candidates == 4,
+                "slow-species collisions ran on inactive base steps");
+            collision_schedule.step();
+            require(
+                collision_schedule.collision_diagnostics().candidates == 6,
+                "slow-species collisions did not use their configured cadence");
+
+            std::filesystem::remove(checkpoint_path);
+            std::filesystem::remove(legacy_checkpoint_path);
+        }
+        {
             const auto output_dir =
                 std::filesystem::path(
                     "test_output_1d_boundary_losses");
@@ -3493,8 +3627,8 @@ int main() {
                 "1D checkpoint lost right-wall impact energy");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v12\n") == 0,
-                "1D phase-EEDF checkpoint did not use v12");
+                    "AuroraPIC-checkpoint-v13\n") == 0,
+                "1D species-timestep checkpoint did not use v13");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3510,6 +3644,7 @@ int main() {
                             << "AuroraPIC-checkpoint-v6\n";
                         first = false;
                     } else if (
+                        line.starts_with("species_timestep_multipliers") ||
                         line.starts_with("power_transfer") ||
                         line.starts_with("collision_energy_totals") ||
                         line.starts_with("spatial_moments") ||
@@ -3555,6 +3690,7 @@ int main() {
                             << "AuroraPIC-checkpoint-v5\n";
                         first = false;
                     } else if (
+                        line.starts_with("species_timestep_multipliers") ||
                         line.starts_with(
                             "boundary_loss") ||
                         line.starts_with(
@@ -3923,8 +4059,8 @@ int main() {
             }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v12\n") == 0,
-                "1D3V checkpoint did not use the spatial-moment-aware "
+                    "AuroraPIC-checkpoint-v13\n") == 0,
+                "1D3V checkpoint did not use the species-timestep-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
             (void)output_simulation.run();

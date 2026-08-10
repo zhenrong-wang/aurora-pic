@@ -910,6 +910,11 @@ void validate_config(const Config& cfg) {
         validate_positive(s.density, "species '" + s.name + "' density");
         if (!std::isfinite(s.charge)) throw std::runtime_error("species '" + s.name + "' charge must be finite");
         if (s.particles == 0) throw std::runtime_error("species '" + s.name + "' particles must be positive");
+        if (s.timestep_multiplier == 0) {
+            throw std::runtime_error(
+                "species '" + s.name +
+                "' timestep_multiplier must be positive");
+        }
         if (s.particles > cfg.max_particles_per_species) {
             throw std::runtime_error(
                 "species '" + s.name +
@@ -1621,7 +1626,7 @@ Config load_config(const std::string& path) {
         "loading", "density_profile", "profile_center_x",
         "profile_scale_x", "profile_amplitude", "profile_phase",
         "profile_mode_x", "max_profile_sampling_attempts",
-        "init_x_min", "init_x_max"
+        "init_x_min", "init_x_max", "timestep_multiplier"
     };
 
     auto blocks = parse_config_blocks(
@@ -1787,6 +1792,8 @@ Config load_config(const std::string& path) {
         parse_density_profile(block, s.initialization, 1);
         s.init_x_min = as<double>(block, "init_x_min", s.init_x_min);
         s.init_x_max = as<double>(block, "init_x_max", s.init_x_max);
+        s.timestep_multiplier = as<std::size_t>(
+            block, "timestep_multiplier", s.timestep_multiplier);
         require_species_scale_source(block, s.name, "");
         if (block.count("weight")) {
             s.weight = as<double>(block, "weight", s.weight);

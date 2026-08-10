@@ -418,10 +418,11 @@ output cadence. Imported runs also write `collision_data.txt`, recording the
 resolved gas metadata, operating state, model signature, effective channel
 settings, table paths, and product mappings used by that run.
 
-1D checkpoint v5 and imported checkpoint v6 record collision model identity, a
+Current 1D checkpoint v13 and imported checkpoint v6 record collision model identity, a
 fingerprint of effective cross-section tables and MCC parameters, cumulative
 collision counts, and RNG state. They reject restart with changed collision
-data, external dataset metadata, or model parameters. Historical 1D v1/v2 and
+data, external dataset metadata, model parameters, or species timestep
+multipliers. Historical 1D v1/v2 and
 imported v1-v5 checkpoints
 cannot restart null-collision MCC because they contain no compatible MCC
 provenance. Historical 1D v3 MCC signatures remain compatible for 1D1V when the new

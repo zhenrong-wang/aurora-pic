@@ -33,6 +33,7 @@ constexpr const char* kCheckpointMagicV9 = "AuroraPIC-checkpoint-v9";
 constexpr const char* kCheckpointMagicV10 = "AuroraPIC-checkpoint-v10";
 constexpr const char* kCheckpointMagicV11 = "AuroraPIC-checkpoint-v11";
 constexpr const char* kCheckpointMagicV12 = "AuroraPIC-checkpoint-v12";
+constexpr const char* kCheckpointMagicV13 = "AuroraPIC-checkpoint-v13";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -369,6 +370,15 @@ Simulation::Simulation(Config cfg)
             "max_particles_per_species must be positive");
     }
     for (const auto& sc : cfg_.species) {
+        if (sc.timestep_multiplier == 0 ||
+            !std::isfinite(
+                cfg_.dt * static_cast<double>(
+                    sc.timestep_multiplier))) {
+            throw std::invalid_argument(
+                "species '" + sc.name +
+                "' timestep_multiplier must produce a positive "
+                "finite particle timestep");
+        }
         if (sc.particles > cfg_.max_particles_per_species) {
             throw std::invalid_argument(
                 "initial particle count exceeds "
@@ -684,6 +694,15 @@ double Simulation::electrode_potential(
         drive.phase);
 }
 
+bool Simulation::species_due(std::size_t species_id) const {
+    return step_ % species_[species_id].config().timestep_multiplier == 0;
+}
+
+double Simulation::species_timestep(std::size_t species_id) const {
+    return cfg_.dt * static_cast<double>(
+        species_[species_id].config().timestep_multiplier);
+}
+
 void Simulation::deposit_and_solve(double field_time) {
     grid_.clear_charge();
     for (const auto& sp : species_) sp.deposit_charge(grid_);
@@ -757,12 +776,15 @@ void Simulation::initialize() {
                 cfg_.initial_state_signature);
     }
     deposit_and_solve(time_);
-    for (auto& sp : species_) {
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
+        const double timestep = species_timestep(species_id);
         auto& particles = sp.particles();
         runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
             auto& p = particles[particle_id];
-            if (p.alive) initialize_leapfrog_half_step(p, interpolate_electric(grid_, p.x), qm, cfg_.dt);
+            if (p.alive) initialize_leapfrog_half_step(p, interpolate_electric(grid_, p.x), qm, timestep);
         });
     }
     initialized_ = true;
@@ -771,10 +793,14 @@ void Simulation::initialize() {
 void Simulation::apply_collisions() {
     if (legacy_bgk_enabled_ &&
         cfg_.collisions.frequency > 0.0) {
-        const double probability =
-            1.0 - std::exp(
-                -cfg_.collisions.frequency * cfg_.dt);
-        for (auto& species : species_) {
+        for (std::size_t species_id = 0;
+             species_id < species_.size(); ++species_id) {
+            if (!species_due(species_id)) continue;
+            auto& species = species_[species_id];
+            const double timestep = species_timestep(species_id);
+            const double probability =
+                1.0 - std::exp(
+                    -cfg_.collisions.frequency * timestep);
             std::uniform_real_distribution<double> unit(
                 0.0, 1.0);
             std::normal_distribution<double> neutral_velocity(
@@ -821,7 +847,7 @@ void Simulation::apply_collisions() {
                     particle,
                     interpolate_electric(
                         grid_, particle.x),
-                    charge_to_mass, cfg_.dt);
+                    charge_to_mass, timestep);
             }
         }
     }
@@ -833,8 +859,10 @@ void Simulation::apply_collisions() {
     };
     std::vector<IonizationProduct> products;
     for (auto& runtime : mcc_models_) {
+        if (!species_due(runtime.species_id)) continue;
         auto& sp = species_[runtime.species_id];
         const double qm = sp.charge() / sp.mass();
+        const double timestep = species_timestep(runtime.species_id);
         const std::size_t initial_particle_count =
             sp.particles().size();
         for (std::size_t particle_id = 0;
@@ -848,14 +876,14 @@ void Simulation::apply_collisions() {
                     part.v, part.velocity_y, part.velocity_z};
                 statistics =
                     runtime.model->collide(
-                        velocity, cfg_.dt, rng_);
+                        velocity, timestep, rng_);
                 part.v = velocity.x;
                 part.velocity_y = velocity.y;
                 part.velocity_z = velocity.z;
             } else {
                 statistics =
                     runtime.model->collide(
-                        part.v, cfg_.dt, rng_);
+                        part.v, timestep, rng_);
             }
             for (auto& energy_change :
                  statistics.channel_projectile_energy_change) {
@@ -923,7 +951,7 @@ void Simulation::apply_collisions() {
             }
             initialize_leapfrog_half_step(
                 part, interpolate_electric(grid_, part.x), qm,
-                cfg_.dt);
+                timestep);
         }
     }
     std::vector<std::size_t> required_products(
@@ -991,7 +1019,7 @@ void Simulation::apply_collisions() {
             interpolate_electric(grid_, position),
             product_species.charge() /
                 product_species.mass(),
-            cfg_.dt);
+            species_timestep(species_id));
     };
     for (const auto& product : products) {
         append_product(
@@ -1022,6 +1050,8 @@ void Simulation::step() {
         std::fill(
             chunk_power.begin(), chunk_power.end(),
             SpeciesPower1D{});
+        if (!species_due(species_id)) continue;
+        const double timestep = species_timestep(species_id);
         runtime_static_chunks(
             std::size_t{0}, particles.size(), cfg_.runtime,
             [&](std::size_t chunk, std::size_t begin,
@@ -1034,8 +1064,8 @@ void Simulation::step() {
                     if (!p.alive) continue;
                     kick_leapfrog(
                         p, interpolate_electric(grid_, p.x),
-                        qm, cfg_.dt);
-                    drift_leapfrog(p, cfg_.dt);
+                        qm, timestep);
+                    drift_leapfrog(p, timestep);
                     if (grid_.boundary() ==
                         Boundary::Periodic) {
                         p.x = std::fmod(
@@ -1093,8 +1123,10 @@ void Simulation::step() {
     deposit_and_solve(time_ + cfg_.dt);
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
+        if (!species_due(species_id)) continue;
         auto& sp = species_[species_id];
         const double qm = sp.charge() / sp.mass();
+        const double timestep = species_timestep(species_id);
         auto& particles = sp.particles();
         auto& chunk_power =
             power_transfer_chunks_[species_id];
@@ -1110,7 +1142,7 @@ void Simulation::step() {
                     const double old_velocity = p.v;
                     synchronize_leapfrog(
                         p, interpolate_electric(grid_, p.x),
-                        qm, cfg_.dt);
+                        qm, timestep);
                     power.electric_work +=
                         0.5 * sp.mass() *
                         sp.config().weight *
@@ -1814,13 +1846,18 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV12 << '\n';
+    out << kCheckpointMagicV13 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
         << cfg_.units.permittivity() << "\n";
     out << "velocity_dimensions "
         << cfg_.velocity_dimensions << "\n";
+    out << "species_timestep_multipliers " << species_.size();
+    for (const auto& species : species_) {
+        out << ' ' << species.config().timestep_multiplier;
+    }
+    out << "\n";
     const bool collisions_enabled =
         legacy_bgk_enabled_ || !mcc_models_.empty();
     const std::uint64_t configured_collision_signature =
@@ -2032,15 +2069,18 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
+    const bool checkpoint_v13 = magic == kCheckpointMagicV13;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-        checkpoint_v10 || checkpoint_v11 || checkpoint_v12;
+        checkpoint_v10 || checkpoint_v11 || checkpoint_v12 ||
+        checkpoint_v13;
     if (!checkpoint_v1 && !checkpoint_v2 &&
         !checkpoint_v3 && !checkpoint_v4 &&
         !checkpoint_v5 && !checkpoint_v6 &&
         !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-        !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12) {
+        !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12 &&
+        !checkpoint_v13) {
         throw std::runtime_error("invalid checkpoint magic in: " + path.string());
     }
 
@@ -2058,7 +2098,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
              !checkpoint_v4 && !checkpoint_v5 &&
              !checkpoint_v6 && !checkpoint_v7 && !checkpoint_v8 &&
              !checkpoint_v9 && !checkpoint_v10 && !checkpoint_v11 &&
-             !checkpoint_v12) ||
+             !checkpoint_v12 && !checkpoint_v13) ||
             unit_system != to_string(cfg_.units.system) ||
             relative_permittivity != cfg_.units.relative_permittivity ||
             permittivity != cfg_.units.permittivity()) {
@@ -2070,7 +2110,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                checkpoint_v4 || checkpoint_v5 ||
                checkpoint_v6 || checkpoint_v7 || checkpoint_v8 ||
                checkpoint_v9 || checkpoint_v10 || checkpoint_v11 ||
-               checkpoint_v12 ||
+               checkpoint_v12 || checkpoint_v13 ||
                cfg_.units.system != UnitSystem::Normalized ||
                cfg_.units.relative_permittivity != 1.0) {
         throw std::runtime_error(
@@ -2090,6 +2130,38 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         throw std::runtime_error(
             "legacy 1D1V checkpoint cannot initialize 1D3V");
     }
+    if (key == "species_timestep_multipliers") {
+        std::size_t stored_species_count = 0;
+        in >> stored_species_count;
+        if (!checkpoint_v13 ||
+            stored_species_count != species_.size()) {
+            throw std::runtime_error(
+                "checkpoint species timestep count does not "
+                "match 1D config");
+        }
+        for (std::size_t species_id = 0;
+             species_id < stored_species_count; ++species_id) {
+            std::size_t stored_multiplier = 0;
+            in >> stored_multiplier;
+            if (stored_multiplier != species_[species_id]
+                    .config().timestep_multiplier) {
+                throw std::runtime_error(
+                    "checkpoint species timestep multiplier "
+                    "does not match 1D config");
+            }
+        }
+        in >> key;
+    } else if (checkpoint_v13 ||
+               std::any_of(
+                   species_.begin(), species_.end(),
+                   [](const Species& species) {
+                       return species.config()
+                                  .timestep_multiplier != 1;
+                   })) {
+        throw std::runtime_error(
+            "legacy checkpoint without species timestep metadata "
+            "requires timestep_multiplier = 1");
+    }
     if (key == "collision_model") {
         std::string model;
         int enabled = 0;
@@ -2102,7 +2174,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         if ((!checkpoint_v3 && !checkpoint_v4 &&
              !checkpoint_v5 && !checkpoint_v6 &&
              !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-             !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12) ||
+             !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12 &&
+             !checkpoint_v13) ||
             model != collision_identity() ||
             enabled != (collisions_enabled ? 1 : 0) ||
             signature != expected_signature) {
@@ -2123,7 +2196,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         clear_collision_counts(collision_interval_);
         in >> key;
-        if (checkpoint_v10 || checkpoint_v11 || checkpoint_v12) {
+        if (checkpoint_v10 || checkpoint_v11 || checkpoint_v12 ||
+            checkpoint_v13) {
             std::size_t energy_count = 0;
             in >> energy_count;
             if (key != "collision_energy_totals" ||
@@ -2147,6 +2221,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                checkpoint_v5 || checkpoint_v6 ||
                checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
                checkpoint_v10 || checkpoint_v11 || checkpoint_v12 ||
+               checkpoint_v13 ||
                !mcc_models_.empty()) {
         throw std::runtime_error(
             "legacy checkpoint without MCC metadata cannot restart "
@@ -2154,7 +2229,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     const bool checkpoint_has_boundary_losses =
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
-        checkpoint_v10 || checkpoint_v11 || checkpoint_v12;
+        checkpoint_v10 || checkpoint_v11 || checkpoint_v12 ||
+        checkpoint_v13;
     const bool legacy_boundary_loss_origin =
         !checkpoint_has_boundary_losses;
     if (checkpoint_has_boundary_losses) {
@@ -2206,9 +2282,10 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     const bool legacy_power_transfer_origin =
         !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
-        !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12;
+        !checkpoint_v10 && !checkpoint_v11 && !checkpoint_v12 &&
+        !checkpoint_v13;
     if (checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
-        checkpoint_v11 || checkpoint_v12) {
+        checkpoint_v11 || checkpoint_v12 || checkpoint_v13) {
         in >> power_transfer_origin_step_;
         if (key != "power_transfer_origin_step") {
             throw std::runtime_error(
@@ -2251,7 +2328,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     if (checkpoint_v5 || checkpoint_v6 ||
         checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
-        checkpoint_v11 || checkpoint_v12) {
+        checkpoint_v11 || checkpoint_v12 || checkpoint_v13) {
         int enabled = 0;
         std::size_t interval = 0;
         std::size_t start_step = 0;
@@ -2343,7 +2420,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         in >> key;
         if (checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
-            checkpoint_v11 || checkpoint_v12) {
+            checkpoint_v11 || checkpoint_v12 || checkpoint_v13) {
             std::size_t stored_moment_samples = 0;
             std::size_t stored_moment_species_count = 0;
             std::size_t stored_moment_nx = 0;
@@ -2413,7 +2490,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         std::size_t stored_phase_count = 0;
         if (checkpoint_v9 || checkpoint_v10 || checkpoint_v11 ||
-            checkpoint_v12) {
+            checkpoint_v12 || checkpoint_v13) {
             std::size_t stored_phase_species = 0;
             std::size_t stored_phase_nx = 0;
             in >> stored_phase_count >> stored_phase_species >> stored_phase_nx;
@@ -2537,7 +2614,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore phase-resolved spatial moments");
         }
-        if (checkpoint_v11 || checkpoint_v12) {
+        if (checkpoint_v11 || checkpoint_v12 || checkpoint_v13) {
             std::size_t stored_collision_steps = 0;
             std::size_t stored_collision_channels = 0;
             std::size_t stored_collision_nx = 0;
@@ -2646,7 +2723,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore spatial collision energy");
         }
-        if (checkpoint_v12) {
+        if (checkpoint_v12 || checkpoint_v13) {
             int stored_eedf_enabled = 0;
             std::string stored_eedf_species;
             std::size_t stored_eedf_bins = 0;
@@ -2790,7 +2867,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
-    if ((checkpoint_v11 || checkpoint_v12) &&
+    if ((checkpoint_v11 || checkpoint_v12 || checkpoint_v13) &&
         cfg_.spatial_average.enabled &&
         !cfg_.spatial_average.reset_on_restart &&
         !spatial_collision_energy_sums_.empty()) {

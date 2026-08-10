@@ -30,9 +30,9 @@
     "license_boundary": "GPL-3.0-derived generated data remain local and untracked"
   },
   "aurorapic_contract": {
-    "case_manifest_sha256": "c3351ac8c9def16ac1c202e49389a9d310d0ae4769ed28006b093f71e0ce2daa",
-    "preparer_sha256": "64933ac30ce182324da661acb83374a23bba1bc6ce662a156ae0ac91f4e2d93a",
-    "generated_deck_sha256": "d1b5bed37ce72e61f2ab1b62e2e877126a501272b2e879d34d220d8f4eb92957",
+    "case_manifest_sha256": "b698d3a55c0ef0d1ce6733dcb57696588fed2217f0806d3c4049bd8941db89fe",
+    "preparer_sha256": "43c4dc10accbc309056422f7565b5459c3dcb75c9db551d0d8724bdabb66cacd",
+    "generated_deck_sha256": "086cea66f615049f82e4139521cf0ac222ee16f3d685315f2186cbd8e0f8105d",
     "nodes": 400,
     "length_m": 0.025,
     "timestep_s": 1.8436578171091445e-11,
@@ -43,30 +43,33 @@
     "macro_particle_weight_per_m2": 700000000.0,
     "electron_neutral_temperature_k": 0.0,
     "ion_neutral_temperature_k": 350.0,
+    "electron_timestep_multiplier": 1,
+    "ion_timestep_multiplier": 20,
+    "species_schedule_phase": "advance_when_pre_step_index_modulo_multiplier_is_zero",
     "thermal_cross_section_range_maximum": "exact_segment_tree_logarithmic_query",
     "runtime_backend": "serial",
     "runtime_threads": 1
   },
   "execution": {
-    "aurorapic_cli_sha256": "3dbe9b05905122e082a75cae62d8801a407a474120fff322c2be70f57eb02489",
+    "aurorapic_cli_sha256": "0529cfdb69c1168bdeaeff2f89c1f7a50a03a9ccd7f15a4dcf2c762d4cf468a4",
     "steps": 2,
     "rf_cycles": 0.0005,
     "exit_status": 0,
-    "wall_seconds": 7.09,
-    "user_cpu_seconds": 6.82,
-    "maximum_resident_set_kib": 177924,
+    "wall_seconds": 6.93,
+    "user_cpu_seconds": 6.67,
+    "maximum_resident_set_kib": 177788,
     "swap_operations": 0,
     "final_time_s": 3.687315634218289e-11,
     "final_live_electrons": 1000,
     "final_live_ions": 1000,
-    "collision_candidates": 37,
-    "null_collisions": 36,
-    "electron_elastic_collisions": 1,
+    "collision_candidates": 65,
+    "null_collisions": 63,
+    "electron_elastic_collisions": 2,
     "other_collisions": 0,
-    "final_total_energy_j_m2": 1.1069670595133194e-05,
-    "checkpoint_sha256": "acf25ead80d4a9fa08f6e7edd7b51312cc12c1ce3c7ae35d0f6a8dde76ba33cb",
-    "scalars_sha256": "6a9009642df2e04d02d2b45f7e37640c37fd6fec6a23fe7ceda71149cc56b665",
-    "collisions_sha256": "8a7808b5787d2f5a8657aa1da64b7ba0d98c0dfd50ceaca9a734654b8bc41bad"
+    "final_total_energy_j_m2": 1.1069672418157732e-05,
+    "checkpoint_sha256": "3a974f5fb18b2d0aa180351f5478b3fdd462cb07772dee3cc2972976902e289a",
+    "scalars_sha256": "bd04e14de7ead53069db148cd5649a143a090e0e6b47e02e9fa72476e7a9b1d7",
+    "collisions_sha256": "98e75bd63283e6f1bb59557c6b9bbfbe6f25423b9b141d810de1b4c0c04cf947"
   },
   "matched_items": [
     "physical geometry and electrode waveform",
@@ -74,12 +77,12 @@
     "locally generated cross-section values and thresholds",
     "lower-bin cross-section evaluation on the 0.001 eV source grid",
     "cold electron-neutral and 350 K ion-neutral target conventions",
+    "ion push, boundary, and MCC cadence of 20 electron timesteps",
     "electron isotropic scattering",
     "Opal-style ionization energy sharing and correlated angles",
     "ion center-of-mass isotropic and backward scattering"
   ],
   "unresolved_contract_items": [
-    "AuroraPIC advances ions every electron step while eduPIC subcycles ions by 20",
     "AuroraPIC inelastic electron events use a heavy-neutral transform while eduPIC retains its finite-mass center-of-mass factor",
     "the random stream and initial microscopic state are intentionally independent",
     "the external 1024-cycle density record failed its predeclared effective-block gate"
@@ -87,5 +90,5 @@
   "interpretation": "The full local data package loads and the matched AuroraPIC SI runtime advances deterministically within a small memory envelope. Two steps contain no discharge-scale information and cannot support a cross-code observable comparison.",
   "physics_claim": "none_contract_integration_only",
   "production_launch_authorized": false,
-  "next_step": "Resolve or quantify the two remaining numerical-contract differences, then run a bounded whole-RF-cycle AuroraPIC startup screen before considering a long campaign."
+  "next_step": "Resolve or quantify the remaining inelastic finite-mass transform difference, then run a bounded whole-RF-cycle AuroraPIC startup screen before considering a long campaign."
 }

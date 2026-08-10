@@ -320,6 +320,9 @@ weight = 0.01             # macro-particle weight; required to be positive
 particles = 10000
 drift_velocity = 0
 thermal_velocity = 0.1
+# Optional 1D species timestep: push, boundary handling, and collisions
+# occur every N base steps with an interval of N*dt. Default: 1.
+# timestep_multiplier = 20
 # In 1D3V, x is the only spatial coordinate and electrostatic E_x is the
 # only field component; vy/vz are retained for distributions and collisions.
 # drift_velocity_y = 0
@@ -349,6 +352,14 @@ initialization, kinetic-energy diagnostics, BGK relaxation, isotropic
 elastic/excitation MCC, and restart. External `.aps` initialization is
 currently restricted to 1D1V; 1D3V external-state ingestion is a subsequent
 interoperability slice.
+
+In 1D, `timestep_multiplier = N` provides deterministic species subcycling.
+The species advances on pre-step indices `0, N, 2N, ...`, using `N*dt` for
+its leapfrog push and MCC interval; its deposited charge remains fixed on
+intermediate field solves. Boundary handling follows each active push. The
+step-zero phase matches eduPIC's ion schedule. The default `N = 1` preserves
+the historical update path. Users must assess particle transit, acceleration,
+and collision-frequency accuracy against the enlarged species timestep.
 
 The sinusoidal drive keys are currently restricted to transient 1D Dirichlet
 domains. Driven `steady_state` mode is rejected until convergence is evaluated
@@ -587,7 +598,7 @@ init_z_max = 1.0
 
 ## Checkpoint/restart controls
 
-All 1D, 2D, and 3D runs support text `.apc` checkpoints for deterministic restart and regression debugging. Structured 2D checkpoint v10 records extrusion depth, volumetric and current-regulated source state, controller/correction modes, reverse-demand statistics and distribution moments, species-resolved boundary losses, potential-reference configuration, unit metadata, RNG state, and full 3V particle state. Structured 2D v1-v9 remain readable when their controller contract is compatible; reverse-demand totals begin at the restart step for pre-v9 inputs and distribution statistics begin there for pre-v10 inputs. Current 1D v12 preserves phase-resolved regional EEDFs, global and spatial/phase-resolved collision-channel kinetic-energy transfer, spatial-density, kinetic-energy, phase-binned velocity-moment, potential, and electric-field averaging state, species/side-resolved wall counts and impact energies, and species electric work. By default a changed averaging contract is rejected. Explicit `spatial_average_reset_on_restart = true` discards stored sums and starts a new window, which must begin after the checkpoint step so no sample is missed. Older checkpoints retain the state they support and begin newer origin-labeled counters at the restart step; pre-v11 collision-localization and pre-v12 EEDF windows must be reset because those checkpoint versions lack the corresponding state. Structured 3D v2 and imported 2D v6 retain their documented compatibility rules. Imported checkpoints additionally fingerprint mesh topology, coordinates, and tags.
+All 1D, 2D, and 3D runs support text `.apc` checkpoints for deterministic restart and regression debugging. Structured 2D checkpoint v10 records extrusion depth, volumetric and current-regulated source state, controller/correction modes, reverse-demand statistics and distribution moments, species-resolved boundary losses, potential-reference configuration, unit metadata, RNG state, and full 3V particle state. Structured 2D v1-v9 remain readable when their controller contract is compatible; reverse-demand totals begin at the restart step for pre-v9 inputs and distribution statistics begin there for pre-v10 inputs. Current 1D v13 records every species timestep multiplier in addition to the v12 phase-resolved regional EEDFs, global and spatial/phase-resolved collision-channel kinetic-energy transfer, spatial-density, kinetic-energy, phase-binned velocity-moment, potential, and electric-field averaging state, species/side-resolved wall counts and impact energies, and species electric work. A changed species schedule is rejected; pre-v13 checkpoints require every multiplier to remain 1. By default a changed averaging contract is rejected. Explicit `spatial_average_reset_on_restart = true` discards stored sums and starts a new window, which must begin after the checkpoint step so no sample is missed. Older checkpoints retain the state they support and begin newer origin-labeled counters at the restart step; pre-v11 collision-localization and pre-v12 EEDF windows must be reset because those checkpoint versions lack the corresponding state. Structured 3D v2 and imported 2D v6 retain their documented compatibility rules. Imported checkpoints additionally fingerprint mesh topology, coordinates, and tags.
 
 - `checkpoint_output`: enable/disable checkpoint writes during `run()`; default `false`.
 - `checkpoint_interval`: checkpoint interval in steps; `0` inherits `output_interval` when `checkpoint_output = true`.

@@ -27,6 +27,7 @@ struct SpeciesConfig {
     ParticleInitializationConfig initialization{};
     double drift_velocity_y{0.0};
     double drift_velocity_z{0.0};
+    std::size_t timestep_multiplier{1};
 };
 
 enum class CollisionModelKind { BGK, NullCollision };

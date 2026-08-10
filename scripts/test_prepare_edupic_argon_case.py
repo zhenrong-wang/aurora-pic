@@ -100,6 +100,7 @@ initial_particles_per_species = 1000
 [numerics]
 nodes = 400
 steps_per_rf_cycle = 4000
+ion_subcycling_reference = 20
 max_particles_per_species = 1000000
 max_candidates_per_particle = 16
 electron_max_frequency_s = 1e9
@@ -132,7 +133,8 @@ physics_claim = none_contract_preflight_only
         require(
             "phi_left_phase = 1.5707963267948966" in deck
             and "neutral_temperature = 0" in deck
-            and "neutral_temperature = 350" in deck,
+            and "neutral_temperature = 350" in deck
+            and "timestep_multiplier = 20" in deck,
             "generated deck lost the matched drive or neutral contracts",
         )
         require(

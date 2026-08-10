@@ -155,6 +155,14 @@ def prepare(args: argparse.Namespace) -> tuple[Path, Path]:
     numerics = case["numerics"]
     frequency = physics.getfloat("rf_frequency_hz")
     steps_per_cycle = numerics.getint("steps_per_rf_cycle")
+    ion_timestep_multiplier = numerics.getint(
+        "ion_subcycling_reference"
+    )
+    require(
+        ion_timestep_multiplier > 0
+        and steps_per_cycle % ion_timestep_multiplier == 0,
+        "ion subcycling must be positive and divide one RF cycle",
+    )
     dt = 1.0 / (frequency * steps_per_cycle)
     neutral_density = physics.getfloat("neutral_density_m3")
     electron_majorant = numerics.getfloat("electron_max_frequency_s")
@@ -238,6 +246,7 @@ weight = {physics.getfloat('macro_particle_weight'):.17g}
 particles = {physics.getint('initial_particles_per_species')}
 thermal_velocity = 0
 loading = random
+timestep_multiplier = {ion_timestep_multiplier}
 """
     compatibility = dict(case["compatibility"])
     unresolved = [

@@ -1165,7 +1165,7 @@ The locked case manifest is
 Its preparer validates every local package hash and can generate at most one RF
 cycle; it explicitly cannot authorize production. A two-step, one-core SI
 preflight loaded all five million table rows and advanced the exact 400-node,
-4,000-step-per-cycle geometry/drive contract in 7.09 s with a 177,924 KiB peak
+4,000-step-per-cycle geometry/drive contract in 6.93 s with a 177,788 KiB peak
 resident set and zero swap. This is integration evidence only. The
 checksum-bearing record is
 [`edupic-argon-aurorapic-contract-preflight-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-contract-preflight-20260810.json).
@@ -1177,13 +1177,20 @@ interpolation as the default for every existing gas package.
 Thermal-neutral frequency validation uses an exact segment-tree range maximum,
 reducing each table query from a million-row scan to logarithmic work. The
 index raises this five-table preflight's peak memory by about 80 MiB, but the
-optimized run is bit-for-bit identical to the pre-optimization run and reduces
-its measured wall time from 11.38 s to 7.09 s.
+optimized interpolation-only run was bit-for-bit identical to its
+pre-optimization run and reduced its measured wall time from 11.38 s to
+7.09 s.
 
-Two numerical-contract differences remain explicit before a meaningful
-whole-cycle comparison: eduPIC advances ions every twentieth electron step,
-whereas AuroraPIC currently advances them every step, and the two codes use
-slightly different finite-mass transforms for inelastic electron events.
+The generated AuroraPIC deck now gives ions a timestep multiplier of 20. Ion
+pushes, boundary checks, and MCC calls occur at pre-step indices divisible by
+20 and use `20*dt`, including the reference-compatible update at index zero;
+ion charge is held between those updates. Checkpoint v13 records and validates
+the complete species schedule. The new two-step preflight therefore exercises
+one long ion update and completes in 6.93 s with zero swap.
+
+One numerical-contract difference remains explicit before a meaningful
+whole-cycle comparison: the two codes use slightly different finite-mass
+transforms for inelastic electron events.
 Independent random streams and microscopic initial states are expected for a
 black-box statistical comparison and are not defects. The failed
 external effective-block gate also remains a limitation on formal uncertainty,
