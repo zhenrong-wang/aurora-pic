@@ -118,4 +118,7 @@ record, not an equilibrium comparison.
 `scripts/extend_aurorapic_edupic_horizon.py` consumes the prior report and
 checkpoint hashes in exact four-cycle blocks, retaining both passing safety
 gates and failed internal stationarity screens. Its absolute built-in horizon
-is cycle 16.
+is cycle 16. The first block accepts only a completed safe pilot report;
+subsequent blocks accept a completed safe horizon report and verify its final
+checkpoint hash before continuing. A failed internal stationarity screen does
+not break the chain when all hard safety gates passed.

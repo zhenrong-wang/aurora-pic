@@ -464,8 +464,10 @@ The checksum-gated `run_aurorapic_edupic_pilot.py` continuation advances that
 state no farther than cycle 4, one low-priority process per cycle, and stops on
 hard population-growth, particle-cap, field, closure, memory, or timeout gates.
 `extend_aurorapic_edupic_horizon.py` continues only in hash-chained four-cycle
-blocks and keeps its internal stationarity result distinct from safe execution
-and from any external validation claim.
+blocks. A safe pilot report starts the chain and each safe horizon report can
+start the next block; unsafe or hash-mismatched reports are rejected. The tool
+keeps its internal stationarity result distinct from safe execution and from
+any external validation claim.
 A separate checkpointed startup ladder advances one RF cycle at a time,
 retaining species/collision balances and phase-matched field metrics while
 hard-limiting each local horizon.

@@ -1263,7 +1263,27 @@ normalized slope per cycle, field energy 2.97%, and peak field 2.32%. At cycle
 energy residuals below `3.5e-14`, and spatial/phase residuals below
 `1.8e-20 J m^-2`. The checksum-bearing negative stationarity result is
 [`edupic-argon-aurorapic-horizon-cycle8-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle8-20260810.json).
-The next permitted block is cycles 9--12 under the same frozen thresholds.
+The horizon runner now accepts either the completed safe pilot or a completed
+safe prior horizon report, while rejecting an unsafe report. This permits an
+immutable multi-block checkpoint chain without weakening any execution gate.
+
+The chained cycles 9--12 block also passed every hard execution and accounting
+gate and correctly failed stationarity. The normalized total-population slope
+moderated from 11.84% to 7.97% per cycle, field-energy slope from 2.97% to
+1.72%, and peak-field slope from 2.32% to 1.86%. All three remain above their
+frozen 1% thresholds. Ionization passed both of its gates: its normalized
+slope was -1.93% per cycle and its coefficient of variation was 3.32%. At
+cycle 12 the simulation contained 7,183 electrons and 10,667 ions, with a
+41.57 kV/m peak sampled field. Each cycle completed in under 19.4 seconds at
+about 172 MiB peak resident memory; relative energy residuals remained below
+`3.8e-14` and spatial/phase residuals below `3.2e-20 J m^-2`.
+
+These improving trends support continued bounded equilibration, but they do
+not establish equilibrium or agreement with eduPIC. The checksum-bearing
+negative result is
+[`edupic-argon-aurorapic-horizon-cycle12-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle12-20260810.json).
+The next and final permitted block is cycles 13--16 under the unchanged frozen
+thresholds.
 
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused

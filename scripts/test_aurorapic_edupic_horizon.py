@@ -7,7 +7,12 @@ import csv
 from pathlib import Path
 import tempfile
 
-from extend_aurorapic_edupic_horizon import endpoint, stationarity
+from extend_aurorapic_edupic_horizon import (
+    HorizonError,
+    endpoint,
+    report_end_cycle,
+    stationarity,
+)
 
 
 def require(condition: bool, message: str) -> None:
@@ -23,6 +28,23 @@ def write_csv(path: Path, fields: list[str], rows: list[dict[str, object]]) -> N
 
 
 def main() -> int:
+    require(
+        report_end_cycle({
+            "completed_through_cycle": 4, "all_gates_passed": True
+        }) == 4
+        and report_end_cycle({
+            "block": {"end_cycle": 8, "hard_safety_gates_passed": True}
+        }) == 8,
+        "safe report chaining lost a pilot or horizon report",
+    )
+    try:
+        report_end_cycle({
+            "block": {"end_cycle": 8, "hard_safety_gates_passed": False}
+        })
+    except HorizonError:
+        pass
+    else:
+        raise RuntimeError("unsafe horizon report was accepted for chaining")
     with tempfile.TemporaryDirectory(prefix="aurorapic-edupic-horizon-") as text:
         output = Path(text)
         write_csv(

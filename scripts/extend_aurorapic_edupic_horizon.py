@@ -153,6 +153,20 @@ def stationarity(endpoints: list[dict[str, float | int]]) -> dict[str, object]:
     }
 
 
+def report_end_cycle(report: dict[str, object]) -> int:
+    completed = report.get("completed_through_cycle")
+    if isinstance(completed, int) and report.get("all_gates_passed") is True:
+        return completed
+    block = report.get("block")
+    if (
+        isinstance(block, dict)
+        and isinstance(block.get("end_cycle"), int)
+        and block.get("hard_safety_gates_passed") is True
+    ):
+        return int(block["end_cycle"])
+    raise HorizonError("prior report is not a completed safe pilot or horizon block")
+
+
 def execute(args: argparse.Namespace) -> dict[str, object]:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise HorizonError(
@@ -178,7 +192,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     if sha256(prior_report_path) != args.expected_prior_report_sha256.lower():
         raise HorizonError("prior report SHA-256 does not match the locked value")
     prior_report = json.loads(prior_report_path.read_text(encoding="utf-8"))
-    if prior_report.get("completed_through_cycle") != args.start_cycle:
+    if report_end_cycle(prior_report) != args.start_cycle:
         raise HorizonError("prior report does not end at the requested start cycle")
     prior_stage = prior_report["stages"][-1]
     checkpoint = input_output / (
