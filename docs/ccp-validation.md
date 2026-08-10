@@ -1165,7 +1165,7 @@ The locked case manifest is
 Its preparer validates every local package hash and can generate at most one RF
 cycle; it explicitly cannot authorize production. A two-step, one-core SI
 preflight loaded all five million table rows and advanced the exact 400-node,
-4,000-step-per-cycle geometry/drive contract in 7.14 s with a 177,912 KiB peak
+4,000-step-per-cycle geometry/drive contract in 7.06 s with a 177,880 KiB peak
 resident set and zero swap. This is integration evidence only. The
 checksum-bearing record is
 [`edupic-argon-aurorapic-contract-preflight-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-contract-preflight-20260810.json).
@@ -1186,7 +1186,7 @@ pushes, boundary checks, and MCC calls occur at pre-step indices divisible by
 20 and use `20*dt`, including the reference-compatible update at index zero;
 ion charge is held between those updates. Checkpoint v13 records and validates
 the complete species schedule. The new two-step preflight therefore exercises
-one long ion update and completes in 7.14 s with zero swap.
+one long ion update and completes in 7.06 s with zero swap.
 
 The previously explicit inelastic-electron transform difference is now closed:
 the generated v2 gas manifest selects the finite-mass center-of-mass transform
@@ -1198,6 +1198,26 @@ Independent random streams and microscopic initial states are expected for a
 black-box statistical comparison and are not defects. The failed
 external effective-block gate also remains a limitation on formal uncertainty,
 not something this preflight repairs.
+
+The preparer now has a strict `--startup-diagnostics` mode. It accepts only the
+complete 4,000-step RF period, emits 40 scalar samples, accumulates spatial
+collision energy every step, and assigns exactly 250 steps to each of 16 phase
+bins. The first one-cycle serial screen completed in 10.08 s with a 171,728 KiB
+peak resident set and zero swap. It sampled 75,134 collision candidates,
+including 1,703 excitations and 2,381 ionizations. Particle accounting closed
+exactly: the 2,381 created pairs and wall losses led from 1,000 particles per
+species to 863 electrons and 3,369 ions. The global kinetic-energy ledger
+closed to `3.30e-13 W m^-2` (`1.18e-15` relative), while global-to-spatial and
+spatial-to-phase collision-energy residuals stayed below
+`6.36e-21 J m^-2`.
+
+This is positive internal numerical evidence, not equilibrium or external
+validation. The ion inventory and field energy were still increasing at the
+cycle boundary, so the discharge was plainly forming. The checksum-bearing
+record is
+[`edupic-argon-aurorapic-startup-cycle1-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-startup-cycle1-20260810.json).
+The next authorized development slice is a checkpointed multi-cycle pilot with
+per-cycle population, field, collision, energy-closure, and resource gates.
 
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused

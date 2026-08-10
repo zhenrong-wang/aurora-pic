@@ -107,4 +107,7 @@ These generated tables remain local and untracked. The workflow records their
 GPL-derived provenance but makes no redistribution or relicensing claim. Use
 `scripts/prepare_edupic_argon_case.py` with
 `examples/edupic_argon_ccp_reference.case` to validate the exact local hashes
-and generate only a bounded, non-production AuroraPIC preflight deck.
+and generate only a bounded, non-production AuroraPIC preflight deck. Passing
+`--steps 4000 --startup-diagnostics` requires exactly one RF period and adds
+40 scalar samples plus every-step spatial and 16-bin phase collision-energy
+diagnostics. It still does not authorize production or attach a physics claim.

@@ -456,6 +456,10 @@ eV-to-joule conversion rather than silently inheriting current SI constants.
 An explicitly acknowledged bounded qualifier measures the exact initial
 population for only a few serial steps under hard work and timeout limits
 before any longer CCP execution is considered.
+A separate pinned eduPIC argon workflow can generate a complete one-period
+startup screen with `--steps 4000 --startup-diagnostics`; its exact population,
+global energy, spatial collision-energy, and RF-phase accounting remain
+explicitly below the cross-code validation claim boundary.
 A separate checkpointed startup ladder advances one RF cycle at a time,
 retaining species/collision balances and phase-matched field metrics while
 hard-limiting each local horizon.

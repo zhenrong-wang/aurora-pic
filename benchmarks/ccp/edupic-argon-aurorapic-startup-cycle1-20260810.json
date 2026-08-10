@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "one_rf_cycle_aurorapic_startup_screen",
+  "claim_boundary": "This bounded startup screen tests runtime stability and internal diagnostic closure. One unequilibrated RF cycle cannot establish cross-code agreement or physical validation.",
+  "reference_contract": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "case_manifest_sha256": "d987244045ed12bd4b2a67b3e47a12bc474f041539996da264e3887f79d58dc7",
+    "source_table_sha256": "8bf9b7970e9297c0776f04c60d40c39a27e98538c45a470eaca5decd308f03d4",
+    "package_audit_sha256": "ba747fc8bcedc48f17af002e62d89592b8c946e83bb5ec766b219d0359c4ead9"
+  },
+  "workflow": {
+    "preparer_sha256": "9cb1d5f1c4432c1f1754698bc673eefd6950f7f3520850c6719c2a16ca481aca",
+    "energy_analyzer_sha256": "082b5ab5eb955eafd51cb5c65daeaef5fc9557abb06f181dc288fa05099530b5",
+    "spatial_collision_analyzer_sha256": "8525fbde761b91f1641f5e3fbdfaca6b4687bc9dbe70175d22966601f736fc22",
+    "generated_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "preflight_report_sha256": "146e7c07e7e329021132d009de2312575812878e4aa5ffd5fa9ec07d3bba59ad",
+    "command_contract": "prepare_edupic_argon_case.py --steps 4000 --startup-diagnostics",
+    "runtime_backend": "serial",
+    "runtime_threads": 1
+  },
+  "numerics": {
+    "nodes": 400,
+    "length_m": 0.025,
+    "steps": 4000,
+    "rf_cycles": 1,
+    "timestep_s": 1.8436578171091445e-11,
+    "duration_s": 7.374631268436101e-08,
+    "scalar_output_interval_steps": 100,
+    "spatial_average_interval_steps": 1,
+    "phase_bins": 16,
+    "timesteps_per_phase_bin": 250,
+    "electron_timestep_multiplier": 1,
+    "ion_timestep_multiplier": 20
+  },
+  "execution": {
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
+    "exit_status": 0,
+    "wall_seconds": 10.08,
+    "user_cpu_seconds": 9.75,
+    "maximum_resident_set_kib": 171728,
+    "swap_operations": 0,
+    "checkpoint_sha256": "97e94584a1bd8c721fb7438d1f8386ec9f50058fd0feb2be9849942738f2c261",
+    "scalars_sha256": "f18d21f1f724d9c8a34a48cd8b27ab592d5a1a3f0e40f07114f398f5ecc59748",
+    "collisions_sha256": "ca1297d2248c9c90d6ace447f6122c5595148e37989c44f4d32f5d030988c41f",
+    "boundary_losses_sha256": "b73ffa005b43a0621a7606832cf8c5d4bcb6732d32e788a7f71ea170033679cd",
+    "power_transfer_sha256": "5f1ee41fe3937025ba221a47fa1577ae30eea4793493abe46193b48776e0ea21",
+    "spatial_collision_power_sha256": "64826264bcf6bb857cc3c933bfa1a19f0ec06cc4c6969bbbb46ca8232adce879",
+    "spatial_phase_collision_power_sha256": "7597e2e7474f01089962ce592eff6bee901292b0c35c53f652e648b447947ef9",
+    "energy_analysis_sha256": "3373ccec9f7f3e25c7400ef8953338fd68d24fb5cb8474f1f4841725f3517fab",
+    "spatial_collision_analysis_sha256": "1612f4ff8e99983e62ebe9159831c7d9ba3ab309ebdae573f9f9d6f4f1d6143d"
+  },
+  "population_balance": {
+    "initial_electrons": 1000,
+    "initial_ions": 1000,
+    "ionization_pairs_created": 2381,
+    "electron_wall_losses_left": 1486,
+    "electron_wall_losses_right": 1032,
+    "ion_wall_losses_left": 8,
+    "ion_wall_losses_right": 4,
+    "final_electrons": 863,
+    "final_ions": 3369,
+    "electron_count_balance_residual": 0,
+    "ion_count_balance_residual": 0,
+    "minimum_live_electrons": 562,
+    "minimum_live_electrons_step": 2500,
+    "maximum_total_live_particles": 4232,
+    "maximum_total_live_particles_fraction_of_cap": 0.002116
+  },
+  "collision_totals": {
+    "candidates": 75134,
+    "null_collisions": 48443,
+    "electron_elastic": 22278,
+    "electron_excitation": 1703,
+    "electron_ionization": 2381,
+    "ion_isotropic": 195,
+    "ion_backward": 134
+  },
+  "energy_budget_W_m-2": {
+    "electric_power_total": 279.9110272462266,
+    "collision_tracked_kinetic_power_total": -87.04591820543244,
+    "wall_kinetic_power_total": 179.15214552310078,
+    "tracked_kinetic_energy_rate": 13.712963517693698,
+    "closure_residual": 3.304023721284466e-13,
+    "relative_closure_residual": 1.1803835503693993e-15,
+    "passes": true
+  },
+  "spatial_phase_closure": {
+    "uniform_phase_sampling": true,
+    "maximum_spatial_global_residual_J_m-2": 3.3881317890172014e-21,
+    "maximum_phase_spatial_residual_J_m-2": 6.3527471044072525e-21,
+    "passes": true
+  },
+  "startup_state": {
+    "initial_field_energy_J_m-2": 1.1068439798447789e-05,
+    "minimum_field_energy_J_m-2": 2.3479206388115343e-06,
+    "minimum_field_energy_step": 1000,
+    "final_field_energy_J_m-2": 2.2098020873597231e-05,
+    "final_kinetic_energy_J_m-2": 1.0112804954050745e-06,
+    "final_total_energy_J_m-2": 2.3109301369002306e-05,
+    "maximum_sampled_absolute_electric_field_V_m-1": 27544.379156470353,
+    "maximum_sampled_absolute_electric_field_step": 4000
+  },
+  "interpretation": {
+    "passed_bounded_startup_screen": true,
+    "evidence": "The complete RF cycle executed without a safety-bound failure, particle counts close exactly against ionization and wall events, and independent global/spatial/phase energy ledgers close near floating-point precision.",
+    "non_claim": "The increasing ion inventory and final field energy show that the discharge is still forming. These data do not demonstrate periodic steady state, convergence, or agreement with eduPIC observables."
+  },
+  "physics_claim": "none_bounded_startup_and_internal_closure_only",
+  "production_launch_authorized": false,
+  "next_step": "Add a checkpointed multi-cycle equilibration pilot with per-cycle growth and resource gates before any long comparison campaign."
+}

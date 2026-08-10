@@ -166,6 +166,33 @@ def prepare(args: argparse.Namespace) -> tuple[Path, Path]:
         "ion subcycling must be positive and divide one RF cycle",
     )
     dt = 1.0 / (frequency * steps_per_cycle)
+    startup_diagnostics = bool(
+        getattr(args, "startup_diagnostics", False)
+    )
+    if startup_diagnostics:
+        require(
+            args.steps == steps_per_cycle,
+            "startup diagnostics require exactly one RF cycle",
+        )
+        require(
+            steps_per_cycle % 40 == 0 and steps_per_cycle % 16 == 0,
+            "startup diagnostic cadence must divide one RF cycle",
+        )
+    output_interval = steps_per_cycle // 40 if startup_diagnostics else args.steps
+    require(
+        output_interval > 0 and args.steps % output_interval == 0,
+        "diagnostic output interval must divide the requested steps",
+    )
+    spatial_diagnostics = ""
+    if startup_diagnostics:
+        spatial_diagnostics = f"""spatial_average = true
+spatial_average_interval = 1
+spatial_average_start_step = 1
+spatial_average_end_step = {args.steps}
+spatial_average_rf_frequency = {frequency:.17g}
+spatial_average_rf_cycles = 1
+spatial_average_phase_bins = 16
+"""
     neutral_density = physics.getfloat("neutral_density_m3")
     electron_majorant = numerics.getfloat("electron_max_frequency_s")
     ion_majorant = numerics.getfloat("ion_max_frequency_s")
@@ -195,9 +222,9 @@ nx = {numerics.getint('nodes')}
 length = {physics.getfloat('length_m'):.17g}
 dt = {dt:.17g}
 steps = {args.steps}
-output_interval = {args.steps}
+output_interval = {output_interval}
 output_dir = {output_dir}
-boundary = dirichlet
+{spatial_diagnostics}boundary = dirichlet
 mode = transient
 phi_left = 0
 phi_right = 0
@@ -277,6 +304,12 @@ timestep_multiplier = {ion_timestep_multiplier}
             "rf_cycles": args.steps / steps_per_cycle,
             "timestep_s": dt,
             "seed": seed,
+            "startup_diagnostics": {
+                "enabled": startup_diagnostics,
+                "output_interval": output_interval,
+                "spatial_average_interval": 1 if startup_diagnostics else 0,
+                "phase_bins": 16 if startup_diagnostics else 0,
+            },
         },
         "compatibility": compatibility,
         "unresolved_contract_items": unresolved,
@@ -299,6 +332,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--steps", required=True, type=int)
     parser.add_argument("--seed", type=int)
+    parser.add_argument(
+        "--startup-diagnostics", action="store_true",
+        help=(
+            "require exactly one RF cycle and enable 40 scalar samples plus "
+            "full-cycle spatial/16-bin phase collision diagnostics"
+        ),
+    )
     return parser.parse_args()
 
 

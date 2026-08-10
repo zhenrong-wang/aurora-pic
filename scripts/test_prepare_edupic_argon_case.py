@@ -127,6 +127,7 @@ physics_claim = none_contract_preflight_only
             output_dir=root / "run",
             steps=2,
             seed=None,
+            startup_diagnostics=False,
         )
         prepare(arguments)
         deck = output.read_text(encoding="utf-8")
@@ -144,9 +145,47 @@ physics_claim = none_contract_preflight_only
             and not result["production_launch_authorized"],
             "preflight report changed its authorization boundary",
         )
+        diagnostic_output = root / "startup.cfg"
+        diagnostic_report = root / "startup.json"
+        arguments.output = diagnostic_output
+        arguments.report = diagnostic_report
+        arguments.output_dir = root / "startup-run"
+        arguments.steps = 4000
+        arguments.startup_diagnostics = True
+        prepare(arguments)
+        diagnostic_deck = diagnostic_output.read_text(encoding="utf-8")
+        diagnostic_result = json.loads(
+            diagnostic_report.read_text(encoding="utf-8")
+        )
+        require(
+            "output_interval = 100\n" in diagnostic_deck
+            and "spatial_average_start_step = 1\n" in diagnostic_deck
+            and "spatial_average_end_step = 4000\n" in diagnostic_deck
+            and "spatial_average_phase_bins = 16\n" in diagnostic_deck
+            and diagnostic_result["deck"]["startup_diagnostics"] == {
+                "enabled": True,
+                "output_interval": 100,
+                "phase_bins": 16,
+                "spatial_average_interval": 1,
+            },
+            "startup diagnostic deck lost its full-cycle sampling contract",
+        )
+        arguments.output = root / "short-startup.cfg"
+        arguments.report = root / "short-startup.json"
+        arguments.steps = 2
+        try:
+            prepare(arguments)
+        except PreparationError as error:
+            require(
+                "exactly one RF cycle" in str(error),
+                "unexpected startup diagnostic rejection",
+            )
+        else:
+            raise RuntimeError("startup diagnostics accepted a partial cycle")
         arguments.output = root / "too-long.cfg"
         arguments.report = root / "too-long.json"
         arguments.steps = 4001
+        arguments.startup_diagnostics = False
         try:
             prepare(arguments)
         except PreparationError as error:
