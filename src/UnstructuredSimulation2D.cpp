@@ -220,7 +220,7 @@ void write_collision_metadata(
             "cannot open imported collision metadata output");
     }
     output << std::setprecision(17);
-    output << "format 6\n";
+    output << "format 7\n";
     output << "gas " << std::quoted(config.gas_name) << '\n';
     output << "neutral_mass " << config.neutral_mass << '\n';
     output << "neutral_density " << config.neutral_density << '\n';
@@ -270,7 +270,9 @@ void write_collision_metadata(
                << channel.ionization_ejected_energy_scale << ' '
                << std::quoted(
                       to_string(
-                          channel.cross_section_interpolation)) << '\n';
+                          channel.cross_section_interpolation)) << ' '
+               << std::quoted(
+                      to_string(channel.inelastic_transform)) << '\n';
     }
 }
 

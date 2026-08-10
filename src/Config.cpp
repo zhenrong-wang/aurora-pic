@@ -422,6 +422,23 @@ CrossSectionInterpolationKind parse_cross_section_interpolation(
         "'; expected linear or lower_bin");
 }
 
+InelasticTransformKind parse_inelastic_transform(
+    const KeyValue& kv, InelasticTransformKind def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "inelastic_transform", to_string(def))));
+    if (value == "heavy_target" || value == "heavy-target") {
+        return InelasticTransformKind::HeavyTarget;
+    }
+    if (value == "finite_mass_center_of_mass" ||
+        value == "finite-mass-center-of-mass" ||
+        value == "finite_mass_com") {
+        return InelasticTransformKind::FiniteMassCenterOfMass;
+    }
+    throw std::runtime_error(
+        "invalid inelastic_transform: '" + value +
+        "'; expected heavy_target or finite_mass_center_of_mass");
+}
+
 IonizationKinematicsKind parse_ionization_kinematics(
     const KeyValue& kv, IonizationKinematicsKind def) {
     const auto value = lower(trim(as<std::string>(
@@ -858,6 +875,18 @@ void validate_config(const Config& cfg) {
                     channel_context +
                     " product species and ionization kinematics are "
                     "valid only for ionization");
+            }
+            const bool inelastic =
+                channel.process == CollisionProcessKind::Excitation ||
+                channel.process == CollisionProcessKind::Ionization;
+            if (channel.inelastic_transform !=
+                    InelasticTransformKind::HeavyTarget &&
+                (!inelastic || !(collision.neutral_mass > 0.0))) {
+                throw std::runtime_error(
+                    channel_context +
+                    " finite-mass inelastic transform requires an "
+                    "excitation or ionization channel and positive "
+                    "neutral_mass");
             }
         }
     };
@@ -1615,7 +1644,7 @@ Config load_config(const std::string& path) {
         "mean_cosine_file", "mean_cosine_energy_scale",
         "energy_frame", "ionization_kinematics",
         "ionization_ejected_energy_scale",
-        "cross_section_interpolation"
+        "cross_section_interpolation", "inelastic_transform"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density",
@@ -1839,6 +1868,9 @@ Config load_config(const std::string& path) {
         channel.cross_section_interpolation =
             parse_cross_section_interpolation(
                 block, channel.cross_section_interpolation);
+        channel.inelastic_transform =
+            parse_inelastic_transform(
+                block, channel.inelastic_transform);
         channel.angular_scattering =
             parse_angular_scattering(
                 block, channel.angular_scattering);

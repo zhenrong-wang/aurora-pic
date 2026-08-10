@@ -65,6 +65,12 @@ def main() -> int:
             "electron manifest lost ionization kinematics",
         )
         require(
+            electron_manifest.count(
+                "inelastic_transform = finite_mass_center_of_mass"
+            ) == 2,
+            "electron manifest lost finite-mass inelastic transforms",
+        )
+        require(
             ion_manifest.count("energy_frame = center_of_mass") == 2
             and ion_manifest.count(
                 "cross_section_interpolation = lower_bin"

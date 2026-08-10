@@ -137,13 +137,23 @@ energy and randomize the sign of the 1D velocity. With positive
 Imported 2D3V samples the post-collision relative direction
 isotropically; projectile plus implicit neutral recoil conserve momentum and
 total kinetic energy, while the tracked projectile can gain or lose energy.
-Excitation removes exactly `threshold_energy` and retains the heavy-neutral
-approximation. A channel below its threshold has zero rate regardless of its
-table.
+Excitation removes exactly `threshold_energy` from the projectile's relative
+energy. The default `inelastic_transform = heavy_target` then adds the sampled
+neutral velocity to the scattered relative velocity, preserving the legacy
+heavy-neutral approximation. The opt-in
+`inelastic_transform = finite_mass_center_of_mass` instead applies
+`v' = W + M g'/(m+M)`, where `g = v-u`,
+`W = (m v + M u)/(m+M)`, and `g'` is the post-threshold relative velocity.
+It requires positive `neutral_mass` and is accepted only for excitation and
+ionization. This matches the finite-mass electron transform in the pinned
+eduPIC target. Because the threshold is removed in the relative frame, the
+tracked projectile's lab-frame energy change need not equal the threshold.
+A channel below its threshold has zero rate regardless of its table.
 
 Ionization is available through 1D3V and imported 2D3V. Each accepted event
-removes `threshold_energy` and creates one secondary electron and one ion at
-the event position. The default `equal_energy_isotropic` kinematics divides
+removes `threshold_energy` from the incoming relative energy and creates one
+secondary electron and one ion at the event position. The default
+`equal_energy_isotropic` kinematics divides
 the available electron energy equally and samples the two directions
 independently and isotropically. The optional `opal_beaty_peterson` model
 samples the ejected-electron energy as
@@ -158,8 +168,12 @@ supply `B` in its declared energy units.
 
 With thermal neutrals, electron energies and directions are evaluated in the
 sampled neutral frame and the new ion inherits the target-neutral velocity;
-neutral recoil remains neglected. The target and secondary species
-must have identical nonzero charge, mass, and macro weight; the ion must have
+the neutral or residual ion is not materialized as a recoil product. The
+finite-mass option applies the same center-of-mass drift and mass factor to
+both Opal/equal-energy electron outputs; it is a reference-compatible
+kinematic transform, not a complete three-body ionization model. The target
+and secondary species must have identical nonzero charge, mass, and macro
+weight; the ion must have
 the opposite charge and the same macro weight. These constraints make each
 macro-event charge conservative and make the implemented electron energy
 partition well-defined. Product storage is preflighted against
@@ -438,8 +452,11 @@ enabling finite-mass recoil.
   equal-sharing or Opal-style ionization, and resonant charge exchange. The 1V interface
   remains isotropic and non-reactive apart from excitation.
 - SI neutrals have a bounded Maxwellian at fixed configured temperature.
-  Neutral bulk flow, excitation/ionization recoil, depletion, and gas heating
-  are absent; normalized-unit neutrals remain stationary.
+  Neutral bulk flow, dynamically tracked excitation/ionization recoil,
+  depletion, and gas heating are absent; normalized-unit neutrals remain
+  stationary. Excitation and ionization can apply the explicit finite-mass
+  center-of-mass projectile transform described above without creating the
+  residual target product.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
 - Ionization is limited to the bounded 1D3V/imported-2D3V models above;
   ion recoil and differential cross-section-driven angles remain absent.

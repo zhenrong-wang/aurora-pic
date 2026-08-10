@@ -110,6 +110,7 @@ cross_section_file = electron_excitation.dat
 energy_scale = {EV_TO_J:.17g}
 cross_section_interpolation = lower_bin
 threshold_energy = {EXCITATION_THRESHOLD_EV * EV_TO_J:.17g}
+inelastic_transform = finite_mass_center_of_mass
 
 [collision.ionization]
 type = ionization
@@ -119,6 +120,7 @@ cross_section_interpolation = lower_bin
 threshold_energy = {IONIZATION_THRESHOLD_EV * EV_TO_J:.17g}
 ionization_kinematics = opal_beaty_peterson
 ionization_ejected_energy_scale = {IONIZATION_EJECTED_SCALE_EV * EV_TO_J:.17g}
+inelastic_transform = finite_mass_center_of_mass
 """
     elif projectile == "ion":
         channels = f"""
@@ -303,6 +305,7 @@ def convert(
                 "ionization_threshold_ev": IONIZATION_THRESHOLD_EV,
                 "ionization_kinematics": "opal_beaty_peterson",
                 "ionization_ejected_energy_scale_ev": IONIZATION_EJECTED_SCALE_EV,
+                "inelastic_transform": "finite_mass_center_of_mass",
                 "ion_energy_frame": "center_of_mass",
                 "cross_section_interpolation": "lower_bin",
             },

@@ -96,7 +96,9 @@ requires exactly 1,000,000 rows on the `0.001 eV` source grid, validates all
 six finite non-negative columns and both inelastic thresholds, and writes
 separate electron and ion manifests. The electron package declares elastic,
 excitation, and Opal-style ionization with a `10 eV` ejected-energy scale. The
-ion package declares center-of-mass isotropic and backward elastic channels.
+two inelastic electron channels declare the finite-mass center-of-mass
+transform used by the reference. The ion package declares center-of-mass
+isotropic and backward elastic channels.
 All five channels declare lower-bin cross-section evaluation, matching
 eduPIC's integer selection on the `0.001 eV` source grid. Every generated
 artifact is hashed in `audit.json`.

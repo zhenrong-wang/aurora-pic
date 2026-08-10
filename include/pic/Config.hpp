@@ -48,6 +48,10 @@ enum class IonizationKinematicsKind {
     EqualEnergyIsotropic,
     OpalBeatyPeterson
 };
+enum class InelasticTransformKind {
+    HeavyTarget,
+    FiniteMassCenterOfMass
+};
 enum class CollisionProcessKind {
     Elastic,
     Excitation,
@@ -109,6 +113,8 @@ struct CollisionChannelConfig {
     double ionization_ejected_energy_scale{0.0};
     CrossSectionInterpolationKind cross_section_interpolation{
         CrossSectionInterpolationKind::Linear};
+    InelasticTransformKind inelastic_transform{
+        InelasticTransformKind::HeavyTarget};
 };
 
 inline std::string to_string(CollisionEnergyFrame frame) {
@@ -137,6 +143,16 @@ inline std::string to_string(CrossSectionInterpolationKind interpolation) {
             return "linear";
         case CrossSectionInterpolationKind::LowerBin:
             return "lower_bin";
+    }
+    return "unknown";
+}
+
+inline std::string to_string(InelasticTransformKind transform) {
+    switch (transform) {
+        case InelasticTransformKind::HeavyTarget:
+            return "heavy_target";
+        case InelasticTransformKind::FiniteMassCenterOfMass:
+            return "finite_mass_center_of_mass";
     }
     return "unknown";
 }

@@ -13,7 +13,7 @@ measurement_evidence = benchmarks/ccp/edupic-native-production-measurement-cycle
 
 [package]
 electron_manifest = edupic_argon_electron.gas
-electron_manifest_sha256 = 9aab4f21c5b369e2454dd5cc1bd8e532da038f8ce7d2e78dddb02bcdec1338a8
+electron_manifest_sha256 = bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6
 ion_manifest = edupic_argon_ion.gas
 ion_manifest_sha256 = b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731
 electron_elastic_sha256 = f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47
@@ -58,7 +58,7 @@ electron_neutral_temperature = matched_cold_target
 ion_neutral_temperature = matched_350_k
 ion_timestep = matched_multiplier_20
 table_interpolation = matched_lower_bin
-inelastic_finite_mass_transform = unmatched_heavy_target_vs_reference_center_of_mass
+inelastic_finite_mass_transform = matched_center_of_mass
 random_stream_and_initial_microstate = intentionally_independent
 external_sampling_gate = failed_effective_block_threshold
 

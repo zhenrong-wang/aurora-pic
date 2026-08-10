@@ -15,11 +15,12 @@
     "source_rows": 1000000,
     "source_table_bytes": 89000000,
     "source_table_sha256": "8bf9b7970e9297c0776f04c60d40c39a27e98538c45a470eaca5decd308f03d4",
-    "converted_package_bytes": 186587337,
-    "importer_sha256": "d79b370be0f5d3a671e02bbdaa00216bbd9693f31790a25218f78d564415a6d6",
-    "electron_manifest_sha256": "9aab4f21c5b369e2454dd5cc1bd8e532da038f8ce7d2e78dddb02bcdec1338a8",
+    "converted_package_bytes": 186587492,
+    "importer_sha256": "f8c052d65208205f574a4edf060bf372b0f245035bd460980d2ff11f32545d7b",
+    "electron_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
     "ion_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
     "cross_section_interpolation": "lower_bin",
+    "inelastic_transform": "finite_mass_center_of_mass",
     "channels": [
       "electron_elastic_isotropic",
       "electron_excitation_isotropic",
@@ -30,8 +31,8 @@
     "license_boundary": "GPL-3.0-derived generated data remain local and untracked"
   },
   "aurorapic_contract": {
-    "case_manifest_sha256": "b698d3a55c0ef0d1ce6733dcb57696588fed2217f0806d3c4049bd8941db89fe",
-    "preparer_sha256": "43c4dc10accbc309056422f7565b5459c3dcb75c9db551d0d8724bdabb66cacd",
+    "case_manifest_sha256": "d987244045ed12bd4b2a67b3e47a12bc474f041539996da264e3887f79d58dc7",
+    "preparer_sha256": "28e4e5dc275bcdf847a177f3bce4a8d6a59c82d49c36a2142acdb852b8e080f4",
     "generated_deck_sha256": "086cea66f615049f82e4139521cf0ac222ee16f3d685315f2186cbd8e0f8105d",
     "nodes": 400,
     "length_m": 0.025,
@@ -51,13 +52,13 @@
     "runtime_threads": 1
   },
   "execution": {
-    "aurorapic_cli_sha256": "0529cfdb69c1168bdeaeff2f89c1f7a50a03a9ccd7f15a4dcf2c762d4cf468a4",
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
     "steps": 2,
     "rf_cycles": 0.0005,
     "exit_status": 0,
-    "wall_seconds": 6.93,
-    "user_cpu_seconds": 6.67,
-    "maximum_resident_set_kib": 177788,
+    "wall_seconds": 7.14,
+    "user_cpu_seconds": 6.83,
+    "maximum_resident_set_kib": 177912,
     "swap_operations": 0,
     "final_time_s": 3.687315634218289e-11,
     "final_live_electrons": 1000,
@@ -67,7 +68,7 @@
     "electron_elastic_collisions": 2,
     "other_collisions": 0,
     "final_total_energy_j_m2": 1.1069672418157732e-05,
-    "checkpoint_sha256": "3a974f5fb18b2d0aa180351f5478b3fdd462cb07772dee3cc2972976902e289a",
+    "checkpoint_sha256": "243b2e2c7b7c337e4c1d156577b7beb5f75a9549f270d6ac1cc7deebb3674b8e",
     "scalars_sha256": "bd04e14de7ead53069db148cd5649a143a090e0e6b47e02e9fa72476e7a9b1d7",
     "collisions_sha256": "98e75bd63283e6f1bb59557c6b9bbfbe6f25423b9b141d810de1b4c0c04cf947"
   },
@@ -80,15 +81,15 @@
     "ion push, boundary, and MCC cadence of 20 electron timesteps",
     "electron isotropic scattering",
     "Opal-style ionization energy sharing and correlated angles",
+    "finite-mass center-of-mass transform for electron excitation and ionization",
     "ion center-of-mass isotropic and backward scattering"
   ],
   "unresolved_contract_items": [
-    "AuroraPIC inelastic electron events use a heavy-neutral transform while eduPIC retains its finite-mass center-of-mass factor",
     "the random stream and initial microscopic state are intentionally independent",
     "the external 1024-cycle density record failed its predeclared effective-block gate"
   ],
   "interpretation": "The full local data package loads and the matched AuroraPIC SI runtime advances deterministically within a small memory envelope. Two steps contain no discharge-scale information and cannot support a cross-code observable comparison.",
   "physics_claim": "none_contract_integration_only",
   "production_launch_authorized": false,
-  "next_step": "Resolve or quantify the remaining inelastic finite-mass transform difference, then run a bounded whole-RF-cycle AuroraPIC startup screen before considering a long campaign."
+  "next_step": "Run a bounded whole-RF-cycle AuroraPIC startup screen, inspect stability and event populations, and only then design a long cross-code campaign."
 }

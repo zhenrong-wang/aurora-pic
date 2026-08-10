@@ -125,7 +125,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "angular_model", "mean_cosine_file",
         "mean_cosine_energy_scale",
         "ionization_kinematics", "ionization_ejected_energy_scale",
-        "cross_section_interpolation",
+        "cross_section_interpolation", "inelastic_transform",
         "secondary_species", "ion_species", "attachment_species",
     };
 
@@ -967,6 +967,26 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 "collision channel '" + channel.name +
                 "' cross_section_interpolation must be linear or "
                 "lower_bin");
+        }
+        const std::string inelastic_transform = lower(
+            channel.values.contains("inelastic_transform")
+                ? channel.values.at("inelastic_transform")
+                : "heavy_target");
+        if (inelastic_transform == "heavy_target" ||
+            inelastic_transform == "heavy-target") {
+            value.inelastic_transform =
+                InelasticTransformKind::HeavyTarget;
+        } else if (
+            inelastic_transform == "finite_mass_center_of_mass" ||
+            inelastic_transform == "finite-mass-center-of-mass" ||
+            inelastic_transform == "finite_mass_com") {
+            value.inelastic_transform =
+                InelasticTransformKind::FiniteMassCenterOfMass;
+        } else {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' inelastic_transform must be heavy_target or "
+                "finite_mass_center_of_mass");
         }
         const std::string angular_model = lower(
             channel.values.contains("angular_model")

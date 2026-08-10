@@ -578,6 +578,13 @@ NullCollisionModel::NullCollisionModel(
             throw std::invalid_argument(
                 "MCC threshold_energy must be finite and non-negative");
         }
+        if (channel_config.inelastic_transform !=
+                InelasticTransformKind::HeavyTarget &&
+            channel_config.inelastic_transform !=
+                InelasticTransformKind::FiniteMassCenterOfMass) {
+            throw std::invalid_argument(
+                "unsupported MCC inelastic transform");
+        }
         if ((channel_config.process == CollisionProcessKind::Elastic ||
              channel_config.process == CollisionProcessKind::Attachment ||
              channel_config.process ==
@@ -664,6 +671,17 @@ NullCollisionModel::NullCollisionModel(
             throw std::invalid_argument(
                 "ionization kinematics is valid only for ionization channels");
         }
+        const bool inelastic =
+            channel_config.process == CollisionProcessKind::Excitation ||
+            channel_config.process == CollisionProcessKind::Ionization;
+        if (channel_config.inelastic_transform !=
+                InelasticTransformKind::HeavyTarget &&
+            (!inelastic || !(config_.neutral_mass > 0.0))) {
+            throw std::invalid_argument(
+                "finite-mass inelastic transform requires an "
+                "excitation or ionization channel and positive "
+                "neutral_mass");
+        }
         if (channel_config.process == CollisionProcessKind::Attachment &&
             channel_config.attachment_species.empty()) {
             throw std::invalid_argument(
@@ -715,6 +733,12 @@ NullCollisionModel::NullCollisionModel(
             CollisionEnergyFrame::Projectile) {
             hash_string(
                 signature_, to_string(channel_config.energy_frame));
+        }
+        if (channel_config.inelastic_transform !=
+            InelasticTransformKind::HeavyTarget) {
+            hash_string(
+                signature_,
+                to_string(channel_config.inelastic_transform));
         }
         hash_double(signature_, channel_config.threshold_energy);
         if (channel_config.process ==
@@ -915,7 +939,16 @@ void NullCollisionModel::apply_channel(
     std::uniform_int_distribution<int> direction(0, 1);
     const double scattered =
         direction(rng) == 0 ? -speed : speed;
-    if (channel.config.process == CollisionProcessKind::Elastic &&
+    if (channel.config.inelastic_transform ==
+        InelasticTransformKind::FiniteMassCenterOfMass) {
+        const double total_mass =
+            particle_mass_ + config_.neutral_mass;
+        velocity =
+            (particle_mass_ * velocity +
+             config_.neutral_mass * neutral_velocity) /
+                total_mass +
+            (config_.neutral_mass / total_mass) * scattered;
+    } else if (channel.config.process == CollisionProcessKind::Elastic &&
         config_.neutral_mass > 0.0) {
         const double total_mass =
             particle_mass_ + config_.neutral_mass;
@@ -961,8 +994,31 @@ void NullCollisionModel::apply_channel(
         const auto pair = opal_ionization_velocities(
             initial_relative, energy, particle_mass_,
             channel.config.ionization_ejected_energy_scale, rng);
-        velocity = add(neutral_velocity, pair.primary);
-        ionization_secondary_relative = pair.secondary;
+        if (channel.config.inelastic_transform ==
+            InelasticTransformKind::FiniteMassCenterOfMass) {
+            const double total_mass =
+                particle_mass_ + config_.neutral_mass;
+            const double initial_factor =
+                particle_mass_ / total_mass;
+            const double relative_factor =
+                config_.neutral_mass / total_mass;
+            const Vec3 drift_relative{
+                initial_factor * initial_relative.x,
+                initial_factor * initial_relative.y,
+                initial_factor * initial_relative.z};
+            const Vec3 primary_relative{
+                drift_relative.x + relative_factor * pair.primary.x,
+                drift_relative.y + relative_factor * pair.primary.y,
+                drift_relative.z + relative_factor * pair.primary.z};
+            ionization_secondary_relative = Vec3{
+                drift_relative.x + relative_factor * pair.secondary.x,
+                drift_relative.y + relative_factor * pair.secondary.y,
+                drift_relative.z + relative_factor * pair.secondary.z};
+            velocity = add(neutral_velocity, primary_relative);
+        } else {
+            velocity = add(neutral_velocity, pair.primary);
+            ionization_secondary_relative = pair.secondary;
+        }
         return;
     }
     if (channel.config.process == CollisionProcessKind::Ionization) {
@@ -985,7 +1041,36 @@ void NullCollisionModel::apply_channel(
             ? angular_velocity(
                   initial_relative, speed, mean_cosine, rng)
             : isotropic_velocity(speed, rng);
-    if (channel.config.process == CollisionProcessKind::Elastic &&
+    if (channel.config.inelastic_transform ==
+        InelasticTransformKind::FiniteMassCenterOfMass) {
+        const double total_mass =
+            particle_mass_ + config_.neutral_mass;
+        const double initial_factor =
+            particle_mass_ / total_mass;
+        const double relative_factor =
+            config_.neutral_mass / total_mass;
+        const Vec3 drift_relative{
+            initial_factor * initial_relative.x,
+            initial_factor * initial_relative.y,
+            initial_factor * initial_relative.z};
+        const Vec3 primary_relative{
+            drift_relative.x + relative_factor * scattered_relative.x,
+            drift_relative.y + relative_factor * scattered_relative.y,
+            drift_relative.z + relative_factor * scattered_relative.z};
+        velocity = add(neutral_velocity, primary_relative);
+        if (channel.config.process ==
+            CollisionProcessKind::Ionization) {
+            const Vec3 secondary_scattered =
+                isotropic_velocity(speed, rng);
+            ionization_secondary_relative = Vec3{
+                drift_relative.x +
+                    relative_factor * secondary_scattered.x,
+                drift_relative.y +
+                    relative_factor * secondary_scattered.y,
+                drift_relative.z +
+                    relative_factor * secondary_scattered.z};
+        }
+    } else if (channel.config.process == CollisionProcessKind::Elastic &&
         config_.neutral_mass > 0.0) {
         const double total_mass =
             particle_mass_ + config_.neutral_mass;

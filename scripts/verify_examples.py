@@ -862,11 +862,11 @@ def check_imported_ionization_2d(output_dir: Path) -> None:
         output_dir / "collision_data.txt"
     ).read_text(encoding="utf-8")
     require(
-        metadata.startswith("format 6\n") and
+        metadata.startswith("format 7\n") and
         'dataset_id "aurorapic.synthetic.ionization"' in metadata and
         'retrieved "2026-07-28"' in metadata and
         'channel "synthetic_ionization" "ionization"' in metadata and
-        '"equal_energy_isotropic" 0 "linear"' in metadata,
+        '"equal_energy_isotropic" 0 "linear" "heavy_target"' in metadata,
         "imported ionization gas metadata output is incomplete",
     )
 

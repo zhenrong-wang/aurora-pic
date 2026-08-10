@@ -56,6 +56,7 @@ def main() -> int:
                 "rows": 1_000_000,
                 "energy_step_ev": 0.001,
                 "ionization_kinematics": "opal_beaty_peterson",
+                "inelastic_transform": "finite_mass_center_of_mass",
                 "ion_energy_frame": "center_of_mass",
                 "cross_section_interpolation": "lower_bin",
             },

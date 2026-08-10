@@ -127,6 +127,8 @@ def validate_package(
         contract.get("rows") == 1_000_000
         and contract.get("energy_step_ev") == 0.001
         and contract.get("ionization_kinematics") == "opal_beaty_peterson"
+        and contract.get("inelastic_transform")
+        == "finite_mass_center_of_mass"
         and contract.get("ion_energy_frame") == "center_of_mass"
         and contract.get("cross_section_interpolation") == "lower_bin",
         "package collision contract mismatch",

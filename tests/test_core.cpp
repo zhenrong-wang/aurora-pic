@@ -670,6 +670,60 @@ int main() {
                           vector_excitation_stats.channel_collisions[0]),
                 1e-13,
                 "2D3V excitation MCC removed the wrong threshold energy");
+            auto finite_excitation_config = excitation_config;
+            finite_excitation_config.neutral_mass = 3.0;
+            finite_excitation_config.channels.front()
+                .inelastic_transform =
+                pic::InelasticTransformKind::FiniteMassCenterOfMass;
+            pic::NullCollisionModel finite_excitation(
+                finite_excitation_config, 1.0);
+            require(
+                finite_excitation.signature() != excitation.signature(),
+                "MCC signature ignored the inelastic transform");
+            std::mt19937_64 finite_excitation_rng(244949);
+            bool observed_finite_excitation = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !observed_finite_excitation;
+                 ++attempt) {
+                const pic::Vec3 initial{2.0, 0.0, 0.0};
+                pic::Vec3 transformed = initial;
+                const auto stats = finite_excitation.collide(
+                    transformed, 0.01, finite_excitation_rng);
+                if (stats.channel_collisions[0] != 1) continue;
+                const pic::Vec3 post_relative{
+                    (transformed.x - 0.25 * initial.x) / 0.75,
+                    (transformed.y - 0.25 * initial.y) / 0.75,
+                    (transformed.z - 0.25 * initial.z) / 0.75};
+                require_near(
+                    norm(post_relative), std::sqrt(3.0), 1e-13,
+                    "finite-mass excitation applied the wrong "
+                    "center-of-mass transform");
+                observed_finite_excitation = true;
+            }
+            require(
+                observed_finite_excitation,
+                "finite-mass excitation was not sampled");
+            auto invalid_finite_excitation = excitation_config;
+            invalid_finite_excitation.channels.front()
+                .inelastic_transform =
+                pic::InelasticTransformKind::FiniteMassCenterOfMass;
+            require_throws(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        invalid_finite_excitation, 1.0);
+                },
+                "finite-mass excitation accepted missing neutral mass");
+            auto invalid_elastic_transform = elastic_config;
+            invalid_elastic_transform.neutral_mass = 3.0;
+            invalid_elastic_transform.channels.front()
+                .inelastic_transform =
+                pic::InelasticTransformKind::FiniteMassCenterOfMass;
+            require_throws(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        invalid_elastic_transform, 1.0);
+                },
+                "elastic channel accepted an inelastic transform");
 
             auto ionization_config = elastic_config;
             ionization_config.max_frequency = 10.0;
@@ -778,6 +832,61 @@ int main() {
             require(
                 observed_opal_ionization,
                 "Opal ionization was not sampled");
+            auto finite_opal_config = opal_ionization_config;
+            finite_opal_config.neutral_mass = 3.0;
+            finite_opal_config.channels.front().inelastic_transform =
+                pic::InelasticTransformKind::FiniteMassCenterOfMass;
+            pic::NullCollisionModel finite_opal(
+                finite_opal_config, 1.0);
+            std::mt19937_64 finite_opal_rng(316227);
+            bool observed_finite_opal = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !observed_finite_opal; ++attempt) {
+                const pic::Vec3 initial{4.0, 0.0, 0.0};
+                pic::Vec3 primary = initial;
+                const auto stats = finite_opal.collide(
+                    primary, 0.01, finite_opal_rng);
+                if (stats.channel_collisions[0] != 1 ||
+                    stats.secondaries.size() != 1) {
+                    continue;
+                }
+                const auto recover_relative =
+                    [&](const pic::Vec3& transformed) {
+                        return pic::Vec3{
+                            (transformed.x - 0.25 * initial.x) / 0.75,
+                            (transformed.y - 0.25 * initial.y) / 0.75,
+                            (transformed.z - 0.25 * initial.z) / 0.75};
+                    };
+                const auto primary_relative =
+                    recover_relative(primary);
+                const auto secondary_relative = recover_relative(
+                    stats.secondaries.front().velocity);
+                require_near(
+                    0.5 * norm(primary_relative) *
+                            norm(primary_relative) +
+                        0.5 * norm(secondary_relative) *
+                            norm(secondary_relative),
+                    7.5, 1e-12,
+                    "finite-mass Opal transform changed the "
+                    "post-threshold relative energy partition");
+                require_near(
+                    primary_relative.x + secondary_relative.x,
+                    std::sqrt(15.0), 1e-12,
+                    "finite-mass Opal transform lost relative "
+                    "longitudinal momentum");
+                require_near(
+                    primary_relative.y + secondary_relative.y,
+                    0.0, 1e-12,
+                    "finite-mass Opal transform lost relative y momentum");
+                require_near(
+                    primary_relative.z + secondary_relative.z,
+                    0.0, 1e-12,
+                    "finite-mass Opal transform lost relative z momentum");
+                observed_finite_opal = true;
+            }
+            require(
+                observed_finite_opal,
+                "finite-mass Opal ionization was not sampled");
             auto invalid_opal_config = opal_ionization_config;
             invalid_opal_config.channels.front()
                 .ionization_ejected_energy_scale = 0.0;
@@ -5967,6 +6076,7 @@ int main() {
                 "ionization_kinematics = opal_beaty_peterson\n"
                 "ionization_ejected_energy_scale = 0.5\n"
                 "cross_section_interpolation = lower_bin\n"
+                "inelastic_transform = finite_mass_center_of_mass\n"
                 "secondary_species = electrons\n"
                 "ion_species = ions");
             {
@@ -5987,7 +6097,11 @@ int main() {
                             .ionization_ejected_energy_scale == 0.5 &&
                     inline_opal_config.collisions.channels.front()
                             .cross_section_interpolation ==
-                        pic::CrossSectionInterpolationKind::LowerBin,
+                        pic::CrossSectionInterpolationKind::LowerBin &&
+                    inline_opal_config.collisions.channels.front()
+                            .inelastic_transform ==
+                        pic::InelasticTransformKind::
+                            FiniteMassCenterOfMass,
                 "imported inline config lost Opal ionization kinematics");
             const auto imported_attachment_example =
                 std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
@@ -6068,7 +6182,9 @@ int main() {
                         << "ionization_kinematics = "
                            "opal_beaty_peterson\n"
                         << "ionization_ejected_energy_scale = 1.0\n"
-                        << "cross_section_interpolation = lower_bin\n";
+                        << "cross_section_interpolation = lower_bin\n"
+                        << "inelastic_transform = "
+                           "finite_mass_center_of_mass\n";
                 }
                 const auto opal_gas =
                     pic::load_gas_dataset(opal_gas_path);
@@ -6082,7 +6198,11 @@ int main() {
                                 .ionization_ejected_energy_scale == 1.0 &&
                         opal_gas.channels.front()
                                 .cross_section_interpolation ==
-                            pic::CrossSectionInterpolationKind::LowerBin,
+                            pic::CrossSectionInterpolationKind::LowerBin &&
+                        opal_gas.channels.front()
+                                .inelastic_transform ==
+                            pic::InelasticTransformKind::
+                                FiniteMassCenterOfMass,
                     "gas dataset loader lost Opal ionization kinematics");
                 std::filesystem::remove(opal_gas_path);
                 std::filesystem::remove(opal_table_path);
@@ -6977,7 +7097,7 @@ int main() {
                 const auto collision_metadata =
                     read_file_text(output_dir / "collision_data.txt");
                 require(
-                    collision_metadata.starts_with("format 6\n") &&
+                    collision_metadata.starts_with("format 7\n") &&
                         collision_metadata.find(
                         "dataset_id \"aurorapic.synthetic.ionization\"") !=
                             std::string::npos &&
@@ -6988,7 +7108,8 @@ int main() {
                             "channel \"synthetic_ionization\" "
                             "\"ionization\"") != std::string::npos &&
                         collision_metadata.find(
-                            "\"equal_energy_isotropic\" 0 \"linear\"") !=
+                            "\"equal_energy_isotropic\" 0 \"linear\" "
+                            "\"heavy_target\"") !=
                             std::string::npos,
                     "imported gas dataset metadata output is incomplete");
 

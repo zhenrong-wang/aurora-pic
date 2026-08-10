@@ -167,7 +167,7 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         "mean_cosine_energy_scale",
         "energy_frame", "ionization_kinematics",
         "ionization_ejected_energy_scale",
-        "cross_section_interpolation",
+        "cross_section_interpolation", "inelastic_transform",
     };
 
     Values global;
@@ -399,6 +399,33 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         value.ionization_ejected_energy_scale = number<double>(
             channel.values, "ionization_ejected_energy_scale",
             value.ionization_ejected_energy_scale, channel_context);
+        const bool has_inelastic_transform =
+            channel.values.contains("inelastic_transform");
+        if (has_inelastic_transform && format_version != 2) {
+            throw std::runtime_error(
+                channel_context +
+                " inelastic transform requires gas_data_version = 2");
+        }
+        const std::string inelastic_transform = lower(
+            has_inelastic_transform
+                ? channel.values.at("inelastic_transform")
+                : "heavy_target");
+        if (inelastic_transform == "heavy_target" ||
+            inelastic_transform == "heavy-target") {
+            value.inelastic_transform =
+                InelasticTransformKind::HeavyTarget;
+        } else if (
+            inelastic_transform == "finite_mass_center_of_mass" ||
+            inelastic_transform == "finite-mass-center-of-mass" ||
+            inelastic_transform == "finite_mass_com") {
+            value.inelastic_transform =
+                InelasticTransformKind::FiniteMassCenterOfMass;
+        } else {
+            throw std::runtime_error(
+                channel_context +
+                " inelastic_transform must be heavy_target or "
+                "finite_mass_center_of_mass");
+        }
         const bool has_angular_data =
             channel.values.contains("angular_model") ||
             channel.values.contains("mean_cosine_file") ||
@@ -492,6 +519,17 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
             throw std::runtime_error(
                 channel_context +
                 " ionization kinematics is valid only for ionization");
+        }
+        const bool inelastic =
+            value.process == CollisionProcessKind::Excitation ||
+            value.process == CollisionProcessKind::Ionization;
+        if (value.inelastic_transform !=
+                InelasticTransformKind::HeavyTarget &&
+            !inelastic) {
+            throw std::runtime_error(
+                channel_context +
+                " finite-mass inelastic transform is valid only for "
+                "excitation and ionization");
         }
         if (value.angular_scattering ==
             AngularScatteringKind::HenyeyGreenstein) {
