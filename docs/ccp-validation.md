@@ -1335,6 +1335,16 @@ peak sampled field. The checksum-bearing result is
 [`edupic-argon-aurorapic-horizon-cycle20-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle20-20260810.json).
 Measurement remains ineligible; the next block is cycles 21--24.
 
+Cycles 21--24 also passed every hard gate but did not start the stationarity
+streak. Population slope moderated further to 3.93% per cycle. Field-energy
+slope passed at 0.838%, while peak-field slope narrowly failed at 1.022%.
+Ionization coefficient of variation passed at 4.16%, but its normalized slope
+failed at 3.68% because the four cycle counts rose from 738 to 821. Cycle 24
+ended with 13,971 electrons, 18,003 ions, and a 47.56 kV/m peak sampled field.
+The retained result is
+[`edupic-argon-aurorapic-horizon-cycle24-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle24-20260810.json).
+Measurement remains ineligible; the next block is cycles 25--28.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

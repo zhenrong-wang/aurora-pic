@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "second_predeclared_comparison_readiness_block_cycles_21_through_24",
+  "claim_boundary": "This is an internal equilibration screen, not an equilibrium, cross-code agreement, or physical-validation result.",
+  "inputs": {
+    "extension_rule_sha256": "14584b56a28bdd54e1865f919cfbdf87d26f932bd7aff7731e07ca8d91aa78a9",
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "prior_horizon_report_sha256": "ca5309f6a045559bc71b84f58a185a0f0db58ed737195b5c36a618abd1aa5d88",
+    "cycle_20_checkpoint_sha256": "a569dfec55098301f93726bb281e91247fe4d5a8cfeff01f5b1035e8c54d58cf"
+  },
+  "workflow": {
+    "horizon_report_sha256": "26dac6fa79c7aa3b0829997c66a22d04a3e4dc0b24d0212e8857cb0c2715be50",
+    "stage_report_sha256": {
+      "cycle_21": "1a893a255d71641db5c22ec299356023c75e144cbb22a550231cd38dd8368b15",
+      "cycle_22": "30019c4553c755ed661a24b1b3a889e6a24710ecaa7ae29fe60b98362ea720ba",
+      "cycle_23": "f61299ad930d29f0ceff5f8853858ff92063cd3c89d84fea3cea310ad93554ec",
+      "cycle_24": "30ffe43555ae8e21199263c98a53f7d183c0d935845166e58c67b3672bb80648"
+    },
+    "final_checkpoint_sha256": "8ccd07ad086cb2e1a3fcff82c159f1dba9e5728891b68ffad60b578eebe1eea9"
+  },
+  "cycles": [
+    {
+      "cycle": 21,
+      "wall_seconds": 27.543335325084627,
+      "peak_resident_set_kib": 171780,
+      "final_electrons": 12248,
+      "final_ions": 16160,
+      "ionization_pairs": 738,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 22,
+      "wall_seconds": 28.65303103183396,
+      "peak_resident_set_kib": 171732,
+      "final_electrons": 12807,
+      "final_ions": 16744,
+      "ionization_pairs": 765,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 23,
+      "wall_seconds": 30.31454143789597,
+      "peak_resident_set_kib": 171920,
+      "final_electrons": 13381,
+      "final_ions": 17375,
+      "ionization_pairs": 804,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 24,
+      "wall_seconds": 29.588777290889993,
+      "peak_resident_set_kib": 171928,
+      "final_electrons": 13971,
+      "final_ions": 18003,
+      "ionization_pairs": 821,
+      "final_field_energy_J_m-2": 3.979378072751637e-05,
+      "maximum_sampled_absolute_field_V_m": 47556.46830083371,
+      "all_hard_gates_passed": true
+    }
+  ],
+  "stationarity_screen": {
+    "window_cycles": [20, 21, 22, 23, 24],
+    "normalized_total_population_slope_per_cycle": 0.0392566170807831,
+    "normalized_field_energy_slope_per_cycle": 0.008377327684052794,
+    "normalized_peak_field_slope_per_cycle": 0.010220915807416776,
+    "normalized_ionization_slope_per_cycle": 0.036828644501278776,
+    "ionization_coefficient_of_variation": 0.041584686806928645,
+    "gates": {
+      "total_population_slope": false,
+      "field_energy_slope": true,
+      "peak_field_slope": false,
+      "ionization_slope": false,
+      "ionization_variation": true
+    },
+    "passed": false,
+    "consecutive_passing_blocks": 0
+  },
+  "comparison_measurement_eligible": false,
+  "production_launch_authorized": false,
+  "next_step": "Continue with cycles 25-28 under the unchanged committed rule."
+}
