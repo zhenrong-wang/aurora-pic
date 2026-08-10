@@ -74,3 +74,33 @@ Before publication or device simulation:
 5. Use the same validated gas package unchanged in the geometry simulation.
 
 The checked-in LXCat fixture is synthetic parser-validation data only.
+
+## Pinned eduPIC reference package
+
+The independent eduPIC 1.0 argon target has a separate strict importer. The
+upstream code contains a dormant `test_cross_sections()` routine that writes
+its five analytic channels to a six-column, one-million-row table. Enable that
+routine only in a local checkout of pinned commit
+`32050728c961a317d6d6acd6bc86d026da403326`, build it locally, and then run:
+
+```bash
+python3 scripts/import_edupic_cross_sections.py \
+  /local/edupic-run/cross_sections.dat \
+  --output-dir /local/gases/edupic-argon \
+  --source-sha256 <sha256-of-cross_sections.dat> \
+  --retrieved 2026-08-10
+```
+
+The importer does not contain or reproduce the GPL cross-section formulas. It
+requires exactly 1,000,000 rows on the `0.001 eV` source grid, validates all
+six finite non-negative columns and both inelastic thresholds, and writes
+separate electron and ion manifests. The electron package declares elastic,
+excitation, and Opal-style ionization with a `10 eV` ejected-energy scale. The
+ion package declares center-of-mass isotropic and backward elastic channels.
+Every generated artifact is hashed in `audit.json`.
+
+These generated tables remain local and untracked. The workflow records their
+GPL-derived provenance but makes no redistribution or relicensing claim. Use
+`scripts/prepare_edupic_argon_case.py` with
+`examples/edupic_argon_ccp_reference.case` to validate the exact local hashes
+and generate only a bounded, non-production AuroraPIC preflight deck.

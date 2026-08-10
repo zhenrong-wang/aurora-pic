@@ -1151,6 +1151,35 @@ The next cross-code prerequisite is an AuroraPIC argon contract matching the
 reference cross sections, ionization energy partition, scattering, boundary
 drive, timestep/subcycling, and observable definitions.
 
+That prerequisite has now advanced to an executable contract preflight.
+`import_edupic_cross_sections.py` consumes the one-million-row table generated
+by the pinned upstream `test_cross_sections()` routine without embedding its
+GPL formulas in AuroraPIC. It validates the exact `0.001 eV` grid and writes
+separate, checksum-audited local electron and ion gas manifests. The electron
+manifest selects isotropic elastic/excitation and the Opal-style `10 eV`
+ionization distribution. The ion manifest selects center-of-mass isotropic and
+backward scattering. Generated tables remain ignored and are not redistributed.
+
+The locked case manifest is
+[`edupic_argon_ccp_reference.case`](../examples/edupic_argon_ccp_reference.case).
+Its preparer validates every local package hash and can generate at most one RF
+cycle; it explicitly cannot authorize production. A two-step, one-core SI
+preflight loaded all five million table rows and advanced the exact 400-node,
+4,000-step-per-cycle geometry/drive contract in 10.91 s with a 95,864 KiB peak
+resident set and zero swap. This is integration evidence only. The
+checksum-bearing record is
+[`edupic-argon-aurorapic-contract-preflight-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-contract-preflight-20260810.json).
+
+Three numerical-contract differences remain explicit before a meaningful
+whole-cycle comparison: eduPIC advances ions every twentieth electron step,
+whereas AuroraPIC currently advances them every step; eduPIC selects the lower
+`0.001 eV` cross-section bin, whereas AuroraPIC linearly interpolates; and the
+two codes use slightly different finite-mass transforms for inelastic electron
+events. Independent random streams and microscopic initial states are expected
+for a black-box statistical comparison and are not defects. The failed
+external effective-block gate also remains a limitation on formal uncertainty,
+not something this preflight repairs.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

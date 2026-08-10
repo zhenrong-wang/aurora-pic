@@ -1,0 +1,68 @@
+case_manifest_version = 1
+case_id = edupic-1.0-default-argon-ccp
+case_class = independent_code_to_code_validation_target
+status = matched_preflight_only
+
+[reference]
+repository = https://github.com/donkozoltan/eduPIC
+commit = 32050728c961a317d6d6acd6bc86d026da403326
+implementation = C/eduPIC.cc
+implementation_sha256 = 7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41
+generated_cross_sections_sha256 = 8bf9b7970e9297c0776f04c60d40c39a27e98538c45a470eaca5decd308f03d4
+measurement_evidence = benchmarks/ccp/edupic-native-production-measurement-cycle2620-20260810.json
+
+[package]
+electron_manifest = edupic_argon_electron.gas
+electron_manifest_sha256 = 0004cd7209108c46b446d171935ff9171206724ca72d46952a4752ac063422ff
+ion_manifest = edupic_argon_ion.gas
+ion_manifest_sha256 = 680397f0030233b32a478f23d6579153da027cedb7a6ee228c30a9ccd0c955e5
+electron_elastic_sha256 = f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47
+electron_excitation_sha256 = 9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c
+electron_ionization_sha256 = 419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0
+ion_isotropic_sha256 = 44da100ce415eac603bc0625d278eb0088cd5b4d707c56ff5d215d4e4327fb17
+ion_backward_sha256 = c7cc0ce959cd73b343f7ec62ed38243f302c9db77e7eccd2bda8d3adf945f44b
+
+[physics]
+length_m = 0.025
+pressure_pa = 10
+neutral_temperature_k = 350
+neutral_density_m3 = 2.0694208669001848e21
+rf_frequency_hz = 13.56e6
+voltage_amplitude_v = 250
+electron_mass_kg = 9.10938356e-31
+argon_mass_kg = 6.63352090e-26
+elementary_charge_c = 1.60217662e-19
+macro_particle_weight = 7e8
+initial_particles_per_species = 1000
+
+[numerics]
+nodes = 400
+steps_per_rf_cycle = 4000
+ion_subcycling_reference = 20
+external_last_cycle = 2620
+measurement_first_cycle = 1597
+measurement_cycles = 1024
+max_particles_per_species = 1000000
+max_candidates_per_particle = 16
+electron_max_frequency_s = 1e9
+ion_max_frequency_s = 1e8
+seed = 13507
+
+[compatibility]
+geometry_and_drive = matched
+cross_section_values = matched_local_generated_table
+electron_scattering = matched_isotropic
+ion_scattering = matched_isotropic_and_backward
+ionization_energy_distribution = matched_opal_style
+electron_neutral_temperature = matched_cold_target
+ion_neutral_temperature = matched_350_k
+ion_timestep = unmatched_aurorapic_no_subcycling
+table_interpolation = unmatched_linear_vs_reference_lower_bin
+inelastic_finite_mass_transform = unmatched_heavy_target_vs_reference_center_of_mass
+random_stream_and_initial_microstate = intentionally_independent
+external_sampling_gate = failed_effective_block_threshold
+
+[authorization]
+maximum_preflight_steps = 4000
+production_launch_authorized = false
+physics_claim = none_contract_preflight_only
