@@ -55,6 +55,9 @@ cross_section_file = ionization.dat
 threshold_energy = 1.0
 secondary_species = electrons
 ion_species = ions
+# Optional for 3V; the default is equal_energy_isotropic:
+ionization_kinematics = opal_beaty_peterson
+ionization_ejected_energy_scale = 0.5
 
 [collision.attachment]
 type = attachment
@@ -125,14 +128,24 @@ Excitation removes exactly `threshold_energy` and retains the heavy-neutral
 approximation. A channel below its threshold has zero rate regardless of its
 table.
 
-Ionization is available through 1D3V and imported 2D3V. Each
-accepted event removes `threshold_energy`, divides the remaining incident
-electron energy equally between the scattered primary and one secondary
-electron, samples both directions independently and isotropically, and creates
-one ion at the event position. With thermal neutrals, electron energies and
-directions are evaluated in the sampled neutral frame and the new ion inherits
-the target-neutral velocity; neutral recoil remains neglected. The target and
-secondary species
+Ionization is available through 1D3V and imported 2D3V. Each accepted event
+removes `threshold_energy` and creates one secondary electron and one ion at
+the event position. The default `equal_energy_isotropic` kinematics divides
+the available electron energy equally and samples the two directions
+independently and isotropically. The optional `opal_beaty_peterson` model
+samples the ejected-electron energy as
+`B tan(U atan(E_available / (2 B)))`, where `U` is uniform on `[0,1)` and
+`B = ionization_ejected_energy_scale`. It assigns the remaining energy to the
+scattered primary and uses correlated binary angles: the two electron momenta
+cancel transversely and their longitudinal sum equals the momentum associated
+with the post-threshold available energy. This is the Opal-style kinematic
+contract used by the pinned eduPIC reference implementation; it is not a
+claim that the empirical scale is universal. A physical gas manifest must
+supply `B` in its declared energy units.
+
+With thermal neutrals, electron energies and directions are evaluated in the
+sampled neutral frame and the new ion inherits the target-neutral velocity;
+neutral recoil remains neglected. The target and secondary species
 must have identical nonzero charge, mass, and macro weight; the ion must have
 the opposite charge and the same macro weight. These constraints make each
 macro-event charge conservative and make the implemented electron energy
@@ -408,13 +421,14 @@ enabling finite-mass recoil.
 - Collision sampling is currently serial to preserve deterministic RNG order.
 - 1D named 3V models support one model per target plus isotropic,
   Henyey-Greenstein, or backward elastic scattering, excitation,
-  equal-sharing ionization, and resonant charge exchange. The 1V interface
+  equal-sharing or Opal-style ionization, and resonant charge exchange. The 1V interface
   remains isotropic and non-reactive apart from excitation.
 - SI neutrals have a bounded Maxwellian at fixed configured temperature.
   Neutral bulk flow, excitation/ionization recoil, depletion, and gas heating
   are absent; normalized-unit neutrals remain stationary.
 - Structured 2D and structured 3D do not yet expose MCC configuration.
-- Ionization is limited to the equal-sharing 1D3V/imported-2D3V model above.
+- Ionization is limited to the bounded 1D3V/imported-2D3V models above;
+  ion recoil and differential cross-section-driven angles remain absent.
   Attachment is limited to the target-velocity negative-ion product model
   above.
   Charge exchange is limited to the resonant mass-matched model above.

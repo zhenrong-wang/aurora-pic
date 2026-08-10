@@ -39,6 +39,10 @@ enum class CollisionEnergyFrame {
     Projectile,
     CenterOfMass
 };
+enum class IonizationKinematicsKind {
+    EqualEnergyIsotropic,
+    OpalBeatyPeterson
+};
 enum class CollisionProcessKind {
     Elastic,
     Excitation,
@@ -95,6 +99,9 @@ struct CollisionChannelConfig {
     double mean_cosine_energy_scale{1.0};
     CollisionEnergyFrame energy_frame{
         CollisionEnergyFrame::Projectile};
+    IonizationKinematicsKind ionization_kinematics{
+        IonizationKinematicsKind::EqualEnergyIsotropic};
+    double ionization_ejected_energy_scale{0.0};
 };
 
 inline std::string to_string(CollisionEnergyFrame frame) {
@@ -103,6 +110,16 @@ inline std::string to_string(CollisionEnergyFrame frame) {
             return "projectile";
         case CollisionEnergyFrame::CenterOfMass:
             return "center_of_mass";
+    }
+    return "unknown";
+}
+
+inline std::string to_string(IonizationKinematicsKind model) {
+    switch (model) {
+        case IonizationKinematicsKind::EqualEnergyIsotropic:
+            return "equal_energy_isotropic";
+        case IonizationKinematicsKind::OpalBeatyPeterson:
+            return "opal_beaty_peterson";
     }
     return "unknown";
 }

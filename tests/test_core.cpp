@@ -682,6 +682,82 @@ int main() {
                            ionization_stats.secondaries.size()),
                 1e-12,
                 "ionization energy ledger does not close with products");
+            auto opal_ionization_config = ionization_config;
+            opal_ionization_config.channels.front()
+                .ionization_kinematics =
+                pic::IonizationKinematicsKind::OpalBeatyPeterson;
+            opal_ionization_config.channels.front()
+                .ionization_ejected_energy_scale = 1.0;
+            pic::NullCollisionModel opal_ionization(
+                opal_ionization_config, 1.0);
+            require(
+                opal_ionization.signature() != ionization.signature(),
+                "MCC signature ignored ionization kinematics");
+            std::mt19937_64 opal_rng(2718281);
+            bool observed_opal_ionization = false;
+            for (std::size_t attempt = 0;
+                 attempt < 10000 && !observed_opal_ionization;
+                 ++attempt) {
+                pic::Vec3 primary{4.0, 0.0, 0.0};
+                const auto stats = opal_ionization.collide(
+                    primary, 0.01, opal_rng);
+                if (stats.channel_collisions[0] != 1 ||
+                    stats.secondaries.size() != 1) {
+                    continue;
+                }
+                const auto& secondary =
+                    stats.secondaries.front().velocity;
+                const double primary_energy =
+                    0.5 * norm(primary) * norm(primary);
+                const double secondary_energy =
+                    0.5 * norm(secondary) * norm(secondary);
+                constexpr double available_energy = 7.5;
+                require_near(
+                    primary_energy + secondary_energy + 0.5,
+                    8.0, 1e-12,
+                    "Opal ionization did not conserve electron energy");
+                require(
+                    secondary_energy <= 0.5 * available_energy &&
+                        std::abs(primary_energy - secondary_energy) >
+                            1e-6,
+                    "Opal ionization did not apply its asymmetric "
+                    "ejected-energy distribution");
+                require_near(
+                    primary.x + secondary.x,
+                    std::sqrt(2.0 * available_energy), 1e-12,
+                    "Opal ionization lost longitudinal electron-pair "
+                    "momentum");
+                require_near(
+                    primary.y + secondary.y, 0.0, 1e-12,
+                    "Opal ionization lost transverse y electron-pair "
+                    "momentum");
+                require_near(
+                    primary.z + secondary.z, 0.0, 1e-12,
+                    "Opal ionization lost transverse z electron-pair "
+                    "momentum");
+                observed_opal_ionization = true;
+            }
+            require(
+                observed_opal_ionization,
+                "Opal ionization was not sampled");
+            auto invalid_opal_config = opal_ionization_config;
+            invalid_opal_config.channels.front()
+                .ionization_ejected_energy_scale = 0.0;
+            require_throws(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        invalid_opal_config, 1.0);
+                },
+                "Opal ionization accepted a zero ejected-energy scale");
+            auto invalid_equal_config = ionization_config;
+            invalid_equal_config.channels.front()
+                .ionization_ejected_energy_scale = 1.0;
+            require_throws(
+                [&] {
+                    (void)pic::NullCollisionModel(
+                        invalid_equal_config, 1.0);
+                },
+                "equal-sharing ionization accepted an Opal energy scale");
             auto thermal_ionization_config =
                 ionization_config;
             thermal_ionization_config.gas_data_units =
@@ -5680,6 +5756,57 @@ int main() {
                     imported_ionization_config.collisions.channels.front()
                         .ion_species == "ions",
                 "imported ionization config did not preserve product species");
+            const auto inline_opal_config_path =
+                std::filesystem::path("test_inline_opal_imported.cfg");
+            std::string inline_opal_text =
+                read_file_text(imported_ionization_example);
+            const auto packaged_gas = inline_opal_text.find(
+                "gas_data_file = synthetic_ionization.gas");
+            require(
+                packaged_gas != std::string::npos,
+                "imported ionization fixture lost its gas manifest");
+            inline_opal_text.replace(
+                packaged_gas,
+                std::string(
+                    "gas_data_file = synthetic_ionization.gas").size(),
+                "gas = synthetic_validation_gas\n"
+                "neutral_mass = 40\n"
+                "data_provenance = inline Opal parser test");
+            const auto product_mapping = inline_opal_text.find(
+                "secondary_species = electrons\nion_species = ions");
+            require(
+                product_mapping != std::string::npos,
+                "imported ionization fixture lost its product mapping");
+            inline_opal_text.replace(
+                product_mapping,
+                std::string(
+                    "secondary_species = electrons\n"
+                    "ion_species = ions").size(),
+                "type = ionization\n"
+                "cross_section_file = examples/"
+                "mcc_2d3v_ionization.dat\n"
+                "threshold_energy = 1\n"
+                "ionization_kinematics = opal_beaty_peterson\n"
+                "ionization_ejected_energy_scale = 0.5\n"
+                "secondary_species = electrons\n"
+                "ion_species = ions");
+            {
+                std::ofstream inline_opal(inline_opal_config_path);
+                inline_opal << inline_opal_text;
+            }
+            const auto inline_opal_config =
+                pic::load_unstructured_config_2d(
+                    inline_opal_config_path);
+            std::filesystem::remove(inline_opal_config_path);
+            require(
+                inline_opal_config.collisions.channels.size() == 1 &&
+                    inline_opal_config.collisions.channels.front()
+                            .ionization_kinematics ==
+                        pic::IonizationKinematicsKind::
+                            OpalBeatyPeterson &&
+                    inline_opal_config.collisions.channels.front()
+                            .ionization_ejected_energy_scale == 0.5,
+                "imported inline config lost Opal ionization kinematics");
             const auto imported_attachment_example =
                 std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
                 "examples" / "imported_attachment_2d.cfg";
@@ -5732,6 +5859,47 @@ int main() {
                         gas_dataset.channels.front().process ==
                             pic::CollisionProcessKind::Ionization,
                     "standalone gas dataset loader lost manifest data");
+                const auto opal_table_path =
+                    std::filesystem::path("test_opal_ionization.dat");
+                const auto opal_gas_path =
+                    std::filesystem::path("test_opal_ionization.gas");
+                {
+                    std::ofstream table(opal_table_path);
+                    table << "0 0\n1 1\n";
+                    std::ofstream manifest(opal_gas_path);
+                    manifest
+                        << "gas_data_version = 2\n"
+                        << "units = normalized\n"
+                        << "gas = synthetic_opal_gas\n"
+                        << "neutral_mass = 40\n"
+                        << "dataset_id = test.opal-ionization\n"
+                        << "dataset_version = 1\n"
+                        << "data_provenance = unit test\n"
+                        << "citation = Opal-style unit test\n"
+                        << "retrieved = 2026-08-10\n"
+                        << "license = test data\n"
+                        << "[collision.ionization]\n"
+                        << "type = ionization\n"
+                        << "cross_section_file = "
+                        << opal_table_path.string() << "\n"
+                        << "threshold_energy = 0.5\n"
+                        << "ionization_kinematics = "
+                           "opal_beaty_peterson\n"
+                        << "ionization_ejected_energy_scale = 1.0\n";
+                }
+                const auto opal_gas =
+                    pic::load_gas_dataset(opal_gas_path);
+                require(
+                    opal_gas.channels.size() == 1 &&
+                        opal_gas.channels.front()
+                                .ionization_kinematics ==
+                            pic::IonizationKinematicsKind::
+                                OpalBeatyPeterson &&
+                        opal_gas.channels.front()
+                                .ionization_ejected_energy_scale == 1.0,
+                    "gas dataset loader lost Opal ionization kinematics");
+                std::filesystem::remove(opal_gas_path);
+                std::filesystem::remove(opal_table_path);
                 const auto angular_gas_path =
                     std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
                     "examples" / "synthetic_swarm.gas";
@@ -6623,7 +6791,8 @@ int main() {
                 const auto collision_metadata =
                     read_file_text(output_dir / "collision_data.txt");
                 require(
-                    collision_metadata.find(
+                    collision_metadata.starts_with("format 5\n") &&
+                        collision_metadata.find(
                         "dataset_id \"aurorapic.synthetic.ionization\"") !=
                             std::string::npos &&
                         collision_metadata.find(
@@ -6631,7 +6800,10 @@ int main() {
                             std::string::npos &&
                         collision_metadata.find(
                             "channel \"synthetic_ionization\" "
-                            "\"ionization\"") != std::string::npos,
+                            "\"ionization\"") != std::string::npos &&
+                        collision_metadata.find(
+                            "\"equal_energy_isotropic\" 0") !=
+                            std::string::npos,
                     "imported gas dataset metadata output is incomplete");
 
                 auto continued_config = config;

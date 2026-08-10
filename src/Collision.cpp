@@ -154,6 +154,86 @@ Vec3 add(const Vec3& first, const Vec3& second) {
         first.z + second.z};
 }
 
+struct IonizationVelocityPair {
+    Vec3 primary{};
+    Vec3 secondary{};
+};
+
+IonizationVelocityPair opal_ionization_velocities(
+    const Vec3& incoming, double available_energy, double particle_mass,
+    double ejected_energy_scale, std::mt19937_64& rng) {
+    if (!(available_energy > 0.0)) return {};
+    const double incoming_speed = speed(incoming);
+    if (!(incoming_speed > 0.0)) return {};
+    std::uniform_real_distribution<double> unit(0.0, 1.0);
+    const double secondary_energy = ejected_energy_scale * std::tan(
+        unit(rng) * std::atan(
+            available_energy / (2.0 * ejected_energy_scale)));
+    const double primary_energy =
+        std::max(0.0, available_energy - secondary_energy);
+    const double primary_speed =
+        std::sqrt(2.0 * primary_energy / particle_mass);
+    const double secondary_speed =
+        std::sqrt(2.0 * secondary_energy / particle_mass);
+    const double primary_cosine =
+        std::sqrt(primary_energy / available_energy);
+    const double secondary_cosine =
+        std::sqrt(secondary_energy / available_energy);
+    const double primary_sine = secondary_cosine;
+    const double secondary_sine = primary_cosine;
+    const double azimuth = 2.0 * std::acos(-1.0) * unit(rng);
+    const Vec3 direction{
+        incoming.x / incoming_speed,
+        incoming.y / incoming_speed,
+        incoming.z / incoming_speed};
+    const Vec3 helper =
+        std::abs(direction.z) < 0.9
+            ? Vec3{0.0, 0.0, 1.0}
+            : Vec3{0.0, 1.0, 0.0};
+    Vec3 tangent{
+        helper.y * direction.z - helper.z * direction.y,
+        helper.z * direction.x - helper.x * direction.z,
+        helper.x * direction.y - helper.y * direction.x};
+    const double tangent_norm = speed(tangent);
+    tangent.x /= tangent_norm;
+    tangent.y /= tangent_norm;
+    tangent.z /= tangent_norm;
+    const Vec3 bitangent{
+        direction.y * tangent.z - direction.z * tangent.y,
+        direction.z * tangent.x - direction.x * tangent.z,
+        direction.x * tangent.y - direction.y * tangent.x};
+    const Vec3 transverse{
+        std::cos(azimuth) * tangent.x +
+            std::sin(azimuth) * bitangent.x,
+        std::cos(azimuth) * tangent.y +
+            std::sin(azimuth) * bitangent.y,
+        std::cos(azimuth) * tangent.z +
+            std::sin(azimuth) * bitangent.z};
+    return {
+        {
+            primary_speed *
+                (primary_cosine * direction.x +
+                 primary_sine * transverse.x),
+            primary_speed *
+                (primary_cosine * direction.y +
+                 primary_sine * transverse.y),
+            primary_speed *
+                (primary_cosine * direction.z +
+                 primary_sine * transverse.z),
+        },
+        {
+            secondary_speed *
+                (secondary_cosine * direction.x -
+                 secondary_sine * transverse.x),
+            secondary_speed *
+                (secondary_cosine * direction.y -
+                 secondary_sine * transverse.y),
+            secondary_speed *
+                (secondary_cosine * direction.z -
+                 secondary_sine * transverse.z),
+        }};
+}
+
 } // namespace
 
 CrossSectionTable::CrossSectionTable(
@@ -500,6 +580,29 @@ NullCollisionModel::NullCollisionModel(
             throw std::invalid_argument(
                 "ionization MCC channel requires secondary and ion species");
         }
+        if (channel_config.process == CollisionProcessKind::Ionization) {
+            if (channel_config.ionization_kinematics ==
+                    IonizationKinematicsKind::OpalBeatyPeterson) {
+                if (!std::isfinite(
+                        channel_config.ionization_ejected_energy_scale) ||
+                    !(channel_config.ionization_ejected_energy_scale > 0.0)) {
+                    throw std::invalid_argument(
+                        "Opal-Beaty-Peterson ionization requires positive "
+                        "finite ionization_ejected_energy_scale");
+                }
+            } else if (
+                channel_config.ionization_ejected_energy_scale != 0.0) {
+                throw std::invalid_argument(
+                    "ionization_ejected_energy_scale requires "
+                    "Opal-Beaty-Peterson ionization kinematics");
+            }
+        } else if (
+            channel_config.ionization_kinematics !=
+                IonizationKinematicsKind::EqualEnergyIsotropic ||
+            channel_config.ionization_ejected_energy_scale != 0.0) {
+            throw std::invalid_argument(
+                "ionization kinematics is valid only for ionization channels");
+        }
         if (channel_config.process == CollisionProcessKind::Attachment &&
             channel_config.attachment_species.empty()) {
             throw std::invalid_argument(
@@ -551,6 +654,15 @@ NullCollisionModel::NullCollisionModel(
             CollisionProcessKind::Ionization) {
             hash_string(signature_, channel_config.secondary_species);
             hash_string(signature_, channel_config.ion_species);
+            if (channel_config.ionization_kinematics !=
+                IonizationKinematicsKind::EqualEnergyIsotropic) {
+                hash_string(
+                    signature_,
+                    to_string(channel_config.ionization_kinematics));
+                hash_double(
+                    signature_,
+                    channel_config.ionization_ejected_energy_scale);
+            }
         } else if (channel_config.process ==
                    CollisionProcessKind::Attachment) {
             hash_string(signature_, channel_config.attachment_species);
@@ -763,7 +875,8 @@ void NullCollisionModel::apply_channel(
     std::size_t channel_index,
     Vec3& velocity,
     const Vec3& neutral_velocity,
-    std::mt19937_64& rng) const {
+    std::mt19937_64& rng,
+    std::optional<Vec3>& ionization_secondary_relative) const {
     const auto& channel = channels_.at(channel_index);
     if (channel.config.process == CollisionProcessKind::Attachment) {
         velocity = {};
@@ -783,6 +896,16 @@ void NullCollisionModel::apply_channel(
         channel.config.process == CollisionProcessKind::Ionization) {
         energy = std::max(
             0.0, energy - channel.config.threshold_energy);
+    }
+    if (channel.config.process == CollisionProcessKind::Ionization &&
+        channel.config.ionization_kinematics ==
+            IonizationKinematicsKind::OpalBeatyPeterson) {
+        const auto pair = opal_ionization_velocities(
+            initial_relative, energy, particle_mass_,
+            channel.config.ionization_ejected_energy_scale, rng);
+        velocity = add(neutral_velocity, pair.primary);
+        ionization_secondary_relative = pair.secondary;
+        return;
     }
     if (channel.config.process == CollisionProcessKind::Ionization) {
         energy *= 0.5;
@@ -957,8 +1080,10 @@ CollisionStepStatistics NullCollisionModel::collide(
                 const double energy_before = 0.5 * particle_mass_ *
                     (velocity.x * velocity.x + velocity.y * velocity.y +
                      velocity.z * velocity.z);
+                std::optional<Vec3> ionization_secondary_relative;
                 apply_channel(
-                    channel, velocity, neutral_velocity, rng);
+                    channel, velocity, neutral_velocity, rng,
+                    ionization_secondary_relative);
                 statistics.channel_projectile_energy_change[channel] +=
                     0.5 * particle_mass_ *
                         (velocity.x * velocity.x + velocity.y * velocity.y +
@@ -967,12 +1092,13 @@ CollisionStepStatistics NullCollisionModel::collide(
                     CollisionProcessKind::Ionization) {
                     const double secondary_speed = speed(
                         subtract(velocity, neutral_velocity));
+                    const Vec3 secondary_relative =
+                        ionization_secondary_relative
+                            ? *ionization_secondary_relative
+                            : isotropic_velocity(secondary_speed, rng);
                     statistics.secondaries.push_back({
                         channel,
-                        add(
-                            neutral_velocity,
-                            isotropic_velocity(
-                                secondary_speed, rng)),
+                        add(neutral_velocity, secondary_relative),
                         neutral_velocity});
                 }
                 ++statistics.channel_collisions[channel];

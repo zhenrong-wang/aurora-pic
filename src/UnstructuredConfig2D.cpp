@@ -124,6 +124,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "energy_scale", "cross_section_scale",
         "angular_model", "mean_cosine_file",
         "mean_cosine_energy_scale",
+        "ionization_kinematics", "ionization_ejected_energy_scale",
         "secondary_species", "ion_species", "attachment_species",
     };
 
@@ -973,6 +974,27 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         value.mean_cosine_energy_scale = number<double>(
             channel.values, "mean_cosine_energy_scale",
             value.mean_cosine_energy_scale);
+        const std::string ionization_kinematics = lower(
+            channel.values.contains("ionization_kinematics")
+                ? channel.values.at("ionization_kinematics")
+                : "equal_energy_isotropic");
+        if (ionization_kinematics == "equal_energy_isotropic" ||
+            ionization_kinematics == "equal-isotropic") {
+            value.ionization_kinematics =
+                IonizationKinematicsKind::EqualEnergyIsotropic;
+        } else if (ionization_kinematics == "opal_beaty_peterson" ||
+                   ionization_kinematics == "opal") {
+            value.ionization_kinematics =
+                IonizationKinematicsKind::OpalBeatyPeterson;
+        } else {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' ionization_kinematics must be "
+                "equal_energy_isotropic or opal_beaty_peterson");
+        }
+        value.ionization_ejected_energy_scale = number<double>(
+            channel.values, "ionization_ejected_energy_scale",
+            value.ionization_ejected_energy_scale);
         if (value.angular_scattering !=
                 AngularScatteringKind::Isotropic &&
             value.process != CollisionProcessKind::Elastic) {
@@ -1008,6 +1030,23 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
             value.ion_species = required(
                 channel.values, "ion_species",
                 "ionization channel '" + channel.name + "'");
+            if (value.ionization_kinematics ==
+                    IonizationKinematicsKind::OpalBeatyPeterson) {
+                if (!std::isfinite(
+                        value.ionization_ejected_energy_scale) ||
+                    !(value.ionization_ejected_energy_scale > 0.0)) {
+                    throw std::runtime_error(
+                        "ionization channel '" + channel.name +
+                        "' Opal-Beaty-Peterson kinematics requires a "
+                        "positive finite ionization_ejected_energy_scale");
+                }
+            } else if (
+                value.ionization_ejected_energy_scale != 0.0) {
+                throw std::runtime_error(
+                    "ionization channel '" + channel.name +
+                    "' ionization_ejected_energy_scale requires "
+                    "ionization_kinematics = opal_beaty_peterson");
+            }
         } else if (value.process ==
                    CollisionProcessKind::Attachment) {
             if (channel.values.contains("secondary_species") ||
@@ -1021,10 +1060,14 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
                 "attachment channel '" + channel.name + "'");
         } else if (channel.values.contains("secondary_species") ||
                    channel.values.contains("ion_species") ||
-                   channel.values.contains("attachment_species")) {
+                   channel.values.contains("attachment_species") ||
+                   value.ionization_kinematics !=
+                       IonizationKinematicsKind::EqualEnergyIsotropic ||
+                   value.ionization_ejected_energy_scale != 0.0) {
             throw std::runtime_error(
                 "collision channel '" + channel.name +
-                "' product species do not match its process");
+                "' product species or ionization kinematics do not "
+                "match its process");
         }
         result.collisions.channels.push_back(std::move(value));
     }

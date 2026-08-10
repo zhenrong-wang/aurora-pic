@@ -165,7 +165,8 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         "energy_scale", "cross_section_scale",
         "angular_model", "mean_cosine_file",
         "mean_cosine_energy_scale",
-        "energy_frame",
+        "energy_frame", "ionization_kinematics",
+        "ionization_ejected_energy_scale",
     };
 
     Values global;
@@ -342,6 +343,35 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
                 channel_context +
                 " center-of-mass energy requires gas_data_version = 2");
         }
+        const bool has_ionization_kinematics =
+            channel.values.contains("ionization_kinematics") ||
+            channel.values.contains("ionization_ejected_energy_scale");
+        if (has_ionization_kinematics && format_version != 2) {
+            throw std::runtime_error(
+                channel_context +
+                " ionization kinematics requires gas_data_version = 2");
+        }
+        const std::string ionization_kinematics = lower(
+            channel.values.contains("ionization_kinematics")
+                ? channel.values.at("ionization_kinematics")
+                : "equal_energy_isotropic");
+        if (ionization_kinematics == "equal_energy_isotropic" ||
+            ionization_kinematics == "equal-isotropic") {
+            value.ionization_kinematics =
+                IonizationKinematicsKind::EqualEnergyIsotropic;
+        } else if (ionization_kinematics == "opal_beaty_peterson" ||
+                   ionization_kinematics == "opal") {
+            value.ionization_kinematics =
+                IonizationKinematicsKind::OpalBeatyPeterson;
+        } else {
+            throw std::runtime_error(
+                channel_context +
+                " ionization_kinematics must be "
+                "equal_energy_isotropic or opal_beaty_peterson");
+        }
+        value.ionization_ejected_energy_scale = number<double>(
+            channel.values, "ionization_ejected_energy_scale",
+            value.ionization_ejected_energy_scale, channel_context);
         const bool has_angular_data =
             channel.values.contains("angular_model") ||
             channel.values.contains("mean_cosine_file") ||
@@ -412,6 +442,29 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
             throw std::runtime_error(
                 channel_context +
                 " anisotropic scattering is valid only for elastic channels");
+        }
+        if (value.process == CollisionProcessKind::Ionization) {
+            if (value.ionization_kinematics ==
+                    IonizationKinematicsKind::OpalBeatyPeterson) {
+                if (!(value.ionization_ejected_energy_scale > 0.0)) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " Opal-Beaty-Peterson ionization requires positive "
+                        "ionization_ejected_energy_scale");
+                }
+            } else if (value.ionization_ejected_energy_scale != 0.0) {
+                throw std::runtime_error(
+                    channel_context +
+                    " ionization_ejected_energy_scale requires "
+                    "ionization_kinematics = opal_beaty_peterson");
+            }
+        } else if (
+            value.ionization_kinematics !=
+                IonizationKinematicsKind::EqualEnergyIsotropic ||
+            value.ionization_ejected_energy_scale != 0.0) {
+            throw std::runtime_error(
+                channel_context +
+                " ionization kinematics is valid only for ionization");
         }
         if (value.angular_scattering ==
             AngularScatteringKind::HenyeyGreenstein) {

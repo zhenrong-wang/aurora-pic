@@ -133,7 +133,8 @@ private:
         std::size_t channel,
         Vec3& velocity,
         const Vec3& neutral_velocity,
-        std::mt19937_64& rng) const;
+        std::mt19937_64& rng,
+        std::optional<Vec3>& ionization_secondary_relative) const;
 
     CollisionConfig config_{};
     double particle_mass_{0.0};

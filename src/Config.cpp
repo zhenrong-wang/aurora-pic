@@ -406,6 +406,21 @@ CollisionEnergyFrame parse_collision_energy_frame(
         "'; expected projectile or center_of_mass");
 }
 
+IonizationKinematicsKind parse_ionization_kinematics(
+    const KeyValue& kv, IonizationKinematicsKind def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "ionization_kinematics", to_string(def))));
+    if (value == "equal_energy_isotropic" || value == "equal-isotropic") {
+        return IonizationKinematicsKind::EqualEnergyIsotropic;
+    }
+    if (value == "opal_beaty_peterson" || value == "opal") {
+        return IonizationKinematicsKind::OpalBeatyPeterson;
+    }
+    throw std::runtime_error(
+        "invalid ionization_kinematics: '" + value +
+        "'; expected equal_energy_isotropic or opal_beaty_peterson");
+}
+
 UnitSystemConfig parse_units(
     const KeyValue& kv, const UnitSystemConfig& defaults) {
     UnitSystemConfig result = defaults;
@@ -778,6 +793,19 @@ void validate_config(const Config& cfg) {
             }
             if (channel.process ==
                 CollisionProcessKind::Ionization) {
+                if (channel.ionization_kinematics ==
+                        IonizationKinematicsKind::OpalBeatyPeterson) {
+                    validate_positive(
+                        channel.ionization_ejected_energy_scale,
+                        channel_context +
+                            " ionization_ejected_energy_scale");
+                } else if (
+                    channel.ionization_ejected_energy_scale != 0.0) {
+                    throw std::runtime_error(
+                        channel_context +
+                        " ionization_ejected_energy_scale requires "
+                        "ionization_kinematics = opal_beaty_peterson");
+                }
                 if (cfg.velocity_dimensions != 3) {
                     throw std::runtime_error(
                         channel_context +
@@ -806,10 +834,14 @@ void validate_config(const Config& cfg) {
                 }
             } else if (
                 !channel.secondary_species.empty() ||
-                !channel.ion_species.empty()) {
+                !channel.ion_species.empty() ||
+                channel.ionization_kinematics !=
+                    IonizationKinematicsKind::EqualEnergyIsotropic ||
+                channel.ionization_ejected_energy_scale != 0.0) {
                 throw std::runtime_error(
                     channel_context +
-                    " product species are valid only for ionization");
+                    " product species and ionization kinematics are "
+                    "valid only for ionization");
             }
         }
     };
@@ -1560,7 +1592,8 @@ Config load_config(const std::string& path) {
         "energy_scale", "cross_section_scale",
         "secondary_species", "ion_species", "angular_model",
         "mean_cosine_file", "mean_cosine_energy_scale",
-        "energy_frame"
+        "energy_frame", "ionization_kinematics",
+        "ionization_ejected_energy_scale"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density",
@@ -1785,6 +1818,13 @@ Config load_config(const std::string& path) {
         channel.energy_frame =
             parse_collision_energy_frame(
                 block, channel.energy_frame);
+        channel.ionization_kinematics =
+            parse_ionization_kinematics(
+                block, channel.ionization_kinematics);
+        channel.ionization_ejected_energy_scale =
+            as<double>(
+                block, "ionization_ejected_energy_scale",
+                channel.ionization_ejected_energy_scale);
         const auto mean_cosine_file =
             as<std::string>(block, "mean_cosine_file", "");
         if (!mean_cosine_file.empty()) {
