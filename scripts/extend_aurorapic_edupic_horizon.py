@@ -11,6 +11,12 @@ import statistics
 import sys
 
 from run_aurorapic_edupic_pilot import (
+    HARD_TIMEOUT_SECONDS,
+    MAX_ABSOLUTE_FIELD_V_M,
+    MAX_PARTICLE_GROWTH_FACTOR,
+    MAX_RELATIVE_ENERGY_RESIDUAL,
+    MAX_SPATIAL_PHASE_RESIDUAL_J_M2,
+    MAX_TOTAL_PARTICLE_CAP_FRACTION,
     MIN_AVAILABLE_MEMORY_KIB,
     PilotError,
     STEPS_PER_CYCLE,
@@ -32,6 +38,9 @@ ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_BOUNDED_AURORAPIC_HORIZON_BLOCK"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 HARD_MAX_CYCLES_PER_BLOCK = 4
 HARD_MAX_END_CYCLE = 16
+APPROVED_EXTENSION_RULE_SHA256 = (
+    "14584b56a28bdd54e1865f919cfbdf87d26f932bd7aff7731e07ca8d91aa78a9"
+)
 MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE = 0.01
@@ -47,6 +56,69 @@ def solver_command(executable: Path, deck: Path) -> list[str]:
     return [
         str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT, str(deck)
     ]
+
+
+def authorized_end_cycle(args: argparse.Namespace) -> int:
+    if args.extension_rule is None:
+        return HARD_MAX_END_CYCLE
+    path = args.extension_rule.resolve()
+    if sha256(path) != APPROVED_EXTENSION_RULE_SHA256:
+        raise HorizonError("extension rule SHA-256 is not approved")
+    rule = json.loads(path.read_text(encoding="utf-8"))
+    execution = rule.get("execution_contract")
+    stationarity_rule = rule.get("stationarity_contract")
+    baseline = rule.get("baseline")
+    if (
+        rule.get("schema_version") != 1
+        or rule.get("case_id") != "edupic-1.0-default-argon-ccp"
+        or rule.get("scope")
+        != "predeclared_aurorapic_edupic_equilibration_extension"
+        or not isinstance(execution, dict)
+        or not isinstance(stationarity_rule, dict)
+        or not isinstance(baseline, dict)
+    ):
+        raise HorizonError("extension rule has the wrong contract identity")
+    expected_execution = {
+        "first_cycle": 17,
+        "maximum_cycle": 64,
+        "cycles_per_block": HARD_MAX_CYCLES_PER_BLOCK,
+        "maximum_blocks_per_invocation": 1,
+        "serial": True,
+        "maximum_wall_seconds_per_cycle": HARD_TIMEOUT_SECONDS,
+        "minimum_available_memory_kib": MIN_AVAILABLE_MEMORY_KIB,
+        "maximum_particle_growth_factor_per_cycle": MAX_PARTICLE_GROWTH_FACTOR,
+        "maximum_total_particle_cap_fraction": MAX_TOTAL_PARTICLE_CAP_FRACTION,
+        "maximum_absolute_field_V_m": MAX_ABSOLUTE_FIELD_V_M,
+        "maximum_relative_energy_residual": MAX_RELATIVE_ENERGY_RESIDUAL,
+        "maximum_spatial_phase_residual_J_m-2":
+            MAX_SPATIAL_PHASE_RESIDUAL_J_M2,
+    }
+    expected_stationarity = {
+        "window_cycles": 5,
+        "maximum_absolute_normalized_total_population_slope_per_cycle":
+            MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE,
+        "maximum_absolute_normalized_field_energy_slope_per_cycle":
+            MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE,
+        "maximum_absolute_normalized_peak_field_slope_per_cycle":
+            MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE,
+        "maximum_absolute_normalized_ionization_slope_per_cycle":
+            MAX_NORMALIZED_IONIZATION_SLOPE_PER_CYCLE,
+        "maximum_ionization_coefficient_of_variation":
+            MAX_IONIZATION_COEFFICIENT_OF_VARIATION,
+        "consecutive_passing_blocks_required_before_measurement": 2,
+    }
+    if execution != expected_execution or stationarity_rule != expected_stationarity:
+        raise HorizonError("extension rule differs from the built-in safety contract")
+    if args.start_cycle < int(baseline.get("cycle", -1)):
+        raise HorizonError("extension cannot precede its frozen baseline")
+    if args.start_cycle == int(baseline.get("cycle", -1)) and (
+        args.expected_prior_report_sha256.lower()
+        != baseline.get("horizon_report_sha256")
+        or args.expected_input_checkpoint_sha256.lower()
+        != baseline.get("checkpoint_sha256")
+    ):
+        raise HorizonError("first extension block differs from its frozen baseline")
+    return int(execution["maximum_cycle"])
 
 
 def endpoint(output: Path, cycle: int) -> dict[str, float | int]:
@@ -183,7 +255,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         raise HorizonError(
             f"horizon block requires exactly {HARD_MAX_CYCLES_PER_BLOCK} cycles"
         )
-    if args.start_cycle < 4 or args.start_cycle + args.cycles > HARD_MAX_END_CYCLE:
+    maximum_end_cycle = authorized_end_cycle(args)
+    if args.start_cycle < 4 or args.start_cycle + args.cycles > maximum_end_cycle:
         raise HorizonError("requested horizon exceeds its built-in cycle bounds")
     executable = args.executable.resolve()
     base_path = args.base_deck.resolve()
@@ -201,6 +274,11 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     prior_report = json.loads(prior_report_path.read_text(encoding="utf-8"))
     if report_end_cycle(prior_report) != args.start_cycle:
         raise HorizonError("prior report does not end at the requested start cycle")
+    prior_stationarity_streak = int(
+        prior_report.get("consecutive_stationary_blocks", 0)
+    )
+    if args.extension_rule is not None and prior_stationarity_streak >= 2:
+        raise HorizonError("equilibration is complete; start a measurement campaign")
     prior_stage = prior_report["stages"][-1]
     checkpoint = input_output / (
         f"checkpoint_{args.start_cycle * STEPS_PER_CYCLE}.apc"
@@ -268,6 +346,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         }
         checkpoint = next_checkpoint
     screen = stationarity(endpoints)
+    stationary_streak = (
+        prior_stationarity_streak + 1 if screen["passed"] else 0
+    )
     report = {
         "schema_version": 1,
         "case_id": "edupic-1.0-default-argon-ccp",
@@ -278,6 +359,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "base_deck_sha256": sha256(base_path),
             "prior_report_sha256": sha256(prior_report_path),
             "input_checkpoint_sha256": args.expected_input_checkpoint_sha256.lower(),
+            "extension_rule_sha256": (
+                sha256(args.extension_rule.resolve())
+                if args.extension_rule is not None else None
+            ),
         },
         "block": {
             "start_cycle": args.start_cycle,
@@ -288,6 +373,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "endpoints": endpoints,
         "stages": stages,
         "stationarity_screen": screen,
+        "consecutive_stationary_blocks": stationary_streak,
+        "comparison_measurement_eligible": (
+            args.extension_rule is not None and stationary_streak >= 2
+        ),
         "production_launch_authorized": False,
     }
     atomic_json(work / "horizon-report.json", report)
@@ -307,6 +396,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--expected-base-deck-sha256", required=True)
     parser.add_argument("--expected-prior-report-sha256", required=True)
     parser.add_argument("--expected-input-checkpoint-sha256", required=True)
+    parser.add_argument("--extension-rule", type=Path)
     parser.add_argument("--acknowledge-cost")
     return parser.parse_args()
 

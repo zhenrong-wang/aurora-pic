@@ -1306,6 +1306,25 @@ horizon before examining more endpoints, retaining the same thresholds and
 resource gates. The evidence is
 [`edupic-argon-aurorapic-horizon-cycle16-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle16-20260810.json).
 
+Before observing cycle 17, the follow-up equilibration and comparison-readiness
+contract was frozen in
+[`edupic-argon-aurorapic-equilibration-extension-rule-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-equilibration-extension-rule-20260810.json).
+It extends the absolute ceiling to cycle 64 only when its exact checksum is
+provided. Execution remains limited to one low-priority four-cycle block per
+invocation with all existing safety and stationarity thresholds unchanged.
+Two consecutive blocks must pass the internal stationarity screen before a
+separate measurement campaign becomes eligible. That future campaign excludes
+all equilibration samples and targets 1,024 cycles in 16-cycle blocks to match
+the duration of the retained native eduPIC reference measurement.
+
+The comparison contract requires electron and ion density profiles, EEPF, and
+powered/grounded ion-impact energy distributions. Density and electron-energy
+diagnostics already have AuroraPIC output paths. A count-preserving 1D ion
+wall-impact spectrum remains an implementation prerequisite. The external
+eduPIC reference's failed effective-block gate also remains visible, so the
+first eligible cross-code result will be descriptive rather than a formal
+acceptance claim.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

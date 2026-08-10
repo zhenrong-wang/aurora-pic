@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import csv
+from argparse import Namespace
 from pathlib import Path
 import tempfile
 
 from extend_aurorapic_edupic_horizon import (
     HorizonError,
+    authorized_end_cycle,
     endpoint,
     report_end_cycle,
     solver_command,
@@ -29,6 +31,32 @@ def write_csv(path: Path, fields: list[str], rows: list[dict[str, object]]) -> N
 
 
 def main() -> int:
+    repository = Path(__file__).resolve().parent.parent
+    rule = repository / (
+        "benchmarks/ccp/"
+        "edupic-argon-aurorapic-equilibration-extension-rule-20260810.json"
+    )
+    extension_args = Namespace(
+        extension_rule=rule,
+        start_cycle=16,
+        expected_prior_report_sha256=(
+            "ad4e34f65a8228a084d6c00f375f7c5c923c9f69f4f9dea728a63a7bb7a8030d"
+        ),
+        expected_input_checkpoint_sha256=(
+            "0bd31a76a3771b5e0b62b88ff3ec7c9862f68bc61b1da37ff50faf827a1a55a4"
+        ),
+    )
+    require(
+        authorized_end_cycle(extension_args) == 64,
+        "approved comparison-readiness extension was not authorized",
+    )
+    extension_args.expected_input_checkpoint_sha256 = "0" * 64
+    try:
+        authorized_end_cycle(extension_args)
+    except HorizonError:
+        pass
+    else:
+        raise RuntimeError("extension accepted a non-baseline checkpoint")
     require(
         solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
             "aurorapic_cli", "--allow-large-run",

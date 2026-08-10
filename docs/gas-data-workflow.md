@@ -125,3 +125,10 @@ not break the chain when all hard safety gates passed. The guarded runner also
 supplies the CLI large-run acknowledgement needed once the cumulative restart
 step crosses the generic initial-update estimate; this does not relax its
 4,000-step per-cycle work, timeout, memory, or particle limits.
+
+After the original cycle-16 horizon failed its frozen stationarity screen, a
+new comparison-readiness extension was declared before cycle 17 in
+`benchmarks/ccp/edupic-argon-aurorapic-equilibration-extension-rule-20260810.json`.
+The runner accepts only that rule's exact SHA-256. It permits one four-cycle
+block per invocation through cycle 64, preserves every prior threshold, and
+requires two consecutive passing blocks before measurement can begin.

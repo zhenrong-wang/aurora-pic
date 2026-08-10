@@ -468,6 +468,10 @@ blocks. A safe pilot report starts the chain and each safe horizon report can
 start the next block; unsafe or hash-mismatched reports are rejected. The tool
 keeps its internal stationarity result distinct from safe execution and from
 any external validation claim.
+The original cycle-16 ceiling can be exceeded only with the repository's
+checksum-approved comparison-readiness rule. That rule permits one block per
+invocation through cycle 64 and requires two consecutive stationary blocks
+before a separate measurement campaign becomes eligible.
 A separate checkpointed startup ladder advances one RF cycle at a time,
 retaining species/collision balances and phase-matched field metrics while
 hard-limiting each local horizon.
