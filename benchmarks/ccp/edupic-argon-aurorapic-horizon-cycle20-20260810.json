@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "first_predeclared_comparison_readiness_block_cycles_17_through_20",
+  "claim_boundary": "This is an internal equilibration screen under a prospectively committed rule, not an equilibrium, cross-code agreement, or physical-validation result.",
+  "inputs": {
+    "extension_rule_sha256": "14584b56a28bdd54e1865f919cfbdf87d26f932bd7aff7731e07ca8d91aa78a9",
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "prior_horizon_report_sha256": "ad4e34f65a8228a084d6c00f375f7c5c923c9f69f4f9dea728a63a7bb7a8030d",
+    "cycle_16_checkpoint_sha256": "0bd31a76a3771b5e0b62b88ff3ec7c9862f68bc61b1da37ff50faf827a1a55a4"
+  },
+  "workflow": {
+    "runner_sha256": "dde2a9e9df9ffab355bb5bb359691787aad962fe0e1630395afbfdd4205543a3",
+    "runner_regression_sha256": "a7f175bc6504677be67625879885e55f9ab60f267b2a5281dceb1243e41c8cfd",
+    "horizon_report_sha256": "ca5309f6a045559bc71b84f58a185a0f0db58ed737195b5c36a618abd1aa5d88",
+    "stage_report_sha256": {
+      "cycle_17": "9f349a7819f349d7449024a5ee2b17eda3c7b0a687b70cfe4726d834ac2c2752",
+      "cycle_18": "4212b857a10043517c344ba822691ce88bc7d6708327354a02627faa236227e1",
+      "cycle_19": "46c3295cdc2cf4b5b4ce948865529af124ae360597349b3f8882f4668e8cdd1e",
+      "cycle_20": "eef716a52179a4f02d1bb0e5396c41baf8bf5df515ed329eebac4742391f363c"
+    },
+    "final_checkpoint_sha256": "a569dfec55098301f93726bb281e91247fe4d5a8cfeff01f5b1035e8c54d58cf"
+  },
+  "cycles": [
+    {
+      "cycle": 17,
+      "wall_seconds": 27.23235779791139,
+      "peak_resident_set_kib": 171772,
+      "final_electrons": 10049,
+      "final_ions": 13800,
+      "total_particle_growth_factor": 1.050292861232219,
+      "ionization_pairs": 758,
+      "final_field_energy_J_m-2": 3.730651605560933e-05,
+      "maximum_sampled_absolute_field_V_m": 44415.813618613945,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 18,
+      "wall_seconds": 24.482474780874327,
+      "peak_resident_set_kib": 171820,
+      "final_electrons": 10616,
+      "final_ions": 14402,
+      "total_particle_growth_factor": 1.049016730261227,
+      "ionization_pairs": 767,
+      "final_field_energy_J_m-2": 3.7666902706781966e-05,
+      "maximum_sampled_absolute_field_V_m": 44963.971213691686,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 19,
+      "wall_seconds": 25.432244826108217,
+      "peak_resident_set_kib": 171852,
+      "final_electrons": 11179,
+      "final_ions": 15023,
+      "total_particle_growth_factor": 1.0473259253337597,
+      "ionization_pairs": 756,
+      "final_field_energy_J_m-2": 3.794867110415658e-05,
+      "maximum_sampled_absolute_field_V_m": 45189.37956903981,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 20,
+      "wall_seconds": 27.454021858982742,
+      "peak_resident_set_kib": 171860,
+      "final_electrons": 11734,
+      "final_ions": 15603,
+      "total_particle_growth_factor": 1.0433173040225936,
+      "ionization_pairs": 766,
+      "final_field_energy_J_m-2": 3.845608241545825e-05,
+      "maximum_sampled_absolute_field_V_m": 45673.485483496006,
+      "all_hard_gates_passed": true
+    }
+  ],
+  "stationarity_screen": {
+    "window_cycles": [16, 17, 18, 19, 20],
+    "normalized_total_population_slope_per_cycle": 0.0464100453190316,
+    "normalized_field_energy_slope_per_cycle": 0.010441122027713048,
+    "normalized_peak_field_slope_per_cycle": 0.009842571476763482,
+    "normalized_ionization_slope_per_cycle": 0.001706596652445028,
+    "ionization_coefficient_of_variation": 0.006321417881279365,
+    "gates": {
+      "total_population_slope": false,
+      "field_energy_slope": false,
+      "peak_field_slope": true,
+      "ionization_slope": true,
+      "ionization_variation": true
+    },
+    "passed": false,
+    "consecutive_passing_blocks": 0
+  },
+  "comparison_measurement_eligible": false,
+  "production_launch_authorized": false,
+  "next_step": "Continue with the separately invoked cycles 21-24 block under the unchanged committed rule."
+}

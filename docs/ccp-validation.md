@@ -1325,6 +1325,16 @@ eduPIC reference's failed effective-block gate also remains visible, so the
 first eligible cross-code result will be descriptive rather than a formal
 acceptance claim.
 
+The first prospectively governed block, cycles 17--20, passed every hard gate
+but did not start the required stationarity streak. Population slope moderated
+to 4.64% per cycle and remains the dominant failure. Field-energy slope was
+1.044%, narrowly above its 1% gate, while peak-field slope passed for the first
+time at 0.984%. Ionization slope and coefficient of variation passed at 0.171%
+and 0.632%. Cycle 20 ended with 11,734 electrons, 15,603 ions, and a 45.67 kV/m
+peak sampled field. The checksum-bearing result is
+[`edupic-argon-aurorapic-horizon-cycle20-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle20-20260810.json).
+Measurement remains ineligible; the next block is cycles 21--24.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
