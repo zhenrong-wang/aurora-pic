@@ -57,6 +57,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_import_edupic_cross_sections.py
           PYTHONPATH=scripts python3 scripts/test_prepare_edupic_argon_case.py
           python3 scripts/test_aurorapic_edupic_pilot.py
+          python3 scripts/test_aurorapic_edupic_horizon.py
 
       - name: Validate electron-swarm CLI
         run: python3 scripts/test_swarm_cli.py build/aurorapic_swarm

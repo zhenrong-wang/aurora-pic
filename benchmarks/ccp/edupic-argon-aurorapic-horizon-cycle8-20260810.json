@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "aurorapic_horizon_stationarity_block_cycles_5_through_8",
+  "claim_boundary": "The block tests bounded continuation and an internal endpoint-trend screen. It is not an equilibrium determination or a cross-code comparison.",
+  "inputs": {
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "prior_pilot_report_sha256": "5b6f74089805cb4681f1e51becf19eff33e7513b847176f69ab057c11db7c5d5",
+    "cycle_4_checkpoint_sha256": "c8f9161fcceddbe13f05ebd2633c9d384a003d3210c56a12443af4efd4a93b8e"
+  },
+  "workflow": {
+    "runner_sha256": "39c2f3ac0ded435c0d49032f160c4e3e5c39cb8fcd119cb2a328be22fa595da8",
+    "runner_regression_sha256": "3c8b89422ff6e9227cb53333e501371a3dcbbe7a912be73f8498b473b16461ad",
+    "horizon_report_sha256": "6b3206ace1f03e9197aecfea80d57a75daf109e8089176aff1647e9ea5945f08",
+    "stage_report_sha256": {
+      "cycle_5": "385e36ec761bae5cc41b0749bab35694764d1dd430ed0949669520e376c4d9c8",
+      "cycle_6": "f572787195e1c5842c22730e230d98a03a2b6365f22b664dbf4b91b14e79fbee",
+      "cycle_7": "2d7e5b42f1aaef234b94077e4ed8f295395c3a3f76edfa9981014fd10f56a590",
+      "cycle_8": "b1032e881e1b02a6fa139d976d2482c5f93fa009fe95c31edb5d0c72af3821e1"
+    },
+    "checkpoint_chain_sha256": [
+      "c8f9161fcceddbe13f05ebd2633c9d384a003d3210c56a12443af4efd4a93b8e",
+      "b6de6fdf7db4590dd4c32c0b39d1fa9cd5045fe41d81328aec46ac00be571fc8",
+      "2ce67c6f810f3da055f3fbbb9f2b23220961fbde1d5c7e43a6add7eba92246cc",
+      "01ef55c068e987bb5e84bdec050644444105a3dd752eed09a8cad4bc86159c40",
+      "f594f98c220ebccc11fb5f90353d51c6a7df6e96a3131dc0167bf627a59a5d1e"
+    ]
+  },
+  "cycles": [
+    {
+      "cycle": 5,
+      "wall_seconds": 12.843485057121143,
+      "peak_resident_set_kib": 171848,
+      "final_electrons": 3059,
+      "final_ions": 6166,
+      "total_particle_growth_factor": 1.1547127300037552,
+      "ionization_pairs": 744,
+      "electron_wall_losses": 168,
+      "ion_wall_losses": 84,
+      "final_field_energy_J_m-2": 2.9997398190378715e-05,
+      "maximum_sampled_absolute_field_V_m": 36388.28945252707,
+      "relative_energy_closure_residual": 2.464757354290268e-14,
+      "maximum_spatial_phase_residual_J_m-2": 1.5246593050577406e-20,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 6,
+      "wall_seconds": 13.944675809936598,
+      "peak_resident_set_kib": 171852,
+      "final_electrons": 3636,
+      "final_ions": 6796,
+      "total_particle_growth_factor": 1.130840108401084,
+      "ionization_pairs": 729,
+      "electron_wall_losses": 152,
+      "ion_wall_losses": 99,
+      "final_field_energy_J_m-2": 3.0979918274092984e-05,
+      "maximum_sampled_absolute_field_V_m": 37301.72132107798,
+      "relative_energy_closure_residual": 3.415872311605942e-14,
+      "maximum_spatial_phase_residual_J_m-2": 1.6093625997831706e-20,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 7,
+      "wall_seconds": 14.820240617962554,
+      "peak_resident_set_kib": 171824,
+      "final_electrons": 4250,
+      "final_ions": 7440,
+      "total_particle_growth_factor": 1.120590490797546,
+      "ionization_pairs": 755,
+      "electron_wall_losses": 141,
+      "ion_wall_losses": 111,
+      "final_field_energy_J_m-2": 3.177449519281971e-05,
+      "maximum_sampled_absolute_field_V_m": 38050.39773475704,
+      "relative_energy_closure_residual": 3.058475087642061e-15,
+      "maximum_spatial_phase_residual_J_m-2": 1.7364175418713157e-20,
+      "all_hard_gates_passed": true
+    },
+    {
+      "cycle": 8,
+      "wall_seconds": 15.63944913703017,
+      "peak_resident_set_kib": 171712,
+      "final_electrons": 4841,
+      "final_ions": 8108,
+      "total_particle_growth_factor": 1.1076988879384089,
+      "ionization_pairs": 767,
+      "electron_wall_losses": 176,
+      "ion_wall_losses": 99,
+      "final_field_energy_J_m-2": 3.257743962393363e-05,
+      "maximum_sampled_absolute_field_V_m": 38656.45839019064,
+      "relative_energy_closure_residual": 2.12888985612656e-14,
+      "maximum_spatial_phase_residual_J_m-2": 1.461131834013668e-20,
+      "all_hard_gates_passed": true
+    }
+  ],
+  "stationarity_screen": {
+    "window_cycles": [4, 5, 6, 7, 8],
+    "normalized_total_population_slope_per_cycle": 0.1184374103471359,
+    "normalized_field_energy_slope_per_cycle": 0.029681298332850933,
+    "normalized_peak_field_slope_per_cycle": 0.023163592664295955,
+    "normalized_ionization_slope_per_cycle": 0.012687813021702838,
+    "ionization_coefficient_of_variation": 0.018706771055534477,
+    "gates": {
+      "total_population_slope": false,
+      "field_energy_slope": false,
+      "peak_field_slope": false,
+      "ionization_slope": true,
+      "ionization_variation": true
+    },
+    "passed": false
+  },
+  "interpretation": "All hard execution and accounting gates passed, and ionization activity is comparatively stable. Population, field energy, and peak field remain strongly trend-dominated, so the plasma is not ready for equilibrium observable comparison.",
+  "physics_claim": "none_internal_stationarity_screen_only",
+  "production_launch_authorized": false,
+  "next_step": "Run the separately hash-chained cycles 9-12 block under the same frozen stationarity thresholds."
+}

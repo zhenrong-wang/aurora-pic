@@ -1244,6 +1244,27 @@ The next step must be a separately authorized blockwise horizon extension with
 cycle-boundary stationarity gates; equilibrium observable comparison remains
 premature.
 
+`extend_aurorapic_edupic_horizon.py` now provides that extension in immutable
+four-cycle blocks, with an absolute cycle-16 ceiling. In addition to the pilot
+safety gates, it freezes an internal stationarity screen before execution:
+absolute normalized slopes below 1% per cycle for total population, field
+energy, and peak field; below 2% for ionization; and ionization coefficient of
+variation below 5%. The tool verifies the prior report and input checkpoint
+hashes, resets each full-cycle diagnostic window, and emits a new checkpoint
+chain. A failed stationarity screen is retained as evidence and does not
+relabel safe execution as equilibrium.
+
+The cycles 5--8 block passed every hard execution/accounting gate but correctly
+failed stationarity. Ionization passed both trend gates, with 1.27% normalized
+slope and 1.87% coefficient of variation. Total population still had an 11.84%
+normalized slope per cycle, field energy 2.97%, and peak field 2.32%. At cycle
+8 the simulation contained 4,841 electrons and 8,108 ions; peak field was
+38.66 kV/m. Each cycle stayed below 16 seconds and about 172 MiB, relative
+energy residuals below `3.5e-14`, and spatial/phase residuals below
+`1.8e-20 J m^-2`. The checksum-bearing negative stationarity result is
+[`edupic-argon-aurorapic-horizon-cycle8-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle8-20260810.json).
+The next permitted block is cycles 9--12 under the same frozen thresholds.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

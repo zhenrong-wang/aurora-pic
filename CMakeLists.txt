@@ -97,6 +97,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_1d_energy_budget.py
   scripts/analyze_1d_spatial_collision.py
   scripts/run_aurorapic_edupic_pilot.py
+  scripts/extend_aurorapic_edupic_horizon.py
   scripts/analyze_phase_eedf.py
   scripts/export_phase_eedf.py
   scripts/compare_phase_eedf.py

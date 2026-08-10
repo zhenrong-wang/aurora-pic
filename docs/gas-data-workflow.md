@@ -115,3 +115,7 @@ diagnostics. It still does not authorize production or attach a physics claim.
 checkpoint and advance only through cycle 4 under built-in population, field,
 energy-closure, memory, and timeout gates. Its output is an equilibration trend
 record, not an equilibrium comparison.
+`scripts/extend_aurorapic_edupic_horizon.py` consumes the prior report and
+checkpoint hashes in exact four-cycle blocks, retaining both passing safety
+gates and failed internal stationarity screens. Its absolute built-in horizon
+is cycle 16.
