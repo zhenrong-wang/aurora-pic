@@ -239,7 +239,9 @@ IonizationVelocityPair opal_ionization_velocities(
 CrossSectionTable::CrossSectionTable(
     const std::filesystem::path& path,
     double energy_scale,
-    double cross_section_scale) {
+    double cross_section_scale,
+    CrossSectionInterpolationKind interpolation)
+    : interpolation_(interpolation) {
     if (!std::isfinite(energy_scale) || !(energy_scale > 0.0)) {
         throw std::invalid_argument(
             "collision cross-section energy_scale must be positive and finite");
@@ -248,6 +250,11 @@ CrossSectionTable::CrossSectionTable(
         !(cross_section_scale > 0.0)) {
         throw std::invalid_argument(
             "collision cross_section_scale must be positive and finite");
+    }
+    if (interpolation != CrossSectionInterpolationKind::Linear &&
+        interpolation != CrossSectionInterpolationKind::LowerBin) {
+        throw std::invalid_argument(
+            "unsupported cross-section interpolation mode");
     }
     std::ifstream input(path);
     if (!input) {
@@ -296,6 +303,21 @@ CrossSectionTable::CrossSectionTable(
             "collision cross-section table requires at least two rows: " +
             path.string());
     }
+    maximum_tree_leaf_count_ = 1;
+    while (maximum_tree_leaf_count_ < cross_sections_.size()) {
+        maximum_tree_leaf_count_ *= 2;
+    }
+    maximum_tree_.assign(2 * maximum_tree_leaf_count_, 0.0);
+    std::copy(
+        cross_sections_.begin(), cross_sections_.end(),
+        maximum_tree_.begin() +
+            static_cast<std::ptrdiff_t>(maximum_tree_leaf_count_));
+    for (std::size_t node = maximum_tree_leaf_count_ - 1;
+         node > 0; --node) {
+        maximum_tree_[node] = std::max(
+            maximum_tree_[2 * node],
+            maximum_tree_[2 * node + 1]);
+    }
 }
 
 double CrossSectionTable::evaluate(double energy) const {
@@ -310,10 +332,49 @@ double CrossSectionTable::evaluate(double energy) const {
     const std::size_t high =
         static_cast<std::size_t>(upper - energies_.begin());
     const std::size_t low = high - 1;
+    if (interpolation_ == CrossSectionInterpolationKind::LowerBin) {
+        return cross_sections_[low];
+    }
     const double fraction =
         (energy - energies_[low]) / (energies_[high] - energies_[low]);
     return cross_sections_[low] +
            fraction * (cross_sections_[high] - cross_sections_[low]);
+}
+
+double CrossSectionTable::maximum_between(
+    double minimum_energy, double maximum_energy) const {
+    if (!std::isfinite(minimum_energy) || minimum_energy < 0.0 ||
+        !std::isfinite(maximum_energy) ||
+        maximum_energy < minimum_energy) {
+        throw std::invalid_argument(
+            "collision maximum lookup requires finite non-negative "
+            "ordered energies");
+    }
+    double result = std::max(
+        evaluate(minimum_energy), evaluate(maximum_energy));
+    std::size_t first = static_cast<std::size_t>(
+        std::lower_bound(
+            energies_.begin(), energies_.end(), minimum_energy) -
+        energies_.begin());
+    std::size_t last = static_cast<std::size_t>(
+        std::upper_bound(
+            energies_.begin(), energies_.end(), maximum_energy) -
+        energies_.begin());
+    first += maximum_tree_leaf_count_;
+    last += maximum_tree_leaf_count_;
+    while (first < last) {
+        if ((first & 1U) != 0U) {
+            result = std::max(result, maximum_tree_[first]);
+            ++first;
+        }
+        if ((last & 1U) != 0U) {
+            --last;
+            result = std::max(result, maximum_tree_[last]);
+        }
+        first /= 2;
+        last /= 2;
+    }
+    return result;
 }
 
 MeanCosineTable::MeanCosineTable(
@@ -644,6 +705,12 @@ NullCollisionModel::NullCollisionModel(
         hash_string(
             signature_,
             to_string(channel_config.angular_scattering));
+        if (channel_config.cross_section_interpolation !=
+            CrossSectionInterpolationKind::Linear) {
+            hash_string(
+                signature_,
+                to_string(channel_config.cross_section_interpolation));
+        }
         if (channel_config.energy_frame !=
             CollisionEnergyFrame::Projectile) {
             hash_string(
@@ -765,18 +832,9 @@ void NullCollisionModel::validate_frequency_bound(
             std::max(
                 channel.config.threshold_energy,
                 collision_energy(channel, minimum_relative_speed));
-        double maximum_cross_section = std::max(
-            channel.table.evaluate(minimum_energy),
-            channel.table.evaluate(maximum_energy));
-        for (std::size_t index = 0;
-             index < channel.table.energies().size(); ++index) {
-            const double energy = channel.table.energies()[index];
-            if (energy >= minimum_energy && energy <= maximum_energy) {
-                maximum_cross_section = std::max(
-                    maximum_cross_section,
-                    channel.table.cross_sections()[index]);
-            }
-        }
+        const double maximum_cross_section =
+            channel.table.maximum_between(
+                minimum_energy, maximum_energy);
         frequency_bound +=
             config_.neutral_density *
             maximum_cross_section *

@@ -58,11 +58,17 @@ def main() -> int:
         ion_manifest = (output / "edupic_argon_ion.gas").read_text()
         require(
             "ionization_kinematics = opal_beaty_peterson" in electron_manifest
-            and "ionization_ejected_energy_scale" in electron_manifest,
+            and "ionization_ejected_energy_scale" in electron_manifest
+            and electron_manifest.count(
+                "cross_section_interpolation = lower_bin"
+            ) == 3,
             "electron manifest lost ionization kinematics",
         )
         require(
             ion_manifest.count("energy_frame = center_of_mass") == 2
+            and ion_manifest.count(
+                "cross_section_interpolation = lower_bin"
+            ) == 2
             and "angular_model = backward" in ion_manifest,
             "ion manifest lost center-of-mass scattering contracts",
         )

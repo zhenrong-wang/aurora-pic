@@ -39,6 +39,10 @@ enum class CollisionEnergyFrame {
     Projectile,
     CenterOfMass
 };
+enum class CrossSectionInterpolationKind {
+    Linear,
+    LowerBin
+};
 enum class IonizationKinematicsKind {
     EqualEnergyIsotropic,
     OpalBeatyPeterson
@@ -102,6 +106,8 @@ struct CollisionChannelConfig {
     IonizationKinematicsKind ionization_kinematics{
         IonizationKinematicsKind::EqualEnergyIsotropic};
     double ionization_ejected_energy_scale{0.0};
+    CrossSectionInterpolationKind cross_section_interpolation{
+        CrossSectionInterpolationKind::Linear};
 };
 
 inline std::string to_string(CollisionEnergyFrame frame) {
@@ -120,6 +126,16 @@ inline std::string to_string(IonizationKinematicsKind model) {
             return "equal_energy_isotropic";
         case IonizationKinematicsKind::OpalBeatyPeterson:
             return "opal_beaty_peterson";
+    }
+    return "unknown";
+}
+
+inline std::string to_string(CrossSectionInterpolationKind interpolation) {
+    switch (interpolation) {
+        case CrossSectionInterpolationKind::Linear:
+            return "linear";
+        case CrossSectionInterpolationKind::LowerBin:
+            return "lower_bin";
     }
     return "unknown";
 }

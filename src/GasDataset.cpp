@@ -167,6 +167,7 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         "mean_cosine_energy_scale",
         "energy_frame", "ionization_kinematics",
         "ionization_ejected_energy_scale",
+        "cross_section_interpolation",
     };
 
     Values global;
@@ -317,6 +318,32 @@ GasDataset load_gas_dataset(const std::filesystem::path& path) {
         value.cross_section_scale = number<double>(
             channel.values, "cross_section_scale",
             value.cross_section_scale, channel_context);
+        const bool has_cross_section_interpolation =
+            channel.values.contains("cross_section_interpolation");
+        if (has_cross_section_interpolation && format_version != 2) {
+            throw std::runtime_error(
+                channel_context +
+                " cross-section interpolation requires "
+                "gas_data_version = 2");
+        }
+        const std::string cross_section_interpolation = lower(
+            has_cross_section_interpolation
+                ? channel.values.at("cross_section_interpolation")
+                : "linear");
+        if (cross_section_interpolation == "linear") {
+            value.cross_section_interpolation =
+                CrossSectionInterpolationKind::Linear;
+        } else if (cross_section_interpolation == "lower_bin" ||
+                   cross_section_interpolation == "lower-bin" ||
+                   cross_section_interpolation == "step") {
+            value.cross_section_interpolation =
+                CrossSectionInterpolationKind::LowerBin;
+        } else {
+            throw std::runtime_error(
+                channel_context +
+                " cross_section_interpolation must be linear or "
+                "lower_bin");
+        }
         const std::string energy_frame = lower(
             channel.values.contains("energy_frame")
                 ? channel.values.at("energy_frame")

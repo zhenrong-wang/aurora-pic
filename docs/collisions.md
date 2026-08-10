@@ -81,9 +81,22 @@ table is whitespace-separated text with exactly two numeric columns:
 
 Blank lines and `#`/`;` comments are accepted. Energies must be strictly
 increasing; energy and cross section must be finite and non-negative. Linear
-interpolation is used between rows, while values outside the table range use
-the nearest endpoint. Tables should span the complete simulated energy range
-and end with a physically justified high-energy value.
+interpolation is the default. A version-2 gas manifest or inline 3V channel can
+instead set `cross_section_interpolation = lower_bin`; an energy strictly
+between two nodes then uses the lower node's value. Exact nodes retain their
+own value. This stepwise mode is intended for independently implemented
+reference algorithms that explicitly select an integer energy bin, and should
+not be selected merely to avoid adequate table resolution. Both modes use the
+nearest endpoint outside the table range. The interpolation contract is
+included in checkpoint fingerprints and collision metadata. Tables should
+span the complete simulated energy range and end with a physically justified
+high-energy value.
+
+For thermal-neutral frequency bounds, the runtime indexes each cross-section
+table and queries the exact maximum over the reachable energy interval in
+logarithmic time. This avoids rescanning a large table for every collision
+candidate; the index deliberately trades additional table memory for bounded
+per-candidate work.
 
 The table columns are interpreted in the active simulation's unit system.
 Optional positive scales convert source-table columns:

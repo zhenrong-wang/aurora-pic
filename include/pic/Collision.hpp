@@ -17,9 +17,13 @@ public:
     CrossSectionTable(
         const std::filesystem::path& path,
         double energy_scale = 1.0,
-        double cross_section_scale = 1.0);
+        double cross_section_scale = 1.0,
+        CrossSectionInterpolationKind interpolation =
+            CrossSectionInterpolationKind::Linear);
 
     double evaluate(double energy) const;
+    double maximum_between(
+        double minimum_energy, double maximum_energy) const;
     const std::vector<double>& energies() const { return energies_; }
     const std::vector<double>& cross_sections() const {
         return cross_sections_;
@@ -28,6 +32,10 @@ public:
 private:
     std::vector<double> energies_{};
     std::vector<double> cross_sections_{};
+    CrossSectionInterpolationKind interpolation_{
+        CrossSectionInterpolationKind::Linear};
+    std::size_t maximum_tree_leaf_count_{0};
+    std::vector<double> maximum_tree_{};
 };
 
 class MeanCosineTable {
@@ -106,7 +114,8 @@ private:
             : config(channel),
               table(channel.cross_section_file,
                     channel.energy_scale,
-                    channel.cross_section_scale) {
+                    channel.cross_section_scale,
+                    channel.cross_section_interpolation) {
             if (channel.angular_scattering ==
                 AngularScatteringKind::HenyeyGreenstein) {
                 mean_cosine.emplace(

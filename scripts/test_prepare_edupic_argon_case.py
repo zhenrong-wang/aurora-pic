@@ -57,6 +57,7 @@ def main() -> int:
                 "energy_step_ev": 0.001,
                 "ionization_kinematics": "opal_beaty_peterson",
                 "ion_energy_frame": "center_of_mass",
+                "cross_section_interpolation": "lower_bin",
             },
             "grid_rate_envelope": {
                 "electron_peak_frequency_s": 5.0e8,

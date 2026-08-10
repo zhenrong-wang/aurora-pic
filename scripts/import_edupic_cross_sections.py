@@ -101,18 +101,21 @@ def write_manifest(
 type = elastic
 cross_section_file = electron_elastic.dat
 energy_scale = {EV_TO_J:.17g}
+cross_section_interpolation = lower_bin
 angular_model = isotropic
 
 [collision.excitation]
 type = excitation
 cross_section_file = electron_excitation.dat
 energy_scale = {EV_TO_J:.17g}
+cross_section_interpolation = lower_bin
 threshold_energy = {EXCITATION_THRESHOLD_EV * EV_TO_J:.17g}
 
 [collision.ionization]
 type = ionization
 cross_section_file = electron_ionization.dat
 energy_scale = {EV_TO_J:.17g}
+cross_section_interpolation = lower_bin
 threshold_energy = {IONIZATION_THRESHOLD_EV * EV_TO_J:.17g}
 ionization_kinematics = opal_beaty_peterson
 ionization_ejected_energy_scale = {IONIZATION_EJECTED_SCALE_EV * EV_TO_J:.17g}
@@ -124,6 +127,7 @@ ionization_ejected_energy_scale = {IONIZATION_EJECTED_SCALE_EV * EV_TO_J:.17g}
 type = elastic
 cross_section_file = ion_isotropic.dat
 energy_scale = {EV_TO_J:.17g}
+cross_section_interpolation = lower_bin
 energy_frame = center_of_mass
 angular_model = isotropic
 
@@ -131,6 +135,7 @@ angular_model = isotropic
 type = elastic
 cross_section_file = ion_backward.dat
 energy_scale = {EV_TO_J:.17g}
+cross_section_interpolation = lower_bin
 energy_frame = center_of_mass
 angular_model = backward
 """
@@ -299,6 +304,7 @@ def convert(
                 "ionization_kinematics": "opal_beaty_peterson",
                 "ionization_ejected_energy_scale_ev": IONIZATION_EJECTED_SCALE_EV,
                 "ion_energy_frame": "center_of_mass",
+                "cross_section_interpolation": "lower_bin",
             },
             "reference_operating_point": {
                 "pressure_pa": PRESSURE_PA,

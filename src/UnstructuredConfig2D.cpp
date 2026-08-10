@@ -125,6 +125,7 @@ ParsedConfig parse(const std::filesystem::path& path) {
         "angular_model", "mean_cosine_file",
         "mean_cosine_energy_scale",
         "ionization_kinematics", "ionization_ejected_energy_scale",
+        "cross_section_interpolation",
         "secondary_species", "ion_species", "attachment_species",
     };
 
@@ -949,6 +950,24 @@ UnstructuredSimulation2DConfig load_unstructured_config_2d(
         value.cross_section_scale = number<double>(
             channel.values, "cross_section_scale",
             value.cross_section_scale);
+        const std::string cross_section_interpolation = lower(
+            channel.values.contains("cross_section_interpolation")
+                ? channel.values.at("cross_section_interpolation")
+                : "linear");
+        if (cross_section_interpolation == "linear") {
+            value.cross_section_interpolation =
+                CrossSectionInterpolationKind::Linear;
+        } else if (cross_section_interpolation == "lower_bin" ||
+                   cross_section_interpolation == "lower-bin" ||
+                   cross_section_interpolation == "step") {
+            value.cross_section_interpolation =
+                CrossSectionInterpolationKind::LowerBin;
+        } else {
+            throw std::runtime_error(
+                "collision channel '" + channel.name +
+                "' cross_section_interpolation must be linear or "
+                "lower_bin");
+        }
         const std::string angular_model = lower(
             channel.values.contains("angular_model")
                 ? channel.values.at("angular_model")

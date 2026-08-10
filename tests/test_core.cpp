@@ -311,6 +311,35 @@ int main() {
             require_near(
                 table.evaluate(0.5), 0.25, 1e-15,
                 "cross-section interpolation is incorrect");
+            pic::CrossSectionTable lower_bin_table(
+                table_path, 1.0, 1.0,
+                pic::CrossSectionInterpolationKind::LowerBin);
+            require_near(
+                lower_bin_table.evaluate(0.5), 0.0, 0.0,
+                "lower-bin cross-section lookup selected the wrong row");
+            require_near(
+                lower_bin_table.evaluate(1.0), 0.5, 0.0,
+                "lower-bin cross-section lookup changed an exact node");
+            require_near(
+                table.maximum_between(0.5, 1.5), 0.75, 1e-15,
+                "linear cross-section range maximum is incorrect");
+            require_near(
+                lower_bin_table.maximum_between(0.5, 1.5),
+                0.5, 0.0,
+                "lower-bin cross-section range maximum is incorrect");
+            require_throws(
+                [&] {
+                    (void)table.maximum_between(1.0, 0.5);
+                },
+                "cross-section maximum accepted a reversed interval");
+            require_throws(
+                [&] {
+                    (void)pic::CrossSectionTable(
+                        table_path, 1.0, 1.0,
+                        static_cast<
+                            pic::CrossSectionInterpolationKind>(99));
+                },
+                "cross-section table accepted an unknown interpolation");
             require_near(
                 table.evaluate(3.0), 1.0, 1e-15,
                 "cross-section upper endpoint behavior changed");
@@ -346,6 +375,15 @@ int main() {
                     pic::CollisionProcessKind::Elastic,
                     table_path, 0.0, 1.0, 1.0}};
             pic::NullCollisionModel elastic(elastic_config, 1.0);
+            auto lower_bin_config = elastic_config;
+            lower_bin_config.channels.front()
+                .cross_section_interpolation =
+                pic::CrossSectionInterpolationKind::LowerBin;
+            pic::NullCollisionModel lower_bin_elastic(
+                lower_bin_config, 1.0);
+            require(
+                lower_bin_elastic.signature() != elastic.signature(),
+                "MCC signature ignored cross-section interpolation");
             std::mt19937_64 rng(8128);
             std::uint64_t candidates = 0;
             std::uint64_t accepted = 0;
@@ -3985,6 +4023,7 @@ int main() {
                     << "type = elastic\n"
                     << "cross_section_file = ion_backward.dat\n"
                     << "energy_scale = 1.602176634e-19\n"
+                    << "cross_section_interpolation = lower_bin\n"
                     << "angular_model = backward\n"
                     << "energy_frame = center_of_mass\n"
                     << "[species.ions]\n"
@@ -4009,7 +4048,10 @@ int main() {
                         pic::AngularScatteringKind::Backward &&
                     turner_config.collision_models[0].config.channels[0]
                             .energy_frame ==
-                        pic::CollisionEnergyFrame::CenterOfMass,
+                        pic::CollisionEnergyFrame::CenterOfMass &&
+                    turner_config.collision_models[0].config.channels[0]
+                            .cross_section_interpolation ==
+                        pic::CrossSectionInterpolationKind::LowerBin,
                 "Turner ion-collision frame and scattering contract "
                 "did not survive 1D config parsing");
             pic::Simulation turner_collision_smoke(turner_config);
@@ -5788,6 +5830,7 @@ int main() {
                 "threshold_energy = 1\n"
                 "ionization_kinematics = opal_beaty_peterson\n"
                 "ionization_ejected_energy_scale = 0.5\n"
+                "cross_section_interpolation = lower_bin\n"
                 "secondary_species = electrons\n"
                 "ion_species = ions");
             {
@@ -5805,7 +5848,10 @@ int main() {
                         pic::IonizationKinematicsKind::
                             OpalBeatyPeterson &&
                     inline_opal_config.collisions.channels.front()
-                            .ionization_ejected_energy_scale == 0.5,
+                            .ionization_ejected_energy_scale == 0.5 &&
+                    inline_opal_config.collisions.channels.front()
+                            .cross_section_interpolation ==
+                        pic::CrossSectionInterpolationKind::LowerBin,
                 "imported inline config lost Opal ionization kinematics");
             const auto imported_attachment_example =
                 std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
@@ -5885,7 +5931,8 @@ int main() {
                         << "threshold_energy = 0.5\n"
                         << "ionization_kinematics = "
                            "opal_beaty_peterson\n"
-                        << "ionization_ejected_energy_scale = 1.0\n";
+                        << "ionization_ejected_energy_scale = 1.0\n"
+                        << "cross_section_interpolation = lower_bin\n";
                 }
                 const auto opal_gas =
                     pic::load_gas_dataset(opal_gas_path);
@@ -5896,7 +5943,10 @@ int main() {
                             pic::IonizationKinematicsKind::
                                 OpalBeatyPeterson &&
                         opal_gas.channels.front()
-                                .ionization_ejected_energy_scale == 1.0,
+                                .ionization_ejected_energy_scale == 1.0 &&
+                        opal_gas.channels.front()
+                                .cross_section_interpolation ==
+                            pic::CrossSectionInterpolationKind::LowerBin,
                     "gas dataset loader lost Opal ionization kinematics");
                 std::filesystem::remove(opal_gas_path);
                 std::filesystem::remove(opal_table_path);
@@ -6791,7 +6841,7 @@ int main() {
                 const auto collision_metadata =
                     read_file_text(output_dir / "collision_data.txt");
                 require(
-                    collision_metadata.starts_with("format 5\n") &&
+                    collision_metadata.starts_with("format 6\n") &&
                         collision_metadata.find(
                         "dataset_id \"aurorapic.synthetic.ionization\"") !=
                             std::string::npos &&
@@ -6802,7 +6852,7 @@ int main() {
                             "channel \"synthetic_ionization\" "
                             "\"ionization\"") != std::string::npos &&
                         collision_metadata.find(
-                            "\"equal_energy_isotropic\" 0") !=
+                            "\"equal_energy_isotropic\" 0 \"linear\"") !=
                             std::string::npos,
                     "imported gas dataset metadata output is incomplete");
 

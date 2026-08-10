@@ -406,6 +406,22 @@ CollisionEnergyFrame parse_collision_energy_frame(
         "'; expected projectile or center_of_mass");
 }
 
+CrossSectionInterpolationKind parse_cross_section_interpolation(
+    const KeyValue& kv, CrossSectionInterpolationKind def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "cross_section_interpolation", to_string(def))));
+    if (value == "linear") {
+        return CrossSectionInterpolationKind::Linear;
+    }
+    if (value == "lower_bin" || value == "lower-bin" ||
+        value == "step") {
+        return CrossSectionInterpolationKind::LowerBin;
+    }
+    throw std::runtime_error(
+        "invalid cross_section_interpolation: '" + value +
+        "'; expected linear or lower_bin");
+}
+
 IonizationKinematicsKind parse_ionization_kinematics(
     const KeyValue& kv, IonizationKinematicsKind def) {
     const auto value = lower(trim(as<std::string>(
@@ -1593,7 +1609,8 @@ Config load_config(const std::string& path) {
         "secondary_species", "ion_species", "angular_model",
         "mean_cosine_file", "mean_cosine_energy_scale",
         "energy_frame", "ionization_kinematics",
-        "ionization_ejected_energy_scale"
+        "ionization_ejected_energy_scale",
+        "cross_section_interpolation"
     };
     static const std::unordered_set<std::string> species_keys{
         "name", "charge", "mass", "weight", "particles", "density",
@@ -1812,6 +1829,9 @@ Config load_config(const std::string& path) {
             as<double>(
                 block, "cross_section_scale",
                 channel.cross_section_scale);
+        channel.cross_section_interpolation =
+            parse_cross_section_interpolation(
+                block, channel.cross_section_interpolation);
         channel.angular_scattering =
             parse_angular_scattering(
                 block, channel.angular_scattering);

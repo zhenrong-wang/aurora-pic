@@ -97,7 +97,9 @@ six finite non-negative columns and both inelastic thresholds, and writes
 separate electron and ion manifests. The electron package declares elastic,
 excitation, and Opal-style ionization with a `10 eV` ejected-energy scale. The
 ion package declares center-of-mass isotropic and backward elastic channels.
-Every generated artifact is hashed in `audit.json`.
+All five channels declare lower-bin cross-section evaluation, matching
+eduPIC's integer selection on the `0.001 eV` source grid. Every generated
+artifact is hashed in `audit.json`.
 
 These generated tables remain local and untracked. The workflow records their
 GPL-derived provenance but makes no redistribution or relicensing claim. Use

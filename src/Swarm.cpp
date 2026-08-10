@@ -517,7 +517,8 @@ void validate_config(
         const CrossSectionTable table(
             channel.cross_section_file,
             channel.energy_scale,
-            channel.cross_section_scale);
+            channel.cross_section_scale,
+            channel.cross_section_interpolation);
         const double table_max_ev =
             table.energies().back() / ev_to_j;
         if (config.max_energy_ev > table_max_ev) {

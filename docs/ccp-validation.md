@@ -1165,18 +1165,27 @@ The locked case manifest is
 Its preparer validates every local package hash and can generate at most one RF
 cycle; it explicitly cannot authorize production. A two-step, one-core SI
 preflight loaded all five million table rows and advanced the exact 400-node,
-4,000-step-per-cycle geometry/drive contract in 10.91 s with a 95,864 KiB peak
+4,000-step-per-cycle geometry/drive contract in 7.09 s with a 177,924 KiB peak
 resident set and zero swap. This is integration evidence only. The
 checksum-bearing record is
 [`edupic-argon-aurorapic-contract-preflight-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-contract-preflight-20260810.json).
 
-Three numerical-contract differences remain explicit before a meaningful
+The cross-section evaluator now provides a fingerprinted `lower_bin` mode,
+selected by all five generated eduPIC channels. This matches the reference's
+integer selection on its `0.001 eV` source grid while preserving linear
+interpolation as the default for every existing gas package.
+Thermal-neutral frequency validation uses an exact segment-tree range maximum,
+reducing each table query from a million-row scan to logarithmic work. The
+index raises this five-table preflight's peak memory by about 80 MiB, but the
+optimized run is bit-for-bit identical to the pre-optimization run and reduces
+its measured wall time from 11.38 s to 7.09 s.
+
+Two numerical-contract differences remain explicit before a meaningful
 whole-cycle comparison: eduPIC advances ions every twentieth electron step,
-whereas AuroraPIC currently advances them every step; eduPIC selects the lower
-`0.001 eV` cross-section bin, whereas AuroraPIC linearly interpolates; and the
-two codes use slightly different finite-mass transforms for inelastic electron
-events. Independent random streams and microscopic initial states are expected
-for a black-box statistical comparison and are not defects. The failed
+whereas AuroraPIC currently advances them every step, and the two codes use
+slightly different finite-mass transforms for inelastic electron events.
+Independent random streams and microscopic initial states are expected for a
+black-box statistical comparison and are not defects. The failed
 external effective-block gate also remains a limitation on formal uncertainty,
 not something this preflight repairs.
 
