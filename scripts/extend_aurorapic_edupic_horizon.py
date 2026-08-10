@@ -29,6 +29,7 @@ from run_aurorapic_edupic_pilot import (
 
 
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_BOUNDED_AURORAPIC_HORIZON_BLOCK"
+CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 HARD_MAX_CYCLES_PER_BLOCK = 4
 HARD_MAX_END_CYCLE = 16
 MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.01
@@ -40,6 +41,12 @@ MAX_IONIZATION_COEFFICIENT_OF_VARIATION = 0.05
 
 class HorizonError(RuntimeError):
     pass
+
+
+def solver_command(executable: Path, deck: Path) -> list[str]:
+    return [
+        str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT, str(deck)
+    ]
 
 
 def endpoint(output: Path, cycle: int) -> dict[str, float | int]:
@@ -224,7 +231,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         deck_path = stage / "input.cfg"
         atomic_text(deck_path, stage_deck(base, cycle, output, checkpoint))
         resources = run_process(
-            [str(executable), str(deck_path)],
+            solver_command(executable, deck_path),
             stage / "stdout.txt", stage / "stderr.txt",
         )
         energy = output / "energy-budget.json"

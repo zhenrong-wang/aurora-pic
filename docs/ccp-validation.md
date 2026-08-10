@@ -1266,6 +1266,10 @@ energy residuals below `3.5e-14`, and spatial/phase residuals below
 The horizon runner now accepts either the completed safe pilot or a completed
 safe prior horizon report, while rejecting an unsafe report. This permits an
 immutable multi-block checkpoint chain without weakening any execution gate.
+For cumulative step counts that trigger the CLI's conservative initial-update
+estimate, the runner supplies the explicit large-run acknowledgement. Actual
+incremental work remains limited to one 4,000-step, low-priority, single-core
+cycle at a time under the runner's non-relaxable timeout and resource gates.
 
 The chained cycles 9--12 block also passed every hard execution and accounting
 gate and correctly failed stationarity. The normalized total-population slope
@@ -1284,6 +1288,23 @@ negative result is
 [`edupic-argon-aurorapic-horizon-cycle12-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle12-20260810.json).
 The next and final permitted block is cycles 13--16 under the unchanged frozen
 thresholds.
+
+Cycles 13--16 completed that predeclared horizon with every hard gate passing
+and with another correct stationarity failure. The normalized population slope
+moderated to 6.00% per cycle, field-energy slope to 1.36%, and peak-field slope
+to 1.30%; each remains above the frozen 1% limit. Ionization passed with a
+0.96% normalized slope and 1.39% coefficient of variation. At cycle 16 the
+simulation contained 9,502 electrons and 13,205 ions, and the peak sampled
+field was 43.85 kV/m. Per-cycle runtime remained below 23.4 seconds and peak
+resident memory near 172 MiB. Relative energy closure stayed below `7.1e-14`
+and spatial/phase closure below `1.2e-19 J m^-2`.
+
+The failed stationarity result means that no equilibrium observable or eduPIC
+comparison is yet eligible. It also exhausts the original absolute cycle-16
+ceiling. The next step is to freeze a new, longer blockwise equilibration
+horizon before examining more endpoints, retaining the same thresholds and
+resource gates. The evidence is
+[`edupic-argon-aurorapic-horizon-cycle16-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle16-20260810.json).
 
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused

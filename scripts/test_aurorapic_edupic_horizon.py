@@ -11,6 +11,7 @@ from extend_aurorapic_edupic_horizon import (
     HorizonError,
     endpoint,
     report_end_cycle,
+    solver_command,
     stationarity,
 )
 
@@ -28,6 +29,13 @@ def write_csv(path: Path, fields: list[str], rows: list[dict[str, object]]) -> N
 
 
 def main() -> int:
+    require(
+        solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
+            "aurorapic_cli", "--allow-large-run",
+            "I_UNDERSTAND_THIS_IS_A_LARGE_RUN", "stage.cfg",
+        ],
+        "horizon solver launch lost its explicit CLI acknowledgement",
+    )
     require(
         report_end_cycle({
             "completed_through_cycle": 4, "all_gates_passed": True

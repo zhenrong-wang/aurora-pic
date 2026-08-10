@@ -121,4 +121,7 @@ gates and failed internal stationarity screens. Its absolute built-in horizon
 is cycle 16. The first block accepts only a completed safe pilot report;
 subsequent blocks accept a completed safe horizon report and verify its final
 checkpoint hash before continuing. A failed internal stationarity screen does
-not break the chain when all hard safety gates passed.
+not break the chain when all hard safety gates passed. The guarded runner also
+supplies the CLI large-run acknowledgement needed once the cumulative restart
+step crosses the generic initial-update estimate; this does not relax its
+4,000-step per-cycle work, timeout, memory, or particle limits.
