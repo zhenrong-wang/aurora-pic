@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_predeclared_1024_cycle_native_production_measurement",
+  "reference_implementation": {
+    "repository": "https://github.com/donkozoltan/eduPIC",
+    "commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "implementation": "C/eduPIC.cc",
+    "source_binary_sha256": "d1915eb5a25e37b385d60f4b32c5101f02df3a95dc8485c53213024064cb6247"
+  },
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-native-production-measurement-rule-20260807.json",
+    "original_declaration_commit": "2a50bcf",
+    "operational_amendment_commit": "10004bb",
+    "current_sha256": "3fa7e34e37f836ebf766b555a0a901875935d1f9e8c921c0f7c23ecebcf09d8a",
+    "scientific_analysis_contract_changed": false
+  },
+  "campaign": {
+    "first_measurement_cycle": 1597,
+    "last_measurement_cycle": 2620,
+    "measurement_cycles": 1024,
+    "measurement_blocks": 64,
+    "cycles_per_block": 16,
+    "target_reached": true,
+    "initial_checkpoint_sha256": "4903827ff00a915df67239a5f7dd3186a582573eb57fa2bc36ea701a6304245d",
+    "final_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "final_stage_report_sha256": "477d29d75af02b7294f5f49afffe5459bbc9574b34fa2daf6b6a120e2864c9b0",
+    "campaign_report_sha256": "6d690d2c786043935d6677139acbefd5cedb03fc2d58dc131d18e825afcf4693",
+    "total_stage_wall_seconds": 22850.995931585436,
+    "final_total_particles": 222598
+  },
+  "host_health": {
+    "checks": 129,
+    "minimum_available_memory_mib": 3366.59375,
+    "maximum_load_per_cpu": 0.452117919921875,
+    "minimum_free_disk_mib": 42290.5703125,
+    "swap_io_pages": 0,
+    "original_4096_mib_guard_stops": 4,
+    "post_amendment_guard_stops": 0,
+    "memory_guard_amendment": {
+      "applied_at_cycle": 1996,
+      "previous_value_mib": 4096.0,
+      "new_value_mib": 3072.0,
+      "scientific_analysis_contract_changed": false
+    }
+  },
+  "analysis": {
+    "block_analysis_sha256": "b746a2da6c3a14f4f9204477a18ffcf0d80e443f15bcf1ad189bb43e376979ab",
+    "stationarity_evaluation_sha256": "695a8604c3c430178601998d191f7fb3d49fbd5c75677332f435477b8d301464",
+    "density_csv_sha256": "4c860617882a551c502934cf38bcf22a6432565f2a8da277a35de216868400a9",
+    "eepf_csv_sha256": "8ad8222107c7e61ea9d1a2d36b0550bcd69ded55dbf5fe0bcfd10810dfc56260",
+    "ifed_csv_sha256": "98c7f40ee0f0ab12038c51f2dafc0b9f9e17781c7264d5399018f86d88dd2b3e",
+    "analyzer_sha256": "488aa3a3d671f38671ccbe0a03b51d342b922e33b44a05a82ba928fee978d708",
+    "evaluator_sha256": "eeeb74c3c90ddb786c7c33affa222647cf3d9898de0cc7e60969228a75885bb0",
+    "analysis_eligible": true,
+    "horizon_complete": true,
+    "classification": "internal_density_stationarity_screen_failed",
+    "passed": false
+  },
+  "density_stationarity": {
+    "electron": {
+      "mean_line_integrated_density_m-2": 75964497560628.05,
+      "lag_one_correlation": 0.9003316029013831,
+      "ar1_effective_blocks": 3.356665439112051,
+      "ar1_corrected_relative_standard_error": 0.0007155647506822402,
+      "projected_fractional_drift": -0.0007996669624367185,
+      "split_half_fractional_change": -0.0010187615433892752,
+      "maximum_adjacent_profile_relative_l2": 0.005458153274563044
+    },
+    "ion": {
+      "mean_line_integrated_density_m-2": 79753948362171.88,
+      "lag_one_correlation": 0.8998486666603116,
+      "ar1_effective_blocks": 3.3737873159168283,
+      "ar1_corrected_relative_standard_error": 0.000679794050374923,
+      "projected_fractional_drift": -0.0007750066514501645,
+      "split_half_fractional_change": -0.0009721533988093402,
+      "maximum_adjacent_profile_relative_l2": 0.010719725785966678
+    },
+    "minimum_effective_blocks_required_per_species": 8.0,
+    "maximum_absolute_drift": 0.01,
+    "maximum_absolute_split_half_change": 0.01,
+    "maximum_adjacent_profile_relative_l2": 0.025,
+    "only_failed_gate": "minimum_ar1_effective_blocks_per_species"
+  },
+  "distribution_normalization": {
+    "eepf": 0.9999999979222712,
+    "powered_ifed": 0.9999996718749999,
+    "grounded_ifed": 1.000000328125
+  },
+  "interpretation": [
+    "The complete native reference horizon is valid and the density mean, drift, split-half, and profile-movement diagnostics are stable.",
+    "Strong serial correlation leaves fewer than four AR(1)-effective density blocks per species, so the predeclared eight-effective-block sampling-readiness rule fails.",
+    "The failure does not identify a faulty eduPIC kernel and must not be converted post hoc into a pass because the corrected relative standard errors are small.",
+    "This campaign ran eduPIC, not AuroraPIC, and establishes no AuroraPIC-to-eduPIC agreement."
+  ],
+  "next_step": "Prepare a provenance-locked AuroraPIC argon contract that matches eduPIC cross sections, ionization energy sharing, scattering, boundaries, timestep/subcycling, and diagnostics before any cross-code run.",
+  "claim_boundary": "This is an external-reference sampling-readiness result. It is neither AuroraPIC numerical verification nor cross-code or experimental physical validation.",
+  "physics_claim": "none_external_reference_stationarity_screen_failed"
+}

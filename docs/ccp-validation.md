@@ -1125,6 +1125,32 @@ autocorrelation, and standard-error fields are now `null`, and no batch series
 is invented. Evidence is
 [`edupic-native-production-measurement-cycle1612-20260807.json`](../benchmarks/ccp/edupic-native-production-measurement-cycle1612-20260807.json).
 
+The production campaign subsequently reached its exact cycle-2,620 target:
+64 contiguous 16-cycle blocks and 1,024 standalone measurement cycles completed
+in 22,851.00 s of single-core solver time. Every checkpoint and native output
+hash revalidated, the final checkpoint SHA-256 is
+`3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4`,
+and swap I/O remained zero. Four host-memory checks stopped coordination safely
+under the original 4 GiB floor; no memory stop occurred after the audited 3 GiB
+amendment.
+
+The complete horizon passes the predeclared drift, split-half, and adjacent
+profile-movement gates for both densities. Electron and ion projected drift
+magnitudes are 0.0800% and 0.0775%, and their autocorrelation-corrected relative
+standard errors are 0.0716% and 0.0680%. Nevertheless, adjacent 16-cycle density
+blocks have lag-one correlations of 0.9003 and 0.8998, leaving only 3.36 and
+3.37 AR(1)-effective blocks against the required eight. The correct frozen
+classification is therefore `internal_density_stationarity_screen_failed`.
+Small corrected uncertainty does not authorize changing a predeclared gate
+after observing the result.
+
+This was an eduPIC execution, not an AuroraPIC execution. It does not validate
+AuroraPIC or establish cross-code agreement. The checksum-pinned result is
+[`edupic-native-production-measurement-cycle2620-20260810.json`](../benchmarks/ccp/edupic-native-production-measurement-cycle2620-20260810.json).
+The next cross-code prerequisite is an AuroraPIC argon contract matching the
+reference cross sections, ionization energy partition, scattering, boundary
+drive, timestep/subcycling, and observable definitions.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic
