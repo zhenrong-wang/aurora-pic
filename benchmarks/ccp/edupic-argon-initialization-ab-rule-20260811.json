@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_initialization_density_ab_diagnostic",
+  "declaration_parent_commit": "fd764b089a21496d08939ce977cca5e2c233f8e3",
+  "motivation": {
+    "strict_campaign_evidence": "benchmarks/ccp/edupic-argon-aurorapic-strict-equilibration-cycle112-20260811.json",
+    "strict_campaign_final_checkpoint_sha256": "9f762d3b2af14ca60a0e9bc4d9381e7e551e9e2c73d121203f2a65499efdc842",
+    "observed_cycle_81_through_112_electron_source_loss_imbalance": 0.4516637980493402,
+    "observed_cycle_81_through_112_ion_source_loss_imbalance": 0.46031746031746035,
+    "question": "Does a reference-density-scale warm start materially reduce the persistent source-loss imbalance relative to the same phase-space sample at its original density?"
+  },
+  "common_initial_state": {
+    "format": "AuroraPIC-particle-state-v2",
+    "spatial_dimension": 1,
+    "velocity_dimensions": 3,
+    "units": "si",
+    "source_step": 448000,
+    "source_checkpoint_sha256": "9f762d3b2af14ca60a0e9bc4d9381e7e551e9e2c73d121203f2a65499efdc842",
+    "particle_state_sha256": "8d92e55aa541947075d3c18db3f8af1b326b6d7ca78c94a5c3e535443b02fffd",
+    "particle_state_signature": 13529092525379880230,
+    "export_manifest_sha256": "a60c45fafac145adec7576b6502a3162a5a6a46e3cda5e637c9e521c55e3d29b",
+    "electrons": 47970,
+    "ions": 52887,
+    "inactive_checkpoint_records_excluded": 56,
+    "time_rng_fields_and_diagnostics_reset": true
+  },
+  "density_basis": {
+    "cycle_80_electron_candidate_to_reference_line_integrated_ratio": 0.3477221026172963,
+    "cycle_80_ion_candidate_to_reference_line_integrated_ratio": 0.37263054232227955,
+    "count_scaled_cycle_112_electron_ratio_estimate": 0.432994036356247,
+    "count_scaled_cycle_112_ion_ratio_estimate": 0.4555655815390647,
+    "common_warm_weight_factor": 2.25156033877556,
+    "estimated_warm_electron_ratio": 0.9749121991860686,
+    "estimated_warm_ion_ratio": 1.0257333951045815,
+    "claim_boundary": "The cycle-112 ratios are count-scaled estimates, not fresh profile measurements. The common factor preserves interspecies macro-weight equality and relative charge structure."
+  },
+  "branches": {
+    "control": {
+      "electron_macro_weight": 700000000.0,
+      "ion_macro_weight": 700000000.0
+    },
+    "warm": {
+      "electron_macro_weight": 1576092237.1428921,
+      "ion_macro_weight": 1576092237.1428921
+    }
+  },
+  "execution_contract": {
+    "solver_commit": "fd764b089a21496d08939ce977cca5e2c233f8e3",
+    "solver_sha256": "ed30f0fdad1b1a05d712a4123dcbdedeee7df0a5b3270afb62b3ed4013cdbd31",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "seed": 13507,
+    "cycles_per_branch": 4,
+    "steps_per_cycle": 4000,
+    "serial": true,
+    "maximum_wall_seconds_per_cycle": 60.0,
+    "minimum_available_memory_kib": 524288,
+    "maximum_particle_growth_factor_per_cycle": 4.0,
+    "maximum_total_particle_cap_fraction": 0.25,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "maximum_spatial_phase_residual_J_m-2": 2e-15,
+    "stop_on_any_hard_gate_failure": true
+  },
+  "diagnostic_contract": {
+    "statistics_are_branch_diagnostic_only": true,
+    "no_cross_code_acceptance_thresholds": true,
+    "primary_metrics": [
+      "normalized_total_population_slope_per_cycle",
+      "electron_source_loss_relative_imbalance",
+      "ion_source_loss_relative_imbalance"
+    ],
+    "secondary_metrics": [
+      "normalized_field_energy_slope_per_cycle",
+      "normalized_peak_field_slope_per_cycle",
+      "normalized_ionization_slope_per_cycle",
+      "ionization_coefficient_of_variation"
+    ]
+  },
+  "decision_rule": {
+    "warm_start_hypothesis_supported_only_if": [
+      "both branches pass all hard gates",
+      "warm electron source-loss imbalance is at least 0.10 lower than control",
+      "warm ion source-loss imbalance is at least 0.10 lower than control",
+      "warm normalized population slope is lower than control"
+    ],
+    "equilibrium_claim_prohibited": true,
+    "measurement_authorization_prohibited": true,
+    "followup_requires_new_predeclaration": true
+  },
+  "claim_boundary": "This A/B diagnostic isolates initial represented density while holding the sampled phase-space coordinates, velocities, seed, physics, and macro-particle counts fixed. Weight scaling changes initial self-consistent fields and is not a restart or a validation measurement.",
+  "physics_claim": "none_predeclared_initialization_diagnostic_only"
+}
