@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_aurorapic_edupic_strict_source_loss_equilibration",
+  "baseline": {
+    "cycle": 80,
+    "measurement_report_sha256": "a6ad72c8fb9a0915a960134554c549397aec1fb7ff1607eed083c5569335e2d0",
+    "checkpoint_sha256": "144d2ad69a3350935a9317255a583c48015ba7f2bb211b691c440d1e2b07b707",
+    "evidence_path": "benchmarks/ccp/edupic-argon-aurorapic-measurement-pilot-cycle80-20260811.json",
+    "evidence_sha256": "380c88a9dd70d8a322d965e552fb08f48e61bf04b87c4817fae3955e6ad7870b",
+    "source_loss_stationary": false
+  },
+  "execution_contract": {
+    "first_cycle": 81,
+    "maximum_cycle": 112,
+    "cycles_per_block": 4,
+    "maximum_blocks_per_invocation": 1,
+    "serial": true,
+    "maximum_wall_seconds_per_cycle": 60,
+    "minimum_available_memory_kib": 524288,
+    "maximum_particle_growth_factor_per_cycle": 4.0,
+    "maximum_total_particle_cap_fraction": 0.25,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "maximum_spatial_phase_residual_J_m-2": 1e-15
+  },
+  "stationarity_contract": {
+    "window_cycles": 5,
+    "maximum_absolute_normalized_total_population_slope_per_cycle": 0.001,
+    "minimum_population_efolding_time_cycles": 1000.0,
+    "maximum_electron_source_loss_relative_imbalance": 0.05,
+    "maximum_ion_source_loss_relative_imbalance": 0.05,
+    "maximum_absolute_normalized_field_energy_slope_per_cycle": 0.01,
+    "maximum_absolute_normalized_peak_field_slope_per_cycle": 0.01,
+    "maximum_absolute_normalized_ionization_slope_per_cycle": 0.02,
+    "maximum_ionization_coefficient_of_variation": 0.05,
+    "consecutive_passing_blocks_required_before_measurement": 2
+  },
+  "diagnostic_contract": {
+    "wall_impact_spectrum_continues_from_cycle": 76,
+    "cycle_77_through_80_measurement_remains_diagnostic_only": true,
+    "future_production_measurement_must_start_with_another_fresh_window": true
+  },
+  "stopping_policy": {
+    "stop_when_two_consecutive_blocks_pass": true,
+    "stop_at_maximum_cycle_if_not_stationary": true,
+    "stop_on_any_hard_safety_failure": true,
+    "do_not_relax_thresholds_after_observing_results": true
+  },
+  "claim_boundary": "Passing requires slow population drift and explicit source-loss balance; it authorizes a new measurement campaign but is not cross-code validation.",
+  "physics_claim": "none_predeclared_strict_equilibration_only"
+}

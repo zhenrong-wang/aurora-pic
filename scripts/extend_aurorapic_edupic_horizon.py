@@ -44,12 +44,18 @@ APPROVED_EXTENSION_RULE_SHA256 = (
 APPROVED_PRODUCTION_RULE_SHA256 = (
     "c3b58592dbaa631aa1a3da549828247e7394d5d847e5101b1782f040aa489a8d"
 )
+APPROVED_STRICT_RULE_SHA256 = (
+    "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144"
+)
 MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_IONIZATION_SLOPE_PER_CYCLE = 0.02
 MAX_IONIZATION_COEFFICIENT_OF_VARIATION = 0.05
 PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE = 64
+STRICT_WALL_IMPACT_ORIGIN_CYCLE = 76
+STRICT_MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.001
+STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE = 0.05
 
 
 class HorizonError(RuntimeError):
@@ -68,18 +74,23 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     path = args.extension_rule.resolve()
     rule_sha256 = sha256(path)
     if rule_sha256 not in {
-        APPROVED_EXTENSION_RULE_SHA256, APPROVED_PRODUCTION_RULE_SHA256
+        APPROVED_EXTENSION_RULE_SHA256, APPROVED_PRODUCTION_RULE_SHA256,
+        APPROVED_STRICT_RULE_SHA256,
     }:
         raise HorizonError("extension rule SHA-256 is not approved")
     rule = json.loads(path.read_text(encoding="utf-8"))
     execution = rule.get("execution_contract")
     stationarity_rule = rule.get("stationarity_contract")
     baseline = rule.get("baseline")
-    expected_scope = (
-        "predeclared_aurorapic_edupic_equilibration_extension"
-        if rule_sha256 == APPROVED_EXTENSION_RULE_SHA256 else
-        "predeclared_aurorapic_edupic_production_equilibration_extension"
-    )
+    scopes = {
+        APPROVED_EXTENSION_RULE_SHA256:
+            "predeclared_aurorapic_edupic_equilibration_extension",
+        APPROVED_PRODUCTION_RULE_SHA256:
+            "predeclared_aurorapic_edupic_production_equilibration_extension",
+        APPROVED_STRICT_RULE_SHA256:
+            "predeclared_aurorapic_edupic_strict_source_loss_equilibration",
+    }
+    expected_scope = scopes[rule_sha256]
     if (
         rule.get("schema_version") != 1
         or rule.get("case_id") != "edupic-1.0-default-argon-ccp"
@@ -90,9 +101,10 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     ):
         raise HorizonError("extension rule has the wrong contract identity")
     production = rule_sha256 == APPROVED_PRODUCTION_RULE_SHA256
+    strict = rule_sha256 == APPROVED_STRICT_RULE_SHA256
     expected_execution = {
-        "first_cycle": 65 if production else 17,
-        "maximum_cycle": 96 if production else 64,
+        "first_cycle": 81 if strict else (65 if production else 17),
+        "maximum_cycle": 112 if strict else (96 if production else 64),
         "cycles_per_block": HARD_MAX_CYCLES_PER_BLOCK,
         "maximum_blocks_per_invocation": 1,
         "serial": True,
@@ -108,7 +120,8 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     expected_stationarity = {
         "window_cycles": 5,
         "maximum_absolute_normalized_total_population_slope_per_cycle":
-            MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE,
+            (STRICT_MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE if strict else
+             MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE),
         "maximum_absolute_normalized_field_energy_slope_per_cycle":
             MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE,
         "maximum_absolute_normalized_peak_field_slope_per_cycle":
@@ -119,6 +132,14 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
             MAX_IONIZATION_COEFFICIENT_OF_VARIATION,
         "consecutive_passing_blocks_required_before_measurement": 2,
     }
+    if strict:
+        expected_stationarity.update({
+            "minimum_population_efolding_time_cycles": 1000.0,
+            "maximum_electron_source_loss_relative_imbalance":
+                STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
+            "maximum_ion_source_loss_relative_imbalance":
+                STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
+        })
     if execution != expected_execution or stationarity_rule != expected_stationarity:
         raise HorizonError("extension rule differs from the built-in safety contract")
     if production and rule.get("wall_impact_diagnostic_contract") != {
@@ -138,7 +159,8 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         raise HorizonError("extension cannot precede its frozen baseline")
     if args.start_cycle == int(baseline.get("cycle", -1)) and (
         args.expected_prior_report_sha256.lower()
-        != baseline.get("horizon_report_sha256")
+        != baseline.get(
+            "horizon_report_sha256", baseline.get("measurement_report_sha256"))
         or args.expected_input_checkpoint_sha256.lower()
         != baseline.get("checkpoint_sha256")
     ):
@@ -149,8 +171,18 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
 def production_rule(path: Path | None) -> bool:
     return (
         path is not None
-        and sha256(path.resolve()) == APPROVED_PRODUCTION_RULE_SHA256
+        and sha256(path.resolve()) in {
+            APPROVED_PRODUCTION_RULE_SHA256, APPROVED_STRICT_RULE_SHA256}
     )
+
+
+def strict_rule(path: Path | None) -> bool:
+    return path is not None and sha256(path.resolve()) == APPROVED_STRICT_RULE_SHA256
+
+
+def wall_impact_origin_cycle(path: Path | None) -> int:
+    return (STRICT_WALL_IMPACT_ORIGIN_CYCLE if strict_rule(path) else
+            PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE)
 
 
 def wall_impact_diagnostic(output: Path, origin_step: int) -> dict[str, object]:
@@ -173,7 +205,7 @@ def wall_impact_diagnostic(output: Path, origin_step: int) -> dict[str, object]:
     if any(integer(row, "count_closure", "wall-impact summary") != 1
            for row in summary):
         raise HorizonError("wall-impact macro counts do not close")
-    return {
+    result = {
         "origin_step": origin_step,
         "summary_sha256": sha256(summary_path),
         "spectrum_sha256": sha256(spectrum_path),
@@ -239,7 +271,11 @@ def normalized_slope(values: list[float]) -> float:
     return slope / abs(mean)
 
 
-def stationarity(endpoints: list[dict[str, float | int]]) -> dict[str, object]:
+def stationarity(
+    endpoints: list[dict[str, float | int]],
+    populations: list[dict[str, object]] | None = None,
+    strict: bool = False,
+) -> dict[str, object]:
     if len(endpoints) < 5:
         raise HorizonError("stationarity block requires an input plus four cycles")
     totals = [float(item["total_particles"]) for item in endpoints]
@@ -261,10 +297,12 @@ def stationarity(endpoints: list[dict[str, float | int]]) -> dict[str, object]:
             if statistics.fmean(ionizations) != 0.0 else math.inf
         ),
     }
+    population_limit = (STRICT_MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE
+                        if strict else MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE)
     gates = {
         "total_population_slope": abs(
             metrics["normalized_total_population_slope_per_cycle"]
-        ) <= MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE,
+        ) <= population_limit,
         "field_energy_slope": abs(
             metrics["normalized_field_energy_slope_per_cycle"]
         ) <= MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE,
@@ -278,11 +316,43 @@ def stationarity(endpoints: list[dict[str, float | int]]) -> dict[str, object]:
             "ionization_coefficient_of_variation"
         ] <= MAX_IONIZATION_COEFFICIENT_OF_VARIATION,
     }
+    if strict:
+        if not populations or len(populations) != 4:
+            raise HorizonError("strict stationarity requires four source-loss records")
+        ionization_total = sum(int(item["ionization_pairs"])
+                               for item in populations)
+        electron_losses = sum(int(item["electron_wall_losses"])
+                              for item in populations)
+        ion_losses = sum(int(item["ion_wall_losses"])
+                         for item in populations)
+        if ionization_total <= 0:
+            raise HorizonError("strict stationarity requires positive ionization")
+        metrics.update({
+            "population_efolding_time_cycles": (
+                1.0 / abs(metrics["normalized_total_population_slope_per_cycle"])
+                if metrics["normalized_total_population_slope_per_cycle"] != 0.0
+                else math.inf),
+            "ionization_pairs_in_block": ionization_total,
+            "electron_wall_losses_in_block": electron_losses,
+            "ion_wall_losses_in_block": ion_losses,
+            "electron_source_loss_relative_imbalance":
+                abs(ionization_total - electron_losses) / ionization_total,
+            "ion_source_loss_relative_imbalance":
+                abs(ionization_total - ion_losses) / ionization_total,
+        })
+        gates.update({
+            "electron_source_loss_balance": metrics[
+                "electron_source_loss_relative_imbalance"] <=
+                STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
+            "ion_source_loss_balance": metrics[
+                "ion_source_loss_relative_imbalance"] <=
+                STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
+        })
     return {
         "window_cycles": [int(item["cycle"]) for item in endpoints],
         "thresholds": {
             "maximum_absolute_normalized_total_population_slope_per_cycle":
-                MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE,
+                population_limit,
             "maximum_absolute_normalized_field_energy_slope_per_cycle":
                 MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE,
             "maximum_absolute_normalized_peak_field_slope_per_cycle":
@@ -300,6 +370,15 @@ def stationarity(endpoints: list[dict[str, float | int]]) -> dict[str, object]:
             "equilibrium or cross-code agreement."
         ),
     }
+    if strict:
+        result["thresholds"].update({
+            "minimum_population_efolding_time_cycles": 1000.0,
+            "maximum_electron_source_loss_relative_imbalance":
+                STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
+            "maximum_ion_source_loss_relative_imbalance":
+                STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
+        })
+    return result
 
 
 def report_end_cycle(report: dict[str, object]) -> int:
@@ -313,6 +392,11 @@ def report_end_cycle(report: dict[str, object]) -> int:
         and block.get("hard_safety_gates_passed") is True
     ):
         return int(block["end_cycle"])
+    window = report.get("window")
+    if (isinstance(window, dict) and
+            isinstance(window.get("end_cycle"), int) and
+            report.get("all_gates_passed") is True):
+        return int(window["end_cycle"])
     raise HorizonError("prior report is not a completed safe pilot or horizon block")
 
 
@@ -327,6 +411,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         )
     maximum_end_cycle = authorized_end_cycle(args)
     collect_wall_impacts = production_rule(args.extension_rule)
+    strict_campaign = strict_rule(args.extension_rule)
     if args.start_cycle < 4 or args.start_cycle + args.cycles > maximum_end_cycle:
         raise HorizonError("requested horizon exceeds its built-in cycle bounds")
     executable = args.executable.resolve()
@@ -350,13 +435,16 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     )
     if args.extension_rule is not None and prior_stationarity_streak >= 2:
         raise HorizonError("equilibration is complete; start a measurement campaign")
-    prior_stage = prior_report["stages"][-1]
+    prior_checkpoint_sha256 = prior_report.get("final_checkpoint_sha256")
+    if prior_checkpoint_sha256 is None:
+        prior_checkpoint_sha256 = prior_report["stages"][-1].get(
+            "output_checkpoint_sha256")
     checkpoint = input_output / (
         f"checkpoint_{args.start_cycle * STEPS_PER_CYCLE}.apc"
     )
     if (
         sha256(checkpoint) != args.expected_input_checkpoint_sha256.lower()
-        or prior_stage.get("output_checkpoint_sha256") != sha256(checkpoint)
+        or prior_checkpoint_sha256 != sha256(checkpoint)
     ):
         raise HorizonError("input checkpoint is not the locked prior output")
     base = base_path.read_text(encoding="utf-8")
@@ -412,7 +500,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         if collect_wall_impacts:
             result["wall_impact_diagnostic"] = wall_impact_diagnostic(
                 output,
-                PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE * STEPS_PER_CYCLE,
+                wall_impact_origin_cycle(args.extension_rule) * STEPS_PER_CYCLE,
             )
         atomic_json(stage / "stage-report.json", result)
         if not result["passes"]:
@@ -424,7 +512,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "ions": result["population"]["final_ions"],
         }
         checkpoint = next_checkpoint
-    screen = stationarity(endpoints)
+    screen = stationarity(
+        endpoints, [stage["population"] for stage in stages], strict_campaign)
     stationary_streak = (
         prior_stationarity_streak + 1 if screen["passed"] else 0
     )

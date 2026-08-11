@@ -41,6 +41,10 @@ def main() -> int:
         "benchmarks/ccp/"
         "edupic-argon-aurorapic-production-equilibration-rule-20260811.json"
     )
+    strict_rule = repository / (
+        "benchmarks/ccp/"
+        "edupic-argon-aurorapic-strict-equilibration-rule-20260811.json"
+    )
     extension_args = Namespace(
         extension_rule=rule,
         start_cycle=16,
@@ -77,6 +81,18 @@ def main() -> int:
     require(
         PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE == 64,
         "production wall-impact origin drifted from the frozen baseline",
+    )
+    extension_args.extension_rule = strict_rule
+    extension_args.start_cycle = 80
+    extension_args.expected_prior_report_sha256 = (
+        "a6ad72c8fb9a0915a960134554c549397aec1fb7ff1607eed083c5569335e2d0"
+    )
+    extension_args.expected_input_checkpoint_sha256 = (
+        "144d2ad69a3350935a9317255a583c48015ba7f2bb211b691c440d1e2b07b707"
+    )
+    require(
+        authorized_end_cycle(extension_args) == 112,
+        "approved strict source-loss extension was not authorized",
     )
     require(
         solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
@@ -160,6 +176,24 @@ def main() -> int:
         and not trending_result["gates"]["total_population_slope"]
         and not trending_result["gates"]["field_energy_slope"],
         "trending synthetic horizon passed stationarity",
+    )
+    strict_populations = [
+        {"ionization_pairs": 1000, "electron_wall_losses": 990,
+         "ion_wall_losses": 1010} for _ in range(4)
+    ]
+    strict_stable = [dict(item) for item in stable]
+    for item in strict_stable:
+        item["total_particles"] = 10000
+    require(
+        stationarity(strict_stable, strict_populations, True)["passed"],
+        "balanced strict synthetic horizon failed",
+    )
+    strict_populations[0]["electron_wall_losses"] = 500
+    strict_result = stationarity(strict_stable, strict_populations, True)
+    require(
+        not strict_result["passed"] and
+        not strict_result["gates"]["electron_source_loss_balance"],
+        "strict horizon accepted source-loss imbalance",
     )
     print("AuroraPIC eduPIC horizon stationarity regression passed")
     return 0
