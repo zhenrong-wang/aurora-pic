@@ -1184,8 +1184,8 @@ pre-optimization run and reduced its measured wall time from 11.38 s to
 The generated AuroraPIC deck now gives ions a timestep multiplier of 20. Ion
 pushes, boundary checks, and MCC calls occur at pre-step indices divisible by
 20 and use `20*dt`, including the reference-compatible update at index zero;
-ion charge is held between those updates. Checkpoint v13 records and validates
-the complete species schedule. The new two-step preflight therefore exercises
+ion charge is held between those updates. Checkpoint v14 retains the v13
+species-schedule validation. The new two-step preflight therefore exercises
 one long ion update and completes in 7.06 s with zero swap.
 
 The previously explicit inelastic-electron transform difference is now closed:
@@ -1389,10 +1389,41 @@ a monotonic dead-slot cursor rather than repeated full storage scans. An exact
 single-core replay from the cycle-63 checkpoint completed cycle 64 in 45.85
 seconds, down from the certified 56.39 seconds. Its final checkpoint SHA-256
 remained `f99b58a0b39a04c190e5ee9b4d5b98d2a65f0cdb9bf42f6165cf1d745541d47c`,
-and ten emitted diagnostic products were byte-identical. This advances the
-runtime prerequisite without changing the failed stationarity conclusion.
-Ion wall-impact spectra remain the next diagnostic prerequisite before a new
-equilibration declaration.
+and ten emitted diagnostic products were byte-identical. This advanced the
+runtime prerequisite without changing the failed stationarity conclusion; at
+that milestone, ion wall-impact spectra remained the next prerequisite.
+
+That diagnostic prerequisite is now implemented. The opt-in keys are:
+
+```ini
+wall_impact_spectrum = true
+wall_impact_energy_bins = 200
+wall_impact_energy_max = 500
+```
+
+Energy bounds are eV in SI runs and normalized energy otherwise. The runtime
+accumulates separate left/right histograms for every species, recording macro
+counts and represented counts independently. Overflow is never folded into
+the last bin. `wall_impact_spectrum_summary.csv` closes every species/side
+macro count and represented kinetic-energy total against the pre-existing
+boundary-loss ledger; a mismatch is fatal. Checkpoint v14 retains histogram,
+overflow, closure baseline, and origin state. Enabling the diagnostic while
+restarting a pre-v14 checkpoint begins a new origin-labelled window without
+discarding the older cumulative boundary ledger.
+
+An exact cycle-64 replay from the cycle-63 checkpoint exercised the diagnostic
+with 200 bins over 0--500 eV. It captured all 336 electron impacts and all 308
+ion impacts with no overflow. Mean ion impact energies were 29.56 eV at the
+left electrode and 26.20 eV at the right; these are nonstationary pilot values,
+not comparison measurements. All four count and energy closures passed, the
+ten pre-existing diagnostic products stayed byte-identical, and the particle
+plus RNG checkpoint tail stayed byte-identical. The retained evidence is
+[`edupic-argon-aurorapic-cycle64-wall-impact-pilot-20260811.json`](../benchmarks/ccp/edupic-argon-aurorapic-cycle64-wall-impact-pilot-20260811.json).
+
+With performance and wall-impact diagnostics complete, the next scientific
+step is to predeclare a longer equilibration campaign. Its measurement gate
+remains unchanged: two consecutive stationary blocks must pass before any
+AuroraPIC-to-eduPIC distribution comparison begins.
 
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused

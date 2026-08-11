@@ -106,6 +106,10 @@ The final checkpoint and ten diagnostic products were byte-identical. This is
 a bounded local result, not a cross-platform speed claim; the machine and
 hash evidence are retained in
 [`edupic-argon-aurorapic-cycle64-mcc-performance-20260811.json`](../benchmarks/ccp/edupic-argon-aurorapic-cycle64-mcc-performance-20260811.json).
+An opt-in 200-bin wall-impact spectrum replay subsequently took 46.04 seconds
+and about 171 MiB RSS on the same state. Its small observed difference is not
+a statistically resolved overhead measurement; it establishes that the
+count-preserving diagnostic remains inside the existing one-core cycle guard.
 
 Imported 2D diagnostics include cumulative `particle_seconds`, `deposition_seconds`, and `field_solve_seconds` columns, plus cumulative `location_cache_hits` and `location_searches`. Timings use a monotonic wall clock and are operational measurements, not simulation state; timings and location caches are intentionally excluded from checkpoints and numerical convergence decisions. Each live particle first validates its last element and recomputes shape coordinates locally. Only a cache miss or element crossing invokes spatial point location; restart reconstructs the sidecars during its required redeposition. Imported charge deposition uses one dense nodal buffer per active worker and reduces those buffers in worker order. This avoids atomics and data races, gives repeatable results for a fixed worker count, and uses additional memory proportional to `active_threads * mesh_nodes`.
 

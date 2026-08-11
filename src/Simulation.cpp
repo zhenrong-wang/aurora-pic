@@ -34,6 +34,7 @@ constexpr const char* kCheckpointMagicV10 = "AuroraPIC-checkpoint-v10";
 constexpr const char* kCheckpointMagicV11 = "AuroraPIC-checkpoint-v11";
 constexpr const char* kCheckpointMagicV12 = "AuroraPIC-checkpoint-v12";
 constexpr const char* kCheckpointMagicV13 = "AuroraPIC-checkpoint-v13";
+constexpr const char* kCheckpointMagicV14 = "AuroraPIC-checkpoint-v14";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -44,6 +45,21 @@ void validate_runtime_config(const Config& cfg) {
     if (!std::isfinite(cfg.dt) || cfg.dt <= 0.0) throw std::invalid_argument("simulation dt must be positive and finite");
     if (cfg.output_interval == 0) throw std::invalid_argument("output_interval must be positive");
     validate_spatial_average_1d(cfg);
+    const auto& impact = cfg.wall_impact_spectrum;
+    if (!impact.enabled) {
+        if (impact.energy_bins != 0 || impact.energy_max != 0.0) {
+            throw std::invalid_argument(
+                "disabled wall_impact_spectrum cannot configure "
+                "energy bins or maximum");
+        }
+    } else if (impact.energy_bins == 0 ||
+               impact.energy_bins > 1000000 ||
+               !std::isfinite(impact.energy_max) ||
+               !(impact.energy_max > 0.0)) {
+        throw std::invalid_argument(
+            "wall_impact_spectrum requires 1..1000000 bins and "
+            "a positive finite energy maximum");
+    }
     if (!std::isfinite(cfg.phi_left) || !std::isfinite(cfg.phi_right)) {
         throw std::invalid_argument("Dirichlet boundary potentials must be finite");
     }
@@ -262,6 +278,48 @@ void write_boundary_loss_sample(
     }
     output << '\n';
     output.flush();
+}
+
+void clear_wall_impact_side(
+    WallImpactSideSpectrum1D& side) {
+    side.macro_impacts = 0;
+    side.overflow_macro_impacts = 0;
+    side.represented_impacts = 0.0;
+    side.overflow_represented_impacts = 0.0;
+    side.represented_kinetic_energy = 0.0;
+    std::fill(
+        side.macro_histogram.begin(),
+        side.macro_histogram.end(), 0);
+    std::fill(
+        side.represented_histogram.begin(),
+        side.represented_histogram.end(), 0.0);
+}
+
+void add_wall_impact_side(
+    WallImpactSideSpectrum1D& destination,
+    const WallImpactSideSpectrum1D& source) {
+    if (destination.macro_histogram.size() !=
+            source.macro_histogram.size() ||
+        destination.represented_histogram.size() !=
+            source.represented_histogram.size()) {
+        throw std::logic_error(
+            "1D wall-impact histogram shape mismatch");
+    }
+    destination.macro_impacts += source.macro_impacts;
+    destination.overflow_macro_impacts +=
+        source.overflow_macro_impacts;
+    destination.represented_impacts += source.represented_impacts;
+    destination.overflow_represented_impacts +=
+        source.overflow_represented_impacts;
+    destination.represented_kinetic_energy +=
+        source.represented_kinetic_energy;
+    for (std::size_t bin = 0;
+         bin < destination.macro_histogram.size(); ++bin) {
+        destination.macro_histogram[bin] +=
+            source.macro_histogram[bin];
+        destination.represented_histogram[bin] +=
+            source.represented_histogram[bin];
+    }
 }
 
 void write_power_transfer_header(
@@ -538,6 +596,32 @@ Simulation::Simulation(Config cfg)
         collision_totals_.channel_names.size(), 0.0);
     species_boundary_losses_.assign(
         species_.size(), BoundaryLoss1D{});
+    if (cfg_.wall_impact_spectrum.enabled) {
+        wall_impact_spectra_.resize(species_.size());
+        wall_impact_chunks_.assign(
+            species_.size(),
+            std::vector<SpeciesWallImpactSpectrum1D>(
+                runtime_info(cfg_.runtime).active_threads));
+        const auto initialize_spectrum = [&](
+            SpeciesWallImpactSpectrum1D& spectrum) {
+            spectrum.left.macro_histogram.assign(
+                cfg_.wall_impact_spectrum.energy_bins, 0);
+            spectrum.left.represented_histogram.assign(
+                cfg_.wall_impact_spectrum.energy_bins, 0.0);
+            spectrum.right.macro_histogram.assign(
+                cfg_.wall_impact_spectrum.energy_bins, 0);
+            spectrum.right.represented_histogram.assign(
+                cfg_.wall_impact_spectrum.energy_bins, 0.0);
+        };
+        for (auto& spectrum : wall_impact_spectra_) {
+            initialize_spectrum(spectrum);
+        }
+        for (auto& species_chunks : wall_impact_chunks_) {
+            for (auto& spectrum : species_chunks) {
+                initialize_spectrum(spectrum);
+            }
+        }
+    }
     boundary_loss_chunks_.assign(
         species_.size(),
         std::vector<BoundaryLoss1D>(
@@ -722,6 +806,12 @@ void Simulation::initialize() {
         species_boundary_losses_.begin(),
         species_boundary_losses_.end(),
         BoundaryLoss1D{});
+    wall_impact_origin_step_ = 0;
+    for (auto& spectrum : wall_impact_spectra_) {
+        spectrum.baseline_loss = {};
+        clear_wall_impact_side(spectrum.left);
+        clear_wall_impact_side(spectrum.right);
+    }
     power_transfer_origin_step_ = 0;
     std::fill(
         species_power_transfer_.begin(),
@@ -1050,6 +1140,13 @@ void Simulation::step() {
         std::fill(
             chunk_losses.begin(), chunk_losses.end(),
             BoundaryLoss1D{});
+        if (cfg_.wall_impact_spectrum.enabled) {
+            for (auto& spectrum :
+                 wall_impact_chunks_[species_id]) {
+                clear_wall_impact_side(spectrum.left);
+                clear_wall_impact_side(spectrum.right);
+            }
+        }
         auto& chunk_power =
             power_transfer_chunks_[species_id];
         std::fill(
@@ -1063,6 +1160,9 @@ void Simulation::step() {
                 std::size_t end) {
                 auto& loss = chunk_losses[chunk];
                 auto& power = chunk_power[chunk];
+                auto* impact = cfg_.wall_impact_spectrum.enabled
+                    ? &wall_impact_chunks_[species_id][chunk]
+                    : nullptr;
                 for (std::size_t particle_id = begin;
                      particle_id < end; ++particle_id) {
                     auto& p = particles[particle_id];
@@ -1099,14 +1199,29 @@ void Simulation::step() {
                             0.5 * sp.mass() *
                             sp.config().weight *
                             speed_squared;
+                        const double particle_energy =
+                            represented_energy /
+                            sp.config().weight;
                         if (p.x < 0.0) {
                             ++loss.absorbed_left;
                             loss.kinetic_energy_left +=
                                 represented_energy;
+                            if (impact) {
+                                accumulate_wall_impact(
+                                    impact->left, species_id,
+                                    particle_energy,
+                                    represented_energy);
+                            }
                         } else {
                             ++loss.absorbed_right;
                             loss.kinetic_energy_right +=
                                 represented_energy;
+                            if (impact) {
+                                accumulate_wall_impact(
+                                    impact->right, species_id,
+                                    particle_energy,
+                                    represented_energy);
+                            }
                         }
                         p.alive = false;
                     }
@@ -1123,6 +1238,14 @@ void Simulation::step() {
                 loss.kinetic_energy_left;
             total_loss.kinetic_energy_right +=
                 loss.kinetic_energy_right;
+        }
+        if (cfg_.wall_impact_spectrum.enabled) {
+            auto& total = wall_impact_spectra_[species_id];
+            for (const auto& chunk :
+                 wall_impact_chunks_[species_id]) {
+                add_wall_impact_side(total.left, chunk.left);
+                add_wall_impact_side(total.right, chunk.right);
+            }
         }
     }
     deposit_and_solve(time_ + cfg_.dt);
@@ -1272,6 +1395,41 @@ void Simulation::begin_spatial_collision_step() {
     }
 }
 
+void Simulation::accumulate_wall_impact(
+    WallImpactSideSpectrum1D& accumulator,
+    std::size_t species_id,
+    double particle_energy,
+    double represented_energy) const {
+    if (!cfg_.wall_impact_spectrum.enabled) return;
+    if (species_id >= species_.size() ||
+        !std::isfinite(particle_energy) || particle_energy < 0.0 ||
+        !std::isfinite(represented_energy) || represented_energy < 0.0) {
+        throw std::logic_error(
+            "invalid 1D wall-impact spectrum sample");
+    }
+    const double energy_scale =
+        cfg_.units.system == UnitSystem::SI
+            ? ELEMENTARY_CHARGE_SI
+            : 1.0;
+    const double energy = particle_energy / energy_scale;
+    const double represented_count = species_[species_id].weight();
+    ++accumulator.macro_impacts;
+    accumulator.represented_impacts += represented_count;
+    accumulator.represented_kinetic_energy += represented_energy;
+    if (energy >= cfg_.wall_impact_spectrum.energy_max) {
+        ++accumulator.overflow_macro_impacts;
+        accumulator.overflow_represented_impacts += represented_count;
+        return;
+    }
+    const auto bin = std::min(
+        cfg_.wall_impact_spectrum.energy_bins - 1,
+        static_cast<std::size_t>(
+            energy / cfg_.wall_impact_spectrum.energy_max *
+            cfg_.wall_impact_spectrum.energy_bins));
+    ++accumulator.macro_histogram[bin];
+    accumulator.represented_histogram[bin] += represented_count;
+}
+
 void Simulation::accumulate_phase_eedf(std::size_t phase) {
     if (!cfg_.phase_eedf.enabled ||
         phase >= phase_eedf_accumulators_.size()) return;
@@ -1404,6 +1562,141 @@ void Simulation::accumulate_spatial_average() {
     }
     ++spatial_average_samples_;
     ++spatial_moment_samples_;
+}
+
+void Simulation::write_wall_impact_spectrum() const {
+    if (!cfg_.wall_impact_spectrum.enabled) return;
+    if (wall_impact_spectra_.size() != species_.size()) {
+        throw std::logic_error(
+            "1D wall-impact spectra do not match species");
+    }
+    const auto output_dir = std::filesystem::path(cfg_.output_dir);
+    std::ofstream histogram(
+        output_dir / "wall_impact_spectrum.csv");
+    std::ofstream summary(
+        output_dir / "wall_impact_spectrum_summary.csv");
+    if (!histogram || !summary) {
+        throw std::runtime_error(
+            "cannot open 1D wall-impact spectrum output");
+    }
+    const bool si = cfg_.units.system == UnitSystem::SI;
+    const char* energy_name = si
+        ? "impact_energy_eV"
+        : "impact_energy_normalized";
+    const char* represented_energy_name = si
+        ? "represented_kinetic_energy_J_m-2"
+        : "represented_kinetic_energy_normalized";
+    histogram << "origin_step,species_id,species,electrode,energy_bin,"
+              << energy_name
+              << ",macro_count,represented_count,probability_density\n"
+              << std::setprecision(17);
+    summary << "origin_step,species_id,species,electrode,macro_impacts,"
+               "represented_impacts,overflow_macro_impacts,"
+               "overflow_represented_impacts,overflow_fraction,"
+            << represented_energy_name
+            << ",boundary_delta_macro_impacts,boundary_delta_"
+            << represented_energy_name
+            << ",count_closure,energy_closure_residual\n"
+            << std::setprecision(17);
+    const double bin_width =
+        cfg_.wall_impact_spectrum.energy_max /
+        static_cast<double>(
+            cfg_.wall_impact_spectrum.energy_bins);
+    for (std::size_t species_id = 0;
+         species_id < species_.size(); ++species_id) {
+        const auto& spectrum = wall_impact_spectra_[species_id];
+        const auto& loss = species_boundary_losses_[species_id];
+        for (const bool left : {true, false}) {
+            const auto& side = left
+                ? spectrum.left : spectrum.right;
+            const auto boundary_count = left
+                ? loss.absorbed_left -
+                      spectrum.baseline_loss.absorbed_left
+                : loss.absorbed_right -
+                      spectrum.baseline_loss.absorbed_right;
+            const double boundary_energy = left
+                ? loss.kinetic_energy_left -
+                      spectrum.baseline_loss.kinetic_energy_left
+                : loss.kinetic_energy_right -
+                      spectrum.baseline_loss.kinetic_energy_right;
+            if (boundary_count != side.macro_impacts) {
+                throw std::runtime_error(
+                    "1D wall-impact count does not close against "
+                    "the boundary-loss ledger");
+            }
+            const double residual =
+                side.represented_kinetic_energy - boundary_energy;
+            const double tolerance =
+                256.0 * std::numeric_limits<double>::epsilon() *
+                std::max({std::numeric_limits<double>::min(),
+                    std::abs(side.represented_kinetic_energy),
+                    std::abs(boundary_energy)});
+            if (std::abs(residual) > tolerance) {
+                throw std::runtime_error(
+                    "1D wall-impact energy does not close against "
+                    "the boundary-loss ledger");
+            }
+            std::uint64_t binned_macro = 0;
+            double binned_represented = 0.0;
+            for (std::size_t bin = 0;
+                 bin < side.macro_histogram.size(); ++bin) {
+                binned_macro += side.macro_histogram[bin];
+                binned_represented +=
+                    side.represented_histogram[bin];
+                histogram << wall_impact_origin_step_ << ','
+                    << species_id << ','
+                    << csv_cell(species_[species_id].name()) << ','
+                    << (left ? "left" : "right") << ','
+                    << bin << ','
+                    << (static_cast<double>(bin) + 0.5) * bin_width
+                    << ',' << side.macro_histogram[bin]
+                    << ',' << side.represented_histogram[bin]
+                    << ','
+                    << (side.represented_impacts > 0.0
+                            ? side.represented_histogram[bin] /
+                                  side.represented_impacts /
+                                  bin_width
+                            : 0.0)
+                    << '\n';
+            }
+            const double count_residual =
+                binned_represented +
+                side.overflow_represented_impacts -
+                side.represented_impacts;
+            const double count_tolerance =
+                256.0 * std::numeric_limits<double>::epsilon() *
+                std::max(1.0, side.represented_impacts);
+            if (binned_macro + side.overflow_macro_impacts !=
+                    side.macro_impacts ||
+                std::abs(count_residual) > count_tolerance) {
+                throw std::runtime_error(
+                    "1D wall-impact histogram does not preserve "
+                    "its impact count");
+            }
+            summary << wall_impact_origin_step_ << ','
+                << species_id << ','
+                << csv_cell(species_[species_id].name()) << ','
+                << (left ? "left" : "right") << ','
+                << side.macro_impacts << ','
+                << side.represented_impacts << ','
+                << side.overflow_macro_impacts << ','
+                << side.overflow_represented_impacts << ','
+                << (side.represented_impacts > 0.0
+                        ? side.overflow_represented_impacts /
+                              side.represented_impacts
+                        : 0.0)
+                << ',' << side.represented_kinetic_energy
+                << ',' << boundary_count
+                << ',' << boundary_energy
+                << ",1," << residual << '\n';
+        }
+    }
+    require_stream(
+        histogram,
+        "failed while writing 1D wall-impact histogram");
+    require_stream(
+        summary,
+        "failed while writing 1D wall-impact summary");
 }
 
 void Simulation::write_spatial_average() const {
@@ -1851,7 +2144,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV13 << '\n';
+    out << kCheckpointMagicV14 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -1899,6 +2192,39 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             << loss.absorbed_right << ' '
             << loss.kinetic_energy_left << ' '
             << loss.kinetic_energy_right << "\n";
+    }
+    out << "wall_impact_spectrum "
+        << (cfg_.wall_impact_spectrum.enabled ? 1 : 0) << ' '
+        << wall_impact_origin_step_ << ' '
+        << cfg_.wall_impact_spectrum.energy_bins << ' '
+        << cfg_.wall_impact_spectrum.energy_max << ' '
+        << wall_impact_spectra_.size() << "\n";
+    for (std::size_t species_id = 0;
+         species_id < wall_impact_spectra_.size(); ++species_id) {
+        const auto& spectrum = wall_impact_spectra_[species_id];
+        out << "wall_impact_species " << species_id << ' '
+            << species_[species_id].name() << ' '
+            << spectrum.baseline_loss.absorbed_left << ' '
+            << spectrum.baseline_loss.absorbed_right << ' '
+            << spectrum.baseline_loss.kinetic_energy_left << ' '
+            << spectrum.baseline_loss.kinetic_energy_right << "\n";
+        for (const bool left : {true, false}) {
+            const auto& side = left
+                ? spectrum.left : spectrum.right;
+            out << "wall_impact_side " << species_id << ' '
+                << (left ? "left" : "right") << ' '
+                << side.macro_impacts << ' '
+                << side.overflow_macro_impacts << ' '
+                << side.represented_impacts << ' '
+                << side.overflow_represented_impacts << ' '
+                << side.represented_kinetic_energy;
+            for (std::size_t bin = 0;
+                 bin < side.macro_histogram.size(); ++bin) {
+                out << ' ' << side.macro_histogram[bin]
+                    << ' ' << side.represented_histogram[bin];
+            }
+            out << "\n";
+        }
     }
     out << "power_transfer_origin_step "
         << power_transfer_origin_step_ << "\n";
@@ -2074,7 +2400,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v13 = magic == kCheckpointMagicV13;
+    const bool checkpoint_v14 = magic == kCheckpointMagicV14;
+    const bool checkpoint_v13 =
+        magic == kCheckpointMagicV13 || checkpoint_v14;
     const bool checkpoint_v4_state =
         checkpoint_v4 || checkpoint_v5 ||
         checkpoint_v6 || checkpoint_v7 || checkpoint_v8 || checkpoint_v9 ||
@@ -2284,6 +2612,160 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             species_boundary_losses_.begin(),
             species_boundary_losses_.end(),
             BoundaryLoss1D{});
+    }
+    const bool legacy_wall_impact_origin =
+        !checkpoint_v14 && cfg_.wall_impact_spectrum.enabled;
+    if (checkpoint_v14) {
+        int stored_enabled = 0;
+        std::size_t stored_origin = 0;
+        std::size_t stored_bins = 0;
+        double stored_energy_max = 0.0;
+        std::size_t stored_species_count = 0;
+        in >> stored_enabled >> stored_origin >> stored_bins >>
+            stored_energy_max >> stored_species_count;
+        const bool enabled = stored_enabled == 1;
+        const bool shape_valid =
+            (stored_enabled == 0 || stored_enabled == 1) &&
+            std::isfinite(stored_energy_max) &&
+            stored_energy_max >= 0.0 &&
+            stored_species_count ==
+                (enabled ? species_.size() : 0) &&
+            (!enabled ||
+             (stored_bins > 0 && stored_energy_max > 0.0));
+        const bool contract_matches =
+            stored_enabled ==
+                (cfg_.wall_impact_spectrum.enabled ? 1 : 0) &&
+            stored_bins ==
+                cfg_.wall_impact_spectrum.energy_bins &&
+            stored_energy_max ==
+                cfg_.wall_impact_spectrum.energy_max &&
+            stored_species_count == wall_impact_spectra_.size();
+        if (key != "wall_impact_spectrum" ||
+            !shape_valid || !contract_matches) {
+            throw std::runtime_error(
+                "checkpoint wall-impact spectrum contract is "
+                "invalid");
+        }
+        wall_impact_origin_step_ = stored_origin;
+        for (std::size_t species_id = 0;
+             species_id < stored_species_count; ++species_id) {
+            std::size_t stored_species_id = 0;
+            std::string stored_name;
+            auto& spectrum = wall_impact_spectra_[species_id];
+            in >> key >> stored_species_id >> stored_name >>
+                spectrum.baseline_loss.absorbed_left >>
+                spectrum.baseline_loss.absorbed_right >>
+                spectrum.baseline_loss.kinetic_energy_left >>
+                spectrum.baseline_loss.kinetic_energy_right;
+            if (key != "wall_impact_species" ||
+                stored_species_id != species_id ||
+                stored_name != species_[species_id].name() ||
+                spectrum.baseline_loss.absorbed_left >
+                    species_boundary_losses_[species_id]
+                        .absorbed_left ||
+                spectrum.baseline_loss.absorbed_right >
+                    species_boundary_losses_[species_id]
+                        .absorbed_right ||
+                !std::isfinite(
+                    spectrum.baseline_loss.kinetic_energy_left) ||
+                !std::isfinite(
+                    spectrum.baseline_loss.kinetic_energy_right) ||
+                spectrum.baseline_loss.kinetic_energy_left < 0.0 ||
+                spectrum.baseline_loss.kinetic_energy_right < 0.0 ||
+                spectrum.baseline_loss.kinetic_energy_left >
+                    species_boundary_losses_[species_id]
+                        .kinetic_energy_left ||
+                spectrum.baseline_loss.kinetic_energy_right >
+                    species_boundary_losses_[species_id]
+                        .kinetic_energy_right) {
+                throw std::runtime_error(
+                    "checkpoint wall-impact species baseline is "
+                    "invalid");
+            }
+            for (const bool left : {true, false}) {
+                std::size_t side_species_id = 0;
+                std::string side_name;
+                auto& side = left
+                    ? spectrum.left : spectrum.right;
+                in >> key >> side_species_id >> side_name >>
+                    side.macro_impacts >>
+                    side.overflow_macro_impacts >>
+                    side.represented_impacts >>
+                    side.overflow_represented_impacts >>
+                    side.represented_kinetic_energy;
+                std::uint64_t binned_macro = 0;
+                double binned_represented = 0.0;
+                for (std::size_t bin = 0;
+                     bin < stored_bins; ++bin) {
+                    in >> side.macro_histogram[bin] >>
+                        side.represented_histogram[bin];
+                    binned_macro += side.macro_histogram[bin];
+                    binned_represented +=
+                        side.represented_histogram[bin];
+                }
+                const auto boundary_count = left
+                    ? species_boundary_losses_[species_id]
+                              .absorbed_left -
+                          spectrum.baseline_loss.absorbed_left
+                    : species_boundary_losses_[species_id]
+                              .absorbed_right -
+                          spectrum.baseline_loss.absorbed_right;
+                const double boundary_energy = left
+                    ? species_boundary_losses_[species_id]
+                              .kinetic_energy_left -
+                          spectrum.baseline_loss.kinetic_energy_left
+                    : species_boundary_losses_[species_id]
+                              .kinetic_energy_right -
+                          spectrum.baseline_loss.kinetic_energy_right;
+                const double energy_tolerance =
+                    256.0 * std::numeric_limits<double>::epsilon() *
+                    std::max({std::numeric_limits<double>::min(),
+                        std::abs(boundary_energy),
+                        std::abs(side.represented_kinetic_energy)});
+                const double count_tolerance =
+                    256.0 * std::numeric_limits<double>::epsilon() *
+                    std::max(1.0, side.represented_impacts);
+                if (key != "wall_impact_side" ||
+                    side_species_id != species_id ||
+                    side_name != (left ? "left" : "right") ||
+                    side.overflow_macro_impacts >
+                        side.macro_impacts ||
+                    binned_macro +
+                            side.overflow_macro_impacts !=
+                        side.macro_impacts ||
+                    side.macro_impacts != boundary_count ||
+                    !std::isfinite(side.represented_impacts) ||
+                    !std::isfinite(
+                        side.overflow_represented_impacts) ||
+                    !std::isfinite(
+                        side.represented_kinetic_energy) ||
+                    side.represented_impacts < 0.0 ||
+                    side.overflow_represented_impacts < 0.0 ||
+                    side.overflow_represented_impacts >
+                        side.represented_impacts ||
+                    std::abs(
+                        binned_represented +
+                            side.overflow_represented_impacts -
+                            side.represented_impacts) >
+                        count_tolerance ||
+                    std::abs(
+                        side.represented_kinetic_energy -
+                            boundary_energy) >
+                        energy_tolerance ||
+                    std::any_of(
+                        side.represented_histogram.begin(),
+                        side.represented_histogram.end(),
+                        [](double count) {
+                            return !std::isfinite(count) ||
+                                   count < 0.0;
+                        })) {
+                    throw std::runtime_error(
+                        "checkpoint wall-impact side data are "
+                        "invalid");
+                }
+            }
+        }
+        in >> key;
     }
     const bool legacy_power_transfer_origin =
         !checkpoint_v7 && !checkpoint_v8 && !checkpoint_v9 &&
@@ -2872,6 +3354,10 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
+    if (checkpoint_v14 && wall_impact_origin_step_ > step_) {
+        throw std::runtime_error(
+            "checkpoint wall-impact origin exceeds its step");
+    }
     if ((checkpoint_v11 || checkpoint_v12 || checkpoint_v13) &&
         cfg_.spatial_average.enabled &&
         !cfg_.spatial_average.reset_on_restart &&
@@ -2911,6 +3397,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     }
     if (legacy_boundary_loss_origin) {
         boundary_loss_origin_step_ = step_;
+    }
+    if (legacy_wall_impact_origin) {
+        wall_impact_origin_step_ = step_;
+        for (std::size_t species_id = 0;
+             species_id < wall_impact_spectra_.size(); ++species_id) {
+            wall_impact_spectra_[species_id].baseline_loss =
+                species_boundary_losses_[species_id];
+        }
     }
     if (legacy_power_transfer_origin) {
         power_transfer_origin_step_ = step_;
@@ -3117,6 +3611,7 @@ RunSummary Simulation::run() {
     summary.steps_completed = step_;
     summary.final_time = time_;
     if (summary.final_sample.step != step_) summary.final_sample = sample();
+    write_wall_impact_spectrum();
     write_spatial_average();
     return summary;
 }

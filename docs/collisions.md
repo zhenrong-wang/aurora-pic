@@ -432,7 +432,7 @@ output cadence. Imported runs also write `collision_data.txt`, recording the
 resolved gas metadata, operating state, model signature, effective channel
 settings, table paths, and product mappings used by that run.
 
-Current 1D checkpoint v13 and imported checkpoint v6 record collision model identity, a
+Current 1D checkpoint v14 and imported checkpoint v6 record collision model identity, a
 fingerprint of effective cross-section tables and MCC parameters, cumulative
 collision counts, and RNG state. They reject restart with changed collision
 data, external dataset metadata, model parameters, or species timestep

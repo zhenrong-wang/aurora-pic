@@ -1617,6 +1617,8 @@ Config load_config(const std::string& path) {
         "spatial_average_phase_bins",
         "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
         "phase_eedf_energy_max", "phase_eedf_regions",
+        "wall_impact_spectrum", "wall_impact_energy_bins",
+        "wall_impact_energy_max",
         "max_particles_per_species",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
@@ -1709,6 +1711,15 @@ Config load_config(const std::string& path) {
     cfg.phase_eedf.energy_max = as<double>(
         global, "phase_eedf_energy_max", cfg.phase_eedf.energy_max);
     cfg.phase_eedf.regions = parse_phase_eedf_regions(global);
+    cfg.wall_impact_spectrum.enabled = parse_bool(
+        global, "wall_impact_spectrum",
+        cfg.wall_impact_spectrum.enabled);
+    cfg.wall_impact_spectrum.energy_bins = as<std::size_t>(
+        global, "wall_impact_energy_bins",
+        cfg.wall_impact_spectrum.energy_bins);
+    cfg.wall_impact_spectrum.energy_max = as<double>(
+        global, "wall_impact_energy_max",
+        cfg.wall_impact_spectrum.energy_max);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir);
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.phi_left = as<double>(global, "phi_left", cfg.phi_left);

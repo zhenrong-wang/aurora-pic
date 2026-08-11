@@ -459,6 +459,58 @@ def check_rf_electrode_1d(output_dir: Path) -> None:
         expected_header=["x", "rho", "phi", "E"],
         min_rows=33,
     )
+    impact_path = output_dir / "wall_impact_spectrum.csv"
+    impact_header, impact_rows = read_csv(impact_path)
+    require(
+        impact_header == [
+            "origin_step", "species_id", "species", "electrode",
+            "energy_bin", "impact_energy_normalized", "macro_count",
+            "represented_count", "probability_density",
+        ],
+        f"unexpected header in {impact_path}: {impact_header!r}",
+    )
+    require(len(impact_rows) == 64,
+            "RF wall-impact histogram has the wrong row count")
+    require(
+        {row[2] for row in impact_rows} == {"electrons", "ions"} and
+        {row[3] for row in impact_rows} == {"left", "right"},
+        "RF wall-impact histogram lost species/electrode identity",
+    )
+    require_numeric_rows(
+        [column for index, column in enumerate(impact_header)
+         if index not in (2, 3)],
+        [[value for index, value in enumerate(row)
+          if index not in (2, 3)] for row in impact_rows],
+        impact_path,
+    )
+    summary_path = output_dir / "wall_impact_spectrum_summary.csv"
+    summary_header, summary_rows = read_csv(summary_path)
+    require(
+        summary_header == [
+            "origin_step", "species_id", "species", "electrode",
+            "macro_impacts", "represented_impacts",
+            "overflow_macro_impacts", "overflow_represented_impacts",
+            "overflow_fraction",
+            "represented_kinetic_energy_normalized",
+            "boundary_delta_macro_impacts",
+            "boundary_delta_represented_kinetic_energy_normalized",
+            "count_closure", "energy_closure_residual",
+        ],
+        f"unexpected header in {summary_path}: {summary_header!r}",
+    )
+    require(len(summary_rows) == 4,
+            "RF wall-impact summary has the wrong row count")
+    require(
+        all(row[-2] == "1" for row in summary_rows),
+        "RF wall-impact count closure failed",
+    )
+    require_numeric_rows(
+        [column for index, column in enumerate(summary_header)
+         if index not in (2, 3)],
+        [[value for index, value in enumerate(row)
+          if index not in (2, 3)] for row in summary_rows],
+        summary_path,
+    )
 
 
 def check_plasma_2d(output_dir: Path) -> None:

@@ -24,6 +24,22 @@ struct BoundaryLoss1D {
     double kinetic_energy_right{0.0};
 };
 
+struct WallImpactSideSpectrum1D {
+    std::uint64_t macro_impacts{0};
+    std::uint64_t overflow_macro_impacts{0};
+    double represented_impacts{0.0};
+    double overflow_represented_impacts{0.0};
+    double represented_kinetic_energy{0.0};
+    std::vector<std::uint64_t> macro_histogram{};
+    std::vector<double> represented_histogram{};
+};
+
+struct SpeciesWallImpactSpectrum1D {
+    BoundaryLoss1D baseline_loss{};
+    WallImpactSideSpectrum1D left{};
+    WallImpactSideSpectrum1D right{};
+};
+
 struct SpeciesPower1D {
     double electric_work{0.0};
 };
@@ -75,6 +91,13 @@ public:
     }
     std::size_t boundary_loss_origin_step() const {
         return boundary_loss_origin_step_;
+    }
+    const std::vector<SpeciesWallImpactSpectrum1D>&
+    wall_impact_spectra() const {
+        return wall_impact_spectra_;
+    }
+    std::size_t wall_impact_origin_step() const {
+        return wall_impact_origin_step_;
     }
     const std::vector<SpeciesPower1D>&
     species_power_transfer() const {
@@ -134,7 +157,13 @@ private:
         std::size_t channel,
         double represented_energy_change);
     void begin_spatial_collision_step();
+    void accumulate_wall_impact(
+        WallImpactSideSpectrum1D& accumulator,
+        std::size_t species_id,
+        double particle_energy,
+        double represented_energy) const;
     void write_spatial_average() const;
+    void write_wall_impact_spectrum() const;
     std::size_t expected_spatial_average_samples() const;
     Config cfg_;
     Grid grid_;
@@ -148,6 +177,11 @@ private:
     std::vector<std::vector<BoundaryLoss1D>>
         boundary_loss_chunks_{};
     std::size_t boundary_loss_origin_step_{0};
+    std::size_t wall_impact_origin_step_{0};
+    std::vector<SpeciesWallImpactSpectrum1D>
+        wall_impact_spectra_{};
+    std::vector<std::vector<SpeciesWallImpactSpectrum1D>>
+        wall_impact_chunks_{};
     std::vector<SpeciesPower1D> species_power_transfer_{};
     std::vector<std::vector<SpeciesPower1D>>
         power_transfer_chunks_{};

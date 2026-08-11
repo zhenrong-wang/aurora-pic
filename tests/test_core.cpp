@@ -3697,7 +3697,8 @@ int main() {
                         legacy << "AuroraPIC-checkpoint-v12\n";
                         first = false;
                     } else if (!line.starts_with(
-                                   "species_timestep_multipliers")) {
+                                   "species_timestep_multipliers") &&
+                               !line.starts_with("wall_impact")) {
                         legacy << line << '\n';
                     }
                 }
@@ -3756,6 +3757,9 @@ int main() {
             cfg.boundary = pic::Boundary::Dirichlet;
             cfg.checkpoint_output = true;
             cfg.checkpoint_interval = 1;
+            cfg.wall_impact_spectrum.enabled = true;
+            cfg.wall_impact_spectrum.energy_bins = 4;
+            cfg.wall_impact_spectrum.energy_max = 200.0;
             cfg.species = {
                 pic::SpeciesConfig{
                     "left", 0.0, 2.0, 3.0, 1, 1.0,
@@ -3784,6 +3788,27 @@ int main() {
                 losses[1].kinetic_energy_right, 300.0,
                 1e-12,
                 "1D right-wall represented impact energy is wrong");
+            const auto& spectra =
+                simulation.wall_impact_spectra();
+            require(
+                spectra.size() == 2 &&
+                    spectra[0].left.macro_impacts == 1 &&
+                    spectra[0].left.macro_histogram[2] == 1 &&
+                    spectra[0].right.macro_impacts == 0 &&
+                    spectra[1].right.macro_impacts == 1 &&
+                    spectra[1].right.macro_histogram[2] == 1 &&
+                    spectra[1].left.macro_impacts == 0,
+                "1D wall-impact spectra did not preserve "
+                "species, electrode, or energy-bin identity");
+            require_near(
+                spectra[0].left.represented_histogram[2],
+                3.0, 1e-14,
+                "1D wall-impact represented count is wrong");
+            require_near(
+                spectra[0].left.represented_kinetic_energy,
+                losses[0].kinetic_energy_left, 1e-14,
+                "1D wall-impact energy did not close against "
+                "boundary loss");
             const auto& power =
                 simulation.species_power_transfer();
             require_near(
@@ -3815,6 +3840,26 @@ int main() {
                     "electric_work_right_normalized\n") == 0 &&
                     count_lines(power_diagnostics) == 3,
                 "1D power-transfer CSV contract is wrong");
+            const auto impact_histogram = read_file_text(
+                output_dir / "wall_impact_spectrum.csv");
+            const auto impact_summary = read_file_text(
+                output_dir /
+                    "wall_impact_spectrum_summary.csv");
+            require(
+                impact_histogram.find(
+                    "0,0,left,left,2,125,1,3,0.02") !=
+                    std::string::npos &&
+                    impact_histogram.find(
+                    "0,1,right,right,2,125,1,3,0.02") !=
+                    std::string::npos &&
+                    count_lines(impact_histogram) == 17,
+                "1D wall-impact histogram CSV contract is wrong");
+            require(
+                impact_summary.find(
+                    "0,0,left,left,1,3,0,0,0,300,1,300,1,0") !=
+                    std::string::npos &&
+                    count_lines(impact_summary) == 5,
+                "1D wall-impact summary did not report closure");
 
             pic::Simulation restarted(cfg);
             restarted.load_checkpoint(checkpoint_path);
@@ -3833,10 +3878,28 @@ int main() {
                 restarted_losses[1].kinetic_energy_right,
                 300.0, 1e-12,
                 "1D checkpoint lost right-wall impact energy");
+            const auto& restarted_spectra =
+                restarted.wall_impact_spectra();
+            require(
+                restarted.wall_impact_origin_step() == 0 &&
+                    restarted_spectra[0].left.macro_impacts == 1 &&
+                    restarted_spectra[0].left.macro_histogram[2] == 1 &&
+                    restarted_spectra[1].right.macro_impacts == 1,
+                "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v13\n") == 0,
-                "1D species-timestep checkpoint did not use v13");
+                    "AuroraPIC-checkpoint-v14\n") == 0,
+                "1D wall-impact checkpoint did not use v14");
+            auto mismatched_spectrum = cfg;
+            mismatched_spectrum.wall_impact_spectrum.energy_max =
+                100.0;
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(mismatched_spectrum);
+                    invalid.load_checkpoint(checkpoint_path);
+                },
+                "1D checkpoint accepted a changed wall-impact "
+                "spectrum contract");
 
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
@@ -3863,6 +3926,7 @@ int main() {
                         line.starts_with("phase_species") ||
                         line.starts_with("spatial_collision") ||
                         line.starts_with("phase_eedf") ||
+                        line.starts_with("wall_impact") ||
                         line.starts_with("phase_fields")) {
                         continue;
                     } else {
@@ -3883,6 +3947,16 @@ int main() {
                             .power_transfer_origin_step() == 1,
                 "legacy v6 restart did not preserve wall data or "
                 "expose its power-counter origin");
+            require(
+                legacy_v6_restarted.wall_impact_origin_step() == 1 &&
+                    legacy_v6_restarted
+                        .wall_impact_spectra()[0]
+                        .baseline_loss.absorbed_left == 1 &&
+                    legacy_v6_restarted
+                        .wall_impact_spectra()[0]
+                        .left.macro_impacts == 0,
+                "legacy restart did not begin a clean wall-impact "
+                "window at its checkpoint step");
 
             const auto legacy_path =
                 output_dir / "legacy_v5.apc";
@@ -3912,6 +3986,7 @@ int main() {
                         line.starts_with("phase_species") ||
                         line.starts_with("spatial_collision") ||
                         line.starts_with("phase_eedf") ||
+                        line.starts_with("wall_impact") ||
                         line.starts_with("phase_fields")) {
                         continue;
                     } else {
@@ -4267,8 +4342,8 @@ int main() {
             }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v13\n") == 0,
-                "1D3V checkpoint did not use the species-timestep-aware "
+                    "AuroraPIC-checkpoint-v14\n") == 0,
+                "1D3V checkpoint did not use the wall-impact-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
             (void)output_simulation.run();

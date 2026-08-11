@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "cycle_64_wall_impact_spectrum_diagnostic_pilot",
+  "claim_boundary": "This verifies diagnostic accounting and restart behavior on a real CCP state. Cycle 64 is not stationary, so the distributions are not comparison measurements or validated physical results.",
+  "input": {
+    "base_cycle_64_deck_sha256": "ec4617b8316a474ce9d0ba630d201ccf0cde75615beb09fcd1bd5c7fcc39e298",
+    "cycle_63_checkpoint_sha256": "b8f5405e9675d1d253293579229ad666cc4f0b096bee045df30411e76b43ed52",
+    "added_configuration": {
+      "wall_impact_spectrum": true,
+      "wall_impact_energy_bins": 200,
+      "wall_impact_energy_max_eV": 500.0
+    },
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "cpu_affinity": 9,
+    "timeout_seconds": 60
+  },
+  "runtime": {
+    "wall_seconds": 46.04,
+    "user_seconds": 45.74,
+    "peak_resident_set_kib": 175108
+  },
+  "results": [
+    {"species": "electrons", "electrode": "left", "macro_impacts": 147, "mean_impact_energy_eV": 5.245072610956928, "binned_median_energy_eV": 3.75, "overflow_macro_impacts": 0},
+    {"species": "electrons", "electrode": "right", "macro_impacts": 189, "mean_impact_energy_eV": 5.556455437736989, "binned_median_energy_eV": 3.75, "overflow_macro_impacts": 0},
+    {"species": "ions", "electrode": "left", "macro_impacts": 152, "mean_impact_energy_eV": 29.556127523753386, "binned_median_energy_eV": 21.25, "overflow_macro_impacts": 0},
+    {"species": "ions", "electrode": "right", "macro_impacts": 156, "mean_impact_energy_eV": 26.199118051723094, "binned_median_energy_eV": 18.75, "overflow_macro_impacts": 0}
+  ],
+  "closure": {
+    "electron_macro_impacts": 336,
+    "ion_macro_impacts": 308,
+    "matches_cycle_64_boundary_loss_counts": true,
+    "all_species_electrode_count_closures_passed": true,
+    "all_species_electrode_energy_closures_passed": true,
+    "maximum_absolute_energy_closure_residual_J_m-2": 1.6093625997831706e-20,
+    "legacy_diagnostic_products_compared": 10,
+    "legacy_diagnostic_products_byte_identical": true,
+    "particle_and_rng_checkpoint_tail_byte_identical": true
+  },
+  "artifacts": {
+    "checkpoint_v14_sha256": "aded77d12ec8ddc49f3a0e16318877f377c6260713181d2e10442cb238c8c822",
+    "wall_impact_spectrum_csv_sha256": "6163f640cffed98ef58ae64dae1eed8361c4990aa3309f2f3645b2c8c34e93f8",
+    "wall_impact_summary_csv_sha256": "f4247c686138c1e4d8fc4e39cc808077d139fe56e2b77529e045ca19626ee567"
+  },
+  "physics_claim": "none_nonstationary_diagnostic_pilot"
+}
