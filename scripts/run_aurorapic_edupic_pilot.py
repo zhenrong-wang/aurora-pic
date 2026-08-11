@@ -76,7 +76,8 @@ def global_integer(text: str, key: str) -> int:
 
 
 def stage_deck(
-    base: str, cycle: int, output_dir: Path, restart: Path
+    base: str, cycle: int, output_dir: Path, restart: Path,
+    *, wall_impact_spectrum: bool = False,
 ) -> str:
     start_step = cycle * STEPS_PER_CYCLE
     end_step = (cycle + 1) * STEPS_PER_CYCLE
@@ -99,6 +100,10 @@ def stage_deck(
             result = insert_global(result, key, str(value))
         else:
             result = set_global(result, key, str(value))
+    if wall_impact_spectrum:
+        result = insert_global(result, "wall_impact_spectrum", "true")
+        result = insert_global(result, "wall_impact_energy_bins", "200")
+        result = insert_global(result, "wall_impact_energy_max", "500")
     return insert_global(result, "restart_path", str(restart))
 
 

@@ -36,6 +36,10 @@ def main() -> int:
         "benchmarks/ccp/"
         "edupic-argon-aurorapic-equilibration-extension-rule-20260810.json"
     )
+    production_rule = repository / (
+        "benchmarks/ccp/"
+        "edupic-argon-aurorapic-production-equilibration-rule-20260811.json"
+    )
     extension_args = Namespace(
         extension_rule=rule,
         start_cycle=16,
@@ -57,6 +61,18 @@ def main() -> int:
         pass
     else:
         raise RuntimeError("extension accepted a non-baseline checkpoint")
+    extension_args.extension_rule = production_rule
+    extension_args.start_cycle = 64
+    extension_args.expected_prior_report_sha256 = (
+        "bd128f7dd42728c6137df73e81d09636e495ba88e52f525904514cccb5c55e49"
+    )
+    extension_args.expected_input_checkpoint_sha256 = (
+        "f99b58a0b39a04c190e5ee9b4d5b98d2a65f0cdb9bf42f6165cf1d745541d47c"
+    )
+    require(
+        authorized_end_cycle(extension_args) == 96,
+        "approved production equilibration extension was not authorized",
+    )
     require(
         solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
             "aurorapic_cli", "--allow-large-run",

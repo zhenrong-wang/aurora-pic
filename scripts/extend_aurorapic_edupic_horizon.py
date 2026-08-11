@@ -41,6 +41,9 @@ HARD_MAX_END_CYCLE = 16
 APPROVED_EXTENSION_RULE_SHA256 = (
     "14584b56a28bdd54e1865f919cfbdf87d26f932bd7aff7731e07ca8d91aa78a9"
 )
+APPROVED_PRODUCTION_RULE_SHA256 = (
+    "c3b58592dbaa631aa1a3da549828247e7394d5d847e5101b1782f040aa489a8d"
+)
 MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE = 0.01
@@ -62,25 +65,33 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     if args.extension_rule is None:
         return HARD_MAX_END_CYCLE
     path = args.extension_rule.resolve()
-    if sha256(path) != APPROVED_EXTENSION_RULE_SHA256:
+    rule_sha256 = sha256(path)
+    if rule_sha256 not in {
+        APPROVED_EXTENSION_RULE_SHA256, APPROVED_PRODUCTION_RULE_SHA256
+    }:
         raise HorizonError("extension rule SHA-256 is not approved")
     rule = json.loads(path.read_text(encoding="utf-8"))
     execution = rule.get("execution_contract")
     stationarity_rule = rule.get("stationarity_contract")
     baseline = rule.get("baseline")
+    expected_scope = (
+        "predeclared_aurorapic_edupic_equilibration_extension"
+        if rule_sha256 == APPROVED_EXTENSION_RULE_SHA256 else
+        "predeclared_aurorapic_edupic_production_equilibration_extension"
+    )
     if (
         rule.get("schema_version") != 1
         or rule.get("case_id") != "edupic-1.0-default-argon-ccp"
-        or rule.get("scope")
-        != "predeclared_aurorapic_edupic_equilibration_extension"
+        or rule.get("scope") != expected_scope
         or not isinstance(execution, dict)
         or not isinstance(stationarity_rule, dict)
         or not isinstance(baseline, dict)
     ):
         raise HorizonError("extension rule has the wrong contract identity")
+    production = rule_sha256 == APPROVED_PRODUCTION_RULE_SHA256
     expected_execution = {
-        "first_cycle": 17,
-        "maximum_cycle": 64,
+        "first_cycle": 65 if production else 17,
+        "maximum_cycle": 96 if production else 64,
         "cycles_per_block": HARD_MAX_CYCLES_PER_BLOCK,
         "maximum_blocks_per_invocation": 1,
         "serial": True,
@@ -109,6 +120,19 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     }
     if execution != expected_execution or stationarity_rule != expected_stationarity:
         raise HorizonError("extension rule differs from the built-in safety contract")
+    if production and rule.get("wall_impact_diagnostic_contract") != {
+        "enabled": True,
+        "energy_bins": 200,
+        "energy_max_eV": 500.0,
+        "accumulation_origin_cycle": 64,
+        "required_electrodes": ["left", "right"],
+        "required_species": ["electrons", "ions"],
+        "exact_macro_count_closure": True,
+        "represented_count_and_energy_closure_required": True,
+        "overflow_is_reported_separately": True,
+        "equilibration_spectra_are_not_comparison_measurements": True,
+    }:
+        raise HorizonError("production wall-impact contract differs from the built-in contract")
     if args.start_cycle < int(baseline.get("cycle", -1)):
         raise HorizonError("extension cannot precede its frozen baseline")
     if args.start_cycle == int(baseline.get("cycle", -1)) and (
@@ -119,6 +143,51 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     ):
         raise HorizonError("first extension block differs from its frozen baseline")
     return int(execution["maximum_cycle"])
+
+
+def production_rule(path: Path | None) -> bool:
+    return (
+        path is not None
+        and sha256(path.resolve()) == APPROVED_PRODUCTION_RULE_SHA256
+    )
+
+
+def wall_impact_diagnostic(output: Path, origin_step: int) -> dict[str, object]:
+    summary_path = output / "wall_impact_spectrum_summary.csv"
+    spectrum_path = output / "wall_impact_spectrum.csv"
+    summary = table(summary_path)
+    spectrum = table(spectrum_path)
+    identities = {
+        (row.get("species"), row.get("electrode")) for row in summary
+    }
+    expected = {
+        ("electrons", "left"), ("electrons", "right"),
+        ("ions", "left"), ("ions", "right"),
+    }
+    if identities != expected or len(summary) != 4 or len(spectrum) != 800:
+        raise HorizonError("wall-impact diagnostic has the wrong shape or identity")
+    for row in summary + spectrum:
+        if integer(row, "origin_step", "wall-impact diagnostic") != origin_step:
+            raise HorizonError("wall-impact diagnostic has the wrong origin")
+    if any(integer(row, "count_closure", "wall-impact summary") != 1
+           for row in summary):
+        raise HorizonError("wall-impact macro counts do not close")
+    return {
+        "origin_step": origin_step,
+        "summary_sha256": sha256(summary_path),
+        "spectrum_sha256": sha256(spectrum_path),
+        "macro_impacts": sum(
+            integer(row, "macro_impacts", "wall-impact summary")
+            for row in summary
+        ),
+        "overflow_macro_impacts": sum(
+            integer(row, "overflow_macro_impacts", "wall-impact summary")
+            for row in summary
+        ),
+        "maximum_absolute_energy_closure_residual_J_m-2": max(
+            abs(float(row["energy_closure_residual"])) for row in summary
+        ),
+    }
 
 
 def endpoint(output: Path, cycle: int) -> dict[str, float | int]:
@@ -256,6 +325,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             f"horizon block requires exactly {HARD_MAX_CYCLES_PER_BLOCK} cycles"
         )
     maximum_end_cycle = authorized_end_cycle(args)
+    collect_wall_impacts = production_rule(args.extension_rule)
     if args.start_cycle < 4 or args.start_cycle + args.cycles > maximum_end_cycle:
         raise HorizonError("requested horizon exceeds its built-in cycle bounds")
     executable = args.executable.resolve()
@@ -307,7 +377,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         output = stage / "output"
         stage.mkdir()
         deck_path = stage / "input.cfg"
-        atomic_text(deck_path, stage_deck(base, cycle, output, checkpoint))
+        atomic_text(deck_path, stage_deck(
+            base, cycle, output, checkpoint,
+            wall_impact_spectrum=collect_wall_impacts,
+        ))
         resources = run_process(
             solver_command(executable, deck_path),
             stage / "stdout.txt", stage / "stderr.txt",
@@ -335,6 +408,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "energy_analysis_sha256": sha256(energy),
             "spatial_analysis_sha256": sha256(spatial),
         })
+        if collect_wall_impacts:
+            result["wall_impact_diagnostic"] = wall_impact_diagnostic(
+                output, args.start_cycle * STEPS_PER_CYCLE
+            )
         atomic_json(stage / "stage-report.json", result)
         if not result["passes"]:
             raise HorizonError(f"cycle {cycle + 1} failed a hard safety gate")
@@ -378,6 +455,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             args.extension_rule is not None and stationary_streak >= 2
         ),
         "production_launch_authorized": False,
+        "wall_impact_accumulation_is_equilibration_only": collect_wall_impacts,
     }
     atomic_json(work / "horizon-report.json", report)
     return report
