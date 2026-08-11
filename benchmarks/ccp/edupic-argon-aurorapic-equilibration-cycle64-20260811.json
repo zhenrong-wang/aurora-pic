@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_predeclared_aurorapic_comparison_readiness_horizon_cycles_17_through_64",
+  "claim_boundary": "This completed horizon is an internal equilibration screen. It does not establish equilibrium, AuroraPIC-to-eduPIC agreement, or physical validation.",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-equilibration-extension-rule-20260810.json",
+    "declaration_commit": "730381fe446fe9b4da54e2afa9c84b327ab0f2ec",
+    "sha256": "14584b56a28bdd54e1865f919cfbdf87d26f932bd7aff7731e07ca8d91aa78a9",
+    "maximum_cycle": 64,
+    "two_consecutive_passing_blocks_required": true
+  },
+  "workflow": {
+    "aurorapic_cli_sha256": "587c57c0e4129144f1f84cdf856f7f7ea404dd5645dbe1f69ef95188bc570f7e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "runner_sha256": "dde2a9e9df9ffab355bb5bb359691787aad962fe0e1630395afbfdd4205543a3",
+    "horizon_regression_sha256": "a7f175bc6504677be67625879885e55f9ab60f267b2a5281dceb1243e41c8cfd",
+    "pilot_support_sha256_after_analyzer_timeout_amendment": "0e5d0426ffe0a330ed999b7214041dfe8966582e955beaa25c6fcd732c8fae9c",
+    "horizon_report_sha256_by_end_cycle": {
+      "28": "622661a86a4bc7ba6f16b9b3fc5fbf4e2c74ea59aa3a8969ed00adf2b5fe0aec",
+      "32": "2977629eb99f5f8dcf394d51f6deea6a38a6918ae738260800011ac6b5f50e26",
+      "36": "84449bdd16ff907ab9f8b14759976a329e4ac0916265091ac862752124353827",
+      "40": "260cc906e770fc7b9884af36478730877e3f319e1986a9ca340f782c29ecb1c6",
+      "44": "9820719ebea00b08e16719105ea328d28aebcbb251940346e99b43946e457b8d",
+      "48": "176f347ed5c4a87e8729a5b4d1010ba158f6849b92a2503fca15f1dc558a58b5",
+      "52": "fcfbb4d3d1a9ea461796dcc2abd7f72e83efec3b693a618c6f7e530150f242e8",
+      "56": "4906a9e5bcd32ea86a9192f48a95da52bb7069f325b02cda6d69c5b57bd06573",
+      "60": "a32bf40a31c21391ff23ff80c2c69c68200d1de77c199e5d7818cadcad5bc866",
+      "64": "bd128f7dd42728c6137df73e81d09636e495ba88e52f525904514cccb5c55e49"
+    },
+    "final_checkpoint_sha256": "f99b58a0b39a04c190e5ee9b4d5b98d2a65f0cdb9bf42f6165cf1d745541d47c",
+    "all_hard_safety_gates_passed": true
+  },
+  "stationarity_by_end_cycle": [
+    {"cycle": 28, "population_slope": 0.03296761046134802, "field_energy_slope": 0.008531862043049145, "peak_field_slope": 0.009055404389608798, "ionization_slope": 0.00506649778340722, "ionization_cv": 0.025498191436602147, "passed": false},
+    {"cycle": 32, "population_slope": 0.027959795359412946, "field_energy_slope": 0.004527717760211561, "peak_field_slope": 0.0051467157962552254, "ionization_slope": -0.021039209435766655, "ionization_cv": 0.04141020419753452, "passed": false},
+    {"cycle": 36, "population_slope": 0.02500592557478075, "field_energy_slope": 0.002962826399254881, "peak_field_slope": 0.004887789135333051, "ionization_slope": -0.020080073914382508, "ionization_cv": 0.02458224336656283, "passed": false},
+    {"cycle": 40, "population_slope": 0.02223276420732508, "field_energy_slope": 0.0055685535120878465, "peak_field_slope": 0.0014964128571599965, "ionization_slope": 0.010058987891959019, "ionization_cv": 0.024404413380217115, "passed": false},
+    {"cycle": 44, "population_slope": 0.017749396817700124, "field_energy_slope": 0.004370137678235841, "peak_field_slope": 0.0016535457112062887, "ionization_slope": -0.007501674480910917, "ionization_cv": 0.02629308295564705, "passed": false},
+    {"cycle": 48, "population_slope": 0.017198950016405992, "field_energy_slope": 0.001195831444832762, "peak_field_slope": 0.004121689773437783, "ionization_slope": 0.011161583387410771, "ionization_cv": 0.026175268046851014, "passed": false},
+    {"cycle": 52, "population_slope": 0.014764028649022116, "field_energy_slope": 0.0025927965530091, "peak_field_slope": 0.0008048632885737444, "ionization_slope": -0.00734194425560843, "ionization_cv": 0.039010650538147035, "passed": false},
+    {"cycle": 56, "population_slope": 0.013513906762288455, "field_energy_slope": 0.0021522118831925167, "peak_field_slope": 0.001592333827971798, "ionization_slope": -0.00013628620102214652, "ionization_cv": 0.03370673514865222, "passed": false},
+    {"cycle": 60, "population_slope": 0.01194030768663073, "field_energy_slope": 0.001622299034458229, "peak_field_slope": 0.0024477560592202885, "ionization_slope": 0.014464733261725742, "ionization_cv": 0.029773175439290898, "passed": false},
+    {"cycle": 64, "population_slope": 0.011588724199215196, "field_energy_slope": 0.0013507615505297921, "peak_field_slope": 0.002863107769582431, "ionization_slope": 0.0004214963119072708, "ionization_cv": 0.010671203042475106, "passed": false}
+  ],
+  "cycle_64_endpoint": {
+    "electrons": 32549,
+    "ions": 37229,
+    "total_particles": 69778,
+    "field_energy_J_m-2": 4.5407191138645304e-05,
+    "maximum_sampled_absolute_field_V_m": 54776.648993531766,
+    "ionization_pairs": 715,
+    "electron_wall_losses": 336,
+    "ion_wall_losses": 308,
+    "net_electron_gain": 379,
+    "net_ion_gain": 407,
+    "maximum_cycle_wall_seconds": 56.38718672799996,
+    "peak_resident_set_kib": 175456
+  },
+  "operational_incidents": [
+    {
+      "type": "post_processing_timeout",
+      "location": "cycle_42_energy_analyzer",
+      "cause": "unrelated host CPU and I/O contention exhausted the original 15-second analyzer wrapper allowance",
+      "resolution": "increase analyzer-only timeout to 45 seconds; no solver or scientific gate changed"
+    },
+    {
+      "type": "host_reboot",
+      "location": "before_cycle_57_launch",
+      "recovery": "cycle-56 report and checkpoint hashes revalidated; no partial cycle-60 directory existed"
+    },
+    {
+      "type": "solver_timeout",
+      "location": "first_cycle_60_attempt_on_contended_core_0",
+      "resolution": "retain the rejected directory and rerun the same serial block on a quieter CPU without changing the 60-second limit",
+      "determinism_check": "cycles 57-59 reproduced identical output checkpoint hashes"
+    }
+  ],
+  "result": {
+    "horizon_complete": true,
+    "stationarity_passed": false,
+    "consecutive_stationary_blocks": 0,
+    "comparison_measurement_eligible": false,
+    "only_cycle_64_stationarity_failure": "total_population_slope",
+    "physical_interpretation": "Ionization still substantially exceeds each species wall loss, so the discharge is continuing to fill even though field and collision-rate observables have moderated."
+  },
+  "next_step": "Do not start side-by-side measurement. Profile and optimize the serial 1D3V cycle cost, implement count-preserving 1D ion-impact spectra, and predeclare a production-scale equilibration campaign informed by the approximately 1500-cycle eduPIC startup horizon.",
+  "physics_claim": "none_internal_equilibration_screen_failed"
+}

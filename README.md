@@ -472,6 +472,11 @@ The original cycle-16 ceiling can be exceeded only with the repository's
 checksum-approved comparison-readiness rule. That rule permits one block per
 invocation through cycle 64 and requires two consecutive stationary blocks
 before a separate measurement campaign becomes eligible.
+The completed comparison-readiness horizon reached cycle 64 with every hard
+gate passing, but population still grew at 1.159% per cycle and ionization
+substantially exceeded wall loss. Measurement therefore remains locked; the
+next prerequisite is performance and wall-impact diagnostic work before a
+prospectively declared production-scale equilibration campaign.
 A separate checkpointed startup ladder advances one RF cycle at a time,
 retaining species/collision balances and phase-matched field metrics while
 hard-limiting each local horizon.

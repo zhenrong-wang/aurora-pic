@@ -1345,6 +1345,44 @@ The retained result is
 [`edupic-argon-aurorapic-horizon-cycle24-20260810.json`](../benchmarks/ccp/edupic-argon-aurorapic-horizon-cycle24-20260810.json).
 Measurement remains ineligible; the next block is cycles 25--28.
 
+The post-processing wrapper originally allowed 15 seconds per analyzer. During
+the later comparison-readiness horizon, unrelated host CPU and I/O contention
+caused a valid energy analysis to take 12.34 seconds on retry and one attempt
+to cross that narrow wrapper limit. The analyzer allowance is now 45 seconds.
+This is an operational robustness change only: the solver remains capped at
+60 seconds per cycle and no execution, physics, accounting, or stationarity
+threshold changed.
+
+The prospectively declared extension subsequently completed all ten remaining
+four-cycle blocks through cycle 64. Every solver, resource, population-cap,
+field, energy-closure, spatial-closure, and checkpoint-chain gate passed. From
+cycle 28 to cycle 64, normalized population slope declined from 3.30% to
+1.159% per cycle. At the final endpoint, field-energy slope was 0.135%, peak-
+field slope 0.286%, ionization slope 0.042%, and ionization coefficient of
+variation 1.07%; all four pass their frozen gates. Population alone remains
+above its 1% threshold, so no block passed the complete stationarity screen
+and the required two-block streak is zero.
+
+This is physically more than a marginal statistical miss. Cycle 64 recorded
+715 ionizations but only 336 electron and 308 ion wall losses, producing net
+gains of 379 electrons and 407 ions. The discharge therefore remains in a
+filling transient. It ended with 32,549 electrons, 37,229 ions, 45.41
+`microJ m^-2` field energy, and a 54.78 kV/m peak sampled field. A side-by-side
+measurement must not begin from this state.
+
+The late campaign also exposed its performance boundary: single-core cycle
+time reached 56.39 seconds at 69,778 particles, close to the unchanged
+60-second guard, while RSS remained only about 171 MiB. One contended-core
+cycle-60 attempt timed out; a rerun on a quieter single core reproduced the
+cycle 57--59 checkpoint hashes and completed without changing the limit. The
+predeclared horizon is exhausted. Complete evidence is
+[`edupic-argon-aurorapic-equilibration-cycle64-20260811.json`](../benchmarks/ccp/edupic-argon-aurorapic-equilibration-cycle64-20260811.json).
+
+The next credible step is not another short extension. AuroraPIC first needs a
+profile-guided 1D3V performance pass and count-preserving ion wall-impact
+spectra; a new production-scale equilibration horizon should then be declared
+before further cycles, informed by eduPIC's approximately 1,500-cycle startup.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

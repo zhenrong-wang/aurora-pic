@@ -20,6 +20,7 @@ ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_BOUNDED_AURORAPIC_EDUPIC_PILOT"
 STEPS_PER_CYCLE = 4000
 HARD_END_CYCLE = 4
 HARD_TIMEOUT_SECONDS = 60
+HARD_ANALYZER_TIMEOUT_SECONDS = 45
 MIN_AVAILABLE_MEMORY_KIB = 512 * 1024
 MAX_PARTICLE_GROWTH_FACTOR = 4.0
 MAX_TOTAL_PARTICLE_CAP_FRACTION = 0.25
@@ -202,7 +203,7 @@ def run_process(command: list[str], stdout: Path, stderr: Path) -> dict[str, obj
 def run_analyzer(command: list[str], context: str) -> None:
     completed = subprocess.run(
         command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        timeout=15,
+        timeout=HARD_ANALYZER_TIMEOUT_SECONDS,
     )
     if completed.returncode != 0:
         raise PilotError(
