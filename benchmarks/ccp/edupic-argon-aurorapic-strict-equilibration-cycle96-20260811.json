@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "fourth_strict_source_loss_equilibration_block_cycles_93_through_96",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-strict-equilibration-rule-20260811.json",
+    "declaration_commit": "80c2bc6",
+    "sha256": "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144",
+    "maximum_cycle": 112,
+    "campaign_remains_open": true
+  },
+  "workflow": {
+    "solver_commit": "9c2447b",
+    "horizon_report_sha256": "d0bd9b8adf12501bb0c874ff96727afe9c9b663e8bda99d1a1ee85556366b0d8",
+    "final_checkpoint_sha256": "6ee51c0bf35847f6373038e4ab0f0c1c46b618f404df4a42c23c7a5052234fda",
+    "all_hard_safety_gates_passed": true,
+    "cycle_wall_seconds": [
+      43.66713164600151,
+      44.24860835800064,
+      48.89349697999933,
+      44.89730381199843
+    ],
+    "maximum_cycle_wall_seconds": 48.89349697999933,
+    "maximum_peak_resident_set_kib": 180164,
+    "serial_low_priority_execution": true
+  },
+  "strict_stationarity": {
+    "window_cycles": [92, 93, 94, 95, 96],
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.006425813873740334,
+    "maximum_allowed_population_slope_per_cycle": 0.001,
+    "population_efolding_time_cycles": 155.62231020829748,
+    "minimum_allowed_population_efolding_time_cycles": 1000.0,
+    "ionization_pairs": 2569,
+    "electron_wall_losses": 1407,
+    "ion_wall_losses": 1419,
+    "electron_source_loss_relative_imbalance": 0.45231607629427795,
+    "ion_source_loss_relative_imbalance": 0.4476449980537174,
+    "maximum_allowed_source_loss_relative_imbalance": 0.05,
+    "normalized_field_energy_slope_per_cycle": 0.0003840686984137523,
+    "normalized_peak_field_slope_per_cycle": 0.00030722853405282697,
+    "normalized_ionization_slope_per_cycle": 0.00576099649669132,
+    "ionization_coefficient_of_variation": 0.02194730301130471,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance"
+    ]
+  },
+  "trend_from_cycle_92_block": {
+    "population_slope_change": -0.00019410967879686764,
+    "population_efolding_time_change_cycles": 4.563163971369652,
+    "electron_source_loss_imbalance_change": 0.011386198245497457,
+    "ion_source_loss_imbalance_change": 0.0009986565903027745,
+    "interpretation": "Population drift slowed slightly, but source-loss balance did not improve monotonically. Field and ionization gates remained stable."
+  },
+  "cycle_96_endpoint": {
+    "electrons": 43390,
+    "ions": 48186,
+    "total_particles": 91576,
+    "field_energy_J_m-2": 0.00004719234709031561,
+    "maximum_sampled_absolute_field_V_m": 56433.016938138666
+  },
+  "wall_impact_diagnostic": {
+    "origin_cycle": 76,
+    "macro_impacts": 14027,
+    "overflow_macro_impacts": 0,
+    "maximum_absolute_energy_closure_residual_J_m-2": 4.743384504624082e-20,
+    "summary_sha256": "05951585a90096d5adb3002b5bf069ca66ef47458fce2a88dc8d86731daeedd7",
+    "spectrum_sha256": "c82454a49c0299826c1b3b8fa4b5c31e318954ec5f43db5724c59d03d0e38b76"
+  },
+  "result": {
+    "comparison_measurement_eligible": false,
+    "source_loss_balance_improving_monotonically": false,
+    "runtime_margin_available": true,
+    "physical_interpretation": "The discharge remains a numerically stable filling transient. Stable field and ionization observables do not substitute for particle source-loss stationarity."
+  },
+  "next_step": "Continue the frozen strict campaign in bounded blocks, while treating the non-monotonic source-loss imbalance as evidence against extrapolating an early equilibrium.",
+  "claim_boundary": "Passing hard numerical gates and stable field observables do not establish equilibrium or cross-code validation while particle balance gates fail.",
+  "physics_claim": "none_strict_equilibration_screen_failed"
+}
