@@ -1617,7 +1617,8 @@ Config load_config(const std::string& path) {
         "spatial_average_phase_bins",
         "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
         "phase_eedf_energy_max", "phase_eedf_regions",
-        "wall_impact_spectrum", "wall_impact_energy_bins",
+        "wall_impact_spectrum", "wall_impact_reset_on_restart",
+        "wall_impact_energy_bins",
         "wall_impact_energy_max",
         "max_particles_per_species",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
@@ -1714,6 +1715,9 @@ Config load_config(const std::string& path) {
     cfg.wall_impact_spectrum.enabled = parse_bool(
         global, "wall_impact_spectrum",
         cfg.wall_impact_spectrum.enabled);
+    cfg.wall_impact_spectrum.reset_on_restart = parse_bool(
+        global, "wall_impact_reset_on_restart",
+        cfg.wall_impact_spectrum.reset_on_restart);
     cfg.wall_impact_spectrum.energy_bins = as<std::size_t>(
         global, "wall_impact_energy_bins",
         cfg.wall_impact_spectrum.energy_bins);

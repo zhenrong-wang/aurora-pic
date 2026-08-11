@@ -47,10 +47,11 @@ void validate_runtime_config(const Config& cfg) {
     validate_spatial_average_1d(cfg);
     const auto& impact = cfg.wall_impact_spectrum;
     if (!impact.enabled) {
-        if (impact.energy_bins != 0 || impact.energy_max != 0.0) {
+        if (impact.reset_on_restart || impact.energy_bins != 0 ||
+            impact.energy_max != 0.0) {
             throw std::invalid_argument(
                 "disabled wall_impact_spectrum cannot configure "
-                "energy bins or maximum");
+                "restart reset, energy bins, or maximum");
         }
     } else if (impact.energy_bins == 0 ||
                impact.energy_bins > 1000000 ||
@@ -3357,6 +3358,19 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     if (checkpoint_v14 && wall_impact_origin_step_ > step_) {
         throw std::runtime_error(
             "checkpoint wall-impact origin exceeds its step");
+    }
+    if (checkpoint_v14 &&
+        cfg_.wall_impact_spectrum.enabled &&
+        cfg_.wall_impact_spectrum.reset_on_restart) {
+        wall_impact_origin_step_ = step_;
+        for (std::size_t species_id = 0;
+             species_id < wall_impact_spectra_.size(); ++species_id) {
+            auto& spectrum = wall_impact_spectra_[species_id];
+            spectrum.baseline_loss =
+                species_boundary_losses_[species_id];
+            clear_wall_impact_side(spectrum.left);
+            clear_wall_impact_side(spectrum.right);
+        }
     }
     if ((checkpoint_v11 || checkpoint_v12 || checkpoint_v13) &&
         cfg_.spatial_average.enabled &&

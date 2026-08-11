@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_aurorapic_fresh_window_measurement_pilot",
+  "baseline": {
+    "cycle": 76,
+    "evidence_path": "benchmarks/ccp/edupic-argon-aurorapic-production-equilibration-cycle76-20260811.json",
+    "evidence_sha256": "164bb5926c7db0aebc98698fc699c10a123ae059cdecc1c76536eb3c6904a81d",
+    "checkpoint_sha256": "69839c088a42745ea473e69c096e3acf9ab9140911094eec0c1219b40d2adfc1",
+    "comparison_measurement_eligible": true
+  },
+  "execution_contract": {
+    "first_cycle": 77,
+    "last_cycle": 80,
+    "measurement_cycles": 4,
+    "serial": true,
+    "maximum_wall_seconds": 240,
+    "minimum_available_memory_kib": 524288,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_window_contract": {
+    "spatial_average_origin_cycle": 76,
+    "wall_impact_origin_cycle": 76,
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 16,
+    "phase_eedf_species": "electrons",
+    "phase_eedf_regions": ["full_gap:0:0.025"],
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "wall_impact_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "descriptive_comparison_contract": {
+    "reference_evidence": "benchmarks/ccp/edupic-native-production-measurement-cycle2620-20260810.json",
+    "reference_evidence_sha256": "f1d3d91742a1c5203fa17a68a49ccccec56bec2aeebd65b12a1fe8f72bd6fb9a",
+    "reference_density": "tmp/edupic-production-analysis-20260810/density.csv",
+    "reference_density_sha256": "4c860617882a551c502934cf38bcf22a6432565f2a8da277a35de216868400a9",
+    "reference_eepf": "tmp/edupic-production-analysis-20260810/eepf.csv",
+    "reference_eepf_sha256": "8ad8222107c7e61ea9d1a2d36b0550bcd69ded55dbf5fe0bcfd10810dfc56260",
+    "reference_ifed": "tmp/edupic-production-analysis-20260810/ifed.csv",
+    "reference_ifed_sha256": "98c7f40ee0f0ab12038c51f2dafc0b9f9e17781c7264d5399018f86d88dd2b3e",
+    "required_metrics": [
+      "electron_density_profile_relative_l2",
+      "ion_density_profile_relative_l2",
+      "electron_energy_distribution_total_variation",
+      "powered_ion_energy_distribution_total_variation",
+      "grounded_ion_energy_distribution_total_variation",
+      "electrode_mean_ion_energy_relative_difference"
+    ],
+    "acceptance_thresholds": null,
+    "reference_stationarity_failure_must_remain_visible": true
+  },
+  "stopping_policy": {
+    "stop_after_pilot": true,
+    "stop_on_any_safety_or_diagnostic_contract_failure": true,
+    "do_not_infer_cross_code_agreement_from_this_pilot": true
+  },
+  "physics_claim": "none_predeclared_descriptive_measurement_pilot_only"
+}

@@ -219,6 +219,7 @@ struct PhaseEedf1DConfig {
 
 struct WallImpactSpectrum1DConfig {
     bool enabled{false};
+    bool reset_on_restart{false};
     std::size_t energy_bins{0};
     double energy_max{0.0};
 };

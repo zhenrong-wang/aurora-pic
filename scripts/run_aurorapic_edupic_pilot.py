@@ -170,7 +170,10 @@ def peak_rss_kib(pid: int) -> int:
     return 0
 
 
-def run_process(command: list[str], stdout: Path, stderr: Path) -> dict[str, object]:
+def run_process(
+    command: list[str], stdout: Path, stderr: Path,
+    timeout_seconds: float = HARD_TIMEOUT_SECONDS,
+) -> dict[str, object]:
     environment = dict(os.environ)
     environment.update({
         "OMP_NUM_THREADS": "1", "OMP_DYNAMIC": "FALSE",
@@ -187,7 +190,7 @@ def run_process(command: list[str], stdout: Path, stderr: Path) -> dict[str, obj
         )
         while process.poll() is None:
             peak = max(peak, peak_rss_kib(process.pid))
-            if time.perf_counter() - start > HARD_TIMEOUT_SECONDS:
+            if time.perf_counter() - start > timeout_seconds:
                 process.terminate()
                 try:
                     process.wait(timeout=5)
@@ -195,7 +198,7 @@ def run_process(command: list[str], stdout: Path, stderr: Path) -> dict[str, obj
                     process.kill()
                     process.wait()
                 raise PilotError(
-                    f"cycle exceeded the {HARD_TIMEOUT_SECONDS} second timeout"
+                    f"run exceeded the {timeout_seconds} second timeout"
                 )
             time.sleep(0.02)
         peak = max(peak, peak_rss_kib(process.pid))

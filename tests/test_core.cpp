@@ -3901,6 +3901,20 @@ int main() {
                 "1D checkpoint accepted a changed wall-impact "
                 "spectrum contract");
 
+            auto reset_spectrum = cfg;
+            reset_spectrum.wall_impact_spectrum.reset_on_restart = true;
+            pic::Simulation reset_restart(reset_spectrum);
+            reset_restart.load_checkpoint(checkpoint_path);
+            const auto& reset_spectra =
+                reset_restart.wall_impact_spectra();
+            require(
+                reset_restart.wall_impact_origin_step() == 1 &&
+                    reset_spectra[0].baseline_loss.absorbed_left == 1 &&
+                    reset_spectra[1].baseline_loss.absorbed_right == 1 &&
+                    reset_spectra[0].left.macro_impacts == 0 &&
+                    reset_spectra[1].right.macro_impacts == 0,
+                "1D restart did not begin a fresh wall-impact window");
+
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
             {

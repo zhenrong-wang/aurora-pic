@@ -1397,6 +1397,7 @@ That diagnostic prerequisite is now implemented. The opt-in keys are:
 
 ```ini
 wall_impact_spectrum = true
+wall_impact_reset_on_restart = true
 wall_impact_energy_bins = 200
 wall_impact_energy_max = 500
 ```
@@ -1410,6 +1411,12 @@ boundary-loss ledger; a mismatch is fatal. Checkpoint v14 retains histogram,
 overflow, closure baseline, and origin state. Enabling the diagnostic while
 restarting a pre-v14 checkpoint begins a new origin-labelled window without
 discarding the older cumulative boundary ledger.
+
+`wall_impact_reset_on_restart = true` explicitly begins a fresh histogram
+window at a v14 checkpoint while retaining the cumulative boundary ledger as
+the new closure baseline. It is intended for prospectively declared
+measurement windows; leave it false on later restarts that continue the same
+window.
 
 An exact cycle-64 replay from the cycle-63 checkpoint exercised the diagnostic
 with 200 bins over 0--500 eV. It captured all 336 electron impacts and all 308
