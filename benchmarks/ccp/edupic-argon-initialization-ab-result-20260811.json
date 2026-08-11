@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_initialization_density_ab_diagnostic",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-initialization-ab-rule-20260811.json",
+    "declaration_commit": "6d28212",
+    "sha256": "f782402b833f9220522060a85f6624e9b723cc605f603bb1c5ca07d560b3bba4"
+  },
+  "workflow": {
+    "runner_commit": "e2b88d6",
+    "study_report_sha256": "78d270bc349b4469825f2f03b71e8e2fd191357c72ea244974052f026aa497c8",
+    "particle_state_sha256": "8d92e55aa541947075d3c18db3f8af1b326b6d7ca78c94a5c3e535443b02fffd",
+    "particle_state_signature": 13529092525379880230,
+    "control_final_checkpoint_sha256": "9acdaae3c849038fa33de2d98566b163fefed6226d25d2ec35431b8c3436fce1",
+    "warm_final_checkpoint_sha256": "b399d493284ffad541237ed88b5b168528b1155732d3c92dfa7b5606dd9ce7ab",
+    "all_hard_gates_passed": true,
+    "maximum_cycle_wall_seconds": 50.30160250799963,
+    "maximum_peak_resident_set_kib": 180884,
+    "maximum_relative_energy_closure_residual": 3.5769572453264945e-14,
+    "serial_low_priority_execution": true
+  },
+  "control": {
+    "macro_weight_factor": 1.0,
+    "initial_total_particles": 100857,
+    "final_total_particles": 103087,
+    "normalized_total_population_slope_per_cycle": 0.0054997969939412005,
+    "ionization_pairs": 2623,
+    "electron_wall_losses": 1501,
+    "ion_wall_losses": 1515,
+    "electron_source_loss_relative_imbalance": 0.42775447960350743,
+    "ion_source_loss_relative_imbalance": 0.42241707967975606,
+    "initial_field_energy_J_m-2": 0.00004822625222336247,
+    "maximum_sampled_absolute_field_V_m": 57863.516220722864
+  },
+  "warm": {
+    "macro_weight_factor": 2.25156033877556,
+    "initial_total_particles": 100857,
+    "final_total_particles": 107785,
+    "normalized_total_population_slope_per_cycle": 0.012862715036186955,
+    "ionization_pairs": 4460,
+    "electron_wall_losses": 36,
+    "ion_wall_losses": 1956,
+    "electron_source_loss_relative_imbalance": 0.9919282511210762,
+    "ion_source_loss_relative_imbalance": 0.5614349775784753,
+    "initial_field_energy_J_m-2": 0.0001994437293024816,
+    "maximum_sampled_absolute_field_V_m": 117767.59479691955,
+    "first_cycle": {
+      "ionization_pairs": 3808,
+      "electron_wall_losses": 3,
+      "ion_wall_losses": 513,
+      "population_growth_factor": 1.0703967002786123
+    },
+    "later_relaxation": {
+      "cycle_2_ionization_pairs": 217,
+      "cycle_3_ionization_pairs": 195,
+      "cycle_4_ionization_pairs": 240,
+      "cycle_4_maximum_sampled_absolute_field_V_m": 80615.67589436485
+    }
+  },
+  "predeclared_comparison": {
+    "electron_imbalance_reduction": -0.5641737715175688,
+    "ion_imbalance_reduction": -0.1390178978987192,
+    "population_slope_reduction": -0.007362918042245754,
+    "warm_start_hypothesis_supported": false
+  },
+  "interpretation": {
+    "naive_common_weight_scaling_rejected": true,
+    "numerical_instability_observed": false,
+    "reason": "Scaling the complete charged phase-space sample scales its sheath and residual space charge as well as its bulk density. The resulting self-consistent field launches a strong ionization and charge-relaxation transient instead of approximating the reference equilibrium.",
+    "consequence": "A credible warm start must reconstruct a quasi-neutral bulk and self-consistent sheath rather than multiply the macro weight of an already charged profile."
+  },
+  "next_step": "Design and predeclare a field-consistent initialization method: scale only a quasi-neutral paired bulk population, retain or recompute sheath charge separately, solve Poisson, and require a bounded relaxation preflight before another source-loss A/B diagnostic.",
+  "claim_boundary": "This diagnostic rejects one initialization transformation. It does not show that density is irrelevant, establish equilibrium, authorize measurement, or validate the cross-code result.",
+  "physics_claim": "none_naive_density_scaling_rejected"
+}
