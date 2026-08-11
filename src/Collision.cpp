@@ -303,6 +303,25 @@ CrossSectionTable::CrossSectionTable(
             "collision cross-section table requires at least two rows: " +
             path.string());
     }
+    const double candidate_spacing =
+        (energies_.back() - energies_.front()) /
+        static_cast<double>(energies_.size() - 1);
+    bool uniformly_spaced =
+        std::isfinite(candidate_spacing) && candidate_spacing > 0.0;
+    for (std::size_t index = 1;
+         uniformly_spaced && index + 1 < energies_.size(); ++index) {
+        const double expected = energies_.front() +
+            static_cast<double>(index) * candidate_spacing;
+        const double tolerance =
+            64.0 * std::numeric_limits<double>::epsilon() *
+            std::max({std::abs(expected), candidate_spacing,
+                      std::numeric_limits<double>::min()});
+        uniformly_spaced =
+            std::abs(energies_[index] - expected) <= tolerance;
+    }
+    if (uniformly_spaced) {
+        uniform_energy_spacing_ = candidate_spacing;
+    }
     maximum_tree_leaf_count_ = 1;
     while (maximum_tree_leaf_count_ < cross_sections_.size()) {
         maximum_tree_leaf_count_ *= 2;
@@ -320,6 +339,39 @@ CrossSectionTable::CrossSectionTable(
     }
 }
 
+std::size_t CrossSectionTable::lower_bound_index(double energy) const {
+    if (uniform_energy_spacing_ == 0.0) {
+        return static_cast<std::size_t>(
+            std::lower_bound(energies_.begin(), energies_.end(), energy) -
+            energies_.begin());
+    }
+    if (energy <= energies_.front()) return 0;
+    if (energy > energies_.back()) return energies_.size();
+    const double coordinate =
+        (energy - energies_.front()) / uniform_energy_spacing_;
+    std::size_t index = static_cast<std::size_t>(std::floor(coordinate));
+    while (index > 0 && energies_[index - 1] >= energy) --index;
+    while (index < energies_.size() && energies_[index] < energy) ++index;
+    return index;
+}
+
+std::size_t CrossSectionTable::upper_bound_index(double energy) const {
+    if (uniform_energy_spacing_ == 0.0) {
+        return static_cast<std::size_t>(
+            std::upper_bound(energies_.begin(), energies_.end(), energy) -
+            energies_.begin());
+    }
+    if (energy < energies_.front()) return 0;
+    if (energy >= energies_.back()) return energies_.size();
+    const double coordinate =
+        (energy - energies_.front()) / uniform_energy_spacing_;
+    std::size_t index =
+        static_cast<std::size_t>(std::floor(coordinate)) + 1;
+    while (index > 0 && energies_[index - 1] > energy) --index;
+    while (index < energies_.size() && energies_[index] <= energy) ++index;
+    return index;
+}
+
 double CrossSectionTable::evaluate(double energy) const {
     if (!std::isfinite(energy) || energy < 0.0) {
         throw std::invalid_argument(
@@ -327,10 +379,7 @@ double CrossSectionTable::evaluate(double energy) const {
     }
     if (energy <= energies_.front()) return cross_sections_.front();
     if (energy >= energies_.back()) return cross_sections_.back();
-    const auto upper =
-        std::upper_bound(energies_.begin(), energies_.end(), energy);
-    const std::size_t high =
-        static_cast<std::size_t>(upper - energies_.begin());
+    const std::size_t high = upper_bound_index(energy);
     const std::size_t low = high - 1;
     if (interpolation_ == CrossSectionInterpolationKind::LowerBin) {
         return cross_sections_[low];
@@ -352,14 +401,8 @@ double CrossSectionTable::maximum_between(
     }
     double result = std::max(
         evaluate(minimum_energy), evaluate(maximum_energy));
-    std::size_t first = static_cast<std::size_t>(
-        std::lower_bound(
-            energies_.begin(), energies_.end(), minimum_energy) -
-        energies_.begin());
-    std::size_t last = static_cast<std::size_t>(
-        std::upper_bound(
-            energies_.begin(), energies_.end(), maximum_energy) -
-        energies_.begin());
+    std::size_t first = lower_bound_index(minimum_energy);
+    std::size_t last = upper_bound_index(maximum_energy);
     first += maximum_tree_leaf_count_;
     last += maximum_tree_leaf_count_;
     while (first < last) {

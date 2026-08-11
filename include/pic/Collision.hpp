@@ -30,12 +30,15 @@ public:
     }
 
 private:
+    std::size_t lower_bound_index(double energy) const;
+    std::size_t upper_bound_index(double energy) const;
     std::vector<double> energies_{};
     std::vector<double> cross_sections_{};
     CrossSectionInterpolationKind interpolation_{
         CrossSectionInterpolationKind::Linear};
     std::size_t maximum_tree_leaf_count_{0};
     std::vector<double> maximum_tree_{};
+    double uniform_energy_spacing_{0.0};
 };
 
 class MeanCosineTable {
