@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "second_strict_source_loss_equilibration_block_cycles_85_through_88",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-strict-equilibration-rule-20260811.json",
+    "declaration_commit": "80c2bc6",
+    "sha256": "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144",
+    "maximum_cycle": 112,
+    "campaign_remains_open": true
+  },
+  "workflow": {
+    "horizon_report_sha256": "fbfe14ca761e2dd3cd56c81704a6ae66600b3c460dfaed8564a6126a0c555e65",
+    "final_checkpoint_sha256": "52dd5fea9f39af7f2710a05e853996535b03d1e0b91aa21cc7b547f9df364053",
+    "all_hard_safety_gates_passed": true,
+    "cycle_wall_seconds": [
+      56.08745205700143,
+      56.48143938099929,
+      57.88032927200038,
+      56.21056383799987
+    ],
+    "maximum_cycle_wall_seconds": 57.88032927200038,
+    "maximum_peak_resident_set_kib": 180104,
+    "serial_low_priority_execution": true
+  },
+  "strict_stationarity": {
+    "window_cycles": [84, 85, 86, 87, 88],
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.0073534217159929045,
+    "maximum_allowed_population_slope_per_cycle": 0.001,
+    "population_efolding_time_cycles": 135.99111252182195,
+    "minimum_allowed_population_efolding_time_cycles": 1000.0,
+    "ionization_pairs": 2668,
+    "electron_wall_losses": 1409,
+    "ion_wall_losses": 1377,
+    "electron_source_loss_relative_imbalance": 0.47188905547226384,
+    "ion_source_loss_relative_imbalance": 0.4838830584707646,
+    "maximum_allowed_source_loss_relative_imbalance": 0.05,
+    "normalized_field_energy_slope_per_cycle": 0.0011240213940556523,
+    "normalized_peak_field_slope_per_cycle": 0.0009689991496205224,
+    "normalized_ionization_slope_per_cycle": -0.026986506746626688,
+    "ionization_coefficient_of_variation": 0.03905252257160751,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance",
+      "ionization_slope"
+    ]
+  },
+  "trend_from_cycle_84_block": {
+    "population_slope_change": -0.0004562946882634387,
+    "population_efolding_time_change_cycles": 7.94548983378249,
+    "electron_source_loss_imbalance_change": -0.009081093781467457,
+    "ion_source_loss_imbalance_change": -0.006415448991921962,
+    "interpretation": "Balance is improving, but the change over four cycles is small relative to the gap between the observed values and frozen gates."
+  },
+  "cycle_88_endpoint": {
+    "electrons": 41071,
+    "ions": 45864,
+    "total_particles": 86935,
+    "field_energy_J_m-2": 4.685490960338529e-05,
+    "maximum_sampled_absolute_field_V_m": 56363.297540567626
+  },
+  "wall_impact_diagnostic": {
+    "origin_cycle": 76,
+    "macro_impacts": 8282,
+    "overflow_macro_impacts": 0,
+    "maximum_absolute_energy_closure_residual_J_m-2": 2.456395547037471e-20,
+    "summary_sha256": "6b428b669a5591132ff42726ec7797a79d4eef3f0ff03e8802646cdfa8df9e9c",
+    "spectrum_sha256": "9fe408245e0d500a23f80c80f810a77a87fd34169d007002bb68da575a86ec2e"
+  },
+  "result": {
+    "comparison_measurement_eligible": false,
+    "source_loss_balance_closing_rapidly": false,
+    "operational_margin_narrow": true,
+    "physical_interpretation": "AuroraPIC remains in a filling transient. Stable fields coexist with materially unbalanced particle production and loss."
+  },
+  "next_step": "Profile the cycle cost at the cycle-88 population and recover runtime margin before continuing the still-open strict campaign; do not relax scientific thresholds or start measurement.",
+  "claim_boundary": "The observed trend does not prove eventual convergence or a physics defect. It shows that equilibrium is not yet reached and that the current runtime guard is becoming the operational limiter.",
+  "physics_claim": "none_strict_equilibration_screen_failed"
+}
