@@ -49,6 +49,7 @@ MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_IONIZATION_SLOPE_PER_CYCLE = 0.02
 MAX_IONIZATION_COEFFICIENT_OF_VARIATION = 0.05
+PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE = 64
 
 
 class HorizonError(RuntimeError):
@@ -124,7 +125,7 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         "enabled": True,
         "energy_bins": 200,
         "energy_max_eV": 500.0,
-        "accumulation_origin_cycle": 64,
+        "accumulation_origin_cycle": PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE,
         "required_electrodes": ["left", "right"],
         "required_species": ["electrons", "ions"],
         "exact_macro_count_closure": True,
@@ -410,7 +411,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         })
         if collect_wall_impacts:
             result["wall_impact_diagnostic"] = wall_impact_diagnostic(
-                output, args.start_cycle * STEPS_PER_CYCLE
+                output,
+                PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE * STEPS_PER_CYCLE,
             )
         atomic_json(stage / "stage-report.json", result)
         if not result["passes"]:

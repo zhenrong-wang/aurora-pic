@@ -10,6 +10,7 @@ import tempfile
 
 from extend_aurorapic_edupic_horizon import (
     HorizonError,
+    PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE,
     authorized_end_cycle,
     endpoint,
     report_end_cycle,
@@ -72,6 +73,10 @@ def main() -> int:
     require(
         authorized_end_cycle(extension_args) == 96,
         "approved production equilibration extension was not authorized",
+    )
+    require(
+        PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE == 64,
+        "production wall-impact origin drifted from the frozen baseline",
     )
     require(
         solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
