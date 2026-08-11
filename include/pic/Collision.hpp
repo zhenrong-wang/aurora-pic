@@ -70,6 +70,11 @@ struct CollisionStepStatistics {
     std::optional<Vec3> primary_removal_product_velocity{};
 };
 
+struct CollisionWorkspace {
+    CollisionStepStatistics statistics{};
+    std::vector<double> channel_rates{};
+};
+
 struct CollisionDiagnostics {
     std::uint64_t candidates{0};
     std::uint64_t null_collisions{0};
@@ -90,6 +95,16 @@ public:
         Vec3& velocity,
         double timestep,
         std::mt19937_64& rng) const;
+    CollisionStepStatistics& collide_reusing_storage(
+        double& velocity,
+        double timestep,
+        std::mt19937_64& rng,
+        CollisionWorkspace& workspace) const;
+    CollisionStepStatistics& collide_reusing_storage(
+        Vec3& velocity,
+        double timestep,
+        std::mt19937_64& rng,
+        CollisionWorkspace& workspace) const;
 
     const CollisionConfig& config() const { return config_; }
     const std::vector<std::string>& channel_names() const {
@@ -127,10 +142,13 @@ private:
         std::optional<MeanCosineTable> mean_cosine{};
     };
 
-    std::vector<double> rates_for_speed(double speed) const;
+    double rates_for_speed(
+        double speed, std::vector<double>& rates) const;
     double collision_energy(
         const Channel& channel, double relative_speed) const;
-    void validate_frequency_bound(double projectile_speed) const;
+    void validate_frequency_bound(
+        double projectile_speed,
+        std::vector<double>& rate_scratch) const;
     double sample_neutral_velocity(std::mt19937_64& rng) const;
     Vec3 sample_neutral_velocity_3v(std::mt19937_64& rng) const;
     void apply_channel(

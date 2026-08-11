@@ -796,15 +796,16 @@ double NullCollisionModel::collision_energy(
     return energy;
 }
 
-std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
+double NullCollisionModel::rates_for_speed(
+    double speed, std::vector<double>& rates) const {
     if (!std::isfinite(speed) || speed < 0.0) {
         throw std::invalid_argument(
             "MCC particle speed must be finite and non-negative");
     }
-    std::vector<double> result;
-    result.reserve(channels_.size());
+    rates.resize(channels_.size());
     double total = 0.0;
-    for (const auto& channel : channels_) {
+    for (std::size_t index = 0; index < channels_.size(); ++index) {
+        const auto& channel = channels_[index];
         const double energy = collision_energy(channel, speed);
         double rate = 0.0;
         if (energy >= channel.config.threshold_energy) {
@@ -814,7 +815,7 @@ std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
         if (!std::isfinite(rate) || rate < 0.0) {
             throw std::overflow_error("MCC collision rate overflow");
         }
-        result.push_back(rate);
+        rates[index] = rate;
         total += rate;
     }
     const double tolerance =
@@ -824,13 +825,14 @@ std::vector<double> NullCollisionModel::rates_for_speed(double speed) const {
         throw std::runtime_error(
             "MCC total collision frequency exceeds configured max_frequency");
     }
-    return result;
+    return total;
 }
 
 void NullCollisionModel::validate_frequency_bound(
-    double projectile_speed) const {
+    double projectile_speed,
+    std::vector<double>& rate_scratch) const {
     if (neutral_velocity_stddev_ == 0.0) {
-        (void)rates_for_speed(projectile_speed);
+        (void)rates_for_speed(projectile_speed, rate_scratch);
         return;
     }
     const double thermal_speed_limit =
@@ -1098,6 +1100,19 @@ CollisionStepStatistics NullCollisionModel::collide(
     double& velocity,
     double timestep,
     std::mt19937_64& rng) const {
+    CollisionWorkspace workspace;
+    collide_reusing_storage(
+        velocity, timestep, rng, workspace);
+    return std::move(workspace.statistics);
+}
+
+CollisionStepStatistics& NullCollisionModel::collide_reusing_storage(
+    double& velocity,
+    double timestep,
+    std::mt19937_64& rng,
+    CollisionWorkspace& workspace) const {
+    auto& statistics = workspace.statistics;
+    auto& channel_rates = workspace.channel_rates;
     if (std::any_of(
             channels_.begin(), channels_.end(),
             [](const Channel& channel) {
@@ -1114,12 +1129,18 @@ CollisionStepStatistics NullCollisionModel::collide(
         throw std::invalid_argument(
             "MCC timestep must be positive and finite");
     }
-    CollisionStepStatistics statistics;
+    statistics.candidates = 0;
+    statistics.null_collisions = 0;
     statistics.channel_collisions.assign(channels_.size(), 0);
-    statistics.channel_projectile_energy_change.assign(channels_.size(), 0.0);
+    statistics.channel_projectile_energy_change.assign(
+        channels_.size(), 0.0);
+    statistics.secondaries.clear();
+    statistics.primary_removal_channel.reset();
+    statistics.primary_removal_product_velocity.reset();
     double elapsed = 0.0;
     while (true) {
-        validate_frequency_bound(std::abs(velocity));
+        validate_frequency_bound(
+            std::abs(velocity), channel_rates);
         const double waiting_time =
             -std::log(open_unit_interval(rng)) / config_.max_frequency;
         if (!std::isfinite(waiting_time) ||
@@ -1136,8 +1157,11 @@ CollisionStepStatistics NullCollisionModel::collide(
         }
         const double neutral_velocity =
             sample_neutral_velocity(rng);
-        const auto channel_rates = rates_for_speed(
-            std::abs(velocity - neutral_velocity));
+        if (neutral_velocity_stddev_ != 0.0) {
+            (void)rates_for_speed(
+                std::abs(velocity - neutral_velocity),
+                channel_rates);
+        }
         const double selection =
             std::generate_canonical<double, 64>(rng) *
             config_.max_frequency;
@@ -1174,6 +1198,19 @@ CollisionStepStatistics NullCollisionModel::collide(
     Vec3& velocity,
     double timestep,
     std::mt19937_64& rng) const {
+    CollisionWorkspace workspace;
+    collide_reusing_storage(
+        velocity, timestep, rng, workspace);
+    return std::move(workspace.statistics);
+}
+
+CollisionStepStatistics& NullCollisionModel::collide_reusing_storage(
+    Vec3& velocity,
+    double timestep,
+    std::mt19937_64& rng,
+    CollisionWorkspace& workspace) const {
+    auto& statistics = workspace.statistics;
+    auto& channel_rates = workspace.channel_rates;
     if (!std::isfinite(velocity.x) ||
         !std::isfinite(velocity.y) ||
         !std::isfinite(velocity.z)) {
@@ -1184,15 +1221,21 @@ CollisionStepStatistics NullCollisionModel::collide(
         throw std::invalid_argument(
             "MCC timestep must be positive and finite");
     }
-    CollisionStepStatistics statistics;
+    statistics.candidates = 0;
+    statistics.null_collisions = 0;
     statistics.channel_collisions.assign(channels_.size(), 0);
-    statistics.channel_projectile_energy_change.assign(channels_.size(), 0.0);
+    statistics.channel_projectile_energy_change.assign(
+        channels_.size(), 0.0);
+    statistics.secondaries.clear();
+    statistics.primary_removal_channel.reset();
+    statistics.primary_removal_product_velocity.reset();
     const auto projectile_speed = [&]() {
         return speed(velocity);
     };
     double elapsed = 0.0;
     while (true) {
-        validate_frequency_bound(projectile_speed());
+        validate_frequency_bound(
+            projectile_speed(), channel_rates);
         const double waiting_time =
             -std::log(open_unit_interval(rng)) / config_.max_frequency;
         if (!std::isfinite(waiting_time) ||
@@ -1209,8 +1252,11 @@ CollisionStepStatistics NullCollisionModel::collide(
         }
         const Vec3 neutral_velocity =
             sample_neutral_velocity_3v(rng);
-        const auto channel_rates = rates_for_speed(
-            speed(subtract(velocity, neutral_velocity)));
+        if (neutral_velocity_stddev_ != 0.0) {
+            (void)rates_for_speed(
+                speed(subtract(velocity, neutral_velocity)),
+                channel_rates);
+        }
         const double selection =
             std::generate_canonical<double, 64>(rng) *
             config_.max_frequency;

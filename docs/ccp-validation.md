@@ -1383,6 +1383,17 @@ profile-guided 1D3V performance pass and count-preserving ion wall-impact
 spectra; a new production-scale equilibration horizon should then be declared
 before further cycles, informed by eduPIC's approximately 1,500-cycle startup.
 
+The first performance prerequisite is now complete. Reusable per-model MCC
+workspaces remove per-particle vector allocation, and ionization products use
+a monotonic dead-slot cursor rather than repeated full storage scans. An exact
+single-core replay from the cycle-63 checkpoint completed cycle 64 in 45.85
+seconds, down from the certified 56.39 seconds. Its final checkpoint SHA-256
+remained `f99b58a0b39a04c190e5ee9b4d5b98d2a65f0cdb9bf42f6165cf1d745541d47c`,
+and ten emitted diagnostic products were byte-identical. This advances the
+runtime prerequisite without changing the failed stationarity conclusion.
+Ion wall-impact spectra remain the next diagnostic prerequisite before a new
+equilibration declaration.
+
 Commit `df8765d` added restart-safe, species-resolved electric-work
 accounting. The diagnostic records represented kinetic-energy change caused
 only by the electric particle push; collision-energy transfer and kinetic

@@ -403,6 +403,49 @@ int main() {
             require(
                 accepted > 620 && accepted < 800,
                 "elastic collision acceptance left its statistical envelope");
+            {
+                std::mt19937_64 allocating_rng(99173);
+                std::mt19937_64 reuse_rng(99173);
+                double allocating_velocity = std::sqrt(2.0);
+                double reused_velocity = allocating_velocity;
+                const auto allocating_statistics =
+                    elastic.collide(
+                        allocating_velocity, 0.5,
+                        allocating_rng);
+                pic::CollisionWorkspace workspace;
+                auto& reused_statistics = workspace.statistics;
+                reused_statistics.candidates = 999;
+                reused_statistics.null_collisions = 999;
+                reused_statistics.channel_collisions = {999, 999};
+                reused_statistics.channel_projectile_energy_change = {
+                    999.0, 999.0};
+                reused_statistics.secondaries.push_back({});
+                reused_statistics.primary_removal_channel = 99;
+                reused_statistics.primary_removal_product_velocity =
+                    pic::Vec3{1.0, 2.0, 3.0};
+                workspace.channel_rates = {999.0, 999.0};
+                elastic.collide_reusing_storage(
+                    reused_velocity, 0.5, reuse_rng,
+                    workspace);
+                require(
+                    allocating_velocity == reused_velocity &&
+                    allocating_statistics.candidates ==
+                        reused_statistics.candidates &&
+                    allocating_statistics.null_collisions ==
+                        reused_statistics.null_collisions &&
+                    allocating_statistics.channel_collisions ==
+                        reused_statistics.channel_collisions &&
+                    allocating_statistics
+                            .channel_projectile_energy_change ==
+                        reused_statistics
+                            .channel_projectile_energy_change &&
+                    reused_statistics.secondaries.empty() &&
+                    !reused_statistics.primary_removal_channel &&
+                    !reused_statistics
+                         .primary_removal_product_velocity,
+                    "storage-reusing scalar MCC changed results or "
+                    "retained prior-call diagnostics");
+            }
             std::mt19937_64 vector_rng(8128);
             std::uint64_t vector_accepted = 0;
             double mean_direction_x = 0.0;
@@ -774,6 +817,62 @@ int main() {
                            ionization_stats.secondaries.size()),
                 1e-12,
                 "ionization energy ledger does not close with products");
+            {
+                std::mt19937_64 allocating_rng(177013);
+                std::mt19937_64 reuse_rng(177013);
+                pic::Vec3 allocating_velocity{4.0, 0.0, 0.0};
+                pic::Vec3 reused_velocity = allocating_velocity;
+                const auto allocating_statistics =
+                    ionization.collide(
+                        allocating_velocity, 10.0,
+                        allocating_rng);
+                pic::CollisionWorkspace workspace;
+                ionization.collide_reusing_storage(
+                    reused_velocity, 10.0, reuse_rng,
+                    workspace);
+                const auto& reused_statistics =
+                    workspace.statistics;
+                require(
+                    allocating_velocity.x == reused_velocity.x &&
+                    allocating_velocity.y == reused_velocity.y &&
+                    allocating_velocity.z == reused_velocity.z &&
+                    allocating_statistics.candidates ==
+                        reused_statistics.candidates &&
+                    allocating_statistics.null_collisions ==
+                        reused_statistics.null_collisions &&
+                    allocating_statistics.channel_collisions ==
+                        reused_statistics.channel_collisions &&
+                    allocating_statistics
+                            .channel_projectile_energy_change ==
+                        reused_statistics
+                            .channel_projectile_energy_change &&
+                    allocating_statistics.secondaries.size() ==
+                        reused_statistics.secondaries.size(),
+                    "storage-reusing 3V ionization MCC changed "
+                    "results");
+                for (std::size_t secondary = 0;
+                     secondary <
+                         allocating_statistics.secondaries.size();
+                     ++secondary) {
+                    const auto& expected =
+                        allocating_statistics.secondaries[secondary];
+                    const auto& actual =
+                        reused_statistics.secondaries[secondary];
+                    require(
+                        expected.channel == actual.channel &&
+                        expected.velocity.x == actual.velocity.x &&
+                        expected.velocity.y == actual.velocity.y &&
+                        expected.velocity.z == actual.velocity.z &&
+                        expected.ion_velocity.x ==
+                            actual.ion_velocity.x &&
+                        expected.ion_velocity.y ==
+                            actual.ion_velocity.y &&
+                        expected.ion_velocity.z ==
+                            actual.ion_velocity.z,
+                        "storage-reusing 3V MCC changed an "
+                        "ionization product");
+                }
+            }
             auto opal_ionization_config = ionization_config;
             opal_ionization_config.channels.front()
                 .ionization_kinematics =

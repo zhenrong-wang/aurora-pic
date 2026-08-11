@@ -114,6 +114,8 @@ private:
         std::unique_ptr<NullCollisionModel> model{};
         std::vector<std::optional<IonizationChannelRuntime>>
             ionization_channels{};
+        CollisionWorkspace collision_workspace{};
+        std::vector<double> tracked_energy_scratch{};
     };
     void apply_collisions();
     void deposit_and_solve(double field_time);

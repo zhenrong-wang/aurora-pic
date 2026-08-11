@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "single_core_cycle_64_mcc_storage_reuse_performance_check",
+  "claim_boundary": "This is a local operational comparison, not a portable performance guarantee or physics-validation result.",
+  "baseline": {
+    "commit": "c38d20e19101f398cca21b19c3e25cb1a383e0c7",
+    "wall_seconds": 56.38718672799996,
+    "peak_resident_set_kib": 175456,
+    "source": "tmp/edupic-argon-cross-sections-20260810/aurorapic-horizon-cycle64/cycle-0064/stage-report.json"
+  },
+  "optimized": {
+    "wall_seconds": 45.85,
+    "user_seconds": 45.51,
+    "peak_resident_set_kib": 179576,
+    "wall_time_reduction_fraction": 0.1868720065576095,
+    "timeout_seconds": 60,
+    "cpu_affinity": 9,
+    "nice_level": 10,
+    "runtime_backend": "serial",
+    "runtime_threads": 1
+  },
+  "environment": {
+    "cpu": "AMD EPYC 7R13 Processor",
+    "logical_cpus": 16,
+    "physical_cores": 8,
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "build_type": "Release",
+    "openmp_compiled": true
+  },
+  "inputs": {
+    "cycle_64_deck_sha256": "ec4617b8316a474ce9d0ba630d201ccf0cde75615beb09fcd1bd5c7fcc39e298",
+    "cycle_63_checkpoint_sha256": "b8f5405e9675d1d253293579229ad666cc4f0b096bee045df30411e76b43ed52",
+    "steps": 4000,
+    "final_total_particles": 69778
+  },
+  "optimization": {
+    "collision_workspace": "Reuse per-model collision statistics and rate buffers instead of allocating vectors for every particle collision call.",
+    "product_slot_cursor": "Scan each product species for dead storage monotonically once per step instead of restarting at the first slot for every ionization product.",
+    "rng_order_changed": false
+  },
+  "equivalence": {
+    "final_checkpoint_sha256": "f99b58a0b39a04c190e5ee9b4d5b98d2a65f0cdb9bf42f6165cf1d745541d47c",
+    "matches_certified_cycle_64_checkpoint": true,
+    "byte_identical_diagnostic_products": 10,
+    "diagnostic_sha256": {
+      "scalars.csv": "89a2624733ac0b6122842a5704586efa2d2d5149f03cbce9bb085d3ba09214f1",
+      "collisions.csv": "bc8ad3b976d8d6c7e6692baf6372aec4fd5927791d3cf2230d979bd944286a86",
+      "boundary_losses.csv": "cbd662d10951346815108b4a249b133a50e94d9f776af6b50ee85405138d50b6",
+      "power_transfer.csv": "4fc2456cfde7cfac31abd884eb0e75e701c0c17572175cc1803167badc4786d6",
+      "spatial_average.csv": "00e5e0d37d86c3f49b788abe709e196fb7ed4a593cd0cd316c4bc64756c56d32",
+      "spatial_field_average.csv": "81f7da5f3dae8c648c172ce76058ed84dad3d24145eced52a4f6dc3962d6c8bf",
+      "spatial_phase_fields.csv": "c86cdf836652d1faaaa0e0c1677d4809464bffb2b1cfaf65446fb6a48f7fb9c4",
+      "spatial_phase_moments.csv": "98eb9dbcb518c8cf7dddd004d60bb8f8132f3a175d287b953dc9d543e4636833",
+      "spatial_collision_power.csv": "b6596c3b7d82803f7d0d5cd08a47980d3a3447cb4e0a7c2ec1455e9815beb4ee",
+      "spatial_phase_collision_power.csv": "47bb6839b73c7f5556848ad880712d3c3d35e6b8ac9a0c5e6afcc105489c670b"
+    }
+  },
+  "result": "accepted_bitwise_equivalent_local_speedup"
+}

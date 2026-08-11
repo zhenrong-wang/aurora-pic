@@ -95,6 +95,18 @@ The current implementation is aimed at correctness and regression coverage befor
 
 Use the serial backend as the portability baseline. Optional OpenMP currently covers safe particle-loop slices and uses deterministic static scheduling; it is not yet a full MPI/GPU or domain-decomposed scaling model. Treat `runtime_backend = mpi` and `runtime_backend = gpu` as reserved future options that intentionally fail fast.
 
+The 1D null-collision path retains one collision workspace per configured
+model. Rate, event-count, energy-change, and secondary-product buffers are
+cleared and reused for each particle instead of allocating new vectors in the
+hot loop. Reactive-product insertion also advances a per-species dead-slot
+cursor, preserving the original first-dead-slot order without repeatedly
+rescanning live storage. On the local AMD EPYC 7R13 host, an exact serial
+replay of eduPIC-comparison cycle 64 fell from 56.39 to 45.85 seconds (18.7%).
+The final checkpoint and ten diagnostic products were byte-identical. This is
+a bounded local result, not a cross-platform speed claim; the machine and
+hash evidence are retained in
+[`edupic-argon-aurorapic-cycle64-mcc-performance-20260811.json`](../benchmarks/ccp/edupic-argon-aurorapic-cycle64-mcc-performance-20260811.json).
+
 Imported 2D diagnostics include cumulative `particle_seconds`, `deposition_seconds`, and `field_solve_seconds` columns, plus cumulative `location_cache_hits` and `location_searches`. Timings use a monotonic wall clock and are operational measurements, not simulation state; timings and location caches are intentionally excluded from checkpoints and numerical convergence decisions. Each live particle first validates its last element and recomputes shape coordinates locally. Only a cache miss or element crossing invokes spatial point location; restart reconstructs the sidecars during its required redeposition. Imported charge deposition uses one dense nodal buffer per active worker and reduces those buffers in worker order. This avoids atomics and data races, gives repeatable results for a fixed worker count, and uses additional memory proportional to `active_threads * mesh_nodes`.
 
 Boundary injection can grow particle storage, so production runs must set `max_particles_per_species` from a conservative memory budget. Absorbed/dead slots are reused before growth. The configured macro-particle injection rate and expected residence time should be used to estimate the live population; the hard limit remains a safety bound rather than a population-control model.

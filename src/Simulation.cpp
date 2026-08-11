@@ -870,27 +870,30 @@ void Simulation::apply_collisions() {
              ++particle_id) {
             auto& part = sp.particles()[particle_id];
             if (!part.alive) continue;
-            CollisionStepStatistics statistics;
+            auto& statistics =
+                runtime.collision_workspace.statistics;
             if (cfg_.velocity_dimensions == 3) {
                 Vec3 velocity{
                     part.v, part.velocity_y, part.velocity_z};
-                statistics =
-                    runtime.model->collide(
-                        velocity, timestep, rng_);
+                runtime.model->collide_reusing_storage(
+                    velocity, timestep, rng_,
+                    runtime.collision_workspace);
                 part.v = velocity.x;
                 part.velocity_y = velocity.y;
                 part.velocity_z = velocity.z;
             } else {
-                statistics =
-                    runtime.model->collide(
-                        part.v, timestep, rng_);
+                runtime.model->collide_reusing_storage(
+                    part.v, timestep, rng_,
+                    runtime.collision_workspace);
             }
             for (auto& energy_change :
                  statistics.channel_projectile_energy_change) {
                 energy_change *= sp.weight();
             }
-            auto tracked_energy_change =
+            runtime.tracked_energy_scratch =
                 statistics.channel_projectile_energy_change;
+            auto& tracked_energy_change =
+                runtime.tracked_energy_scratch;
             add_collision_statistics(
                 collision_totals_, statistics,
                 runtime.diagnostic_offset);
@@ -990,6 +993,8 @@ void Simulation::apply_collisions() {
                 species_[species_id].name() + "'");
         }
     }
+    std::vector<std::size_t> next_reusable_slot(
+        species_.size(), 0);
     const auto append_product =
         [&](std::size_t species_id,
             double position,
@@ -998,24 +1003,24 @@ void Simulation::apply_collisions() {
             species_[species_id];
         auto& particles =
             product_species.particles();
-        auto dead = std::find_if(
-            particles.begin(), particles.end(),
-            [](const Particle& particle) {
-                return !particle.alive;
-            });
-        if (dead == particles.end()) {
-            particles.emplace_back();
-            dead = std::prev(particles.end());
+        auto& slot = next_reusable_slot[species_id];
+        while (slot < particles.size() &&
+               particles[slot].alive) {
+            ++slot;
         }
-        *dead = {};
-        dead->x = position;
-        dead->v = velocity.x;
-        dead->velocity_y = velocity.y;
-        dead->velocity_z = velocity.z;
-        dead->v_half = dead->v;
-        dead->alive = true;
+        if (slot == particles.size()) {
+            particles.emplace_back();
+        }
+        auto& product = particles[slot++];
+        product = {};
+        product.x = position;
+        product.v = velocity.x;
+        product.velocity_y = velocity.y;
+        product.velocity_z = velocity.z;
+        product.v_half = product.v;
+        product.alive = true;
         initialize_leapfrog_half_step(
-            *dead,
+            product,
             interpolate_electric(grid_, position),
             product_species.charge() /
                 product_species.mass(),
