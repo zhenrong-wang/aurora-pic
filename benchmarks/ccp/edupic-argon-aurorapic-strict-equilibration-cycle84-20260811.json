@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "first_strict_source_loss_equilibration_block_cycles_81_through_84",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-strict-equilibration-rule-20260811.json",
+    "declaration_commit": "80c2bc6",
+    "sha256": "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144"
+  },
+  "workflow": {
+    "horizon_report_sha256": "c070607df477041d096ecc493a9318a9c9722cc37b919059ecdaa748b22211ec",
+    "final_checkpoint_sha256": "f5f3de9ea5945417d05407cfb3ba37b4bccc0a654af5f20472dfe1699f20d7fd",
+    "runner_sha256_after_metadata_fix": "e935a63458e66f72273951dc0234009e99b7569e2a55e28a6516335864c06988",
+    "horizon_regression_sha256_after_metadata_fix": "458ccfaa11d026b71422f1c4313cc3d2b5efc3dbb42baded181c4ef52da3fa48",
+    "all_hard_safety_gates_passed": true,
+    "maximum_cycle_wall_seconds": 56.45274496999991,
+    "maximum_peak_resident_set_kib": 179984,
+    "serial_low_priority_execution": true
+  },
+  "strict_stationarity": {
+    "window_cycles": [80, 81, 82, 83, 84],
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.007809716404256343,
+    "maximum_allowed_population_slope_per_cycle": 0.001,
+    "population_efolding_time_cycles": 128.04562268803946,
+    "minimum_allowed_population_efolding_time_cycles": 1000.0,
+    "ionization_pairs": 2680,
+    "electron_wall_losses": 1391,
+    "ion_wall_losses": 1366,
+    "electron_source_loss_relative_imbalance": 0.4809701492537313,
+    "ion_source_loss_relative_imbalance": 0.49029850746268655,
+    "maximum_allowed_source_loss_relative_imbalance": 0.05,
+    "normalized_field_energy_slope_per_cycle": 0.001049259942315125,
+    "normalized_peak_field_slope_per_cycle": 0.0019768261761002027,
+    "normalized_ionization_slope_per_cycle": 0.00626865671641791,
+    "ionization_coefficient_of_variation": 0.009956465719497265,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance"
+    ]
+  },
+  "cycle_84_endpoint": {
+    "electrons": 39812,
+    "ions": 44573,
+    "total_particles": 84385,
+    "field_energy_J_m-2": 4.664019752683376e-05,
+    "maximum_sampled_absolute_field_V_m": 56187.25351270129
+  },
+  "wall_impact_diagnostic": {
+    "origin_cycle": 76,
+    "macro_impacts": 5496,
+    "overflow_macro_impacts": 0,
+    "maximum_absolute_energy_closure_residual_J_m-2": 2.879912020664621e-20,
+    "summary_sha256": "72b2311bb188ef2bd059e913e3a8b831440042d8df566c10e26dfa6151e2c0f4",
+    "spectrum_sha256": "6b65bde9743742a41d56b2a30c46a79ea7e838b1ce5ddd2eaa992c5abb6dee3c"
+  },
+  "operational_incidents": [
+    {
+      "type": "postprocessing_metadata_return_defect",
+      "effect": "The raw report serialized validated wall summaries as null and omitted the strict threshold echoes; gate calculations and solver outputs were unaffected.",
+      "resolution_commit": "3d9e33e",
+      "physics_or_solver_change": false,
+      "raw_outputs_revalidated_after_fix": true
+    }
+  ],
+  "result": {
+    "comparison_measurement_eligible": false,
+    "strict_gate_confirmed_prior_pilot_diagnosis": true,
+    "physical_interpretation": "The discharge remains in a slow filling transient: ionization is still nearly twice either species wall loss, despite stable field and ionization-rate trends."
+  },
+  "next_step": "Continue only under the frozen strict rule, while respecting the narrowing 60-second per-cycle performance margin; do not collect production comparison statistics.",
+  "claim_boundary": "This block rejects equilibrium readiness. It does not identify the cause of the source-loss imbalance or establish a physics-kernel defect.",
+  "physics_claim": "none_strict_equilibration_screen_failed"
+}
