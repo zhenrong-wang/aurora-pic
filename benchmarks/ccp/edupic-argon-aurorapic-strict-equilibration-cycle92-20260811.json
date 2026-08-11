@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "third_strict_source_loss_equilibration_block_cycles_89_through_92",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-strict-equilibration-rule-20260811.json",
+    "declaration_commit": "80c2bc6",
+    "sha256": "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144",
+    "maximum_cycle": 112,
+    "campaign_remains_open": true
+  },
+  "workflow": {
+    "solver_commit": "9c2447b",
+    "horizon_report_sha256": "bf96083fbf21562cdbf6ebe311a6e81a6ec045047020bab68345327496c76f5b",
+    "final_checkpoint_sha256": "d5b2049d189519861b35207489a66e7c7f1c7d89f8fff84f8c3dca1a38f8edc7",
+    "all_hard_safety_gates_passed": true,
+    "cycle_wall_seconds": [
+      41.92738605199702,
+      41.861147038001945,
+      43.67253084699769,
+      43.84808432600039
+    ],
+    "maximum_cycle_wall_seconds": 43.84808432600039,
+    "maximum_peak_resident_set_kib": 180132,
+    "serial_low_priority_execution": true
+  },
+  "optimization_validation": {
+    "change": "uniform_cross_section_grid_direct_index_with_exact_bound_correction",
+    "full_cycle_88_replay_wall_seconds": 42.92,
+    "prior_cycle_88_wall_seconds": 56.21056383799987,
+    "wall_time_reduction_fraction": 0.2364419287417746,
+    "replay_checkpoint_byte_identical": true,
+    "replay_checkpoint_sha256": "52dd5fea9f39af7f2710a05e853996535b03d1e0b91aa21cc7b547f9df364053",
+    "compared_diagnostics_byte_identical": [
+      "collisions.csv",
+      "power_transfer.csv",
+      "scalars.csv",
+      "spatial_average.csv",
+      "spatial_phase_moments.csv",
+      "wall_impact_spectrum.csv"
+    ]
+  },
+  "strict_stationarity": {
+    "window_cycles": [88, 89, 90, 91, 92],
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.0066199235525372015,
+    "maximum_allowed_population_slope_per_cycle": 0.001,
+    "population_efolding_time_cycles": 151.05914623692783,
+    "minimum_allowed_population_efolding_time_cycles": 1000.0,
+    "ionization_pairs": 2624,
+    "electron_wall_losses": 1467,
+    "ion_wall_losses": 1452,
+    "electron_source_loss_relative_imbalance": 0.4409298780487805,
+    "ion_source_loss_relative_imbalance": 0.44664634146341464,
+    "maximum_allowed_source_loss_relative_imbalance": 0.05,
+    "normalized_field_energy_slope_per_cycle": 0.0015194059572465669,
+    "normalized_peak_field_slope_per_cycle": 0.00006548186128782218,
+    "normalized_ionization_slope_per_cycle": -0.010060975609756098,
+    "ionization_coefficient_of_variation": 0.015657498920864436,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance"
+    ]
+  },
+  "trend_from_cycle_88_block": {
+    "population_slope_change": -0.0007334981634557029,
+    "population_efolding_time_change_cycles": 15.068033715105884,
+    "electron_source_loss_imbalance_change": -0.030959177423483364,
+    "ion_source_loss_imbalance_change": -0.037236717007349984,
+    "interpretation": "All population-balance indicators improved and the ionization trend gate recovered, but population growth and source-loss imbalance remain far outside the frozen strict thresholds."
+  },
+  "cycle_92_endpoint": {
+    "electrons": 42228,
+    "ions": 47036,
+    "total_particles": 89264,
+    "field_energy_J_m-2": 0.000047200987127680386,
+    "maximum_sampled_absolute_field_V_m": 56349.20868421161
+  },
+  "wall_impact_diagnostic": {
+    "origin_cycle": 76,
+    "macro_impacts": 11201,
+    "overflow_macro_impacts": 0,
+    "maximum_absolute_energy_closure_residual_J_m-2": 6.437450399132683e-20,
+    "summary_sha256": "16e0108031acdfe6bf4c99c7b8c366837c044fda93c7435e9dbac732df9c857e",
+    "spectrum_sha256": "f5d61c52bb0da53a6c5236a5230535c0bb2fe65fb6384b91a9a92f2046668208"
+  },
+  "result": {
+    "comparison_measurement_eligible": false,
+    "source_loss_balance_improving": true,
+    "runtime_margin_recovered": true,
+    "physical_interpretation": "AuroraPIC remains in a filling transient. Field and ionization observables are stable while particle production still materially exceeds wall loss."
+  },
+  "next_step": "Continue the frozen strict campaign with cycles 93 through 96; do not begin a fresh comparison measurement until two consecutive blocks pass all stationarity gates.",
+  "claim_boundary": "This block establishes deterministic performance equivalence and continued safe equilibration, not physical equilibrium or cross-code validation.",
+  "physics_claim": "none_strict_equilibration_screen_failed"
+}
