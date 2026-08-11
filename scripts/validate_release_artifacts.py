@@ -80,6 +80,7 @@ def validate_cmake_packaging() -> None:
         "scripts/analyze_edupic_convergence.py",
         "scripts/advance_edupic_equilibration.py",
         "scripts/export_checkpoint_particle_state.py",
+        "scripts/run_aurorapic_initialization_ab.py",
         "scripts/normalize_hall_reference.py",
         "scripts/preflight_hall.py",
         "scripts/qualify_hall_runtime.py",
