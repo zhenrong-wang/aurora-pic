@@ -221,6 +221,7 @@ def wall_impact_diagnostic(output: Path, origin_step: int) -> dict[str, object]:
             abs(float(row["energy_closure_residual"])) for row in summary
         ),
     }
+    return result
 
 
 def endpoint(output: Path, cycle: int) -> dict[str, float | int]:
@@ -243,7 +244,7 @@ def endpoint(output: Path, cycle: int) -> dict[str, float | int]:
             if not math.isfinite(value):
                 raise HorizonError("field output contains non-finite E")
             maximum_field = max(maximum_field, value)
-    return {
+    result = {
         "cycle": cycle,
         "electrons": integer(
             scalars[-1], "live_particles_electrons", "horizon endpoint"
@@ -256,6 +257,7 @@ def endpoint(output: Path, cycle: int) -> dict[str, float | int]:
         "maximum_sampled_absolute_field_V_m": maximum_field,
         "ionization_pairs_in_cycle": ionizations,
     }
+    return result
 
 
 def normalized_slope(values: list[float]) -> float:
@@ -348,7 +350,7 @@ def stationarity(
                 "ion_source_loss_relative_imbalance"] <=
                 STRICT_MAX_SOURCE_LOSS_RELATIVE_IMBALANCE,
         })
-    return {
+    result = {
         "window_cycles": [int(item["cycle"]) for item in endpoints],
         "thresholds": {
             "maximum_absolute_normalized_total_population_slope_per_cycle":

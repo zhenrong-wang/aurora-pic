@@ -188,6 +188,11 @@ def main() -> int:
         stationarity(strict_stable, strict_populations, True)["passed"],
         "balanced strict synthetic horizon failed",
     )
+    require(
+        stationarity(strict_stable, strict_populations, True)["thresholds"]
+        ["minimum_population_efolding_time_cycles"] == 1000.0,
+        "strict horizon omitted its e-folding threshold",
+    )
     strict_populations[0]["electron_wall_losses"] = 500
     strict_result = stationarity(strict_stable, strict_populations, True)
     require(
