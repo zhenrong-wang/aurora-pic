@@ -76,11 +76,19 @@ void write_particle_state(
     std::size_t dimension,
     std::size_t particle_count,
     const std::string& records,
-    const std::string& units = "normalized") {
+    const std::string& units = "normalized",
+    std::size_t velocity_dimensions = 0) {
     std::ofstream output(path);
     output
-        << "AuroraPIC-particle-state-v1\n"
-        << "dimension " << dimension << '\n'
+        << (velocity_dimensions == 0
+                ? "AuroraPIC-particle-state-v1\n"
+                : "AuroraPIC-particle-state-v2\n")
+        << "dimension " << dimension << '\n';
+    if (velocity_dimensions != 0) {
+        output << "velocity_dimensions "
+               << velocity_dimensions << '\n';
+    }
+    output
         << "units " << units << '\n'
         << "weighting species_constant\n"
         << "velocity_staggering time_centered\n"
@@ -803,7 +811,7 @@ int main() {
                 bounded_records(2);
             const auto bounded_metadata =
                 pic::load_validated_external_particle_state_bounded(
-                    state_path, 1,
+                    state_path, 1, 1,
                     pic::UnitSystem::Normalized,
                     {{"electrons", 2}}, "test",
                     [&](std::size_t species_index,
@@ -825,11 +833,65 @@ int main() {
                 bounded_records[1].velocity.x, -0.5,
                 1e-15,
                 "bounded external reader changed record ordering");
+            const auto state_1d3v_path =
+                std::filesystem::path(
+                    "test_external_particle_state_1d3v.aps");
+            write_particle_state(
+                state_1d3v_path, 1, 2,
+                "particle electrons 0.25 0 0 1.5 2.5 3.5\n"
+                "particle electrons 0.75 0 0 -0.5 -1.5 -2.5\n",
+                "normalized", 3);
+            const auto state_1d3v =
+                pic::load_validated_external_particle_state(
+                    state_1d3v_path, 1, 3,
+                    pic::UnitSystem::Normalized,
+                    {{"electrons", 2}}, "1D3V test");
+            require(
+                state_1d3v.version == 2 &&
+                    state_1d3v.velocity_dimensions == 3 &&
+                    state_1d3v.species.at("electrons")[1]
+                            .velocity.z == -2.5,
+                "v2 1D3V external state lost velocity metadata or data");
+            require_throws(
+                [&] {
+                    (void)pic::load_validated_external_particle_state(
+                        state_1d3v_path, 1, 1,
+                        pic::UnitSystem::Normalized,
+                        {{"electrons", 2}}, "1D1V test");
+                },
+                "1D1V consumer accepted a 1D3V external state");
+            pic::Config state_1d3v_config;
+            state_1d3v_config.nx = 8;
+            state_1d3v_config.length = 1.0;
+            state_1d3v_config.dt = 0.01;
+            state_1d3v_config.velocity_dimensions = 3;
+            state_1d3v_config.initial_state_path = state_1d3v_path;
+            state_1d3v_config.initial_state_signature =
+                state_1d3v.signature;
+            pic::SpeciesConfig state_1d3v_species;
+            state_1d3v_species.name = "electrons";
+            state_1d3v_species.charge = 0.0;
+            state_1d3v_species.mass = 1.0;
+            state_1d3v_species.weight = 1.0;
+            state_1d3v_species.particles = 2;
+            state_1d3v_config.species = {state_1d3v_species};
+            pic::Simulation state_1d3v_simulation(
+                state_1d3v_config);
+            state_1d3v_simulation.initialize();
+            const auto& imported_1d3v =
+                state_1d3v_simulation.species().front().particles();
+            require(
+                imported_1d3v[0].velocity_y == 2.5 &&
+                    imported_1d3v[0].velocity_z == 3.5 &&
+                    imported_1d3v[1].velocity_y == -1.5 &&
+                    imported_1d3v[1].velocity_z == -2.5,
+                "1D3V simulation external initialization changed transverse velocities");
+            std::filesystem::remove(state_1d3v_path);
             std::size_t rejected_consumer_calls = 0;
             require_throws(
                 [&] {
                     (void)pic::load_validated_external_particle_state_bounded(
-                        state_path, 1,
+                        state_path, 1, 1,
                         pic::UnitSystem::Normalized,
                         {{"electrons", 2}}, "test",
                         [&](std::size_t,
@@ -859,7 +921,7 @@ int main() {
                 delivered_positions(2);
             const auto interleaved_metadata =
                 pic::load_validated_external_particle_state_bounded(
-                    interleaved_path, 1,
+                    interleaved_path, 1, 1,
                     pic::UnitSystem::Normalized,
                     {{"ions", 2}, {"electrons", 2}},
                     "interleaved test",
@@ -919,7 +981,7 @@ int main() {
             require_throws(
                 [&] {
                     (void)pic::load_validated_external_particle_state(
-                        state_path, 1,
+                        state_path, 1, 1,
                         pic::UnitSystem::Normalized,
                         {{"electrons", 2}}, "test",
                         state.signature + 1);
@@ -927,7 +989,7 @@ int main() {
                 "external particle-state signature mismatch was accepted");
             std::filesystem::remove(roundtrip_path);
             pic::validate_external_particle_state(
-                state, 1, pic::UnitSystem::Normalized,
+                state, 1, 1, pic::UnitSystem::Normalized,
                 {{"electrons", 2}}, "test");
             require_throws(
                 [&] {
@@ -938,7 +1000,7 @@ int main() {
             require_throws(
                 [&] {
                     pic::validate_external_particle_state(
-                        state, 2,
+                        state, 2, 1,
                         pic::UnitSystem::Normalized,
                         {{"electrons", 2}}, "test");
                 },
@@ -946,14 +1008,14 @@ int main() {
             require_throws(
                 [&] {
                     pic::validate_external_particle_state(
-                        state, 1, pic::UnitSystem::SI,
+                        state, 1, 1, pic::UnitSystem::SI,
                         {{"electrons", 2}}, "test");
                 },
                 "external particle-state unit mismatch was accepted");
             require_throws(
                 [&] {
                     pic::validate_external_particle_state(
-                        state, 1,
+                        state, 1, 1,
                         pic::UnitSystem::Normalized,
                         {{"ions", 2}}, "test");
                 },

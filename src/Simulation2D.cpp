@@ -716,7 +716,7 @@ void Simulation2D::initialize() {
         }
         initial_state_metadata_ =
             load_validated_external_particle_state_bounded(
-                cfg_.initial_state_path, 2,
+                cfg_.initial_state_path, 2, 3,
                 cfg_.units.system, expected,
                 "2D simulation",
                 [&](std::size_t species_index,

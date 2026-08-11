@@ -1067,7 +1067,7 @@ void UnstructuredSimulation2D::initialize() {
         }
         initial_state_metadata_ =
             load_validated_external_particle_state_bounded(
-                config_.initial_state_path, 2,
+                config_.initial_state_path, 2, 3,
                 config_.units.system, expected,
                 "unstructured 2D simulation",
                 [&](std::size_t species_id,

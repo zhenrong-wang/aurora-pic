@@ -21,6 +21,7 @@ struct ExternalParticleRecord {
 struct ExternalParticleState {
     std::size_t version{1};
     std::size_t spatial_dimension{0};
+    std::size_t velocity_dimensions{0};
     UnitSystem unit_system{UnitSystem::Normalized};
     std::map<std::string, std::vector<ExternalParticleRecord>>
         species;
@@ -31,6 +32,7 @@ struct ExternalParticleState {
 struct ExternalParticleStateMetadata {
     std::size_t version{1};
     std::size_t spatial_dimension{0};
+    std::size_t velocity_dimensions{0};
     UnitSystem unit_system{UnitSystem::Normalized};
     std::size_t particle_count{0};
     std::uint64_t signature{0};
@@ -53,19 +55,58 @@ ExternalParticleState load_external_particle_state(
 void validate_external_particle_state(
     const ExternalParticleState& state,
     std::size_t spatial_dimension,
+    std::size_t velocity_dimensions,
     UnitSystem unit_system,
     const std::vector<ExternalSpeciesExpectation>& expected_species,
     const std::string& context);
 
+inline void validate_external_particle_state(
+    const ExternalParticleState& state,
+    std::size_t spatial_dimension,
+    UnitSystem unit_system,
+    const std::vector<ExternalSpeciesExpectation>& expected_species,
+    const std::string& context) {
+    validate_external_particle_state(
+        state, spatial_dimension,
+        spatial_dimension == 1 ? 1 : 3,
+        unit_system, expected_species, context);
+}
+
 ExternalParticleState load_validated_external_particle_state(
     const std::filesystem::path& path,
     std::size_t spatial_dimension,
+    std::size_t velocity_dimensions,
     UnitSystem unit_system,
     const std::vector<ExternalSpeciesExpectation>& expected_species,
     const std::string& context,
     std::optional<std::uint64_t> expected_signature = {});
 
+inline ExternalParticleState load_validated_external_particle_state(
+    const std::filesystem::path& path,
+    std::size_t spatial_dimension,
+    UnitSystem unit_system,
+    const std::vector<ExternalSpeciesExpectation>& expected_species,
+    const std::string& context,
+    std::optional<std::uint64_t> expected_signature = {}) {
+    return load_validated_external_particle_state(
+        path, spatial_dimension,
+        spatial_dimension == 1 ? 1 : 3,
+        unit_system, expected_species, context,
+        expected_signature);
+}
+
 ExternalParticleStateMetadata
+load_validated_external_particle_state_bounded(
+    const std::filesystem::path& path,
+    std::size_t spatial_dimension,
+    std::size_t velocity_dimensions,
+    UnitSystem unit_system,
+    const std::vector<ExternalSpeciesExpectation>& expected_species,
+    const std::string& context,
+    const ExternalParticleRecordConsumer& consumer,
+    std::optional<std::uint64_t> expected_signature = {});
+
+inline ExternalParticleStateMetadata
 load_validated_external_particle_state_bounded(
     const std::filesystem::path& path,
     std::size_t spatial_dimension,
@@ -73,7 +114,13 @@ load_validated_external_particle_state_bounded(
     const std::vector<ExternalSpeciesExpectation>& expected_species,
     const std::string& context,
     const ExternalParticleRecordConsumer& consumer,
-    std::optional<std::uint64_t> expected_signature = {});
+    std::optional<std::uint64_t> expected_signature = {}) {
+    return load_validated_external_particle_state_bounded(
+        path, spatial_dimension,
+        spatial_dimension == 1 ? 1 : 3,
+        unit_system, expected_species, context, consumer,
+        expected_signature);
+}
 
 std::uint64_t external_particle_state_signature(
     const ExternalParticleState& state);

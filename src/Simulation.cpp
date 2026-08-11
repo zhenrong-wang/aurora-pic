@@ -415,12 +415,6 @@ Simulation::Simulation(Config cfg)
         throw std::invalid_argument(
             "initial_state_signature requires initial_state_path");
     }
-    if (cfg_.velocity_dimensions == 3 &&
-        !cfg_.initial_state_path.empty()) {
-        throw std::invalid_argument(
-            "external particle-state initialization is not yet "
-            "available for 1D3V");
-    }
     validate_initialization_acceptance(
         cfg_.initialization_acceptance,
         "1D initialization acceptance config");
@@ -835,6 +829,7 @@ void Simulation::initialize() {
         initial_state_metadata_ =
             load_validated_external_particle_state_bounded(
                 cfg_.initial_state_path, 1,
+                cfg_.velocity_dimensions,
                 cfg_.units.system, expected,
                 "1D simulation",
                 [&](std::size_t species_index,
@@ -861,6 +856,8 @@ void Simulation::initialize() {
                         species.particles().at(record_index);
                     particle.x = record.position.x;
                     particle.v = record.velocity.x;
+                    particle.velocity_y = record.velocity.y;
+                    particle.velocity_z = record.velocity.z;
                     particle.v_half = record.velocity.x;
                     particle.alive = true;
                 },
