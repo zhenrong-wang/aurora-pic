@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_strict_source_loss_equilibration_campaign_cycles_81_through_112",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-strict-equilibration-rule-20260811.json",
+    "declaration_commit": "80c2bc6",
+    "sha256": "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144",
+    "maximum_cycle": 112,
+    "maximum_cycle_reached": true,
+    "campaign_remains_open": false
+  },
+  "final_workflow": {
+    "solver_commit": "9c2447b",
+    "horizon_report_sha256": "bb8af3fba46c97e90787dbb3d8e646860be0c7ed78312c4466d6623a14c48e13",
+    "final_checkpoint_sha256": "9f762d3b2af14ca60a0e9bc4d9381e7e551e9e2c73d121203f2a65499efdc842",
+    "final_step": 448000,
+    "all_hard_safety_gates_passed": true,
+    "maximum_cycle_wall_seconds": 57.88032927200038,
+    "maximum_optimized_cycle_wall_seconds": 53.42410851900058,
+    "maximum_peak_resident_set_kib": 180716,
+    "serial_low_priority_execution": true
+  },
+  "campaign_aggregate": {
+    "first_cycle": 81,
+    "last_cycle": 112,
+    "cycles": 32,
+    "cycle_80_total_particles": 81782,
+    "cycle_112_total_particles": 100857,
+    "population_growth_factor": 1.233242033699347,
+    "long_window_normalized_population_slope_per_cycle": 0.006444997546098297,
+    "long_window_population_efolding_time_cycles": 155.15909709001903,
+    "ionization_pairs": 20916,
+    "electron_wall_losses": 11469,
+    "ion_wall_losses": 11288,
+    "electron_source_loss_relative_imbalance": 0.4516637980493402,
+    "ion_source_loss_relative_imbalance": 0.46031746031746035,
+    "maximum_relative_energy_closure_residual": 3.6798844238893775e-13,
+    "maximum_spatial_phase_residual_J_m-2": 1.5818340289974059e-18,
+    "maximum_sampled_absolute_field_V_m": 57863.516220722864,
+    "cycle_80_field_energy_J_m-2": 0.00004652586575498169,
+    "cycle_112_field_energy_J_m-2": 0.00004822625222336247
+  },
+  "block_history": [
+    {
+      "end_cycle": 84,
+      "report_sha256": "c070607df477041d096ecc493a9318a9c9722cc37b919059ecdaa748b22211ec",
+      "population_slope_per_cycle": 0.007809716404256343,
+      "electron_source_loss_imbalance": 0.4809701492537313,
+      "ion_source_loss_imbalance": 0.49029850746268655
+    },
+    {
+      "end_cycle": 88,
+      "report_sha256": "fbfe14ca761e2dd3cd56c81704a6ae66600b3c460dfaed8564a6126a0c555e65",
+      "population_slope_per_cycle": 0.0073534217159929045,
+      "electron_source_loss_imbalance": 0.47188905547226384,
+      "ion_source_loss_imbalance": 0.4838830584707646
+    },
+    {
+      "end_cycle": 92,
+      "report_sha256": "bf96083fbf21562cdbf6ebe311a6e81a6ec045047020bab68345327496c76f5b",
+      "population_slope_per_cycle": 0.0066199235525372015,
+      "electron_source_loss_imbalance": 0.4409298780487805,
+      "ion_source_loss_imbalance": 0.44664634146341464
+    },
+    {
+      "end_cycle": 96,
+      "report_sha256": "d0bd9b8adf12501bb0c874ff96727afe9c9b663e8bda99d1a1ee85556366b0d8",
+      "population_slope_per_cycle": 0.006425813873740334,
+      "electron_source_loss_imbalance": 0.45231607629427795,
+      "ion_source_loss_imbalance": 0.4476449980537174
+    },
+    {
+      "end_cycle": 100,
+      "report_sha256": "bc1908fcaf50d9bb8d58328fc939f25da87a66814dba0334eee8ccb84f0730ac",
+      "population_slope_per_cycle": 0.0067525910980047255,
+      "electron_source_loss_imbalance": 0.4588989441930618,
+      "ion_source_loss_imbalance": 0.4792609351432881
+    },
+    {
+      "end_cycle": 104,
+      "report_sha256": "b68f9b7f019534addc1e6a9b2a263c574f3abbcec9458751b205ae361b3bc9fe",
+      "population_slope_per_cycle": 0.005808969974032958,
+      "electron_source_loss_imbalance": 0.43684415079673533,
+      "ion_source_loss_imbalance": 0.43451224251846093
+    },
+    {
+      "end_cycle": 108,
+      "report_sha256": "c9887ba06f996fd6b3c61bad2f9b29ec8302fa27a81de9cb7408132cdb34dbcc",
+      "population_slope_per_cycle": 0.005557974199006895,
+      "electron_source_loss_imbalance": 0.4231687898089172,
+      "ion_source_loss_imbalance": 0.43272292993630573
+    },
+    {
+      "end_cycle": 112,
+      "report_sha256": "bb8af3fba46c97e90787dbb3d8e646860be0c7ed78312c4466d6623a14c48e13",
+      "population_slope_per_cycle": 0.00600716644417902,
+      "electron_source_loss_imbalance": 0.44579226686884005,
+      "ion_source_loss_imbalance": 0.4643669446550417
+    }
+  ],
+  "final_stationarity": {
+    "window_cycles": [108, 109, 110, 111, 112],
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "comparison_measurement_eligible": false,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance"
+    ]
+  },
+  "campaign_decision": {
+    "strict_equilibration_established": false,
+    "production_cross_code_measurement_authorized": false,
+    "numerical_instability_observed": false,
+    "meaningful_result": "The early AuroraPIC-to-eduPIC density comparison was made during a persistent particle-growth transient. Thirty-two additional RF cycles did not establish source-loss balance, so its density discrepancy cannot be classified as a converged physics-kernel error.",
+    "localized_blocker": "physical equilibration timescale, initialization, or pinned case configuration; the present campaign does not discriminate among them"
+  },
+  "next_step": "Do not extend this observed campaign ad hoc. Predeclare an initialization and long-horizon study that tests a reference-density warm start separately from continued low-density startup, then require the same source-loss gates before a fresh comparison window.",
+  "claim_boundary": "Passing all hard numerical gates supports stable execution and ledger consistency, not physical correctness. Failure to equilibrate by cycle 112 neither proves a physics-kernel defect nor permits cross-code acceptance.",
+  "physics_claim": "none_campaign_rejected_for_persistent_particle_imbalance"
+}
