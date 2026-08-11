@@ -26,6 +26,7 @@ PYTHONPATH=scripts python3 scripts/test_import_edupic_cross_sections.py
 PYTHONPATH=scripts python3 scripts/test_prepare_edupic_argon_case.py
 python3 scripts/test_aurorapic_edupic_pilot.py
 python3 scripts/test_aurorapic_edupic_horizon.py
+python3 scripts/test_aurorapic_edupic_measurement_pilot.py
 python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 python3 scripts/test_compare_swarm.py
 python3 scripts/test_swarm_campaign.py

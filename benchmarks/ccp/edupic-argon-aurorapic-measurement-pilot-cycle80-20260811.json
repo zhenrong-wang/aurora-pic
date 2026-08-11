@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_fresh_window_aurorapic_edupic_measurement_pilot_cycles_77_through_80",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-aurorapic-measurement-pilot-rule-20260811.json",
+    "declaration_commit": "55c9e27",
+    "sha256": "8b662fc493df3229fc123d034cd55c602628d0dcc1b2e447e119d1a6647a9387",
+    "acceptance_thresholds_declared": false
+  },
+  "candidate_campaign": {
+    "first_measurement_cycle": 77,
+    "last_measurement_cycle": 80,
+    "measurement_cycles": 4,
+    "equilibration_statistics_excluded": true,
+    "input_checkpoint_sha256": "69839c088a42745ea473e69c096e3acf9ab9140911094eec0c1219b40d2adfc1",
+    "final_checkpoint_sha256": "144d2ad69a3350935a9317255a583c48015ba7f2bb211b691c440d1e2b07b707",
+    "measurement_report_sha256": "a6ad72c8fb9a0915a960134554c549397aec1fb7ff1607eed083c5569335e2d0",
+    "all_hard_and_diagnostic_gates_passed": true,
+    "wall_seconds": 194.30516913300016,
+    "peak_resident_set_kib": 179636,
+    "serial_low_priority_execution": true
+  },
+  "fresh_window_diagnostics": {
+    "spatial_samples": 16000,
+    "spatial_phase_bins": 16,
+    "wall_macro_impacts": 2739,
+    "wall_overflow_macro_impacts": 0,
+    "wall_maximum_absolute_energy_closure_residual_J_m-2": 2.1175823681357508e-20,
+    "electron_energy_overflow_fraction": 0.0,
+    "maximum_sampled_absolute_field_V_m": 55671.5598803768
+  },
+  "fresh_window_source_loss_balance": {
+    "ionization_pairs": 2886,
+    "electron_wall_losses": 1393,
+    "ion_wall_losses": 1346,
+    "electron_population_start": 37030,
+    "electron_population_end": 38523,
+    "ion_population_start": 41719,
+    "ion_population_end": 43259,
+    "electron_population_gain": 1493,
+    "ion_population_gain": 1540,
+    "electron_count_closure": true,
+    "ion_count_closure": true,
+    "interpretation": "Ionization remains about twice either species wall-loss count, and both populations continue secular growth near the prior one-percent-per-cycle gate."
+  },
+  "descriptive_cross_code_comparison": {
+    "comparison_report_sha256": "1dafc981ffd37ba535f488bf0111c5bb3bbb377861a2a31eca5a4666b62f723a",
+    "reference_evidence": "benchmarks/ccp/edupic-native-production-measurement-cycle2620-20260810.json",
+    "reference_sampling_boundary": "The 1024-cycle eduPIC reference passed density drift and profile-shape gates but failed its predeclared minimum effective-block gate.",
+    "density": {
+      "electron_profile_relative_l2": 0.6468126112181652,
+      "ion_profile_relative_l2": 0.64103972277935,
+      "electron_candidate_to_reference_line_integrated_ratio": 0.3477221026172963,
+      "ion_candidate_to_reference_line_integrated_ratio": 0.37263054232227955
+    },
+    "electron_energy_distribution": {
+      "total_variation": 0.22502873371288332,
+      "aurorapic_mean_energy_eV": 2.8801472946638143,
+      "edupic_mean_energy_eV": 1.5260211434273663,
+      "mean_energy_relative_difference": 0.4701586456169453
+    },
+    "ion_impact_energy_distribution": {
+      "powered_total_variation": 0.1662769046175373,
+      "grounded_total_variation": 0.16802253966346153,
+      "powered_aurorapic_mean_energy_eV": 29.675373134328357,
+      "powered_edupic_mean_energy_eV": 33.48172774400442,
+      "powered_mean_energy_relative_difference": 0.11368453380837447,
+      "grounded_aurorapic_mean_energy_eV": 31.17973372781065,
+      "grounded_edupic_mean_energy_eV": 33.331975680132985,
+      "grounded_mean_energy_relative_difference": 0.06456988847514208
+    }
+  },
+  "result": {
+    "fresh_window_measurement_contract_passed": true,
+    "formal_cross_code_acceptance_evaluated": false,
+    "production_comparison_ready": false,
+    "primary_blocker": "candidate_source_loss_balance_not_stationary",
+    "interpretation": [
+      "This is the first direct black-box AuroraPIC-to-eduPIC comparison for the pinned argon CCP observables.",
+      "Ion-impact energy scales are substantially closer than density normalization, while the candidate electron population is hotter and still filling.",
+      "The density discrepancy cannot yet be assigned to a physics-kernel defect because the AuroraPIC candidate is not in source-loss balance.",
+      "Two endpoint-trend blocks below one-percent population slope were insufficient as a scientific equilibrium criterion."
+    ]
+  },
+  "next_step": "Predeclare a stricter equilibration gate that requires source-loss balance and a much longer population e-folding time, then resume from cycle 80 without treating this pilot as production statistics.",
+  "claim_boundary": "The pilot localizes a candidate equilibration defect and provides descriptive cross-code distances. It does not establish converged disagreement, cross-code acceptance, or independent physical validation.",
+  "physics_claim": "none_descriptive_cross_code_pilot_identified_equilibration_blocker"
+}
