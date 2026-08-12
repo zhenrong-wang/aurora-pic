@@ -1,0 +1,57 @@
+{
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This two-window trend can localize a discrepancy but cannot establish stationarity, cross-code acceptance, physical validation, or predictive accuracy.",
+  "classification": "all_predeclared_directions_support_transient_heating_hypothesis",
+  "directional_hypothesis_result": {
+    "stationarity_established": false,
+    "thresholded_acceptance_performed": false,
+    "transient_heating_supported": true,
+    "validation_established": false
+  },
+  "evidence_sha256": {
+    "cycle116_phase_space": "58163e9027db925ff8b9adbd82b3382db9d465a7924eb765e3a2a6fb5cdb2151",
+    "cycle80_phase_space": "f2d698b183c8bf48e10b4c0a62d984d009f2c6be70d2725ab7c8cdf3e21dd728",
+    "prospective_rule": "f8d4a05fc5fb359cc5808fb35d08d39af3392b8d5108a2474716ee57a2c845be"
+  },
+  "interpretation": "Increasing density coincides with reduced RF power per electron, electron-energy error, and ionization frequency. This supports a population-filling contribution to the hot EEDF but does not exclude a residual heating-model discrepancy.",
+  "observables": {
+    "eedf_collision_ledger_ratio": {
+      "cycle116": 0.9961497765472487,
+      "cycle80": 1.0240340830666148,
+      "relative_change": -0.02722986175993536
+    },
+    "effective_ionization_frequency_reference_ratio": {
+      "cycle116": 2.8609369148060098,
+      "cycle80": 4.161394207968843,
+      "relative_change": -0.31250519133047483
+    },
+    "electron_density_reference_ratio": {
+      "cycle116": 0.45553272514216114,
+      "cycle80": 0.35444197780373415,
+      "relative_change": 0.28521098986306903
+    },
+    "electron_density_relative_l2": {
+      "cycle116": 0.5375294207855057,
+      "cycle80": 0.6398540676697735,
+      "relative_change": -0.15991872530702922
+    },
+    "electron_mean_energy_relative_l2": {
+      "cycle116": 0.45895926713445934,
+      "cycle80": 0.5392479867488463,
+      "relative_change": -0.1488901610898017
+    },
+    "electron_rf_power_per_particle_reference_ratio": {
+      "cycle116": 2.523793824594133,
+      "cycle80": 3.3790536851275683,
+      "relative_change": -0.25310632509265596
+    },
+    "ionization_rate_relative_l2": {
+      "cycle116": 1.1452028943940007,
+      "cycle80": 1.277651110096818,
+      "relative_change": -0.10366540181128214
+    }
+  },
+  "physics_claim": "none_directional_transient_discriminator_only",
+  "schema_version": 1,
+  "scope": "prospective_cycle80_to116_heating_trend_diagnostic"
+}

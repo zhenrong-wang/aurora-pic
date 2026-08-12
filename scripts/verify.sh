@@ -28,6 +28,7 @@ python3 scripts/test_aurorapic_edupic_pilot.py
 python3 scripts/test_aurorapic_edupic_horizon.py
 python3 scripts/test_aurorapic_edupic_measurement_pilot.py
 PYTHONPATH=scripts python3 scripts/test_compare_edupic_phase_space.py
+PYTHONPATH=scripts python3 scripts/test_analyze_edupic_heating_trend.py
 python3 scripts/test_export_checkpoint_particle_state.py
 python3 scripts/test_prepare_quasineutral_particle_state.py
 PYTHONPATH=scripts python3 scripts/test_augment_neutral_particle_pairs.py

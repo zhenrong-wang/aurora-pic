@@ -90,6 +90,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_turner_ensemble.py
   scripts/audit_turner_credibility.py
   scripts/compare_edupic_phase_space.py
+  scripts/analyze_edupic_heating_trend.py
   scripts/prepare_turner_sensitivity.py
   scripts/qualify_turner_runtime.py
   scripts/run_turner_startup.py
