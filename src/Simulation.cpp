@@ -35,6 +35,7 @@ constexpr const char* kCheckpointMagicV11 = "AuroraPIC-checkpoint-v11";
 constexpr const char* kCheckpointMagicV12 = "AuroraPIC-checkpoint-v12";
 constexpr const char* kCheckpointMagicV13 = "AuroraPIC-checkpoint-v13";
 constexpr const char* kCheckpointMagicV14 = "AuroraPIC-checkpoint-v14";
+constexpr const char* kCheckpointMagicV15 = "AuroraPIC-checkpoint-v15";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -667,6 +668,14 @@ Simulation::Simulation(Config cfg)
             std::vector<std::vector<double>>(
                 collision_totals_.channel_names.size(),
                 std::vector<double>(grid_.nx(), 0.0)));
+        spatial_collision_event_sums_.assign(
+            collision_totals_.channel_names.size(),
+            std::vector<double>(grid_.nx(), 0.0));
+        spatial_collision_phase_event_sums_.assign(
+            cfg_.spatial_average.phase_bins,
+            std::vector<std::vector<double>>(
+                collision_totals_.channel_names.size(),
+                std::vector<double>(grid_.nx(), 0.0)));
     }
     if (cfg_.phase_eedf.enabled) {
         phase_eedf_species_id_ = species_id(cfg_.phase_eedf.species);
@@ -919,6 +928,8 @@ void Simulation::apply_collisions() {
                 ++collision_totals_.channel_collisions[0];
                 ++collision_interval_.candidates;
                 ++collision_interval_.channel_collisions[0];
+                deposit_spatial_collision_events(
+                    particle.x, 0, species.weight());
                 const double energy_after = 0.5 * species.mass() *
                     species.weight() *
                     (particle.v * particle.v +
@@ -988,6 +999,15 @@ void Simulation::apply_collisions() {
             add_collision_statistics(
                 collision_interval_, statistics,
                 runtime.diagnostic_offset);
+            for (std::size_t channel = 0;
+                 channel < statistics.channel_collisions.size(); ++channel) {
+                if (statistics.channel_collisions[channel] != 0) {
+                    deposit_spatial_collision_events(
+                        part.x, runtime.diagnostic_offset + channel,
+                        sp.weight() * static_cast<double>(
+                            statistics.channel_collisions[channel]));
+                }
+            }
             for (const auto& secondary :
                  statistics.secondaries) {
                 if (secondary.channel >=
@@ -1345,6 +1365,47 @@ void Simulation::deposit_spatial_collision_energy(
         if (spatial_collision_active_phase_ <
             spatial_collision_phase_energy_sums_.size()) {
             spatial_collision_phase_energy_sums_
+                [spatial_collision_active_phase_][channel][node] += density;
+        }
+    };
+    const double dx = grid_.dx();
+    if (grid_.boundary() == Boundary::Periodic) {
+        const double wrapped = std::fmod(
+            std::fmod(position, grid_.length()) + grid_.length(),
+            grid_.length());
+        const double coordinate = wrapped / dx;
+        const auto cell = static_cast<std::size_t>(std::floor(coordinate));
+        const double fraction = coordinate - static_cast<double>(cell);
+        add(cell % grid_.nx(), 1.0 - fraction, dx);
+        add((cell + 1) % grid_.nx(), fraction, dx);
+    } else {
+        const double bounded = std::clamp(position, 0.0, grid_.length());
+        const double coordinate = bounded / dx;
+        const auto cell = static_cast<std::size_t>(std::min<double>(
+            std::floor(coordinate), grid_.nx() - 2));
+        const double fraction = coordinate - static_cast<double>(cell);
+        add(cell, 1.0 - fraction, grid_.node_volume(cell));
+        add(cell + 1, fraction, grid_.node_volume(cell + 1));
+    }
+}
+
+void Simulation::deposit_spatial_collision_events(
+    double position,
+    std::size_t channel,
+    double represented_events) {
+    if (!spatial_collision_step_active_) return;
+    if (channel >= spatial_collision_event_sums_.size() ||
+        spatial_collision_event_sums_[channel].size() != grid_.nx() ||
+        !std::isfinite(represented_events) || represented_events < 0.0) {
+        throw std::logic_error(
+            "spatial collision-event storage does not match diagnostics");
+    }
+    const auto add = [&](std::size_t node, double shape, double volume) {
+        const double density = represented_events * shape / volume;
+        spatial_collision_event_sums_[channel][node] += density;
+        if (spatial_collision_active_phase_ <
+            spatial_collision_phase_event_sums_.size()) {
+            spatial_collision_phase_event_sums_
                 [spatial_collision_active_phase_][channel][node] += density;
         }
     };
@@ -1921,6 +1982,36 @@ void Simulation::write_spatial_average() const {
     require_stream(collision_power,
         "failed while writing 1D spatial collision-power output");
 
+    std::ofstream collision_rate(
+        output_dir / "spatial_collision_rate.csv");
+    if (!collision_rate) {
+        throw std::runtime_error(
+            "cannot open 1D spatial collision-rate output");
+    }
+    collision_rate << "channel_id,channel,node,"
+        << (si ? "x_m" : "x_normalized") << ",timesteps,"
+        << (si ? "duration_s" : "duration_normalized") << ','
+        << (si ? "represented_event_density_sum_m-3,mean_event_rate_m-3_s-1"
+               : "represented_event_density_sum_normalized,mean_event_rate_normalized")
+        << '\n' << std::setprecision(17);
+    for (std::size_t channel = 0;
+         channel < spatial_collision_event_sums_.size(); ++channel) {
+        for (std::size_t node = 0; node < grid_.nx(); ++node) {
+            const double event_density =
+                spatial_collision_event_sums_[channel][node];
+            collision_rate << channel << ','
+                << csv_cell(collision_totals_.channel_names[channel]) << ','
+                << node << ',' << grid_.node_x(node) << ','
+                << spatial_collision_steps_ << ',' << collision_duration << ','
+                << event_density << ','
+                << (collision_duration > 0.0
+                        ? event_density / collision_duration : 0.0)
+                << '\n';
+        }
+    }
+    require_stream(collision_rate,
+        "failed while writing 1D spatial collision-rate output");
+
     if (!spatial_collision_phase_energy_sums_.empty()) {
         std::ofstream phase_collision_power(
             output_dir / "spatial_phase_collision_power.csv");
@@ -1964,6 +2055,48 @@ void Simulation::write_spatial_average() const {
         }
         require_stream(phase_collision_power,
             "failed while writing 1D phase-resolved collision-power output");
+
+        std::ofstream phase_collision_rate(
+            output_dir / "spatial_phase_collision_rate.csv");
+        if (!phase_collision_rate) {
+            throw std::runtime_error(
+                "cannot open 1D phase-resolved collision-rate output");
+        }
+        phase_collision_rate
+            << "phase_bin,phase_fraction,timesteps,"
+            << (si ? "duration_s" : "duration_normalized")
+            << ",channel_id,channel,node,"
+            << (si ? "x_m" : "x_normalized") << ','
+            << (si ? "represented_event_density_sum_m-3,mean_event_rate_m-3_s-1"
+                   : "represented_event_density_sum_normalized,mean_event_rate_normalized")
+            << '\n' << std::setprecision(17);
+        for (std::size_t phase = 0;
+             phase < spatial_collision_phase_event_sums_.size(); ++phase) {
+            const double duration =
+                static_cast<double>(spatial_collision_phase_steps_[phase]) *
+                cfg_.dt;
+            for (std::size_t channel = 0;
+                 channel < spatial_collision_event_sums_.size(); ++channel) {
+                for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                    const double event_density =
+                        spatial_collision_phase_event_sums_[phase]
+                            [channel][node];
+                    phase_collision_rate << phase << ','
+                        << (static_cast<double>(phase) + 0.5) /
+                               static_cast<double>(
+                                   spatial_collision_phase_event_sums_.size())
+                        << ',' << spatial_collision_phase_steps_[phase] << ','
+                        << duration << ',' << channel << ','
+                        << csv_cell(collision_totals_.channel_names[channel])
+                        << ',' << node << ',' << grid_.node_x(node) << ','
+                        << event_density << ','
+                        << (duration > 0.0 ? event_density / duration : 0.0)
+                        << '\n';
+                }
+            }
+        }
+        require_stream(phase_collision_rate,
+            "failed while writing 1D phase-resolved collision-rate output");
     }
 
     if (cfg_.phase_eedf.enabled) {
@@ -2142,7 +2275,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV14 << '\n';
+    out << kCheckpointMagicV15 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -2333,6 +2466,32 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             out << "\n";
         }
     }
+    out << "spatial_collision_events "
+        << spatial_collision_event_sums_.size() << ' '
+        << grid_.nx() << ' '
+        << spatial_collision_phase_event_sums_.size() << "\n";
+    for (std::size_t channel = 0;
+         channel < spatial_collision_event_sums_.size(); ++channel) {
+        out << "spatial_collision_event_channel " << channel << ' '
+            << collision_totals_.channel_names[channel];
+        for (const double value : spatial_collision_event_sums_[channel]) {
+            out << ' ' << value;
+        }
+        out << "\n";
+    }
+    for (std::size_t phase = 0;
+         phase < spatial_collision_phase_event_sums_.size(); ++phase) {
+        for (std::size_t channel = 0;
+             channel < spatial_collision_event_sums_.size(); ++channel) {
+            out << "spatial_collision_phase_event_channel " << phase << ' '
+                << channel;
+            for (const double value :
+                 spatial_collision_phase_event_sums_[phase][channel]) {
+                out << ' ' << value;
+            }
+            out << "\n";
+        }
+    }
     out << "phase_eedf " << (cfg_.phase_eedf.enabled ? 1 : 0) << ' '
         << (cfg_.phase_eedf.species.empty() ? "-" : cfg_.phase_eedf.species)
         << ' ' << cfg_.phase_eedf.energy_bins << ' '
@@ -2398,7 +2557,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v14 = magic == kCheckpointMagicV14;
+    const bool checkpoint_v15 = magic == kCheckpointMagicV15;
+    const bool checkpoint_v14 =
+        magic == kCheckpointMagicV14 || checkpoint_v15;
     const bool checkpoint_v13 =
         magic == kCheckpointMagicV13 || checkpoint_v14;
     const bool checkpoint_v4_state =
@@ -3099,11 +3260,11 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore phase-resolved spatial moments");
         }
+        std::size_t stored_collision_steps = 0;
+        std::size_t stored_collision_channels = 0;
+        std::size_t stored_collision_nx = 0;
+        std::size_t stored_collision_phases = 0;
         if (checkpoint_v11 || checkpoint_v12 || checkpoint_v13) {
-            std::size_t stored_collision_steps = 0;
-            std::size_t stored_collision_channels = 0;
-            std::size_t stored_collision_nx = 0;
-            std::size_t stored_collision_phases = 0;
             in >> stored_collision_steps >> stored_collision_channels >>
                 stored_collision_nx >> stored_collision_phases;
             const std::size_t window_steps = stored_enabled
@@ -3207,6 +3368,79 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                    !spatial_collision_energy_sums_.empty()) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore spatial collision energy");
+        }
+        if (checkpoint_v15) {
+            std::size_t stored_event_channels = 0;
+            std::size_t stored_event_nx = 0;
+            std::size_t stored_event_phases = 0;
+            in >> stored_event_channels >> stored_event_nx >>
+                stored_event_phases;
+            if (key != "spatial_collision_events" ||
+                stored_event_channels != stored_collision_channels ||
+                stored_event_nx != grid_.nx() ||
+                stored_event_phases != stored_collision_phases ||
+                (!reset &&
+                 (stored_event_channels !=
+                      spatial_collision_event_sums_.size() ||
+                  stored_event_phases !=
+                      spatial_collision_phase_event_sums_.size()))) {
+                throw std::runtime_error(
+                    "checkpoint spatial collision-event contract is invalid");
+            }
+            for (std::size_t channel = 0;
+                 channel < stored_event_channels; ++channel) {
+                std::size_t stored_channel = 0;
+                std::string stored_name;
+                in >> key >> stored_channel >> stored_name;
+                if (key != "spatial_collision_event_channel" ||
+                    stored_channel != channel ||
+                    stored_name != collision_totals_.channel_names[channel]) {
+                    throw std::runtime_error(
+                        "checkpoint spatial collision-event channel is invalid");
+                }
+                for (std::size_t node = 0; node < stored_event_nx; ++node) {
+                    double value = 0.0;
+                    in >> value;
+                    if (!std::isfinite(value) || value < 0.0) {
+                        throw std::runtime_error(
+                            "checkpoint spatial collision-event value is invalid");
+                    }
+                    if (!reset) {
+                        spatial_collision_event_sums_[channel][node] = value;
+                    }
+                }
+            }
+            for (std::size_t phase = 0;
+                 phase < stored_event_phases; ++phase) {
+                for (std::size_t channel = 0;
+                     channel < stored_event_channels; ++channel) {
+                    std::size_t stored_phase = 0;
+                    std::size_t stored_channel = 0;
+                    in >> key >> stored_phase >> stored_channel;
+                    if (key != "spatial_collision_phase_event_channel" ||
+                        stored_phase != phase || stored_channel != channel) {
+                        throw std::runtime_error(
+                            "checkpoint phase collision-event channel is invalid");
+                    }
+                    for (std::size_t node = 0; node < stored_event_nx; ++node) {
+                        double value = 0.0;
+                        in >> value;
+                        if (!std::isfinite(value) || value < 0.0) {
+                            throw std::runtime_error(
+                                "checkpoint phase collision-event value is invalid");
+                        }
+                        if (!reset) {
+                            spatial_collision_phase_event_sums_[phase]
+                                [channel][node] = value;
+                        }
+                    }
+                }
+            }
+            in >> key;
+        } else if (!reset && stored_samples != 0 &&
+                   !spatial_collision_event_sums_.empty()) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore spatial collision events");
         }
         if (checkpoint_v12 || checkpoint_v13) {
             int stored_eedf_enabled = 0;
@@ -3331,6 +3565,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                 }
             }
             for (auto& values : spatial_collision_energy_sums_) {
+                std::fill(values.begin(), values.end(), 0.0);
+            }
+            for (auto& channels : spatial_collision_phase_event_sums_) {
+                for (auto& values : channels) {
+                    std::fill(values.begin(), values.end(), 0.0);
+                }
+            }
+            for (auto& values : spatial_collision_event_sums_) {
                 std::fill(values.begin(), values.end(), 0.0);
             }
             for (auto& sum : spatial_kinetic_energy_sums_) {

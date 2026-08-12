@@ -114,6 +114,14 @@ public:
     spatial_collision_phase_energy_sums() const {
         return spatial_collision_phase_energy_sums_;
     }
+    const std::vector<std::vector<double>>&
+    spatial_collision_event_sums() const {
+        return spatial_collision_event_sums_;
+    }
+    const std::vector<std::vector<std::vector<double>>>&
+    spatial_collision_phase_event_sums() const {
+        return spatial_collision_phase_event_sums_;
+    }
     std::size_t spatial_collision_steps() const {
         return spatial_collision_steps_;
     }
@@ -156,6 +164,10 @@ private:
         double position,
         std::size_t channel,
         double represented_energy_change);
+    void deposit_spatial_collision_events(
+        double position,
+        std::size_t channel,
+        double represented_events);
     void begin_spatial_collision_step();
     void accumulate_wall_impact(
         WallImpactSideSpectrum1D& accumulator,
@@ -207,6 +219,10 @@ private:
     std::vector<std::size_t> spatial_collision_phase_steps_{};
     std::vector<std::vector<std::vector<double>>>
         spatial_collision_phase_energy_sums_{};
+    std::vector<std::vector<double>>
+        spatial_collision_event_sums_{};
+    std::vector<std::vector<std::vector<double>>>
+        spatial_collision_phase_event_sums_{};
     bool spatial_collision_step_active_{false};
     std::size_t spatial_collision_active_phase_{0};
     std::size_t phase_eedf_species_id_{0};

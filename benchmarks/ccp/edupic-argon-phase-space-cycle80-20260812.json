@@ -346,6 +346,6 @@
   "schema_version": 1,
   "scope": "descriptive_transient_position_rf_phase_cross_code_comparison",
   "unavailable_comparisons": {
-    "ionization_rate": "The current AuroraPIC pilot output does not expose a matching phase-resolved volumetric ionization-rate diagnostic."
+    "ionization_rate": "This checkpoint predates AuroraPIC's phase-resolved volumetric collision-event-rate diagnostic; rerun the fresh measurement window."
   }
 }

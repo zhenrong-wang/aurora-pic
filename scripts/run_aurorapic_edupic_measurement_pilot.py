@@ -155,7 +155,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "final_checkpoint_sha256": sha256(final_checkpoint),
         "output_hashes": {
             name: sha256(output / name) for name in (
-                "spatial_average.csv", "phase_eedf.csv",
+                "spatial_average.csv", "spatial_phase_fields.csv",
+                "spatial_phase_moments.csv",
+                "spatial_collision_rate.csv",
+                "spatial_phase_collision_rate.csv", "phase_eedf.csv",
                 "phase_eedf_moments.csv", "wall_impact_spectrum.csv",
                 "wall_impact_spectrum_summary.csv")},
         "claim_boundary": "This four-cycle pilot checks fresh-window diagnostics; it does not establish statistical convergence or cross-code agreement.",

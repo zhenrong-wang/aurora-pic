@@ -14,7 +14,8 @@ import tempfile
 
 
 MAGIC = "AuroraPIC-particle-state-v2"
-CHECKPOINT_MAGIC = "AuroraPIC-checkpoint-v14"
+CHECKPOINT_MAGICS = {
+    "AuroraPIC-checkpoint-v14", "AuroraPIC-checkpoint-v15"}
 FNV_OFFSET = 14695981039346656037
 FNV_PRIME = 1099511628211
 
@@ -67,8 +68,9 @@ def parse_expected_species(values: list[str]) -> dict[str, int]:
 
 def parse_checkpoint(path: Path, expected_step: int) -> dict[str, object]:
     with path.open(encoding="utf-8") as stream:
-        if stream.readline().rstrip("\n") != CHECKPOINT_MAGIC:
-            raise ExportError("only 1D checkpoint v14 is supported")
+        checkpoint_magic = stream.readline().rstrip("\n")
+        if checkpoint_magic not in CHECKPOINT_MAGICS:
+            raise ExportError("only 1D checkpoint v14/v15 is supported")
         dimension = None
         units = None
         velocity_dimensions = None
@@ -135,6 +137,7 @@ def parse_checkpoint(path: Path, expected_step: int) -> dict[str, object]:
         if stream.read().strip():
             raise ExportError("checkpoint contains trailing data")
     return {
+        "checkpoint_format": checkpoint_magic,
         "step": step,
         "time": simulation_time,
         "units": units,
@@ -224,7 +227,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "scope": "checkpoint_live_particle_state_export",
         "source_checkpoint": str(checkpoint),
         "source_checkpoint_sha256": expected_hash,
-        "source_checkpoint_format": CHECKPOINT_MAGIC,
+        "source_checkpoint_format": parsed["checkpoint_format"],
         "source_step": parsed["step"],
         "source_time": parsed["time"],
         "spatial_dimension": 1,

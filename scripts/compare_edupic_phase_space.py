@@ -260,6 +260,39 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
          for phase in range(CANDIDATE_PHASES)],
         reference_matrices["potential"][0])
 
+    rate_path = candidate / "spatial_phase_collision_rate.csv"
+    unavailable_comparisons = {}
+    candidate_hashes = {
+        "measurement_report_sha256": sha256(report_path),
+        "spatial_phase_fields_sha256": sha256(fields_path),
+        "spatial_phase_moments_sha256": sha256(moments_path),
+    }
+    if rate_path.exists():
+        rate_rows = csv_rows(rate_path)
+        ionization_rows = [
+            row for row in rate_rows
+            if row["channel"] == "ionization" or
+            row["channel"].endswith(".ionization")]
+        if not ionization_rows:
+            raise ValueError(
+                "candidate collision-rate output has no ionization channel")
+        rate = [0.0] * (CANDIDATE_PHASES * NODES)
+        seen_channels = sorted({row["channel"] for row in ionization_rows})
+        for channel in seen_channels:
+            selected = [row for row in ionization_rows
+                        if row["channel"] == channel]
+            validate_candidate_grid(selected, CANDIDATE_PHASES * NODES)
+            for index, row in enumerate(selected):
+                rate[index] += float(row["mean_event_rate_m-3_s-1"])
+        comparisons["ionization_rate"] = phase_space_metrics(
+            rate, flatten_phase_major(reference_matrices["ionization_rate"]))
+        candidate_hashes["spatial_phase_collision_rate_sha256"] = sha256(
+            rate_path)
+    else:
+        unavailable_comparisons["ionization_rate"] = (
+            "This checkpoint predates AuroraPIC's phase-resolved volumetric "
+            "collision-event-rate diagnostic; rerun the fresh measurement window.")
+
     return {
         "schema_version": 1,
         "case_id": "edupic-1.0-default-argon-ccp",
@@ -275,11 +308,7 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
             "current_derivation": "q_number_density_mean_velocity_x",
             "ohmic_power_derivation": "current_density_times_electric_field",
         },
-        "candidate": {
-            "measurement_report_sha256": sha256(report_path),
-            "spatial_phase_fields_sha256": sha256(fields_path),
-            "spatial_phase_moments_sha256": sha256(moments_path),
-        },
+        "candidate": candidate_hashes,
         "reference": {
             "repository": "https://github.com/donkozoltan/eduPIC",
             "commit": "32050728c961a317d6d6acd6bc86d026da403326",
@@ -288,11 +317,7 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
             "raw_matrix_sha256": reference_hashes,
         },
         "comparisons": comparisons,
-        "unavailable_comparisons": {
-            "ionization_rate": (
-                "The current AuroraPIC pilot output does not expose a matching "
-                "phase-resolved volumetric ionization-rate diagnostic.")
-        },
+        "unavailable_comparisons": unavailable_comparisons,
         "acceptance": {"thresholds_declared": False, "passes": None},
         "candidate_state_boundary": (
             "AuroraPIC contributes a four-cycle fresh measurement window from "

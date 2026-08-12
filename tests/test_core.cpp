@@ -3888,8 +3888,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v14\n") == 0,
-                "1D wall-impact checkpoint did not use v14");
+                    "AuroraPIC-checkpoint-v15\n") == 0,
+                "1D wall-impact checkpoint did not use v15");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4287,11 +4287,18 @@ int main() {
                 continuous.spatial_collision_energy_sums();
             const auto& phase_energy =
                 continuous.spatial_collision_phase_energy_sums();
+            const auto& spatial_events =
+                continuous.spatial_collision_event_sums();
+            const auto& phase_events =
+                continuous.spatial_collision_phase_event_sums();
             require(
                 spatial_energy.size() == 1 &&
-                    phase_energy.size() == 2,
-                "1D3V spatial collision energy has the wrong shape");
+                    phase_energy.size() == 2 &&
+                    spatial_events.size() == 1 &&
+                    phase_events.size() == 2,
+                "1D3V spatial collision diagnostics have the wrong shape");
             double integrated_spatial_energy = 0.0;
+            double integrated_spatial_events = 0.0;
             for (std::size_t node = 0; node < cfg.nx; ++node) {
                 integrated_spatial_energy +=
                     spatial_energy[0][node] *
@@ -4301,12 +4308,26 @@ int main() {
                         phase_energy[1][0][node],
                     spatial_energy[0][node], 1e-12,
                     "phase collision energy does not sum to its spatial total");
+                integrated_spatial_events +=
+                    spatial_events[0][node] *
+                    continuous.grid().node_volume(node);
+                require_near(
+                    phase_events[0][0][node] +
+                        phase_events[1][0][node],
+                    spatial_events[0][node], 1e-12,
+                    "phase collision events do not sum to their spatial total");
             }
             require_near(
                 integrated_spatial_energy,
                 continuous.collision_diagnostics().channel_energy_change[0],
                 1e-12,
                 "spatial collision deposition does not integrate to the channel ledger");
+            require_near(
+                integrated_spatial_events,
+                static_cast<double>(continuous.collision_diagnostics()
+                                        .channel_collisions[0]),
+                1e-12,
+                "spatial collision-event deposition does not integrate to the channel ledger");
             require(
                 restarted.spatial_collision_steps() ==
                     continuous.spatial_collision_steps() &&
@@ -4319,6 +4340,11 @@ int main() {
                         [phase][0],
                     phase_energy[phase][0], 1e-12,
                     "1D3V restart lost phase collision energy");
+                require_vector_near(
+                    restarted.spatial_collision_phase_event_sums()
+                        [phase][0],
+                    phase_events[phase][0], 1e-12,
+                    "1D3V restart lost phase collision events");
             }
             const auto& eedf = continuous.phase_eedf_accumulators();
             const auto& restarted_eedf =
@@ -4356,8 +4382,8 @@ int main() {
             }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v14\n") == 0,
-                "1D3V checkpoint did not use the wall-impact-aware "
+                    "AuroraPIC-checkpoint-v15\n") == 0,
+                "1D3V checkpoint did not use the collision-event-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
             (void)output_simulation.run();
@@ -4365,6 +4391,10 @@ int main() {
                 output_dir / "spatial_collision_power.csv");
             const auto phase_collision_csv = read_file_text(
                 output_dir / "spatial_phase_collision_power.csv");
+            const auto collision_rate_csv = read_file_text(
+                output_dir / "spatial_collision_rate.csv");
+            const auto phase_collision_rate_csv = read_file_text(
+                output_dir / "spatial_phase_collision_rate.csv");
             const auto eedf_csv = read_file_text(
                 output_dir / "phase_eedf.csv");
             const auto eedf_moments_csv = read_file_text(
@@ -4381,6 +4411,18 @@ int main() {
                     count_lines(phase_collision_csv) ==
                         2 * cfg.nx + 1,
                 "1D phase collision-power CSV contract is wrong");
+            require(
+                collision_rate_csv.find(
+                    "represented_event_density_sum_normalized,mean_event_rate_normalized") !=
+                        std::string::npos &&
+                    count_lines(collision_rate_csv) == cfg.nx + 1,
+                "1D spatial collision-rate CSV contract is wrong");
+            require(
+                phase_collision_rate_csv.find(
+                    "phase_bin,phase_fraction,timesteps,duration_normalized") == 0 &&
+                    count_lines(phase_collision_rate_csv) ==
+                        2 * cfg.nx + 1,
+                "1D phase collision-rate CSV contract is wrong");
             require(
                 count_lines(eedf_csv) == 2 * 2 * 10 + 1 &&
                     count_lines(eedf_moments_csv) == 2 * 2 + 1,

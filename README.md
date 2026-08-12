@@ -83,6 +83,10 @@ The current result is descriptive because the AuroraPIC measurement window is
 still transient; it is not a cross-code acceptance or validation claim. The
 first locked result is recorded in
 `benchmarks/ccp/edupic-argon-phase-space-cycle80-20260812.json`.
+Fresh 1D spatial-average windows also write `spatial_collision_rate.csv` and
+`spatial_phase_collision_rate.csv`. These deposit represented collision events
+with the same shape function as collision energy and expose SI volumetric event
+rates, including an eduPIC-compatible phase-resolved ionization-rate field.
 `prepare_turner_sensitivity.py` creates a non-launching, staged refinement
 matrix with predeclared interpretation thresholds after a systematic Turner
 density discrepancy is established.

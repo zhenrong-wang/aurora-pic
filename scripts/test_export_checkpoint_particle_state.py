@@ -25,7 +25,7 @@ def main() -> int:
         state = work / "output.aps"
         manifest = work / "manifest.json"
         checkpoint.write_text(
-            "AuroraPIC-checkpoint-v14\n"
+            "AuroraPIC-checkpoint-v15\n"
             "dimension 1\n"
             "units si 1 8.854e-12\n"
             "velocity_dimensions 3\n"
