@@ -28,6 +28,7 @@ python3 scripts/test_aurorapic_edupic_pilot.py
 python3 scripts/test_aurorapic_edupic_horizon.py
 python3 scripts/test_aurorapic_edupic_measurement_pilot.py
 python3 scripts/test_export_checkpoint_particle_state.py
+python3 scripts/test_prepare_quasineutral_particle_state.py
 python3 scripts/test_swarm_cli.py build/aurorapic_swarm
 python3 scripts/test_compare_swarm.py
 python3 scripts/test_swarm_campaign.py

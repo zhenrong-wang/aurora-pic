@@ -145,3 +145,20 @@ the canonical APS signature. This supports controlled initialization studies;
 it is not a restart conversion. Simulation time, RNG state, fields, leapfrog
 half-step velocities, collision counters, and accumulated diagnostics are
 deliberately not exported.
+
+## Quasi-neutral bulk transform
+
+`prepare_quasineutral_particle_state.py` supports a narrowly scoped density
+initialization experiment for locked 1D3V APS v2 states. It partitions the
+domain into configured spatial bins, pairs the electron and ion bulk within
+each bin at a common position, and retains a deterministic stratified sample
+of the unpaired residual population when increasing the common species macro
+weight. The paired population therefore contributes no grid charge, while
+the sampled residual approximates the source sheath and charge structure.
+
+The command requires the source SHA-256 and both source species counts,
+refuses overwrite, and records the decomposition, output hash and semantic
+signature, and CIC node-charge error in a JSON manifest. It preserves particle
+velocity components but does not solve a kinetic equilibrium or a
+self-consistent sheath. Its output is an explicitly testable initialization
+hypothesis, not evidence of physical validation by itself.

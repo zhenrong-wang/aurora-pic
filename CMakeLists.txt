@@ -100,6 +100,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/extend_aurorapic_edupic_horizon.py
   scripts/export_checkpoint_particle_state.py
   scripts/run_aurorapic_initialization_ab.py
+  scripts/prepare_quasineutral_particle_state.py
   scripts/analyze_phase_eedf.py
   scripts/export_phase_eedf.py
   scripts/compare_phase_eedf.py
