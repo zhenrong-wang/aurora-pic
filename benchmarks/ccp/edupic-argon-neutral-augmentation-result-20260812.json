@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_exact_charge_density_followup",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-neutral-augmentation-rule-20260812.json",
+    "declaration_commit": "8d5db32",
+    "sha256": "d11580363e88514503ccef6d1907534294eb05ad2e66ed02e9aea1325f65a135"
+  },
+  "workflow": {
+    "study_report_sha256": "234f9db3980f53c08288ff3f3cb4c9d1500a290aff7d013ce30b0632e3e9244e",
+    "particle_state_sha256": "6321ef05283fe76891f6f94b933768250cdf088c256813b571407baf50965384",
+    "particle_state_signature": 3106964195858676934,
+    "final_checkpoint_sha256": "a83953716b70dcae9583afef800841649b21e7f5109f2955ead4b78a29a9703e",
+    "all_numerical_hard_gates_passed": true,
+    "maximum_cycle_wall_seconds": 99.97712153100292,
+    "maximum_peak_resident_set_kib": 195908,
+    "maximum_relative_energy_closure_residual": 3.961137245630652e-14,
+    "maximum_spatial_phase_residual_J_m-2": 7.623296525288703e-20,
+    "serial_low_priority_execution": true
+  },
+  "exact_charge_preflight": {
+    "node_charge_relative_l1_error": 1.772051626412353e-14,
+    "initial_field_energy_relative_difference_vs_control": 1.967137932533029e-15,
+    "initial_charge_l1_relative_difference_vs_control": 1.3522566441689534e-16,
+    "estimated_reference_electron_density_ratio": 1.0016541216271155,
+    "estimated_reference_ion_density_ratio": 0.9982439644490628
+  },
+  "augmented_branch": {
+    "initial_total_particles": 226857,
+    "final_total_particles": 226881,
+    "normalized_total_population_slope_per_cycle": 0.00014242024466298872,
+    "ionization_pairs": 2785,
+    "electron_wall_losses": 3261,
+    "ion_wall_losses": 2285,
+    "electron_source_loss_relative_imbalance": -0.1709156193895871,
+    "ion_source_loss_relative_imbalance": 0.17953321364452424,
+    "maximum_sampled_absolute_field_V_m": 75944.68847774091,
+    "final_cycle_maximum_sampled_absolute_field_V_m": 74343.08014060641,
+    "first_cycle": {
+      "ionization_pairs": 910,
+      "electron_wall_losses": 1626,
+      "ion_wall_losses": 484,
+      "population_growth_factor": 0.998721661663515
+    }
+  },
+  "prospective_decision": {
+    "all_numerical_hard_gates": true,
+    "bounded_first_cycle_ionization": true,
+    "nonvanishing_first_cycle_electron_loss": true,
+    "bounded_first_cycle_population_growth": true,
+    "bounded_transient_field": false,
+    "observed_peak_field_V_m": 75944.68847774091,
+    "predeclared_peak_field_limit_V_m": 72330.0,
+    "field_limit_excess_fraction": 0.04997495475931024,
+    "admissible_for_density_diagnostic": false
+  },
+  "interpretation": {
+    "initial_charge_distortion_excluded_at_roundoff": true,
+    "naive_ionization_launch_observed": false,
+    "prospective_followup_passed": false,
+    "numerical_instability_observed": false,
+    "reason": "The augmented state reproduces the control initial deposited charge and field at roundoff, yet evolves to nearly the same elevated field range as the charge-thinned candidates while remaining population-stable. Initial charge reconstruction error therefore cannot explain the field shift.",
+    "consequence": "Do not relax or reinterpret the failed rule. Control-relative field similarity is not a sufficient physical acceptance criterion when represented density changes. The next prospective comparison must use published reference-density field, density, current, and power observables and separately assess deterministic velocity-resampling correlations."
+  },
+  "claim_boundary": "This result excludes initial charge distortion as the primary cause of the observed density-followup field shift and demonstrates stable bounded execution. It fails one prospective gate and does not establish equilibrium, validate AuroraPIC against eduPIC, or prove physical correctness.",
+  "physics_claim": "none_initialization_diagnostic_only"
+}
