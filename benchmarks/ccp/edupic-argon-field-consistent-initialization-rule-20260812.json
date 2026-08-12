@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_field_consistent_initialization_followup",
+  "declaration_parent_commit": "a247fd0708ba174a00a6d2e247887da3533650a7",
+  "motivation": {
+    "rejected_naive_result": "benchmarks/ccp/edupic-argon-initialization-ab-result-20260811.json",
+    "rejected_naive_study_report_sha256": "78d270bc349b4469825f2f03b71e8e2fd191357c72ea244974052f026aa497c8",
+    "locked_control_first_cycle_ionization_pairs": 640,
+    "locked_control_first_cycle_electron_wall_losses": 365,
+    "locked_control_first_cycle_total_growth_factor": 1.005205389809334,
+    "locked_control_maximum_sampled_absolute_field_V_m": 57863.516220722864,
+    "question": "Does the quasi-neutral-bulk transform avoid the violent transient produced by naive full-state macro-weight scaling?"
+  },
+  "initial_state": {
+    "format": "AuroraPIC-particle-state-v2",
+    "spatial_dimension": 1,
+    "velocity_dimensions": 3,
+    "units": "si",
+    "particle_state_sha256": "93433f3ad1af435bf79ba1d41279d3bd3fb05bbaac90c20aef34cd4d1ca5fd7c",
+    "particle_state_signature": 5959263220232258678,
+    "transform_manifest_sha256": "c467ad0d927d23e0875c6e0a18f647090e159d4210d29f396b568d617fc22b87",
+    "source_particle_state_sha256": "8d92e55aa541947075d3c18db3f8af1b326b6d7ca78c94a5c3e535443b02fffd",
+    "electrons": 47763,
+    "ions": 49947,
+    "macro_weight": 1576092237.1428921,
+    "weight_factor": 2.25156033877556,
+    "paired_bulk_per_species": 47598,
+    "retained_residual_particles": 2514,
+    "charge_node_relative_l2_error": 0.3690997288123295
+  },
+  "observed_predeclaration_preflight": {
+    "scope": "motivation_only_not_a_prospective_gate",
+    "steps": 1,
+    "scalars_sha256": "54f232b3c329100903d9bf506bdd5d7ce0b0957e40fccb4e367ae8cc12884faa",
+    "checkpoint_sha256": "3fc9765d2804b40bf2cdd0412585451ac9190637aa18faff95a9c834c34eb698",
+    "initial_field_energy_J_m-2": 0.000048212186539360095,
+    "locked_control_initial_field_energy_J_m-2": 0.00004822625222336247,
+    "relative_field_energy_difference": -0.0002916622717624887,
+    "initial_charge_l1_C_m-2": 6.31712442645254e-7,
+    "locked_control_initial_charge_l1_C_m-2": 7.829809442116434e-7
+  },
+  "execution_contract": {
+    "runner_commit": "a247fd0708ba174a00a6d2e247887da3533650a7",
+    "solver_sha256": "ed30f0fdad1b1a05d712a4123dcbdedeee7df0a5b3270afb62b3ed4013cdbd31",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "seed": 13507,
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "serial": true,
+    "maximum_wall_seconds_per_cycle": 60.0,
+    "minimum_available_memory_kib": 524288,
+    "stop_on_any_hard_gate_failure": true
+  },
+  "decision_rule": {
+    "prospective_threshold_basis": "Thresholds are fixed from the previously locked control and reject the qualitative launch signature of the naive branch.",
+    "prospective_thresholds": {
+      "maximum_first_cycle_ionization_pairs": 1280,
+      "minimum_first_cycle_electron_wall_losses": 91,
+      "maximum_first_cycle_total_growth_factor": 1.02,
+      "maximum_sampled_absolute_field_V_m": 72330.0
+    },
+    "admissible_for_density_diagnostic_only_if": [
+      "all four cycles pass numerical hard gates",
+      "first-cycle ionization does not exceed twice the locked control",
+      "first-cycle electron wall loss remains at least one quarter of the locked control",
+      "first-cycle total population growth does not exceed 1.02",
+      "sampled absolute electric field does not exceed 1.25 times the locked control"
+    ],
+    "equilibrium_claim_prohibited": true,
+    "measurement_authorization_prohibited": true
+  },
+  "claim_boundary": "This prospective follow-up tests whether one charge-aware transformed state avoids the already observed naive initialization launch. Passing makes the transform admissible for a later density diagnostic; it does not establish equilibrium, validate AuroraPIC against eduPIC, or authorize a physics measurement.",
+  "physics_claim": "none_predeclared_initialization_diagnostic_only"
+}
