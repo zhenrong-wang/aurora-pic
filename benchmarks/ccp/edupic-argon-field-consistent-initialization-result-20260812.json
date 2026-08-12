@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_field_consistent_initialization_followup",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-field-consistent-initialization-rule-20260812.json",
+    "declaration_commit": "4d4b872",
+    "sha256": "7e07a2f620f700c30486f2b3d6e6b83c948d6a0d91a878b6f6843315efe3c4a5"
+  },
+  "workflow": {
+    "runner_commit": "a247fd0",
+    "study_report_sha256": "7c56c11d0f0bf5e35630f779e8b0ed563fd59941cb4370b884646d1bee688e54",
+    "particle_state_sha256": "93433f3ad1af435bf79ba1d41279d3bd3fb05bbaac90c20aef34cd4d1ca5fd7c",
+    "particle_state_signature": 5959263220232258678,
+    "final_checkpoint_sha256": "181acb80546f27d48379b9f6841251a9ef75e308a466a6936387a2d06ac33c23",
+    "all_numerical_hard_gates_passed": true,
+    "maximum_cycle_wall_seconds": 47.313155736002955,
+    "maximum_peak_resident_set_kib": 182072,
+    "maximum_relative_energy_closure_residual": 3.5109740934640846e-14,
+    "maximum_spatial_phase_residual_J_m-2": 5.844527336054672e-20,
+    "serial_low_priority_execution": true
+  },
+  "transformed_branch": {
+    "initial_total_particles": 97710,
+    "final_total_particles": 97602,
+    "normalized_total_population_slope_per_cycle": -0.00010859098080193415,
+    "ionization_pairs": 1193,
+    "electron_wall_losses": 1472,
+    "ion_wall_losses": 1022,
+    "electron_source_loss_relative_imbalance": -0.23386420787929585,
+    "ion_source_loss_relative_imbalance": 0.143336127409891,
+    "initial_field_energy_J_m-2": 0.000048212186539360095,
+    "maximum_sampled_absolute_field_V_m": 76160.77760213923,
+    "first_cycle": {
+      "ionization_pairs": 380,
+      "electron_wall_losses": 744,
+      "ion_wall_losses": 207,
+      "population_growth_factor": 0.9980452359021594
+    }
+  },
+  "contextual_comparison": {
+    "locked_control_first_cycle_ionization_pairs": 640,
+    "rejected_naive_first_cycle_ionization_pairs": 3808,
+    "first_cycle_ionization_reduction_vs_naive_fraction": 0.9002100840336135,
+    "locked_control_peak_field_V_m": 57863.516220722864,
+    "rejected_naive_peak_field_V_m": 117767.59479691955,
+    "peak_field_increase_vs_control_fraction": 0.31621412897931545,
+    "peak_field_reduction_vs_naive_fraction": 0.3532959747248623
+  },
+  "prospective_decision": {
+    "all_numerical_hard_gates": true,
+    "bounded_first_cycle_ionization": true,
+    "nonvanishing_first_cycle_electron_loss": true,
+    "bounded_first_cycle_population_growth": true,
+    "bounded_transient_field": false,
+    "observed_peak_field_V_m": 76160.77760213923,
+    "predeclared_peak_field_limit_V_m": 72330.0,
+    "admissible_for_density_diagnostic": false
+  },
+  "interpretation": {
+    "naive_launch_signature_removed": true,
+    "prospective_followup_passed": false,
+    "numerical_instability_observed": false,
+    "reason": "The binwise paired bulk prevents the full residual charge from being multiplied and removes the naive ionization avalanche. The evolved peak field nevertheless exceeds the deliberately tight control-relative limit, consistent with either imperfect local residual-charge reconstruction or a real density-dependent sheath response.",
+    "consequence": "Do not relax the observed threshold or claim validation. Quantify spatial charge/sheath fidelity and distinguish transform error from physical density response before authorizing a cross-code density comparison."
+  },
+  "claim_boundary": "This result demonstrates numerically stable execution and rejects the naive launch mechanism for one transformed state, but it fails one prospective field gate. It does not establish equilibrium, validate AuroraPIC against eduPIC, or prove physical correctness.",
+  "physics_claim": "none_initialization_diagnostic_only"
+}
