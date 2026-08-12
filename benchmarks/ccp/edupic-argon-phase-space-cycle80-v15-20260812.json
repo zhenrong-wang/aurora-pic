@@ -371,6 +371,37 @@
       "relative_l2": 0.00031620546644247374
     }
   },
+  "derived_diagnostics": {
+    "ionization_per_electron": {
+      "candidate_effective_ionization_frequency_s-1": 259269.19524804584,
+      "candidate_to_reference_average_electron_density_ratio": 0.35444197780373415,
+      "candidate_to_reference_average_rate_ratio": 1.4749727934934804,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 4.161394207968843,
+      "candidate_to_reference_phase_effective_frequency_ratio": [
+        3.7397026434940783,
+        3.8390602896484816,
+        4.397528357834976,
+        3.843620662666663,
+        3.7682946922090075,
+        4.116407604665762,
+        4.45784242564624,
+        3.9221792657170926,
+        3.566911740708449,
+        3.8822552795467153,
+        4.423558127384903,
+        4.050896274971177,
+        4.579751730399554,
+        4.41170797675912,
+        4.527819860532498,
+        4.197068199695457
+      ],
+      "candidate_volume_phase_average_electron_density_m-3": 1056581827000001.1,
+      "candidate_volume_phase_average_rate_m-3_s-1": 2.739391200000003e+20,
+      "reference_effective_ionization_frequency_s-1": 62303.44502127664,
+      "reference_volume_phase_average_electron_density_m-3": 2980972608117722.0,
+      "reference_volume_phase_average_rate_m-3_s-1": 1.8572486299979412e+20
+    }
+  },
   "physics_claim": "none_descriptive_transient_cross_code_comparison_only",
   "reference": {
     "commit": "32050728c961a317d6d6acd6bc86d026da403326",

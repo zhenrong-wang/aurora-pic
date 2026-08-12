@@ -4,8 +4,9 @@
 import math
 
 from compare_edupic_phase_space import (
-    flatten_phase_major, metrics, periodic_overlap_average, phase_space_metrics,
-    resample_matrix,
+    flatten_phase_major, metrics, periodic_overlap_average,
+    phase_effective_frequency, phase_space_metrics, resample_matrix,
+    spatial_phase_average,
 )
 
 
@@ -36,6 +37,11 @@ def main() -> int:
     assert phase["phase_profile_relative_l2"] == [0.0, 1.0]
     assert phase["maximum_phase_profile_relative_l2_bin"] == 1
     assert math.isclose(phase["cycle_average_spatial_profile_relative_l2"], 0.5)
+    assert spatial_phase_average(
+        [1.0, 2.0, 3.0, 1.0, 2.0, 3.0], phases=2, nodes=3) == 2.0
+    assert phase_effective_frequency(
+        [2.0, 2.0, 2.0, 4.0, 4.0, 4.0],
+        [1.0, 1.0, 1.0, 2.0, 2.0, 2.0], phases=2, nodes=3) == [2.0, 2.0]
     print("eduPIC phase-space comparison regression passed")
     return 0
 

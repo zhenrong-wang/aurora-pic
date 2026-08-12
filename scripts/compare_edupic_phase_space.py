@@ -159,6 +159,39 @@ def phase_space_metrics(candidate: list[float], reference: list[float],
     return result
 
 
+def spatial_phase_average(values: list[float], phases: int = CANDIDATE_PHASES,
+                          nodes: int = NODES) -> float:
+    if len(values) != phases * nodes or nodes < 2:
+        raise ValueError("spatial-phase average vector has the wrong size")
+    weighted = 0.0
+    for phase in range(phases):
+        for node in range(nodes):
+            weight = 0.5 if node in (0, nodes - 1) else 1.0
+            weighted += weight * values[phase * nodes + node]
+    return weighted / (phases * (nodes - 1))
+
+
+def phase_effective_frequency(rate: list[float], density: list[float],
+                              phases: int = CANDIDATE_PHASES,
+                              nodes: int = NODES) -> list[float]:
+    if len(rate) != phases * nodes or len(density) != len(rate):
+        raise ValueError("effective-frequency vectors have the wrong size")
+    result = []
+    for phase in range(phases):
+        start = phase * nodes
+        weights = [0.5] + [1.0] * (nodes - 2) + [0.5]
+        numerator = math.fsum(
+            weight * value for weight, value in
+            zip(weights, rate[start:start + nodes]))
+        denominator = math.fsum(
+            weight * value for weight, value in
+            zip(weights, density[start:start + nodes]))
+        if denominator <= 0.0:
+            raise ValueError("phase-integrated electron density is not positive")
+        result.append(numerator / denominator)
+    return result
+
+
 def csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as stream:
         result = list(csv.DictReader(stream))
@@ -269,6 +302,7 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
 
     rate_path = candidate / "spatial_phase_collision_rate.csv"
     unavailable_comparisons = {}
+    derived_diagnostics = {}
     candidate_hashes = {
         "measurement_report_sha256": sha256(report_path),
         "spatial_phase_fields_sha256": sha256(fields_path),
@@ -300,6 +334,43 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
                 rate[index] += float(row["mean_event_rate_m-3_s-1"])
         comparisons["ionization_rate"] = phase_space_metrics(
             rate, flatten_phase_major(reference_matrices["ionization_rate"]))
+        reference_rate = flatten_phase_major(
+            reference_matrices["ionization_rate"])
+        reference_density = flatten_phase_major(
+            reference_matrices["electron_density"])
+        candidate_rate_average = spatial_phase_average(rate)
+        reference_rate_average = spatial_phase_average(reference_rate)
+        candidate_density_average = spatial_phase_average(
+            candidate_values["electron_density"])
+        reference_density_average = spatial_phase_average(reference_density)
+        candidate_frequency = candidate_rate_average / candidate_density_average
+        reference_frequency = reference_rate_average / reference_density_average
+        candidate_phase_frequency = phase_effective_frequency(
+            rate, candidate_values["electron_density"])
+        reference_phase_frequency = phase_effective_frequency(
+            reference_rate, reference_density)
+        derived_diagnostics["ionization_per_electron"] = {
+            "candidate_volume_phase_average_rate_m-3_s-1":
+                candidate_rate_average,
+            "reference_volume_phase_average_rate_m-3_s-1":
+                reference_rate_average,
+            "candidate_to_reference_average_rate_ratio":
+                candidate_rate_average / reference_rate_average,
+            "candidate_volume_phase_average_electron_density_m-3":
+                candidate_density_average,
+            "reference_volume_phase_average_electron_density_m-3":
+                reference_density_average,
+            "candidate_to_reference_average_electron_density_ratio":
+                candidate_density_average / reference_density_average,
+            "candidate_effective_ionization_frequency_s-1": candidate_frequency,
+            "reference_effective_ionization_frequency_s-1": reference_frequency,
+            "candidate_to_reference_effective_ionization_frequency_ratio":
+                candidate_frequency / reference_frequency,
+            "candidate_to_reference_phase_effective_frequency_ratio": [
+                candidate_value / reference_value
+                for candidate_value, reference_value in
+                zip(candidate_phase_frequency, reference_phase_frequency)],
+        }
         candidate_hashes["spatial_phase_collision_rate_sha256"] = sha256(
             rate_path)
     else:
@@ -337,6 +408,7 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
             "raw_matrix_sha256": reference_hashes,
         },
         "comparisons": comparisons,
+        "derived_diagnostics": derived_diagnostics,
         "unavailable_comparisons": unavailable_comparisons,
         "acceptance": {"thresholds_declared": False, "passes": None},
         "candidate_state_boundary": (
