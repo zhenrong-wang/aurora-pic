@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_field_consistent_initialization_followup",
+  "declaration_parent_commit": "ea933f6789e3ed352a43ea5a5e4ef90600aecf19",
+  "motivation": {
+    "prior_result": "benchmarks/ccp/edupic-argon-field-consistent-initialization-result-20260812.json",
+    "prior_peak_field_V_m": 76160.77760213923,
+    "prior_failed_peak_field_limit_V_m": 72330.0,
+    "selection_observables_excluded_transient_results": true,
+    "selection_basis": "An exploratory preprocessing sweep reduced CIC node-charge L2 error from 0.3691 at 64 pairing bins to 0.06074 at four pairing bins per field cell. A one-step preflight retained control-like initial field energy and charge L1.",
+    "question": "Does grid-resolved pairing remove the excess transient field without reintroducing the naive ionization launch?"
+  },
+  "initial_state": {
+    "format": "AuroraPIC-particle-state-v2",
+    "spatial_dimension": 1,
+    "velocity_dimensions": 3,
+    "units": "si",
+    "particle_state_sha256": "3bca20a722d4dc7783b12a8156bea9ed122bad6e3db36d54b227f288947999d3",
+    "particle_state_signature": 15451594479681555519,
+    "transform_manifest_sha256": "d02fe70c1f76817a498eb594dd2481908161ad4755c17ee0461c3f23b497ca61",
+    "source_particle_state_sha256": "8d92e55aa541947075d3c18db3f8af1b326b6d7ca78c94a5c3e535443b02fffd",
+    "electrons": 46068,
+    "ions": 48252,
+    "macro_weight": 1576092237.1428921,
+    "weight_factor": 2.25156033877556,
+    "pairing_bins": 1596,
+    "field_nodes": 400,
+    "paired_bulk_per_species": 44548,
+    "retained_residual_particles": 5224,
+    "charge_node_relative_l1_error": 0.05926189785650129,
+    "charge_node_relative_l2_error": 0.06073585949634279
+  },
+  "observed_predeclaration_preflight": {
+    "scope": "motivation_only_not_a_prospective_gate",
+    "steps": 1,
+    "scalars_sha256": "5dbaf5aa8a45b1056e4e11a52c8515ee1e77bf9f69aaebd3568bf9b80f001ebc",
+    "checkpoint_sha256": "3fe6a41dd81f07a6258c01eaca8965d99d4605519a3afaaad83c18b2aba39328",
+    "initial_field_energy_J_m-2": 0.00004821323953062287,
+    "locked_control_initial_field_energy_J_m-2": 0.00004822625222336247,
+    "initial_charge_l1_C_m-2": 7.871628711449757e-7,
+    "locked_control_initial_charge_l1_C_m-2": 7.829809442116434e-7
+  },
+  "execution_contract": {
+    "runner_commit": "a247fd0708ba174a00a6d2e247887da3533650a7",
+    "solver_sha256": "ed30f0fdad1b1a05d712a4123dcbdedeee7df0a5b3270afb62b3ed4013cdbd31",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "seed": 13507,
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "serial": true,
+    "maximum_wall_seconds_per_cycle": 60.0,
+    "minimum_available_memory_kib": 524288,
+    "stop_on_any_hard_gate_failure": true
+  },
+  "decision_rule": {
+    "prospective_threshold_basis": "The thresholds are unchanged from the prior prospective follow-up and remain tied to the locked control.",
+    "prospective_thresholds": {
+      "maximum_first_cycle_ionization_pairs": 1280,
+      "minimum_first_cycle_electron_wall_losses": 91,
+      "maximum_first_cycle_total_growth_factor": 1.02,
+      "maximum_sampled_absolute_field_V_m": 72330.0
+    },
+    "admissible_for_density_diagnostic_only_if": [
+      "all four cycles pass numerical hard gates",
+      "first-cycle ionization does not exceed twice the locked control",
+      "first-cycle electron wall loss remains at least one quarter of the locked control",
+      "first-cycle total population growth does not exceed 1.02",
+      "sampled absolute electric field does not exceed 1.25 times the locked control"
+    ],
+    "equilibrium_claim_prohibited": true,
+    "measurement_authorization_prohibited": true
+  },
+  "claim_boundary": "This prospective follow-up tests whether finer charge reconstruction makes one transformed state admissible for a later density diagnostic. Passing does not establish equilibrium, validate AuroraPIC against eduPIC, or authorize a physics measurement.",
+  "physics_claim": "none_predeclared_initialization_diagnostic_only"
+}
