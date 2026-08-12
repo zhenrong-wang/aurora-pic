@@ -373,6 +373,30 @@
     }
   },
   "derived_diagnostics": {
+    "electron_rf_power_per_particle": {
+      "candidate_average_power_per_particle_W": 1.8055324020352541e-12,
+      "candidate_to_reference_average_number_density_ratio": 0.35444197780373415,
+      "candidate_to_reference_average_power_density_ratio": 1.1976784712616115,
+      "candidate_to_reference_power_per_particle_ratio": 3.3790536851275683,
+      "candidate_volume_phase_average_number_density_m-3": 1056581827000001.1,
+      "candidate_volume_phase_average_power_density_W_m-3": 1907.6927240501093,
+      "interpretation_boundary": "This derived ratio does not by itself distinguish a transient population deficit from a field-heating model discrepancy.",
+      "reference_average_power_per_particle_W": 5.343307831959144e-13,
+      "reference_volume_phase_average_number_density_m-3": 2980972608117722.0,
+      "reference_volume_phase_average_power_density_W_m-3": 1592.82542838111
+    },
+    "ion_rf_power_per_particle": {
+      "candidate_average_power_per_particle_W": 1.9308870080417525e-12,
+      "candidate_to_reference_average_number_density_ratio": 0.37953605332769,
+      "candidate_to_reference_average_power_density_ratio": 0.7039615198353865,
+      "candidate_to_reference_power_per_particle_ratio": 1.8547948572031672,
+      "candidate_volume_phase_average_number_density_m-3": 1188821348749999.5,
+      "candidate_volume_phase_average_power_density_W_m-3": 2295.4796971840474,
+      "interpretation_boundary": "This derived ratio does not by itself distinguish a transient population deficit from a field-heating model discrepancy.",
+      "reference_average_power_per_particle_W": 1.041024564276248e-12,
+      "reference_volume_phase_average_number_density_m-3": 3132301498966095.5,
+      "reference_volume_phase_average_power_density_W_m-3": 3260.802803143018
+    },
     "ionization_eedf_ledger_closure": {
       "acceptance": {
         "passes": null,

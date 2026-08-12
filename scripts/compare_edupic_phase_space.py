@@ -369,6 +369,44 @@ def analyze(candidate: Path, reference: Path,
     rate_path = candidate / "spatial_phase_collision_rate.csv"
     unavailable_comparisons = {}
     derived_diagnostics = {}
+    for species_name, power_name, density_name in (
+            ("electron", "electron_ohmic_power_density", "electron_density"),
+            ("ion", "ion_ohmic_power_density", "ion_density")):
+        candidate_power_average = spatial_phase_average(
+            candidate_values[power_name])
+        reference_power_average = spatial_phase_average(
+            flatten_phase_major(reference_matrices[power_name]))
+        candidate_number_average = spatial_phase_average(
+            candidate_values[density_name])
+        reference_number_average = spatial_phase_average(
+            flatten_phase_major(reference_matrices[density_name]))
+        candidate_power_per_particle = (
+            candidate_power_average / candidate_number_average)
+        reference_power_per_particle = (
+            reference_power_average / reference_number_average)
+        derived_diagnostics[f"{species_name}_rf_power_per_particle"] = {
+            "candidate_volume_phase_average_power_density_W_m-3":
+                candidate_power_average,
+            "reference_volume_phase_average_power_density_W_m-3":
+                reference_power_average,
+            "candidate_to_reference_average_power_density_ratio":
+                candidate_power_average / reference_power_average,
+            "candidate_volume_phase_average_number_density_m-3":
+                candidate_number_average,
+            "reference_volume_phase_average_number_density_m-3":
+                reference_number_average,
+            "candidate_to_reference_average_number_density_ratio":
+                candidate_number_average / reference_number_average,
+            "candidate_average_power_per_particle_W":
+                candidate_power_per_particle,
+            "reference_average_power_per_particle_W":
+                reference_power_per_particle,
+            "candidate_to_reference_power_per_particle_ratio":
+                candidate_power_per_particle / reference_power_per_particle,
+            "interpretation_boundary": (
+                "This derived ratio does not by itself distinguish a transient "
+                "population deficit from a field-heating model discrepancy."),
+        }
     candidate_hashes = {
         "measurement_report_sha256": sha256(report_path),
         "spatial_phase_fields_sha256": sha256(fields_path),
