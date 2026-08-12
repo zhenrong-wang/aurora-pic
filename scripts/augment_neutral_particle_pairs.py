@@ -125,12 +125,14 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "output_counts": {
             name: len(records) for name, records in augmented.items()},
         "charge_preservation": {
-            "source_signed_charge_C_m-2": math.fsum(source_charge),
-            "augmented_signed_charge_C_m-2": math.fsum(augmented_charge),
-            "signed_charge_error_C_m-2": math.fsum(difference),
+            "source_signed_weighted_particle_equivalents":
+                math.fsum(source_charge),
+            "augmented_signed_weighted_particle_equivalents":
+                math.fsum(augmented_charge),
+            "signed_weighted_particle_error": math.fsum(difference),
             "node_charge_relative_l1_error":
                 math.fsum(abs(value) for value in difference) / l1,
-            "node_charge_maximum_absolute_error_C_m-2": max(
+            "node_charge_maximum_absolute_weighted_particle_error": max(
                 abs(value) for value in difference),
         },
         "claim_boundary": (
