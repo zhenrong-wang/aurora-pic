@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_cycle112_to116_heating_trend_diagnostic",
+  "question": "Does the hot AuroraPIC EEDF moderate as the under-dense discharge fills?",
+  "frozen_window": {
+    "start_cycle": 112,
+    "end_cycle": 116,
+    "measurement_cycles": 4,
+    "phase_bins": 16,
+    "fresh_statistics_required": true
+  },
+  "locked_inputs": {
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "cycle112_checkpoint_sha256": "9f762d3b2af14ca60a0e9bc4d9381e7e551e9e2c73d121203f2a65499efdc842",
+    "cycle80_phase_space_evidence_sha256": "f2d698b183c8bf48e10b4c0a62d984d009f2c6be70d2725ab7c8cdf3e21dd728",
+    "ionization_cross_section_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0"
+  },
+  "comparison_observables": [
+    "volume_phase_average_electron_density",
+    "electron_rf_power_per_particle",
+    "mean_electron_energy",
+    "effective_ionization_frequency_per_electron",
+    "electron_power_phase_space_relative_l2",
+    "electron_mean_energy_phase_space_relative_l2"
+  ],
+  "interpretation": {
+    "transient_heating_hypothesis": "Electron density increases while power per electron, mean electron energy, and effective ionization frequency decrease relative to cycle 80.",
+    "persistent_heating_discrepancy_hypothesis": "The electron energy and ionization observables do not moderate materially despite increased density.",
+    "mixed_outcome": "Preserve each signed change and do not select a mechanism from an incomplete trend.",
+    "post_hoc_thresholds_forbidden": true
+  },
+  "execution_policy": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "reduced_process_priority": true,
+    "timeout_seconds": 240,
+    "maximum_peak_resident_set_kib": 524288,
+    "refuse_overwrite": true
+  },
+  "claim_boundary": "This two-window trend can localize a discrepancy but cannot establish stationarity, cross-code acceptance, physical validation, or predictive accuracy.",
+  "physics_claim": "none_prospective_transient_discriminator_only"
+}
