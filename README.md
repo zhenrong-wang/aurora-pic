@@ -75,6 +75,14 @@ numerical-sensitivity, energy-closure, phase, and EEDF evidence into one
 fail-closed scientific status. It distinguishes numerical integrity and
 descriptive scalar agreement from the unresolved published ion-density
 failure, and never promotes post-benchmark diagnostics into formal passes.
+`compare_edupic_phase_space.py` checksum-locks the public eduPIC Figure 11 raw
+matrices and directly compares AuroraPIC over position and RF phase. It covers
+potential, electric field, electron/ion density, current density, ohmic power,
+and mean particle energy without fitted phase shifts or spatial reflection.
+The current result is descriptive because the AuroraPIC measurement window is
+still transient; it is not a cross-code acceptance or validation claim. The
+first locked result is recorded in
+`benchmarks/ccp/edupic-argon-phase-space-cycle80-20260812.json`.
 `prepare_turner_sensitivity.py` creates a non-launching, staged refinement
 matrix with predeclared interpretation thresholds after a systematic Turner
 density discrepancy is established.
