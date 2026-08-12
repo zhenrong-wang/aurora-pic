@@ -89,6 +89,9 @@ with the same shape function as collision energy and expose SI volumetric event
 rates, including an eduPIC-compatible phase-resolved ionization-rate field.
 The first complete phase-space result, including ionization, is recorded in
 `benchmarks/ccp/edupic-argon-phase-space-cycle80-v15-20260812.json`.
+It also independently integrates the checksum-locked ionization cross section
+over the measured EEDF and compares that prediction with the collision-event
+ledger, keeping this post-diagnostic closure separate from acceptance claims.
 `prepare_turner_sensitivity.py` creates a non-launching, staged refinement
 matrix with predeclared interpretation thresholds after a systematic Turner
 density discrepancy is established.

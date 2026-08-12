@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import csv
 import json
 import math
@@ -19,6 +20,10 @@ LENGTH_M = 0.025
 ELEMENTARY_CHARGE_C = 1.60217662e-19
 EDUPIC_IMPLEMENTATION_SHA256 = (
     "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41")
+IONIZATION_CROSS_SECTION_SHA256 = (
+    "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0")
+ARGON_NEUTRAL_DENSITY_M3 = 2.0694208669001848e21
+ELECTRON_MASS_KG = 9.10938356e-31
 
 REFERENCE_FILES = {
     "electron_density": ("Figure11a)_ne_xt.dat",
@@ -200,6 +205,66 @@ def csv_rows(path: Path) -> list[dict[str, str]]:
     return result
 
 
+def lower_bin_table(path: Path) -> tuple[list[float], list[float]]:
+    energies, values = [], []
+    with path.open(encoding="utf-8") as stream:
+        for line in stream:
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            fields = line.split()
+            if len(fields) != 2:
+                raise ValueError(f"invalid two-column cross section: {path}")
+            energy, value = map(float, fields)
+            if (not math.isfinite(energy) or not math.isfinite(value) or
+                    energy < 0.0 or value < 0.0 or
+                    (energies and energy <= energies[-1])):
+                raise ValueError(f"invalid cross-section row: {path}")
+            energies.append(energy)
+            values.append(value)
+    if len(energies) < 2:
+        raise ValueError(f"cross-section table is incomplete: {path}")
+    return energies, values
+
+
+def lower_bin_value(energies: list[float], values: list[float],
+                    target: float) -> float:
+    index = max(0, min(len(values) - 1,
+                       bisect.bisect_right(energies, target) - 1))
+    return values[index]
+
+
+def predict_ionization_frequency_from_eedf(
+        eedf_rows: list[dict[str, str]], cross_section: Path,
+        phases: int = CANDIDATE_PHASES) -> tuple[list[float], list[float]]:
+    energies, cross_sections = lower_bin_table(cross_section)
+    result, normalizations = [], []
+    for phase in range(phases):
+        selected = [row for row in eedf_rows
+                    if int(row["phase_bin"]) == phase and
+                    row["region"] == "full_gap"]
+        if len(selected) < 2:
+            raise ValueError("candidate phase EEDF is incomplete")
+        centers = [float(row["energy_eV"]) for row in selected]
+        width = centers[1] - centers[0]
+        if (width <= 0.0 or any(
+                abs((right - left) - width) > 1e-12 * max(1.0, width)
+                for left, right in zip(centers, centers[1:]))):
+            raise ValueError("candidate phase EEDF bins are not uniform")
+        normalization = math.fsum(
+            float(row["probability_density"]) * width for row in selected)
+        if abs(normalization - 1.0) > 1e-9:
+            raise ValueError("candidate phase EEDF is not normalized")
+        frequency = math.fsum(
+            float(row["probability_density"]) * width *
+            ARGON_NEUTRAL_DENSITY_M3 *
+            lower_bin_value(energies, cross_sections, energy) *
+            math.sqrt(2.0 * energy * ELEMENTARY_CHARGE_C / ELECTRON_MASS_KG)
+            for row, energy in zip(selected, centers))
+        result.append(frequency)
+        normalizations.append(normalization)
+    return result, normalizations
+
+
 def validate_candidate_grid(rows: list[dict[str, str]], expected_rows: int,
                             species: str | None = None,
                             count_field: str = "samples") -> None:
@@ -224,7 +289,8 @@ def validate_candidate_grid(rows: list[dict[str, str]], expected_rows: int,
         raise ValueError("candidate phase-space sample counts are not uniform")
 
 
-def analyze(candidate: Path, reference: Path) -> dict[str, object]:
+def analyze(candidate: Path, reference: Path,
+            ionization_cross_section: Path | None = None) -> dict[str, object]:
     report_path = candidate.parent / "measurement-report.json"
     pilot = json.loads(report_path.read_text(encoding="utf-8"))
     if (pilot.get("scope") != "fresh_window_aurorapic_measurement_pilot" or
@@ -371,6 +437,49 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
                 for candidate_value, reference_value in
                 zip(candidate_phase_frequency, reference_phase_frequency)],
         }
+        if ionization_cross_section is not None:
+            if sha256(ionization_cross_section) != IONIZATION_CROSS_SECTION_SHA256:
+                raise ValueError("locked ionization cross section differs")
+            eedf_path = candidate / "phase_eedf.csv"
+            if ("phase_eedf.csv" in reported_hashes and
+                    sha256(eedf_path) != reported_hashes["phase_eedf.csv"]):
+                raise ValueError(
+                    "candidate phase EEDF differs from its measurement report")
+            candidate_hashes["phase_eedf_sha256"] = sha256(eedf_path)
+            predicted_frequency, eedf_normalization = (
+                predict_ionization_frequency_from_eedf(
+                    csv_rows(eedf_path),
+                    ionization_cross_section))
+            predicted_average = (
+                math.fsum(predicted_frequency) / CANDIDATE_PHASES)
+            derived_diagnostics["ionization_eedf_ledger_closure"] = {
+                "cross_section_sha256": IONIZATION_CROSS_SECTION_SHA256,
+                "cross_section_interpolation": "lower_bin",
+                "neutral_density_m-3": ARGON_NEUTRAL_DENSITY_M3,
+                "electron_mass_kg": ELECTRON_MASS_KG,
+                "eedf_energy_quadrature": "uniform_bin_center",
+                "phase_eedf_probability_normalization": eedf_normalization,
+                "predicted_phase_ionization_frequency_s-1":
+                    predicted_frequency,
+                "measured_phase_ionization_frequency_s-1":
+                    candidate_phase_frequency,
+                "measured_to_predicted_phase_frequency_ratio": [
+                    measured / predicted for measured, predicted in
+                    zip(candidate_phase_frequency, predicted_frequency)],
+                "predicted_phase_average_ionization_frequency_s-1":
+                    predicted_average,
+                "measured_density_weighted_ionization_frequency_s-1":
+                    candidate_frequency,
+                "measured_to_predicted_average_frequency_ratio":
+                    candidate_frequency / predicted_average,
+                "acceptance": {
+                    "threshold_declared_prospectively": False,
+                    "passes": None,
+                },
+                "interpretation_boundary": (
+                    "This post-diagnostic closure localizes the discrepancy; "
+                    "it is not a prospectively accepted verification gate."),
+            }
         candidate_hashes["spatial_phase_collision_rate_sha256"] = sha256(
             rate_path)
     else:
@@ -428,10 +537,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("candidate_output", type=Path)
     parser.add_argument("reference_raw_data", type=Path)
+    parser.add_argument("--ionization-cross-section", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    report = analyze(args.candidate_output.resolve(),
-                     args.reference_raw_data.resolve())
+    report = analyze(
+        args.candidate_output.resolve(), args.reference_raw_data.resolve(),
+        args.ionization_cross_section.resolve()
+        if args.ionization_cross_section else None)
     if args.output:
         atomic_json(args.output, report)
     print(json.dumps(report, indent=2, sort_keys=True))

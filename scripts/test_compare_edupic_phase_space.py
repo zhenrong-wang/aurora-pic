@@ -4,7 +4,7 @@
 import math
 
 from compare_edupic_phase_space import (
-    flatten_phase_major, metrics, periodic_overlap_average,
+    flatten_phase_major, lower_bin_value, metrics, periodic_overlap_average,
     phase_effective_frequency, phase_space_metrics, resample_matrix,
     spatial_phase_average,
 )
@@ -42,6 +42,7 @@ def main() -> int:
     assert phase_effective_frequency(
         [2.0, 2.0, 2.0, 4.0, 4.0, 4.0],
         [1.0, 1.0, 1.0, 2.0, 2.0, 2.0], phases=2, nodes=3) == [2.0, 2.0]
+    assert lower_bin_value([0.0, 1.0, 2.0], [0.0, 4.0, 9.0], 1.5) == 4.0
     print("eduPIC phase-space comparison regression passed")
     return 0
 
