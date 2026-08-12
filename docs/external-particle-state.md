@@ -162,3 +162,12 @@ signature, and CIC node-charge error in a JSON manifest. It preserves particle
 velocity components but does not solve a kinetic equilibrium or a
 self-consistent sheath. Its output is an explicitly testable initialization
 hypothesis, not evidence of physical validation by itself.
+
+`augment_neutral_particle_pairs.py` provides an alternative that retains every
+source record at the original common macro weight and adds a requested number
+of co-located electron-ion pairs selected from a spatially paired source pool.
+The added pairs cancel identically during charge deposition, so the source
+grid charge is preserved without residual-particle thinning. Its manifest
+quantifies the remaining floating-point charge error. Reusing source velocity
+samples creates deterministic particle correlations, so the resulting state
+still requires a bounded relaxation diagnostic before scientific use.
