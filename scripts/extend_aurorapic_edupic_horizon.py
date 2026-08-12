@@ -47,6 +47,9 @@ APPROVED_PRODUCTION_RULE_SHA256 = (
 APPROVED_STRICT_RULE_SHA256 = (
     "9034bd795245f9662ff02298b9e38ba56938a6383622aff1295823a587f21144"
 )
+APPROVED_POST_TREND_RULE_SHA256 = (
+    "3e6e29425325e9e70557fa1a17545893fae816e49ff351bac14dc4dd82f37b27"
+)
 MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE = 0.01
@@ -75,7 +78,7 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     rule_sha256 = sha256(path)
     if rule_sha256 not in {
         APPROVED_EXTENSION_RULE_SHA256, APPROVED_PRODUCTION_RULE_SHA256,
-        APPROVED_STRICT_RULE_SHA256,
+        APPROVED_STRICT_RULE_SHA256, APPROVED_POST_TREND_RULE_SHA256,
     }:
         raise HorizonError("extension rule SHA-256 is not approved")
     rule = json.loads(path.read_text(encoding="utf-8"))
@@ -89,6 +92,8 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
             "predeclared_aurorapic_edupic_production_equilibration_extension",
         APPROVED_STRICT_RULE_SHA256:
             "predeclared_aurorapic_edupic_strict_source_loss_equilibration",
+        APPROVED_POST_TREND_RULE_SHA256:
+            "predeclared_aurorapic_edupic_post_trend_strict_equilibration",
     }
     expected_scope = scopes[rule_sha256]
     if (
@@ -100,11 +105,15 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         or not isinstance(baseline, dict)
     ):
         raise HorizonError("extension rule has the wrong contract identity")
+    post_trend = rule_sha256 == APPROVED_POST_TREND_RULE_SHA256
     production = rule_sha256 == APPROVED_PRODUCTION_RULE_SHA256
-    strict = rule_sha256 == APPROVED_STRICT_RULE_SHA256
+    strict = rule_sha256 in {
+        APPROVED_STRICT_RULE_SHA256, APPROVED_POST_TREND_RULE_SHA256}
     expected_execution = {
-        "first_cycle": 81 if strict else (65 if production else 17),
-        "maximum_cycle": 112 if strict else (96 if production else 64),
+        "first_cycle": 117 if post_trend else
+            (81 if strict else (65 if production else 17)),
+        "maximum_cycle": 148 if post_trend else
+            (112 if strict else (96 if production else 64)),
         "cycles_per_block": HARD_MAX_CYCLES_PER_BLOCK,
         "maximum_blocks_per_invocation": 1,
         "serial": True,
@@ -155,6 +164,12 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         "equilibration_spectra_are_not_comparison_measurements": True,
     }:
         raise HorizonError("production wall-impact contract differs from the built-in contract")
+    if post_trend and rule.get("diagnostic_contract") != {
+        "wall_impact_spectrum_continues_from_cycle": 112,
+        "cycle_113_through_116_measurement_remains_diagnostic_only": True,
+        "future_production_measurement_must_start_with_another_fresh_window": True,
+    }:
+        raise HorizonError("post-trend diagnostic contract differs")
     if args.start_cycle < int(baseline.get("cycle", -1)):
         raise HorizonError("extension cannot precede its frozen baseline")
     if args.start_cycle == int(baseline.get("cycle", -1)) and (
@@ -172,16 +187,24 @@ def production_rule(path: Path | None) -> bool:
     return (
         path is not None
         and sha256(path.resolve()) in {
-            APPROVED_PRODUCTION_RULE_SHA256, APPROVED_STRICT_RULE_SHA256}
+            APPROVED_PRODUCTION_RULE_SHA256, APPROVED_STRICT_RULE_SHA256,
+            APPROVED_POST_TREND_RULE_SHA256}
     )
 
 
 def strict_rule(path: Path | None) -> bool:
-    return path is not None and sha256(path.resolve()) == APPROVED_STRICT_RULE_SHA256
+    return path is not None and sha256(path.resolve()) in {
+        APPROVED_STRICT_RULE_SHA256, APPROVED_POST_TREND_RULE_SHA256}
+
+
+def post_trend_rule(path: Path | None) -> bool:
+    return (path is not None and
+            sha256(path.resolve()) == APPROVED_POST_TREND_RULE_SHA256)
 
 
 def wall_impact_origin_cycle(path: Path | None) -> int:
-    return (STRICT_WALL_IMPACT_ORIGIN_CYCLE if strict_rule(path) else
+    return (112 if post_trend_rule(path) else
+            STRICT_WALL_IMPACT_ORIGIN_CYCLE if strict_rule(path) else
             PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE)
 
 
