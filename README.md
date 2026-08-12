@@ -94,6 +94,8 @@ over the measured EEDF and compares that prediction with the collision-event
 ledger, keeping this post-diagnostic closure separate from acceptance claims.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
+The subsequent strict continuation and cycle-148 horizon-sufficiency decision
+are recorded in `benchmarks/ccp/edupic-argon-post-trend-horizon-cycle128-20260812.json`.
 `prepare_turner_sensitivity.py` creates a non-launching, staged refinement
 matrix with predeclared interpretation thresholds after a systematic Turner
 density discrepancy is established.

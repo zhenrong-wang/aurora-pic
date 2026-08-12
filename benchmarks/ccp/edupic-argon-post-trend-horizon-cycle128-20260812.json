@@ -1,0 +1,64 @@
+{
+  "all_projected_strict_gates_pass": false,
+  "block_end_cycles": [
+    120,
+    124,
+    128
+  ],
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "Passing requires slow population drift and explicit source-loss balance; it authorizes a new measurement campaign but is not cross-code validation.",
+  "completed": {
+    "all_hard_safety_gates_passed": true,
+    "cycles": 12,
+    "final_checkpoint_sha256": "6e1733adf4a3cceb8043fd10e40ae580a8ca6149cd9b195cdd6aa45c915f2ffa",
+    "first_cycle": 117,
+    "last_cycle": 128,
+    "maximum_peak_resident_set_kib": 179932,
+    "maximum_wall_seconds_per_cycle": 52.385932005010545
+  },
+  "decision": {
+    "campaign_complete": false,
+    "comparison_measurement_eligible": false,
+    "launch_remaining_declared_blocks_now": false,
+    "reason": "All numerical safety gates pass, but recent block trends do not project population drift or source/loss balance near their frozen strict thresholds by cycle 148. Pause between authorized invocations and redesign equilibration rather than spend the remaining horizon without a plausible acceptance outcome."
+  },
+  "evidence_sha256": {
+    "blocks": {
+      "120": "ac0ad23b00d83b23fe8d6e411834c308c79b0922604126e0921ac39c5b1f8c5b",
+      "124": "4b304e9cb97d76c7af4febf359ba5124471e0304918eec187799e77ca792bf61",
+      "128": "f6c54f82d00fccac6f081af0d8b2dd0ddfa1801cfa259d60be5327113827fd8d"
+    },
+    "rule": "3e6e29425325e9e70557fa1a17545893fae816e49ff351bac14dc4dd82f37b27"
+  },
+  "forecast_boundary": "The three-block linear forecast is a resource-planning diagnostic, not a physical asymptote, stopping proof, or validation result.",
+  "linear_horizon_forecast_at_cycle148": {
+    "electron_source_loss_relative_imbalance": 0.3909515632907441,
+    "ion_source_loss_relative_imbalance": 0.44006108606225625,
+    "normalized_total_population_slope_per_cycle": 0.003951992367579797
+  },
+  "metric_history": {
+    "electron_source_loss_relative_imbalance": [
+      0.4086519891850135,
+      0.4183082271147161,
+      0.4023762376237624
+    ],
+    "ion_source_loss_relative_imbalance": [
+      0.4159907300115875,
+      0.41444573194283507,
+      0.42336633663366335
+    ],
+    "normalized_total_population_slope_per_cycle": [
+      0.005088606135157991,
+      0.005034008738918685,
+      0.004753081744508464
+    ]
+  },
+  "physics_claim": "none_resource_planning_and_stationarity_rejection_only",
+  "projected_strict_gates": {
+    "electron_source_loss_balance": false,
+    "ion_source_loss_balance": false,
+    "total_population_slope": false
+  },
+  "schema_version": 1,
+  "scope": "post_trend_equilibration_horizon_sufficiency_audit"
+}

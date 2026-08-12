@@ -159,6 +159,7 @@ def validate_ci_matrix() -> None:
         "PYTHONPATH=scripts python3 scripts/test_audit_turner_credibility.py",
         "PYTHONPATH=scripts python3 scripts/test_compare_edupic_phase_space.py",
         "PYTHONPATH=scripts python3 scripts/test_analyze_edupic_heating_trend.py",
+        "PYTHONPATH=scripts python3 scripts/test_analyze_edupic_post_trend_horizon.py",
         "python3 scripts/test_prepare_turner_sensitivity.py",
         "python3 scripts/test_spatial_average_1d.py build/aurorapic_cli",
         "python3 scripts/test_analyze_turner_spatial_structure.py",
