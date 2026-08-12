@@ -168,7 +168,8 @@ def csv_rows(path: Path) -> list[dict[str, str]]:
 
 
 def validate_candidate_grid(rows: list[dict[str, str]], expected_rows: int,
-                            species: str | None = None) -> None:
+                            species: str | None = None,
+                            count_field: str = "samples") -> None:
     if len(rows) != expected_rows:
         raise ValueError(f"candidate has {len(rows)} rows; expected {expected_rows}")
     samples = set()
@@ -180,7 +181,7 @@ def validate_candidate_grid(rows: list[dict[str, str]], expected_rows: int,
             raise ValueError("candidate phase centers differ from the comparison contract")
         if abs(float(row["x_m"]) - node * LENGTH_M / (NODES - 1)) > 1e-12:
             raise ValueError("candidate spatial coordinates differ from the comparison contract")
-        count = int(row["samples"])
+        count = int(row[count_field])
         if count <= 0:
             raise ValueError("candidate sample counts must be positive")
         samples.add(count)
@@ -211,6 +212,12 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
 
     fields_path = candidate / "spatial_phase_fields.csv"
     moments_path = candidate / "spatial_phase_moments.csv"
+    reported_hashes = pilot.get("output_hashes", {})
+    for name, path in (("spatial_phase_fields.csv", fields_path),
+                       ("spatial_phase_moments.csv", moments_path)):
+        if name in reported_hashes and sha256(path) != reported_hashes[name]:
+            raise ValueError(
+                f"candidate {name} differs from its measurement report")
     fields = csv_rows(fields_path)
     validate_candidate_grid(fields, CANDIDATE_PHASES * NODES)
     all_moments = csv_rows(moments_path)
@@ -268,6 +275,11 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
         "spatial_phase_moments_sha256": sha256(moments_path),
     }
     if rate_path.exists():
+        if ("spatial_phase_collision_rate.csv" in reported_hashes and
+                sha256(rate_path) !=
+                reported_hashes["spatial_phase_collision_rate.csv"]):
+            raise ValueError(
+                "candidate collision rate differs from its measurement report")
         rate_rows = csv_rows(rate_path)
         ionization_rows = [
             row for row in rate_rows
@@ -281,7 +293,9 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
         for channel in seen_channels:
             selected = [row for row in ionization_rows
                         if row["channel"] == channel]
-            validate_candidate_grid(selected, CANDIDATE_PHASES * NODES)
+            validate_candidate_grid(
+                selected, CANDIDATE_PHASES * NODES,
+                count_field="timesteps")
             for index, row in enumerate(selected):
                 rate[index] += float(row["mean_event_rate_m-3_s-1"])
         comparisons["ionization_rate"] = phase_space_metrics(
@@ -309,6 +323,12 @@ def analyze(candidate: Path, reference: Path) -> dict[str, object]:
             "ohmic_power_derivation": "current_density_times_electric_field",
         },
         "candidate": candidate_hashes,
+        "candidate_measurement_context": {
+            "window": pilot.get("window"),
+            "resources": pilot.get("resources"),
+            "inputs": pilot.get("inputs"),
+            "all_gates_passed": pilot.get("all_gates_passed"),
+        },
         "reference": {
             "repository": "https://github.com/donkozoltan/eduPIC",
             "commit": "32050728c961a317d6d6acd6bc86d026da403326",

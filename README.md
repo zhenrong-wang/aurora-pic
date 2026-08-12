@@ -87,6 +87,8 @@ Fresh 1D spatial-average windows also write `spatial_collision_rate.csv` and
 `spatial_phase_collision_rate.csv`. These deposit represented collision events
 with the same shape function as collision energy and expose SI volumetric event
 rates, including an eduPIC-compatible phase-resolved ionization-rate field.
+The first complete phase-space result, including ionization, is recorded in
+`benchmarks/ccp/edupic-argon-phase-space-cycle80-v15-20260812.json`.
 `prepare_turner_sensitivity.py` creates a non-launching, staged refinement
 matrix with predeclared interpretation thresholds after a systematic Turner
 density discrepancy is established.
