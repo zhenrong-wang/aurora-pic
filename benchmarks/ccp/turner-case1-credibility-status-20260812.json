@@ -1,0 +1,81 @@
+{
+  "audit_tool_sha256": "111328bca62bd6684a255f0ea0915c69ad1fca3f1e812ac4b944281f6ef14d69",
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "claim_boundary": "This audit consolidates existing code-to-code evidence. It does not create a new acceptance threshold, reinterpret failed Turner runs, or constitute experimental validation.",
+  "claims": {
+    "not_supported": [
+      "AuroraPIC passes the Turner Case 1 published ion-density benchmark across independent seeds.",
+      "AuroraPIC is generally validated for CCP or arbitrary plasma devices.",
+      "Post-benchmark diagnostic windows can replace the published-duration acceptance result."
+    ],
+    "supported": [
+      "The electrostatic PIC-MCC implementation executes this case with independently closed energy and particle ledgers.",
+      "Turner-compatible diagnostic windows reproduce global current and power observables descriptively closely.",
+      "Ordinary particle, timestep, and grid refinement did not remove the positive density bias in the tested matrix."
+    ]
+  },
+  "classification": "partial_code_to_code_verification_systematic_density_discrepancy",
+  "diagnostic_localization": {
+    "independent_phase_matched_eedf_reference_available": false,
+    "phase_symmetry_supported": true,
+    "regional_eedf_quality_passed": true,
+    "remaining_discrepancy_focus": "electron_sheath_transport_and_collision_model_conventions"
+  },
+  "evidence": {
+    "energy_ledger": {
+      "path": "benchmarks/ccp/turner-case1-energy-ledger-pilot-20260804.json",
+      "sha256": "34090778e6bd70229faf403c7826cafe4880e96f133f020d57124cbcc4522d6b"
+    },
+    "numerical_sensitivity": {
+      "path": "benchmarks/ccp/turner-case1-numerical-sensitivity-matrix-20260803.json",
+      "sha256": "bccef67375d701d2893c5ff0a20c13c6adeb81cbb0a6256c4cbbd50576050ab7"
+    },
+    "phase_eedf": {
+      "path": "benchmarks/ccp/turner-case1-phase-eedf-32cycle-20260804.json",
+      "sha256": "3e28a2783414860208ee1211571fb8484dcc3647211913899a83decab2953190"
+    },
+    "phase_structure": {
+      "path": "benchmarks/ccp/turner-case1-phase-structure-20260804.json",
+      "sha256": "dab718318841a0f93b8d0544f9266ba7de62ab760a450eca388ef44ffdacc2fd"
+    },
+    "published_duration_ensemble": {
+      "path": "benchmarks/ccp/turner-case1-seed-ensemble-3-20260801.json",
+      "sha256": "2605bd4468dccf7e4b0f06dad31f223aa5bd21635028e43ada852f512c72221e"
+    },
+    "spatial_collision": {
+      "path": "benchmarks/ccp/turner-case1-spatial-collision-32cycle-20260804.json",
+      "sha256": "f53e2149e62db419ca3e7e6c4f750b1290bc161e7e85af6262f675b8cda1327b"
+    }
+  },
+  "evidence_contract_sha256": "6cbbbb12db256562bc89bf9cdb9376b8b77057a10bde285bee03e054f1e1d270",
+  "next_credibility_gate": "Run a prospectively matched independent implementation comparison of phase-resolved bulk/sheath electron energy distributions and collision-channel transport; retain the published-duration ion density discrepancy as unresolved.",
+  "numerical_integrity": {
+    "independent_energy_ledger_passed": true,
+    "particle_source_loss_balance_exact": true,
+    "passed": true,
+    "spatial_and_phase_collision_ledgers_passed": true,
+    "tested_resolution_refinements_remove_bias": false
+  },
+  "published_duration_density": {
+    "accepted_95_percent": 0,
+    "accepted_99_percent": 1,
+    "all_biases_same_sign": true,
+    "ensemble_mean_integrated_bias_percent": 2.236500134372954,
+    "failed_99_percent": 2,
+    "published_density_verification_passed": false,
+    "verified_members": 3
+  },
+  "published_scalar_context": {
+    "formal_acceptance_ranges_published": false,
+    "interpretation": "descriptive_agreement_only",
+    "relative_differences_percent": {
+      "electron_power_percent": -0.1655786967425188,
+      "ion_current_percent": 0.43760557299088454,
+      "ion_power_percent": 0.5213123501859762,
+      "midplane_electron_temperature_percent": -6.504531519049072,
+      "midplane_ion_density_percent": 3.431022996908295
+    }
+  },
+  "schema_version": 1,
+  "scope": "audited_turner_case1_scientific_credibility_status"
+}
