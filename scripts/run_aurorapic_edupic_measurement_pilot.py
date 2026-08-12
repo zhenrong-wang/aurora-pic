@@ -20,8 +20,10 @@ from run_aurorapic_edupic_pilot import (
 
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_FRESH_AURORAPIC_MEASUREMENT_PILOT"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
-RULE_SHA256 = "8b662fc493df3229fc123d034cd55c602628d0dcc1b2e447e119d1a6647a9387"
-START_CYCLE = 76
+APPROVED_RULES = {
+    "8b662fc493df3229fc123d034cd55c602628d0dcc1b2e447e119d1a6647a9387": 76,
+    "f8d4a05fc5fb359cc5808fb35d08d39af3392b8d5108a2474716ee57a2c845be": 112,
+}
 MEASUREMENT_CYCLES = 4
 TIMEOUT_SECONDS = 240
 
@@ -30,9 +32,10 @@ class MeasurementPilotError(RuntimeError):
     pass
 
 
-def deck(base: str, output: Path, checkpoint: Path) -> str:
-    start_step = START_CYCLE * STEPS_PER_CYCLE
-    end_step = (START_CYCLE + MEASUREMENT_CYCLES) * STEPS_PER_CYCLE
+def deck(base: str, output: Path, checkpoint: Path,
+         start_cycle: int = 76) -> str:
+    start_step = start_cycle * STEPS_PER_CYCLE
+    end_step = (start_cycle + MEASUREMENT_CYCLES) * STEPS_PER_CYCLE
     values = {
         "steps": end_step, "output_interval": 100,
         "output_dir": output, "spatial_average_start_step": start_step + 1,
@@ -66,8 +69,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise MeasurementPilotError("measurement pilot cost was not acknowledged")
     rule = args.rule.resolve()
-    if sha256(rule) != RULE_SHA256:
+    rule_hash = sha256(rule)
+    if rule_hash not in APPROVED_RULES:
         raise MeasurementPilotError("measurement rule SHA-256 is not approved")
+    start_cycle = APPROVED_RULES[rule_hash]
     executable = args.executable.resolve()
     base_path = args.base_deck.resolve()
     checkpoint = args.checkpoint.resolve()
@@ -88,7 +93,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     output = work / "output"
     deck_path = work / "input.cfg"
     atomic_text(deck_path, deck(base_path.read_text(encoding="utf-8"),
-                                output, checkpoint))
+                                output, checkpoint, start_cycle))
     resources = run_process([
         str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT,
         str(deck_path),
@@ -107,8 +112,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
                   "--max-overflow", "0.001", "--json", str(phase)],
                  "phase EEDF analyzer")
     scalars = table(output / "scalars.csv")
-    start_step = START_CYCLE * STEPS_PER_CYCLE
-    end_step = (START_CYCLE + MEASUREMENT_CYCLES) * STEPS_PER_CYCLE
+    start_step = start_cycle * STEPS_PER_CYCLE
+    end_step = (start_cycle + MEASUREMENT_CYCLES) * STEPS_PER_CYCLE
     if (integer(scalars[0], "step", "measurement start") != start_step or
             integer(scalars[-1], "step", "measurement end") != end_step):
         raise MeasurementPilotError("measurement scalar window differs")
@@ -138,10 +143,11 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "schema_version": 1, "case_id": "edupic-1.0-default-argon-ccp",
         "scope": "fresh_window_aurorapic_measurement_pilot",
         "physics_claim": "none_descriptive_pilot_only",
-        "window": {"start_cycle": START_CYCLE, "end_cycle": 80,
+        "window": {"start_cycle": start_cycle,
+                   "end_cycle": start_cycle + MEASUREMENT_CYCLES,
                    "measurement_cycles": MEASUREMENT_CYCLES,
                    "equilibration_statistics_excluded": True},
-        "inputs": {"rule_sha256": sha256(rule),
+        "inputs": {"rule_sha256": rule_hash,
                    "binary_sha256": sha256(executable),
                    "base_deck_sha256": sha256(base_path),
                    "checkpoint_sha256": sha256(checkpoint)},
