@@ -70,6 +70,11 @@ comparison, and checksum-recording its profile, metadata, and final checkpoint.
 `analyze_turner_ensemble.py` then requires every prepared seed, revalidates all
 artifact hashes and comparisons, and emits a descriptive aggregate without
 inventing a post-hoc ensemble acceptance threshold.
+`audit_turner_credibility.py` checksum-locks the published-duration ensemble,
+numerical-sensitivity, energy-closure, phase, and EEDF evidence into one
+fail-closed scientific status. It distinguishes numerical integrity and
+descriptive scalar agreement from the unresolved published ion-density
+failure, and never promotes post-benchmark diagnostics into formal passes.
 `prepare_turner_sensitivity.py` creates a non-launching, staged refinement
 matrix with predeclared interpretation thresholds after a systematic Turner
 density discrepancy is established.

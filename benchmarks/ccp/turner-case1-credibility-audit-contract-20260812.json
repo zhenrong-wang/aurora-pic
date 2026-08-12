@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "turner_credibility_evidence_contract",
+  "evidence": {
+    "published_duration_ensemble": {
+      "path": "benchmarks/ccp/turner-case1-seed-ensemble-3-20260801.json",
+      "sha256": "2605bd4468dccf7e4b0f06dad31f223aa5bd21635028e43ada852f512c72221e"
+    },
+    "numerical_sensitivity": {
+      "path": "benchmarks/ccp/turner-case1-numerical-sensitivity-matrix-20260803.json",
+      "sha256": "bccef67375d701d2893c5ff0a20c13c6adeb81cbb0a6256c4cbbd50576050ab7"
+    },
+    "spatial_collision": {
+      "path": "benchmarks/ccp/turner-case1-spatial-collision-32cycle-20260804.json",
+      "sha256": "f53e2149e62db419ca3e7e6c4f750b1290bc161e7e85af6262f675b8cda1327b"
+    },
+    "phase_structure": {
+      "path": "benchmarks/ccp/turner-case1-phase-structure-20260804.json",
+      "sha256": "dab718318841a0f93b8d0544f9266ba7de62ab760a450eca388ef44ffdacc2fd"
+    },
+    "phase_eedf": {
+      "path": "benchmarks/ccp/turner-case1-phase-eedf-32cycle-20260804.json",
+      "sha256": "3e28a2783414860208ee1211571fb8484dcc3647211913899a83decab2953190"
+    },
+    "energy_ledger": {
+      "path": "benchmarks/ccp/turner-case1-energy-ledger-pilot-20260804.json",
+      "sha256": "34090778e6bd70229faf403c7826cafe4880e96f133f020d57124cbcc4522d6b"
+    }
+  },
+  "claim_boundary": "This contract locks already observed evidence and defines no new prospective physics threshold."
+}

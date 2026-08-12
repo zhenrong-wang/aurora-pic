@@ -50,6 +50,7 @@ python3 scripts/test_turner_density_blocks.py
 python3 scripts/test_prepare_turner_ensemble.py
 python3 scripts/test_attach_turner_ensemble_result.py
 python3 scripts/test_analyze_turner_ensemble.py
+PYTHONPATH=scripts python3 scripts/test_audit_turner_credibility.py
 python3 scripts/test_prepare_turner_sensitivity.py
 python3 scripts/test_spatial_average_1d.py build/aurorapic_cli
 python3 scripts/test_analyze_turner_spatial_structure.py
