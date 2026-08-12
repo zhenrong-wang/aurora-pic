@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "completed_grid_resolved_initialization_followup",
+  "predeclared_rule": {
+    "path": "benchmarks/ccp/edupic-argon-grid-resolved-initialization-rule-20260812.json",
+    "declaration_commit": "f2e02cf",
+    "sha256": "a58f3cbcac32d077a2bd5b057465c8172e9095bb648b346ea80d66a7fbebd3d9"
+  },
+  "workflow": {
+    "study_report_sha256": "59bafa22514f5c3c1837c191818154ee84ea58fb995a0819eb8a39c47fa9aa52",
+    "particle_state_sha256": "3bca20a722d4dc7783b12a8156bea9ed122bad6e3db36d54b227f288947999d3",
+    "particle_state_signature": 15451594479681555519,
+    "final_checkpoint_sha256": "1539b01d0a10cd31e9532edb211fb2ed59cb2a1d03b7a8b3ed22d2bd45be14b5",
+    "all_numerical_hard_gates_passed": true,
+    "maximum_cycle_wall_seconds": 46.38445981100085,
+    "maximum_peak_resident_set_kib": 180352,
+    "maximum_relative_energy_closure_residual": 1.992650364447071e-14,
+    "maximum_spatial_phase_residual_J_m-2": 4.573977915173222e-20,
+    "serial_low_priority_execution": true
+  },
+  "transformed_branch": {
+    "initial_total_particles": 94320,
+    "final_total_particles": 94417,
+    "normalized_total_population_slope_per_cycle": 0.0003592860064989433,
+    "ionization_pairs": 1190,
+    "electron_wall_losses": 1332,
+    "ion_wall_losses": 951,
+    "electron_source_loss_relative_imbalance": -0.119327731092437,
+    "ion_source_loss_relative_imbalance": 0.20084033613445373,
+    "initial_field_energy_J_m-2": 0.00004821323953062287,
+    "maximum_sampled_absolute_field_V_m": 74375.87667754773,
+    "final_cycle_maximum_sampled_absolute_field_V_m": 72639.6083125729,
+    "first_cycle": {
+      "ionization_pairs": 394,
+      "electron_wall_losses": 659,
+      "ion_wall_losses": 196,
+      "population_growth_factor": 0.9992896522476675
+    }
+  },
+  "comparison_to_64_bin_transform": {
+    "charge_node_relative_l2_error_before": 0.3690997288123295,
+    "charge_node_relative_l2_error_after": 0.06073585949634279,
+    "peak_field_before_V_m": 76160.77760213923,
+    "peak_field_after_V_m": 74375.87667754773,
+    "peak_field_reduction_fraction": 0.023435959831131892
+  },
+  "prospective_decision": {
+    "all_numerical_hard_gates": true,
+    "bounded_first_cycle_ionization": true,
+    "nonvanishing_first_cycle_electron_loss": true,
+    "bounded_first_cycle_population_growth": true,
+    "bounded_transient_field": false,
+    "observed_peak_field_V_m": 74375.87667754773,
+    "predeclared_peak_field_limit_V_m": 72330.0,
+    "admissible_for_density_diagnostic": false
+  },
+  "interpretation": {
+    "subcell_charge_error_material": true,
+    "prospective_followup_passed": false,
+    "numerical_instability_observed": false,
+    "reason": "Finer pairing reduced the charge-profile error sixfold and reduced the transient peak, demonstrating that sub-bin charge loss was material. The remaining peak exceeded the unchanged gate by 2.83 percent, while population and ionization remained bounded and the field relaxed close to the limit by cycle four.",
+    "consequence": "Do not relax the failed threshold. Replace charge-thinning with exact retention of the source state plus explicitly neutral pair augmentation so higher density cannot alter the source charge distribution at initialization."
+  },
+  "next_step": "Construct a constant-weight APS state that retains every source particle and adds approximately 63000 co-located electron-ion pairs. This targets the reference line densities while preserving source charge deposition exactly.",
+  "claim_boundary": "This result quantifies and reduces one initialization artifact but fails one prospective field gate. It does not establish equilibrium, validate AuroraPIC against eduPIC, or prove physical correctness.",
+  "physics_claim": "none_initialization_diagnostic_only"
+}
