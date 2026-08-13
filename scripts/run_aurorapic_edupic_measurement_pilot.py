@@ -21,13 +21,14 @@ from run_aurorapic_edupic_pilot import (
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_FRESH_AURORAPIC_MEASUREMENT_PILOT"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 APPROVED_RULES = {
-    "8b662fc493df3229fc123d034cd55c602628d0dcc1b2e447e119d1a6647a9387": 76,
-    "f8d4a05fc5fb359cc5808fb35d08d39af3392b8d5108a2474716ee57a2c845be": 112,
+    "8b662fc493df3229fc123d034cd55c602628d0dcc1b2e447e119d1a6647a9387":
+        (76, 240, MIN_AVAILABLE_MEMORY_KIB),
+    "f8d4a05fc5fb359cc5808fb35d08d39af3392b8d5108a2474716ee57a2c845be":
+        (112, 240, MIN_AVAILABLE_MEMORY_KIB),
+    "6da07382d4723853d976bcfb00d89c766b468d17e21502f8e885996628014986":
+        (20, 600, 256 * 1024),
 }
 MEASUREMENT_CYCLES = 4
-TIMEOUT_SECONDS = 240
-
-
 class MeasurementPilotError(RuntimeError):
     pass
 
@@ -72,7 +73,21 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     rule_hash = sha256(rule)
     if rule_hash not in APPROVED_RULES:
         raise MeasurementPilotError("measurement rule SHA-256 is not approved")
-    start_cycle = APPROVED_RULES[rule_hash]
+    start_cycle, timeout_seconds, minimum_available_memory_kib = (
+        APPROVED_RULES[rule_hash])
+    rule_data = json.loads(rule.read_text(encoding="utf-8"))
+    execution = rule_data.get("execution_contract", {})
+    if execution != {
+        "first_cycle": start_cycle + 1,
+        "last_cycle": start_cycle + MEASUREMENT_CYCLES,
+        "measurement_cycles": MEASUREMENT_CYCLES,
+        "serial": True,
+        "maximum_wall_seconds": timeout_seconds,
+        "minimum_available_memory_kib": minimum_available_memory_kib,
+        "maximum_absolute_field_V_m": MAX_ABSOLUTE_FIELD_V_M,
+        "maximum_relative_energy_residual": MAX_RELATIVE_ENERGY_RESIDUAL,
+    }:
+        raise MeasurementPilotError("measurement execution contract differs")
     executable = args.executable.resolve()
     base_path = args.base_deck.resolve()
     checkpoint = args.checkpoint.resolve()
@@ -87,7 +102,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         if sha256(path) != expected.lower():
             raise MeasurementPilotError(f"{name} SHA-256 differs")
     available = available_memory_kib()
-    if available < MIN_AVAILABLE_MEMORY_KIB:
+    if available < minimum_available_memory_kib:
         raise MeasurementPilotError("available memory is below the launch floor")
     work.mkdir(parents=True)
     output = work / "output"
@@ -97,7 +112,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     resources = run_process([
         str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT,
         str(deck_path),
-    ], work / "stdout.txt", work / "stderr.txt", TIMEOUT_SECONDS)
+    ], work / "stdout.txt", work / "stderr.txt", timeout_seconds)
     scripts = Path(__file__).resolve().parent
     energy = output / "energy-budget.json"
     spatial = output / "spatial-collision.json"
