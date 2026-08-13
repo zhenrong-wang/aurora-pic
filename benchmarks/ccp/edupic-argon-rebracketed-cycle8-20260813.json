@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "rebracketed_strict_equilibration_cycle8_evidence",
+  "rule_sha256": "f8300ee6440dbd539bcc8e4a252ada94e471cfa892ed1c4e769c62fc7a98a878",
+  "horizon_report_sha256": "6f846cca251409bf0312e5dc33f3a225427c255197dff42bc9c116bb7ef31976",
+  "block": {
+    "start_cycle": 4,
+    "end_cycle": 8,
+    "hard_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 189912,
+    "total_solver_wall_seconds": 425.3894291530014,
+    "final_checkpoint_sha256": "d18dd52d9fa7a5a690ce5ae019bcf9946baa3ddcd5345277caa68da03644f3ce"
+  },
+  "stationarity": {
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.00017870446606124747,
+    "population_efolding_time_cycles": 5595.831050228311,
+    "electron_source_loss_relative_imbalance": 0.07092198581560284,
+    "ion_source_loss_relative_imbalance": 0.005673758865248227,
+    "normalized_field_energy_slope_per_cycle": -0.0006463197802893817,
+    "normalized_peak_field_slope_per_cycle": -0.007246134631852935,
+    "normalized_ionization_slope_per_cycle": -0.003215130023640662,
+    "ionization_coefficient_of_variation": 0.009008302072462246,
+    "passing_gates": [
+      "total_population_slope",
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation",
+      "ion_source_loss_balance"
+    ],
+    "failing_gates": [
+      "electron_source_loss_balance"
+    ]
+  },
+  "interpretation": "The rebracketed state is near a fixed point: ion source-loss balance closes to 0.57%, population e-folding exceeds 5595 cycles, and every fluctuation/trend gate passes. Electron loss remains 7.09% below ionization and narrowly misses the frozen 5% gate.",
+  "continuation_decision": "Run one more frozen-rule four-cycle block to test whether electron balance closes and whether a first strict passing block is reproducible. No measurement is authorized.",
+  "comparison_measurement_eligible": false,
+  "claim_boundary": "This is an internal strict-equilibration screen. Six of seven gates passing is not equivalent to stationarity or cross-code validation."
+}
