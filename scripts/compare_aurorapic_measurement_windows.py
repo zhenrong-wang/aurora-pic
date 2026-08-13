@@ -77,12 +77,18 @@ def ion_impact_distribution(
             float(row["impact_energy_eV"]) + 0.5 * width,
             float(row["probability_density"]) * width)
            for row in selected]
-    if rebin_factor <= 0 or len(raw) % rebin_factor != 0:
+    return rebin_distribution(raw, rebin_factor)
+
+
+def rebin_distribution(
+    raw: list[tuple[float, float, float]], factor: int,
+) -> list[tuple[float, float, float]]:
+    if factor <= 0 or len(raw) % factor != 0:
         raise ValueError("IFED rebin factor does not divide the raw bins")
     return [(group[0][0], group[-1][1],
              math.fsum(item[2] for item in group))
-            for offset in range(0, len(raw), rebin_factor)
-            for group in [raw[offset:offset + rebin_factor]]]
+            for offset in range(0, len(raw), factor)
+            for group in [raw[offset:offset + factor]]]
 
 
 def ion_impact_counts(output: Path, side: str) -> list[int]:

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_coarse_ifed_repeatability_and_independent_cross_code_replication",
+  "rule_sha256": "5bd9eab0d3c79ba640c5ef83febacb43abbf008af16c335a2caadd03b3ac5a97",
+  "measurement_report_sha256": "8d96f51fa9b65e3cf848f5e74c2baa2bd2dfa4948c7819e01f61486365469eb9",
+  "repeatability_report_sha256": "a38a4a3d7df08beda34c89dc8424310dcdcd9c5db36dc24b8d3527aeb9008218",
+  "descriptive_cross_code_comparison_sha256": "4009863f0578b03dfd051b584291b4dc336052edc787b54e1c93b9ff3576487b",
+  "phase_space_comparison_sha256": "1ac435f66ed64d7f8cf8495b609877a0335ac855a96d0908f304b0158340832c",
+  "eedf_band_diagnostic_sha256": "45e64f86f2f83539c145f692ee0259244f00ec0cc6504cd17a44248136c40553",
+  "execution": {
+    "window_cycles": [29, 32],
+    "all_safety_and_diagnostic_gates_passed": true,
+    "wall_seconds": 420.0284486799792,
+    "peak_resident_set_kib": 185644,
+    "maximum_sampled_absolute_field_V_m": 66370.74165179841,
+    "wall_macro_impacts": 4060,
+    "wall_overflow_macro_impacts": 0
+  },
+  "prospective_repeatability": {
+    "all_gates_passed": true,
+    "passed_gate_count": 10,
+    "total_gate_count": 10,
+    "ifed_raw_bins": 200,
+    "ifed_acceptance_bins": 50,
+    "ifed_acceptance_bin_width_eV": 10.0,
+    "metrics": {
+      "electron_density_integral_relative_change": 0.000936704439879109,
+      "ion_density_integral_relative_change": 0.0007978645882850037,
+      "electron_energy_distribution_total_variation": 0.005289307754988462,
+      "electron_mean_energy_relative_change": 0.008251676067659804,
+      "electric_field_phase_space_relative_l2": 0.005666273312120491,
+      "electron_current_phase_space_relative_l2": 0.03493190429368836,
+      "average_ionization_rate_ratio": 0.9771428571428571,
+      "maximum_electrode_mean_ion_energy_relative_change": 0.04008994613021462,
+      "powered_ion_energy_distribution_total_variation": 0.04703543315244112,
+      "grounded_ion_energy_distribution_total_variation": 0.04922825470343056
+    }
+  },
+  "independent_cross_code_replication": {
+    "electron_density_profile_relative_l2": 0.10385514827735966,
+    "ion_density_profile_relative_l2": 0.1036097799349855,
+    "electron_density_integral_ratio": 1.1010241242987597,
+    "ion_density_integral_ratio": 1.0969961156951176,
+    "electron_energy_distribution_total_variation": 0.10295897705328524,
+    "electron_mean_energy_relative_difference": 0.17220311694148221,
+    "powered_ifed_total_variation_at_raw_resolution": 0.09464565445230105,
+    "grounded_ifed_total_variation_at_raw_resolution": 0.10490361712443239,
+    "electric_field_phase_space_relative_l2": 0.026415973230087902,
+    "electric_field_phase_space_correlation": 0.9997010993428098,
+    "electron_current_phase_space_relative_l2": 0.05087033184011255,
+    "electron_current_phase_space_correlation": 0.9991481822262505,
+    "electron_power_per_particle_ratio": 0.8146097368758904,
+    "average_ionization_rate_ratio": 0.961338816549283,
+    "effective_ionization_frequency_ratio": 0.8565770833177263,
+    "ionization_phase_space_relative_l2": 0.923805616635689,
+    "candidate_measured_to_eedf_predicted_ionization_frequency_ratio": 1.0223164210136608
+  },
+  "assessment": {
+    "candidate_adjacent_window_repeatability_established_at_declared_resolution": true,
+    "prior_200_bin_ifed_failure_overridden": false,
+    "cross_code_pattern_reproduced_in_independent_window": true,
+    "systematic_cross_code_discrepancy_remains": true,
+    "formal_cross_code_validation_claimed": false,
+    "next_target": "Prospectively test numerical convergence and localize the repeated electron-heating and phase-ionization discrepancy."
+  },
+  "claim_boundary": "The predeclared repeatability milestone covers adjacent windows at the stated diagnostic resolution. The eduPIC comparisons remain descriptive because cross-code tolerances were not declared prospectively and the locked eduPIC reference failed its effective-block criterion."
+}

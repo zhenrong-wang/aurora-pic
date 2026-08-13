@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Small regression tests for prospective window acceptance."""
 
-from compare_aurorapic_measurement_windows import evaluate
+from compare_aurorapic_measurement_windows import evaluate, rebin_distribution
 
 
 def main() -> None:
@@ -32,6 +32,10 @@ def main() -> None:
     assert all(evaluate(metrics, thresholds).values())
     metrics["average_ionization_rate_ratio"] = 1.2000001
     assert evaluate(metrics, thresholds)["average_ionization_rate"] is False
+    assert rebin_distribution([
+        (0.0, 1.0, 0.1), (1.0, 2.0, 0.2),
+        (2.0, 3.0, 0.3), (3.0, 4.0, 0.4),
+    ], 2) == [(0.0, 2.0, 0.30000000000000004), (2.0, 4.0, 0.7)]
 
 
 if __name__ == "__main__":
