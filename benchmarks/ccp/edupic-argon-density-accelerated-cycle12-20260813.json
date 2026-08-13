@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "density_accelerated_strict_equilibration_cycle12_evidence",
+  "rule_sha256": "41ec8075a076fea6de40ffed410605a8687547d6890a37b4690bfb8402aedf98",
+  "prior_cycle8_evidence_sha256": "ba9cbbb3b722cc6e7282b830baed8fcc1a58386c6f68203758fdb0b31109526f",
+  "horizon_report_sha256": "fc5fa02de97a51f2d26f049aaf01e322d8126be66308aaaa5a9c3b8d60315e99",
+  "block": {
+    "start_cycle": 8,
+    "end_cycle": 12,
+    "hard_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 185936,
+    "total_solver_wall_seconds": 301.23440823704004,
+    "final_checkpoint_sha256": "358ed93084e177ae8902aff26c3bf57532ad47d16746423121d766a2ed7ebabf"
+  },
+  "stationarity": {
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.0015678842806525026,
+    "population_efolding_time_cycles": 637.8021722265322,
+    "electron_source_loss_relative_imbalance": 0.234375,
+    "ion_source_loss_relative_imbalance": 0.22232142857142856,
+    "normalized_field_energy_slope_per_cycle": 0.002090423803354069,
+    "normalized_peak_field_slope_per_cycle": -0.003134794203545257,
+    "normalized_ionization_slope_per_cycle": 0.029642857142857144,
+    "ionization_coefficient_of_variation": 0.04309827995052561,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance",
+      "ionization_slope"
+    ]
+  },
+  "trend_vs_cycle8_block": {
+    "population_slope_change": -0.0001652476699287574,
+    "electron_imbalance_change": -0.02210058386411889,
+    "ion_imbalance_change": 0.00321314831665148,
+    "simple_blocks_to_population_gate": 3.4365645270358893,
+    "simple_blocks_to_electron_balance_gate": 8.342539777844491,
+    "forecast_warning": "Two blocks are insufficient for a reliable asymptotic forecast; these linear estimates are resource-triage indicators only. Ion imbalance did not improve."
+  },
+  "resource_decision": "Pause blind continuation. The population gate may be reachable inside the cycle-36 horizon, but observed source-loss trends do not support reaching both 5% balance gates. Use a new prospective density bracket from the safe cycle-12 state.",
+  "comparison_measurement_eligible": false,
+  "claim_boundary": "This is an internal strict-equilibration screen and resource decision, not equilibrium or cross-code validation."
+}
