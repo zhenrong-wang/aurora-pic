@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_warm_state_density_bracket",
+  "frozen_before_execution": true,
+  "purpose": "Adaptively bracket a higher warm-state density after the selected cycle-128 accelerator failed to approach strict electron and ion source-loss balance efficiently through cycle 12.",
+  "provenance": {
+    "source_cycle": 12,
+    "source_checkpoint_sha256": "358ed93084e177ae8902aff26c3bf57532ad47d16746423121d766a2ed7ebabf",
+    "source_export_manifest_sha256": "2b5e146e50bc7198b4ba7dee0c47a3887b3744ea4787842af172f7dcfd3ff48e",
+    "plus25_manifest_sha256": "9e822ce893ddc4e26a8e9ca1b9acfa15b684f419f60e1535250688d22ce027ec",
+    "plus50_manifest_sha256": "b4df5448f486e6cf1164db585cbf97ade9d656039bb0ae4badaab98e3a26732d",
+    "cycle12_horizon_report_sha256": "fc5fa02de97a51f2d26f049aaf01e322d8126be66308aaaa5a9c3b8d60315e99",
+    "cycle12_evidence_sha256": "43651ad37886da4a4b7e0a1c5f66905dbaa79310c93bfe52525cff236993d1a9",
+    "runner_git_commit": "52cb8b2d7b9b50b63cf9402c9125ecaf2efaa1e7",
+    "runner_sha256": "0995218408e190bb0019407635ef9c842a9905d1c1234630f071366423d11293"
+  },
+  "execution_contract": {
+    "solver_sha256": "f0344e9565bfe86a7dee05804a8ea92cb59de5ace114ab3cb7f70d005b2ff4ae",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "seed": 13507,
+    "cycles_per_branch": 4,
+    "steps_per_cycle": 4000,
+    "branch_order": [
+      "control",
+      "plus25",
+      "plus50"
+    ],
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "maximum_wall_seconds_per_cycle": 120,
+    "minimum_available_memory_kib": 262144
+  },
+  "branches": {
+    "control": {
+      "added_pairs": 0,
+      "density_multiplier_relative_to_cycle12_electrons": 1.0,
+      "electrons": 79899,
+      "ions": 85090,
+      "macro_weight": 700000000.0,
+      "particle_state_sha256": "966b2c55a30e581668ad085a1f0f9f6853fde587a56312eb1986927b06040f85",
+      "particle_state_signature": 443151606047325264
+    },
+    "plus25": {
+      "added_pairs": 19975,
+      "density_multiplier_relative_to_cycle12_electrons": 1.2500031289502997,
+      "electrons": 99874,
+      "ions": 105065,
+      "macro_weight": 700000000.0,
+      "particle_state_sha256": "b3aaa92ebc39d623ac7634d2ec5731eb43acbee9f204ddbd8b94b75be93ce191",
+      "particle_state_signature": 12649379854519524277
+    },
+    "plus50": {
+      "added_pairs": 39950,
+      "density_multiplier_relative_to_cycle12_electrons": 1.5000062579005995,
+      "electrons": 119849,
+      "ions": 125040,
+      "macro_weight": 700000000.0,
+      "particle_state_sha256": "5468e6d1841675b32b9229db0018f055514958afe3d04e2ee84d1bb52eed8fe7",
+      "particle_state_signature": 3747055525793149596
+    }
+  },
+  "historical_baseline": {
+    "cycle_window": [8, 12],
+    "normalized_total_population_slope_per_cycle": 0.0015678842806525026,
+    "electron_source_loss_relative_imbalance": 0.234375,
+    "ion_source_loss_relative_imbalance": 0.22232142857142856,
+    "cycle12_maximum_sampled_absolute_field_V_m": 62797.50452417099,
+    "interpretation": "Context only. Selection uses the APS-reinitialized control branch to isolate restart bias."
+  },
+  "decision_rule": {
+    "candidate_branches": [
+      "plus25",
+      "plus50"
+    ],
+    "prospective_safety_thresholds": {
+      "maximum_first_cycle_ionization_pairs": 1306,
+      "minimum_first_cycle_electron_wall_losses": 90,
+      "maximum_first_cycle_total_growth_factor": 1.02,
+      "maximum_sampled_absolute_field_V_m": 80000.0
+    },
+    "minimum_absolute_imbalance_improvement_vs_control": 0.05,
+    "require_absolute_population_slope_improvement_vs_control": true,
+    "parsimony_tolerance": 0.02,
+    "selection": "An augmented branch is eligible only if every safety gate passes, its maximum absolute electron/ion source-loss imbalance improves by at least 0.05 versus the reinitialized control, and its absolute population slope decreases. Select the smaller augmentation when its imbalance score is within 0.02 of the best eligible score; otherwise select the best score. No eligible branch means no density accelerator is selected."
+  },
+  "adaptive_design_note": "The 80 kV/m diagnostic ceiling is frozen for this new experiment before execution. It encloses the previously observed 75.9 kV/m reference-scale transient while remaining far below the unchanged 10 MV/m numerical hard gate; it does not retroactively alter the first bracket decision.",
+  "resource_policy": "Run branches and cycles serially, inherit one-CPU affinity and reduced process priority from the launcher, and never retry a failed branch with relaxed gates under this rule.",
+  "claim_boundary": "This adaptive short bracket can identify a safer higher-density initialization accelerator. It cannot establish kinetic equilibrium, validate AuroraPIC against eduPIC, or authorize comparison measurement."
+}
