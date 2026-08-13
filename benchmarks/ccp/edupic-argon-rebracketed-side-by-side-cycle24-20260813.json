@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "stationary_fresh_window_descriptive_side_by_side_comparison",
+  "candidate_measurement_report_sha256": "cdcda4685741833aad2806e4c7a44cab5565c0815b1bb3ba382a3ef3ce7722f3",
+  "comparison_report_sha256": "dace7c47857455c46a95cb01f2c0fb04f89c39b1ee284a3788d9f0f8d00c962f",
+  "prior_cycle80_comparison_sha256": "1dafc981ffd37ba535f488bf0111c5bb3bbb377861a2a31eca5a4666b62f723a",
+  "reference_hashes": {
+    "density.csv": "4c860617882a551c502934cf38bcf22a6432565f2a8da277a35de216868400a9",
+    "eepf.csv": "8ad8222107c7e61ea9d1a2d36b0550bcd69ded55dbf5fe0bcfd10810dfc56260",
+    "ifed.csv": "98c7f40ee0f0ab12038c51f2dafc0b9f9e17781c7264d5399018f86d88dd2b3e"
+  },
+  "density": {
+    "electrons": {
+      "candidate_to_reference_line_integrated_ratio": 1.102991497482544,
+      "profile_relative_l2": 0.11293371939235441,
+      "prior_cycle80_ratio": 0.3477221026172963,
+      "prior_cycle80_profile_relative_l2": 0.6468126112181652,
+      "profile_l2_reduction_fraction": 0.8253996328555463
+    },
+    "ions": {
+      "candidate_to_reference_line_integrated_ratio": 1.0985307842103373,
+      "profile_relative_l2": 0.11274059697298633,
+      "prior_cycle80_ratio": 0.37263054232227955,
+      "prior_cycle80_profile_relative_l2": 0.64103972277935,
+      "profile_l2_reduction_fraction": 0.8241285321849044
+    }
+  },
+  "electron_energy_distribution": {
+    "candidate_mean_energy_eV": 1.871743247319779,
+    "reference_mean_energy_eV": 1.5260211434273663,
+    "mean_energy_relative_difference": 0.1847059442514167,
+    "total_variation": 0.1121079573593768,
+    "prior_cycle80_total_variation": 0.22502873371288332,
+    "total_variation_reduction_fraction": 0.5018060337911486
+  },
+  "ion_impact_energy_distribution": {
+    "powered": {
+      "candidate_mean_energy_eV": 35.597725162488395,
+      "reference_mean_energy_eV": 33.48172774400442,
+      "mean_energy_relative_difference": 0.059441928067744634,
+      "total_variation": 0.07604825336583101,
+      "prior_cycle80_total_variation": 0.1662769046175373,
+      "total_variation_reduction_fraction": 0.5426409125142556
+    },
+    "grounded": {
+      "candidate_mean_energy_eV": 33.84179265658747,
+      "reference_mean_energy_eV": 33.331975680132985,
+      "mean_energy_relative_difference": 0.015064715443058816,
+      "total_variation": 0.10010854405710043,
+      "prior_cycle80_total_variation": 0.16802253966346153,
+      "total_variation_reduction_fraction": 0.4041957450612787
+    }
+  },
+  "assessment": {
+    "scientifically_meaningful_improvement": true,
+    "cross_code_acceptance_thresholds_declared": false,
+    "cross_code_agreement_claimed": false,
+    "remaining_primary_discrepancies": [
+      "candidate electron and ion line-integrated densities are approximately 10% above reference",
+      "candidate mean electron energy is 18.5% above reference",
+      "grounded ion-energy distribution total variation remains 0.100"
+    ]
+  },
+  "reference_sampling_boundary": "The 1024-cycle eduPIC reference passed density drift and shape gates but failed its predeclared minimum effective-block gate.",
+  "claim_boundary": "The stationary candidate shows large, broad improvements over the cycle-80 transient comparison. Formal cross-code validation remains withheld because no acceptance thresholds were prospectively declared and the reference effective-block criterion failed."
+}
