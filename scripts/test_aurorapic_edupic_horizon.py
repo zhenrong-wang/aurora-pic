@@ -13,6 +13,7 @@ from extend_aurorapic_edupic_horizon import (
     PRODUCTION_WALL_IMPACT_ORIGIN_CYCLE,
     authorized_end_cycle,
     endpoint,
+    execution_limits,
     report_end_cycle,
     solver_command,
     stationarity,
@@ -44,6 +45,10 @@ def main() -> int:
     strict_rule = repository / (
         "benchmarks/ccp/"
         "edupic-argon-aurorapic-strict-equilibration-rule-20260811.json"
+    )
+    density_rule = repository / (
+        "benchmarks/ccp/"
+        "edupic-argon-density-accelerated-equilibration-rule-20260813.json"
     )
     extension_args = Namespace(
         extension_rule=rule,
@@ -94,6 +99,22 @@ def main() -> int:
         authorized_end_cycle(extension_args) == 112,
         "approved strict source-loss extension was not authorized",
     )
+    extension_args.extension_rule = density_rule
+    extension_args.start_cycle = 4
+    extension_args.expected_prior_report_sha256 = (
+        "a2041488afaa3ca0a5f75eab3822a5ff03bfb87bb680588f6bdf165ace7781b9"
+    )
+    extension_args.expected_input_checkpoint_sha256 = (
+        "cc2e22966db54c664542687cf8c5c42ba857a8d43c77c281dc57e115565e6b34"
+    )
+    require(
+        authorized_end_cycle(extension_args) == 36,
+        "approved density-accelerated strict extension was not authorized",
+    )
+    require(
+        execution_limits(density_rule) == (120, 256 * 1024),
+        "density-accelerated execution limits drifted",
+    )
     require(
         solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
             "aurorapic_cli", "--allow-large-run",
@@ -107,7 +128,11 @@ def main() -> int:
         }) == 4
         and report_end_cycle({
             "block": {"end_cycle": 8, "hard_safety_gates_passed": True}
-        }) == 8,
+        }) == 8
+        and report_end_cycle({
+            "safety_decision": {"passes": True},
+            "stages": [{"passes": True, "end_step": 16000}],
+        }) == 4,
         "safe report chaining lost a pilot or horizon report",
     )
     try:

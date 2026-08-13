@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_aurorapic_edupic_density_accelerated_strict_equilibration",
+  "baseline": {
+    "cycle": 4,
+    "density_bracket_result_sha256": "250dcd159c5c5fa93727a2f4826676687aaf882e79027869c9f5ce2b5b7044f8",
+    "horizon_report_sha256": "a2041488afaa3ca0a5f75eab3822a5ff03bfb87bb680588f6bdf165ace7781b9",
+    "checkpoint_sha256": "cc2e22966db54c664542687cf8c5c42ba857a8d43c77c281dc57e115565e6b34",
+    "selected_branch": "plus50",
+    "source_loss_stationary": false
+  },
+  "execution_contract": {
+    "first_cycle": 5,
+    "maximum_cycle": 36,
+    "cycles_per_block": 4,
+    "maximum_blocks_per_invocation": 1,
+    "serial": true,
+    "maximum_wall_seconds_per_cycle": 120,
+    "minimum_available_memory_kib": 262144,
+    "maximum_particle_growth_factor_per_cycle": 4.0,
+    "maximum_total_particle_cap_fraction": 0.25,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "maximum_spatial_phase_residual_J_m-2": 1e-15
+  },
+  "stationarity_contract": {
+    "window_cycles": 5,
+    "maximum_absolute_normalized_total_population_slope_per_cycle": 0.001,
+    "minimum_population_efolding_time_cycles": 1000.0,
+    "maximum_electron_source_loss_relative_imbalance": 0.05,
+    "maximum_ion_source_loss_relative_imbalance": 0.05,
+    "maximum_absolute_normalized_field_energy_slope_per_cycle": 0.01,
+    "maximum_absolute_normalized_peak_field_slope_per_cycle": 0.01,
+    "maximum_absolute_normalized_ionization_slope_per_cycle": 0.02,
+    "maximum_ionization_coefficient_of_variation": 0.05,
+    "consecutive_passing_blocks_required_before_measurement": 2
+  },
+  "diagnostic_contract": {
+    "wall_impact_spectrum_enabled": false,
+    "equilibration_outputs_are_not_comparison_measurements": true,
+    "future_production_measurement_must_start_with_a_fresh_window": true
+  },
+  "stopping_policy": {
+    "stop_when_two_consecutive_blocks_pass": true,
+    "stop_at_maximum_cycle_if_not_stationary": true,
+    "stop_on_any_hard_safety_failure": true,
+    "do_not_relax_thresholds_after_observing_results": true
+  },
+  "resource_policy": "Run exactly one four-cycle block per invocation, serially on one inherited CPU with reduced child priority. The larger wall bound reflects measured dense-state runtime and does not change any physical or numerical gate.",
+  "claim_boundary": "Passing two consecutive strict blocks authorizes a fresh comparison-measurement campaign but is not itself agreement with eduPIC or validation of AuroraPIC.",
+  "physics_claim": "none_predeclared_density_accelerated_strict_equilibration_only"
+}
