@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "rebracketed_fresh_measurement_cycle24_evidence",
+  "rule_sha256": "6da07382d4723853d976bcfb00d89c766b468d17e21502f8e885996628014986",
+  "measurement_report_sha256": "cdcda4685741833aad2806e4c7a44cab5565c0815b1bb3ba382a3ef3ce7722f3",
+  "inputs": {
+    "binary_sha256": "7333bdaa460971ed274c7985c73e2fcc788b8864b4968c69357a5700d0df3744",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "checkpoint_sha256": "9e6bc1ef864735ac9123a77da494f289279a1fad8465ca15370c91a9f0f2648b"
+  },
+  "window": {
+    "start_cycle": 20,
+    "end_cycle": 24,
+    "measurement_cycles": 4,
+    "equilibration_statistics_excluded": true
+  },
+  "execution": {
+    "all_gates_passed": true,
+    "wall_seconds": 415.77048357299645,
+    "peak_resident_set_kib": 185868,
+    "maximum_sampled_absolute_field_V_m": 66221.39015026289
+  },
+  "diagnostics": {
+    "energy_analysis_sha256": "0dfd439d80b0602fad1a5df4b0736e5b95653698e38541fb83a92dbd2625d316",
+    "spatial_analysis_sha256": "0d58c7ddcc3bc250d5c741f9a89327cb79f3726cf13eb5eb86191faaffaa09bf",
+    "phase_eedf_analysis_sha256": "6ba126bdf1c0856b4187464231dc52d0286bf2b7fee146a0f5746c915e639b3a",
+    "wall_impact_spectrum_sha256": "72aeb23e19436653e09b538ef37f1c2d5a273765ed9b523e5511e5ab2593beaa",
+    "wall_impact_summary_sha256": "6e1374d0e7cdb4e8c37c9633d48a17852a2d802954bdb57fa85914e70d54fc6e",
+    "wall_impact_macro_count": 3990,
+    "wall_impact_overflow_macro_count": 0,
+    "maximum_absolute_wall_energy_closure_residual_J_m-2": 1.9481757786848908e-20
+  },
+  "decision": {
+    "descriptive_side_by_side_comparison_authorized": true,
+    "cross_code_agreement_established": false
+  },
+  "claim_boundary": "This is the first fresh AuroraPIC measurement after two consecutive strict stationary blocks. It authorizes descriptive comparison but does not predetermine agreement with eduPIC."
+}
