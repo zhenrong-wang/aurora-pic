@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "stationary_explicit_pic_resolution_adequacy_screen",
+  "measurement_evidence_path": "benchmarks/ccp/edupic-argon-rebracketed-coarse-ifed-cycle32-20260813.json",
+  "measurement_evidence_sha256": "ea2a1ea5ec62a93eb5d4e5d8ddbc2ce7e4f261fb2341d4dc47c0235f6a8d49e3",
+  "resolution_audit_sha256": "a50f9b3eb0abdfe76f41a53bd8832f15e4bd239c94af7079ca95ec323dc5f7aa",
+  "analyzer_sha256": "4fed7b823d9bbea3843a3297a77905ccf4764d58eb0cf7a9320e2111a3e97d10",
+  "all_engineering_gates_passed": true,
+  "metrics": {
+    "cell_width_m": 0.00006265664160401002,
+    "minimum_populated_electron_debye_length_m": 0.00008318315194841447,
+    "cell_width_to_debye_length": 0.7532371656566484,
+    "maximum_omega_pe_dt": 0.09621966222536353,
+    "rf_steps_per_cycle": 4000.0,
+    "mean_electron_macro_particles_per_cell": 299.4596895966625,
+    "mean_ion_macro_particles_per_cell": 313.2510935724404,
+    "maximum_electron_null_collision_number": 0.018436578171091445,
+    "maximum_ion_null_collision_number": 0.03687315634218289
+  },
+  "engineering_thresholds": {
+    "maximum_cell_width_to_debye_length": 1.0,
+    "maximum_omega_pe_dt": 0.2,
+    "minimum_rf_steps_per_cycle": 1000.0,
+    "minimum_mean_macro_particles_per_cell_per_species": 100.0,
+    "maximum_null_collision_number": 0.1
+  },
+  "assessment": {
+    "obvious_spatial_under_resolution_detected": false,
+    "obvious_temporal_under_resolution_detected": false,
+    "obvious_particle_count_under_resolution_detected": false,
+    "obvious_null_collision_bound_under_resolution_detected": false,
+    "numerical_convergence_proved": false,
+    "next_required_evidence": "paired mesh, timestep, and particle-count refinements from a common stationary particle state"
+  },
+  "claim_boundary": "This deterministic screen passes conservative project engineering criteria. It is necessary but not sufficient numerical evidence and does not replace a refinement study."
+}
