@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_common_state_timestep_refinement",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "particle_state_manifest_sha256": "b4065aa11529983ba743b83400e2721a7bcdad8a504754f8b52f2399c9c50ab0",
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "rf_phase_at_reinitialization": 0.0,
+    "known_reset_boundary": "The portable state excludes fields, half-step velocities, RNG state, and diagnostic history; both arms reconstruct these identically before paired equilibration."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "7333bdaa460971ed274c7985c73e2fcc788b8864b4968c69357a5700d0df3744",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "length_m": 0.025,
+    "seed": 13507,
+    "macro_weight": 700000000.0,
+    "electron_gas_dataset": "edupic.1.0.default-argon.electron",
+    "ion_gas_dataset": "edupic.1.0.default-argon.ion"
+  },
+  "branches": {
+    "baseline_dt": {
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    },
+    "half_dt": {
+      "timestep_s": 9.218289085545723e-12,
+      "steps_per_rf_cycle": 8000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 720,
+      "measurement_timeout_seconds": 1440
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "stop_after_each_branch": true,
+    "run_baseline_before_half_dt": true
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 16,
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0,
+    "ifed_comparison_rebin_factor": 4
+  },
+  "prospective_acceptance": {
+    "maximum_electron_density_integral_relative_change": 0.03,
+    "maximum_ion_density_integral_relative_change": 0.03,
+    "maximum_electron_energy_distribution_total_variation": 0.04,
+    "maximum_electron_mean_energy_relative_change": 0.05,
+    "maximum_electric_field_phase_space_relative_l2": 0.03,
+    "maximum_electron_current_phase_space_relative_l2": 0.08,
+    "allowed_average_ionization_rate_ratio": [0.90, 1.10],
+    "maximum_powered_ion_energy_distribution_total_variation": 0.08,
+    "maximum_grounded_ion_energy_distribution_total_variation": 0.08,
+    "maximum_electrode_mean_ion_energy_relative_change": 0.10,
+    "maximum_electron_power_per_particle_relative_change": 0.08,
+    "maximum_ionization_frequency_relative_change": 0.10,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "Ordinary timestep and MCC-splitting error at this 2:1 refinement is not a material explanation of the stationary discrepancy.",
+    "fail": "At least one observable is timestep-sensitive at the declared tolerance; further temporal refinement is required before interpreting the cross-code discrepancy.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Each stage runs on one inherited CPU at nice +10. Baseline and refined branches run sequentially, never concurrently.",
+  "physics_claim": "paired_numerical_sensitivity_evidence_only"
+}
