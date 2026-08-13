@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "recorded_prospective_cycle12_density_bracket",
+  "rule_sha256": "17e4d03ba3f0afe28422b1d02e2f9c58a54eef683e5c84628213eb65a2d32877",
+  "study_report_sha256": "94b344f25ef7de903dfeeb20c113b8f49298b2d44769d832f882cfde191cd5c5",
+  "execution": {
+    "branches": 3,
+    "cycles_per_branch": 4,
+    "serial": true,
+    "cpu_affinity": "0",
+    "nice": 10,
+    "all_numerical_hard_gates_passed": true,
+    "all_prospective_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 195656,
+    "total_solver_wall_seconds": 1108.16211362998
+  },
+  "branches": {
+    "control": {
+      "normalized_total_population_slope_per_cycle": 0.0012924567196263604,
+      "electron_source_loss_relative_imbalance": 0.1970466082141209,
+      "ion_source_loss_relative_imbalance": 0.1905860636825104,
+      "maximum_absolute_source_loss_imbalance": 0.1970466082141209,
+      "maximum_sampled_absolute_field_V_m": 62654.29149769043,
+      "final_checkpoint_sha256": "e420b69fd8bd2ce5f0aeaa0868f1cbd57d3455b04439e43856dcc6fcba866972"
+    },
+    "plus25": {
+      "normalized_total_population_slope_per_cycle": 0.0006806751595956682,
+      "electron_source_loss_relative_imbalance": 0.08750000000000002,
+      "ion_source_loss_relative_imbalance": 0.16465517241379313,
+      "maximum_absolute_source_loss_imbalance": 0.16465517241379313,
+      "maximum_sampled_absolute_field_V_m": 66967.1763872035,
+      "absolute_imbalance_improvement_vs_control": 0.03239143580032777,
+      "absolute_population_slope_improvement_vs_control": 0.0006117815600306922,
+      "eligible": false,
+      "final_checkpoint_sha256": "5d06642e3248d87a761a42827bdcfb3985ff67e1159884bc8899932867db1abf"
+    },
+    "plus50": {
+      "normalized_total_population_slope_per_cycle": 0.00014495605993912662,
+      "electron_source_loss_relative_imbalance": -0.0696283639470312,
+      "ion_source_loss_relative_imbalance": 0.12430585219991452,
+      "maximum_absolute_source_loss_imbalance": 0.12430585219991452,
+      "maximum_sampled_absolute_field_V_m": 71039.95271067084,
+      "normalized_field_energy_slope_per_cycle": 0.008728075033098921,
+      "normalized_ionization_slope_per_cycle": -0.04801366937206322,
+      "ionization_coefficient_of_variation": 0.08314205761422203,
+      "absolute_imbalance_improvement_vs_control": 0.07274075601420638,
+      "absolute_population_slope_improvement_vs_control": 0.0011475006596872337,
+      "eligible": true,
+      "final_checkpoint_sha256": "7d31dfafc4a368bbfcad4c8ef6768805ac0a881a8674e7694fd608f1d9c45b3d"
+    }
+  },
+  "prospective_decision": {
+    "density_acceleration_supported": true,
+    "selected_branch": "plus50",
+    "reason": "Only plus50 passed the frozen minimum 0.05 reduction in worst source-loss imbalance while reducing absolute population drift and passing every safety gate."
+  },
+  "physical_interpretation": "The selected density nearly arrests net population drift and brackets electron balance, with electron loss now 6.96% above ionization. Ion loss remains 12.43% below ionization, consistent with a slower ion response. Ionization trend and variation are not yet stationary.",
+  "strict_gate_preview": {
+    "population_slope": true,
+    "field_energy_slope": true,
+    "peak_field_slope": true,
+    "electron_source_loss_balance": false,
+    "ion_source_loss_balance": false,
+    "ionization_slope": false,
+    "ionization_variation": false
+  },
+  "equilibrium_established": false,
+  "comparison_measurement_eligible": false,
+  "claim_boundary": "This is prospective evidence for a higher-density initialization accelerator. The selected checkpoint must pass two consecutive strict stationarity blocks before a fresh side-by-side measurement is authorized."
+}
