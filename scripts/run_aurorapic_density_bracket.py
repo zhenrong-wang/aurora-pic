@@ -145,7 +145,11 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     execution = rule["execution_contract"]
     branch_contracts = rule["branches"]
-    if (rule.get("scope") != "predeclared_cycle128_density_bracket" or
+    accepted_scopes = {
+        "predeclared_cycle128_density_bracket",
+        "predeclared_warm_state_density_bracket",
+    }
+    if (rule.get("scope") not in accepted_scopes or
             execution["cycles_per_branch"] != 4 or
             execution["steps_per_cycle"] != STEPS_PER_CYCLE or
             execution["branch_order"] != list(branch_contracts) or
@@ -237,7 +241,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     report = {
         "schema_version": 1,
         "case_id": rule["case_id"],
-        "scope": "completed_cycle128_density_bracket",
+        "scope": ("completed_cycle128_density_bracket"
+                  if rule["scope"] == "predeclared_cycle128_density_bracket"
+                  else "completed_warm_state_density_bracket"),
         "physics_claim": "none_initialization_diagnostic_only",
         "rule_sha256": sha256(rule_path),
         "inputs": {
