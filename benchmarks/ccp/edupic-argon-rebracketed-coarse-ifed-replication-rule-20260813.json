@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_aurorapic_stationary_coarse_ifed_replication",
+  "baseline": {
+    "cycle": 28,
+    "measurement_evidence_path": "benchmarks/ccp/edupic-argon-rebracketed-replication-cycle28-20260813.json",
+    "measurement_evidence_sha256": "748346cb965f268892282af0ebbf2785148eb43a32e41908714a8a82cba1a22d",
+    "measurement_report_sha256": "169d8e5cb0748d65e209dacdc21f9b278177fce3c882fbab033a0eae7017f95f",
+    "checkpoint_sha256": "0c1d41b763872e4e85b27a2dd622a38be5765f2a04e40498f4f1465d0fe66f80",
+    "prior_fine_ifed_result_passed": false
+  },
+  "execution_contract": {
+    "first_cycle": 29,
+    "last_cycle": 32,
+    "measurement_cycles": 4,
+    "serial": true,
+    "maximum_wall_seconds": 600,
+    "minimum_available_memory_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_window_contract": {
+    "spatial_average_origin_cycle": 28,
+    "wall_impact_origin_cycle": 28,
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 16,
+    "phase_eedf_species": "electrons",
+    "phase_eedf_regions": ["full_gap:0:0.025"],
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_raw_bin_width_eV": 2.5,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "prospective_replication_acceptance": {
+    "reference_window_cycles": [25, 28],
+    "replication_window_cycles": [29, 32],
+    "ifed_rebin_factor": 4,
+    "ifed_acceptance_energy_bins": 50,
+    "ifed_acceptance_bin_width_eV": 10.0,
+    "maximum_electron_density_integral_relative_change": 0.05,
+    "maximum_ion_density_integral_relative_change": 0.05,
+    "maximum_electron_energy_distribution_total_variation": 0.05,
+    "maximum_electron_mean_energy_relative_change": 0.10,
+    "maximum_powered_ion_energy_distribution_total_variation": 0.08,
+    "maximum_grounded_ion_energy_distribution_total_variation": 0.08,
+    "maximum_electrode_mean_ion_energy_relative_change": 0.10,
+    "maximum_electric_field_phase_space_relative_l2": 0.05,
+    "maximum_electron_current_phase_space_relative_l2": 0.10,
+    "allowed_average_ionization_rate_ratio": [0.80, 1.20],
+    "all_gates_required": true
+  },
+  "stopping_policy": {
+    "stop_after_replication_window": true,
+    "stop_on_any_safety_or_diagnostic_contract_failure": true,
+    "do_not_tune_model_parameters_from_replication_result": true,
+    "do_not_change_raw_diagnostic_resolution": true,
+    "do_not_infer_physical_validation_from_replication_alone": true
+  },
+  "rationale": "Approximately 1000 ion impacts per electrode over 200 raw bins produced a sampling-null mean TV near 0.11. Four adjacent raw bins are summed prospectively for a 50-bin broad-shape gate while all 200-bin raw evidence is retained.",
+  "resource_policy": "Run the four-cycle replication serially on one inherited CPU at reduced child priority. The launch floor is 256 MiB available memory and the hard wall-time limit is 600 seconds.",
+  "physics_claim": "none_predeclared_candidate_repeatability_test_only"
+}

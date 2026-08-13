@@ -16,8 +16,10 @@ from compare_aurorapic_edupic_measurement_pilot import (
 from run_aurorapic_edupic_pilot import atomic_json, sha256
 
 
-APPROVED_RULE_SHA256 = (
-    "f9a5e33683986432f3c2050515ad6e7de02316b14dd35c14d3e6a05694e5a216")
+APPROVED_RULE_SHA256 = {
+    "f9a5e33683986432f3c2050515ad6e7de02316b14dd35c14d3e6a05694e5a216",
+    "5bd9eab0d3c79ba640c5ef83febacb43abbf008af16c335a2caadd03b3ac5a97",
+}
 ELEMENTARY_CHARGE_C = 1.60217662e-19
 
 
@@ -63,7 +65,7 @@ def eedf(output: Path) -> list[tuple[float, float, float]]:
 
 
 def ion_impact_distribution(
-    output: Path, side: str,
+    output: Path, side: str, rebin_factor: int = 1,
 ) -> list[tuple[float, float, float]]:
     selected = [row for row in rows(output / "wall_impact_spectrum.csv")
                 if row["species"] == "ions" and row["electrode"] == side]
@@ -71,10 +73,16 @@ def ion_impact_distribution(
         raise ValueError(f"incomplete ion impact distribution at {side}")
     width = (float(selected[1]["impact_energy_eV"]) -
              float(selected[0]["impact_energy_eV"]))
-    return [(float(row["impact_energy_eV"]) - 0.5 * width,
-             float(row["impact_energy_eV"]) + 0.5 * width,
-             float(row["probability_density"]) * width)
-            for row in selected]
+    raw = [(float(row["impact_energy_eV"]) - 0.5 * width,
+            float(row["impact_energy_eV"]) + 0.5 * width,
+            float(row["probability_density"]) * width)
+           for row in selected]
+    if rebin_factor <= 0 or len(raw) % rebin_factor != 0:
+        raise ValueError("IFED rebin factor does not divide the raw bins")
+    return [(group[0][0], group[-1][1],
+             math.fsum(item[2] for item in group))
+            for offset in range(0, len(raw), rebin_factor)
+            for group in [raw[offset:offset + rebin_factor]]]
 
 
 def ion_impact_counts(output: Path, side: str) -> list[int]:
@@ -176,12 +184,14 @@ def evaluate(metrics: dict[str, float], thresholds: dict[str, object]) -> dict[s
 
 
 def analyze(baseline: Path, replication: Path, rule_path: Path) -> dict[str, object]:
-    if sha256(rule_path) != APPROVED_RULE_SHA256:
+    rule_hash = sha256(rule_path)
+    if rule_hash not in APPROVED_RULE_SHA256:
         raise ValueError("replication rule is not the prospectively approved rule")
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     baseline_report_path, baseline_report = passing_report(baseline)
     replication_report_path, replication_report = passing_report(replication)
     expected_windows = rule["prospective_replication_acceptance"]
+    rebin_factor = int(expected_windows.get("ifed_rebin_factor", 1))
     if ([baseline_report["window"]["start_cycle"] + 1,
          baseline_report["window"]["end_cycle"]] !=
             expected_windows["reference_window_cycles"] or
@@ -206,8 +216,8 @@ def analyze(baseline: Path, replication: Path, rule_path: Path) -> dict[str, obj
     impact_sampling = {}
     for side, electrode, seed in (("left", "powered", 20260813),
                                   ("right", "grounded", 20260814)):
-        first_ifed = ion_impact_distribution(baseline, side)
-        second_ifed = ion_impact_distribution(replication, side)
+        first_ifed = ion_impact_distribution(baseline, side, rebin_factor)
+        second_ifed = ion_impact_distribution(replication, side, rebin_factor)
         metrics[f"{electrode}_ion_energy_distribution_total_variation"] = (
             total_variation(second_ifed, first_ifed))
         ion_mean_changes.append(relative_difference(
@@ -239,7 +249,7 @@ def analyze(baseline: Path, replication: Path, rule_path: Path) -> dict[str, obj
         "schema_version": 1,
         "case_id": "edupic-1.0-default-argon-ccp",
         "scope": "prospective_stationary_measurement_repeatability",
-        "rule_sha256": APPROVED_RULE_SHA256,
+        "rule_sha256": rule_hash,
         "baseline_measurement_report_sha256": sha256(baseline_report_path),
         "replication_measurement_report_sha256": sha256(replication_report_path),
         "metrics": metrics,

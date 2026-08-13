@@ -29,6 +29,8 @@ APPROVED_RULES = {
         (20, 600, 256 * 1024),
     "f9a5e33683986432f3c2050515ad6e7de02316b14dd35c14d3e6a05694e5a216":
         (24, 600, 256 * 1024),
+    "5bd9eab0d3c79ba640c5ef83febacb43abbf008af16c335a2caadd03b3ac5a97":
+        (28, 600, 256 * 1024),
 }
 MEASUREMENT_CYCLES = 4
 class MeasurementPilotError(RuntimeError):
