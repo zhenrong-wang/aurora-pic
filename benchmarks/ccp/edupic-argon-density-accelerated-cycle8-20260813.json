@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "density_accelerated_strict_equilibration_cycle8_evidence",
+  "rule_sha256": "41ec8075a076fea6de40ffed410605a8687547d6890a37b4690bfb8402aedf98",
+  "horizon_report_sha256": "a810b17a621542429ccb39b58efa741081805bb81a17b474d65a873a02906e0d",
+  "block": {
+    "start_cycle": 4,
+    "end_cycle": 8,
+    "hard_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 185940,
+    "total_solver_wall_seconds": 294.3299546370108,
+    "final_checkpoint_sha256": "d6ddcdd560c365b7c5bd2e5f93a9040bbf2895fb4c357242bfe64acd36ab2b7f"
+  },
+  "stationarity": {
+    "passed": false,
+    "consecutive_passing_blocks": 0,
+    "normalized_total_population_slope_per_cycle": 0.00173313195058126,
+    "population_efolding_time_cycles": 576.9901129943504,
+    "electron_source_loss_relative_imbalance": 0.2564755838641189,
+    "ion_source_loss_relative_imbalance": 0.21910828025477708,
+    "normalized_field_energy_slope_per_cycle": 0.00057183856105108,
+    "normalized_peak_field_slope_per_cycle": -0.007012767607350264,
+    "normalized_ionization_slope_per_cycle": -0.005605095541401274,
+    "ionization_coefficient_of_variation": 0.02289452325555596,
+    "passing_gates": [
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation"
+    ],
+    "failing_gates": [
+      "total_population_slope",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance"
+    ]
+  },
+  "trend_context": {
+    "population_slope_change_vs_selected_bracket_fraction": -0.1734688938874859,
+    "electron_imbalance_change_vs_selected_bracket": 0.07388299127152626,
+    "ion_imbalance_change_vs_selected_bracket": -0.08829912715263038,
+    "interpretation": "Population drift and ion balance improve, while electron balance is not monotonic. The state remains a transient redistribution and requires another frozen-rule block."
+  },
+  "comparison_measurement_eligible": false,
+  "claim_boundary": "This is an internal strict-equilibration screen. It neither establishes equilibrium nor demonstrates agreement with eduPIC."
+}
