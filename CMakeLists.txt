@@ -112,6 +112,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_edupic_eedf_discrepancy.py
   scripts/analyze_pic_resolution.py
   scripts/compare_aurorapic_measurement_windows.py
+  scripts/run_aurorapic_timestep_refinement.py
   scripts/export_phase_eedf.py
   scripts/compare_phase_eedf.py
   scripts/run_edupic_stage.py
