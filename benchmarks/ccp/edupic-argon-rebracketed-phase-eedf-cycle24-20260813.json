@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "stationary_fresh_window_phase_space_and_eedf_diagnosis",
+  "candidate_measurement_report_sha256": "cdcda4685741833aad2806e4c7a44cab5565c0815b1bb3ba382a3ef3ce7722f3",
+  "phase_space_comparison_sha256": "ccbd22f9740d12d40c55fc4579c457c560dcdc1bfcc6fafecb936d36e0567f3b",
+  "eedf_band_diagnostic_sha256": "6ccb0d8b46330c841319f2bc9ba59c39b881a011bd5b8c8dbee92e24bca0ce2d",
+  "phase_space": {
+    "electric_field_relative_l2": 0.02569286643172021,
+    "electric_field_pearson_correlation": 0.9997119815506914,
+    "electron_current_density_relative_l2": 0.046193491011513134,
+    "electron_current_density_pearson_correlation": 0.9991868626353394,
+    "electron_density_relative_l2": 0.13350136780412325,
+    "electron_density_pearson_correlation": 0.9989053664682737,
+    "electron_mean_energy_relative_l2": 0.20485754773927642,
+    "electron_mean_energy_cycle_average_profile_relative_l2": 0.07581511227061187,
+    "electron_ohmic_power_density_relative_l2": 0.18178256668116893,
+    "ion_density_relative_l2": 0.1332132234635164,
+    "ion_mean_energy_relative_l2": 0.08887869302289719,
+    "ion_ohmic_power_density_relative_l2": 0.11459433446278412,
+    "ionization_rate_relative_l2": 0.9236180399244301,
+    "ionization_rate_pearson_correlation": 0.6260090938493273
+  },
+  "derived_diagnostics": {
+    "candidate_to_reference_electron_power_per_particle_ratio": 0.8304854752563867,
+    "candidate_to_reference_ion_power_per_particle_ratio": 0.9333355476733394,
+    "candidate_to_reference_average_ionization_rate_ratio": 0.9822930384942703,
+    "candidate_to_reference_effective_ionization_frequency_ratio": 0.8736873741620638,
+    "measured_to_eedf_predicted_candidate_ionization_frequency_ratio": 1.0020294601005058
+  },
+  "eedf_energy_band_localization": {
+    "candidate_mean_energy_eV": 1.871743247319779,
+    "reference_mean_energy_eV": 1.5260211434273665,
+    "mean_energy_excess_eV": 0.34572210389241254,
+    "dominant_absolute_excess_band_eV": [2.0, 5.0],
+    "sub_ionization_threshold_excess_fraction": 0.9706383084138417
+  },
+  "collision_semantics_audit": {
+    "aurorapic_collision_source_sha256": "6a41a2ecf468847e384c4dc8915a58c76a0993c21f5f9b4adc6ccf356922e750",
+    "edupic_source_sha256": "a850889bbc3c5917505eb31752cde607b7550c8212f7df01fa739b70d1a6a79f",
+    "electron_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "ion_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+    "matched_features": [
+      "isotropic electron elastic and excitation scattering",
+      "finite-mass center-of-mass electron transforms",
+      "11.5 eV excitation and 15.8 eV ionization losses",
+      "Opal-Beaty-Peterson ionization energy sharing with 10 eV scale",
+      "correlated primary and secondary ionization angles",
+      "center-of-mass isotropic and backward ion-neutral scattering"
+    ],
+    "implementation_defect_found": false
+  },
+  "assessment": {
+    "field_and_electron_current_agreement_is_strong": true,
+    "candidate_internal_ionization_ledger_closes": true,
+    "dominant_mean_energy_discrepancy_is_in_bulk_electrons": true,
+    "cross_code_acceptance_thresholds_declared": false,
+    "cross_code_agreement_claimed": false,
+    "remaining_primary_discrepancies": [
+      "electron and ion density amplitudes are approximately 12 percent above the phase-space reference averages",
+      "electron power per particle is approximately 17 percent below the reference",
+      "ionization per electron is approximately 13 percent below the reference",
+      "phase-resolved ionization structure remains substantially different"
+    ]
+  },
+  "claim_boundary": "This post-measurement diagnosis strengthens localization but does not establish predictive validation. It found no collision-kinematics defect and must not be used to tune implementation physics post hoc."
+}

@@ -559,8 +559,9 @@ def analyze(candidate: Path, reference: Path,
         "unavailable_comparisons": unavailable_comparisons,
         "acceptance": {"thresholds_declared": False, "passes": None},
         "candidate_state_boundary": (
-            "AuroraPIC contributes a four-cycle fresh measurement window from "
-            "a transient, non-stationary source-loss state."),
+            "AuroraPIC contributes a four-cycle fresh measurement window. "
+            "Stationarity eligibility is established, if applicable, by a "
+            "separately locked pre-measurement evidence chain."),
         "reference_boundary": (
             "The locked matrices are public eduPIC reference-case outputs; this "
             "comparison does not treat them as experimental measurements."),

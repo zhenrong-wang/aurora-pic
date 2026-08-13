@@ -66,6 +66,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_augment_neutral_particle_pairs.py
           PYTHONPATH=scripts python3 scripts/test_aurorapic_initialization_followup.py
           PYTHONPATH=scripts python3 scripts/test_aurorapic_density_bracket.py
+          PYTHONPATH=scripts python3 scripts/test_analyze_edupic_eedf_discrepancy.py
 
       - name: Validate electron-swarm CLI
         run: python3 scripts/test_swarm_cli.py build/aurorapic_swarm
