@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_stationary_measurement_repeatability_result",
+  "rule_sha256": "f9a5e33683986432f3c2050515ad6e7de02316b14dd35c14d3e6a05694e5a216",
+  "baseline_measurement_report_sha256": "cdcda4685741833aad2806e4c7a44cab5565c0815b1bb3ba382a3ef3ce7722f3",
+  "replication_measurement_report_sha256": "169d8e5cb0748d65e209dacdc21f9b278177fce3c882fbab033a0eae7017f95f",
+  "repeatability_report_sha256": "19c5a87ff762f3fc68982e0ed4204564876aad2724b7ceb954e0c428b80fb22b",
+  "execution": {
+    "window_cycles": [25, 28],
+    "all_safety_and_diagnostic_gates_passed": true,
+    "wall_seconds": 426.1484359220194,
+    "peak_resident_set_kib": 185736,
+    "maximum_sampled_absolute_field_V_m": 66335.69001733403,
+    "wall_macro_impacts": 4019,
+    "wall_overflow_macro_impacts": 0,
+    "maximum_absolute_wall_energy_closure_residual_J_m-2": 2.0328790734103208e-20
+  },
+  "prospective_acceptance": {
+    "all_gates_passed": false,
+    "passed_gate_count": 8,
+    "total_gate_count": 10,
+    "metrics": {
+      "electron_density_integral_relative_change": 0.000846953489785281,
+      "ion_density_integral_relative_change": 0.00059582935669379,
+      "electron_energy_distribution_total_variation": 0.0053251516147864,
+      "electron_mean_energy_relative_change": 0.006909073454184034,
+      "electric_field_phase_space_relative_l2": 0.006828567000548509,
+      "electron_current_phase_space_relative_l2": 0.035339024076368825,
+      "average_ionization_rate_ratio": 1.00156087408949,
+      "maximum_electrode_mean_ion_energy_relative_change": 0.015345890035222586,
+      "powered_ion_energy_distribution_total_variation": 0.12465409080378625,
+      "grounded_ion_energy_distribution_total_variation": 0.09747080459668056
+    },
+    "failed_gates": {
+      "powered_ion_energy_distribution_total_variation": {
+        "threshold": 0.08,
+        "observed": 0.12465409080378625
+      },
+      "grounded_ion_energy_distribution_total_variation": {
+        "threshold": 0.08,
+        "observed": 0.09747080459668056
+      }
+    }
+  },
+  "post_hoc_sampling_diagnostic": {
+    "method": "conditional pooled multinomial, 3000 trials per electrode",
+    "powered": {
+      "baseline_macro_impacts": 1077,
+      "replication_macro_impacts": 1018,
+      "null_mean_total_variation": 0.10929259372763486,
+      "null_95_percent_interval": [0.08409538246566446, 0.13511026226164874],
+      "upper_tail_monte_carlo_probability": 0.12229256914361879
+    },
+    "grounded": {
+      "baseline_macro_impacts": 926,
+      "replication_macro_impacts": 973,
+      "null_mean_total_variation": 0.11230627038017843,
+      "null_95_percent_interval": [0.08741861802134966, 0.14008355179478754],
+      "upper_tail_monte_carlo_probability": 0.8697100966344552
+    },
+    "boundary": "This diagnostic is post hoc and assumes independent impacts. It does not override the failed prospective gates."
+  },
+  "assessment": {
+    "bulk_and_phase_space_candidate_repeatability_supported": true,
+    "ion_impact_histogram_repeatability_supported_at_declared_resolution": false,
+    "physical_instability_detected": false,
+    "sampling_limitation_detected": true,
+    "recommended_next_action": "Prospectively accumulate more ion impacts or declare coarser energy bins before repeating IFED acceptance."
+  },
+  "claim_boundary": "The result supports adjacent-window repeatability for density, EEDF, mean energies, fields, current, and ionization. Formal all-observable repeatability is withheld because both prospectively declared IFED-shape gates failed."
+}
