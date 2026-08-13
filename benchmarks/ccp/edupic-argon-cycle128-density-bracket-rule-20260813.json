@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_cycle128_density_bracket",
+  "frozen_before_execution": true,
+  "purpose": "Test whether modest, exactly charge-neutral density augmentation can reduce the long-lived source-loss transient without crossing the field excursion observed for the prior reference-density jump.",
+  "provenance": {
+    "source_cycle": 128,
+    "source_checkpoint_sha256": "6e1733adf4a3cceb8043fd10e40ae580a8ca6149cd9b195cdd6aa45c915f2ffa",
+    "source_export_manifest_sha256": "0d6fc47d18e0683f0a5eb948e5d23d441cb7f84130844c26135bf42edd91e5f3",
+    "plus25_manifest_sha256": "0a4ffc8634ef0d2fb70766950b9d2a60678acf7ab03e90d491877a82a5200b43",
+    "plus50_manifest_sha256": "6fc3358a7e85d771a1f808df4b335f77b39f3d43e7f48a7965c145ff9e88945a",
+    "cycle128_horizon_report_sha256": "f6c54f82d00fccac6f081af0d8b2dd0ddfa1801cfa259d60be5327113827fd8d",
+    "runner_git_commit": "940818c5b4ccc9fbdb6cc205afae7316eea64367",
+    "runner_sha256": "c8d1c97f3a3cd16693bb1d0cfdcec31c5b1b4381f166a507c4e977e44f233b5b"
+  },
+  "execution_contract": {
+    "solver_sha256": "f0344e9565bfe86a7dee05804a8ea92cb59de5ace114ab3cb7f70d005b2ff4ae",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "seed": 13507,
+    "cycles_per_branch": 4,
+    "steps_per_cycle": 4000,
+    "branch_order": [
+      "control",
+      "plus25",
+      "plus50"
+    ],
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "maximum_wall_seconds_per_cycle": 120,
+    "minimum_available_memory_kib": 262144
+  },
+  "branches": {
+    "control": {
+      "added_pairs": 0,
+      "density_multiplier_relative_to_cycle128_electrons": 1.0,
+      "electrons": 52185,
+      "ions": 57154,
+      "macro_weight": 700000000.0,
+      "particle_state_sha256": "4a7ff2a718c6fe81cc50e76474b5331bc874879a50fa562ba7b7c9acace38a39",
+      "particle_state_signature": 1408278426297144633
+    },
+    "plus25": {
+      "added_pairs": 13046,
+      "density_multiplier_relative_to_cycle128_electrons": 1.249976046756731,
+      "electrons": 65231,
+      "ions": 70200,
+      "macro_weight": 700000000.0,
+      "particle_state_sha256": "6d919df23578a1e08feea3436b6b0caedb52b9258a61572e3cb4c4e743ef775a",
+      "particle_state_signature": 14649565240244953138
+    },
+    "plus50": {
+      "added_pairs": 26092,
+      "density_multiplier_relative_to_cycle128_electrons": 1.499952093513462,
+      "electrons": 78277,
+      "ions": 83246,
+      "macro_weight": 700000000.0,
+      "particle_state_sha256": "32b968361f1d0ba805edcef83dfb95647de019cd3d63bc8fa51594da7efe6501",
+      "particle_state_signature": 15096580253295076928
+    }
+  },
+  "historical_baseline": {
+    "cycle_window": [124, 128],
+    "normalized_total_population_slope_per_cycle": 0.004753081744508464,
+    "electron_source_loss_relative_imbalance": 0.4023762376237624,
+    "ion_source_loss_relative_imbalance": 0.42336633663366335,
+    "cycle128_maximum_sampled_absolute_field_V_m": 58285.15355779829,
+    "interpretation": "Context only. Prospective selection uses the APS-reinitialized control branch to isolate restart bias."
+  },
+  "decision_rule": {
+    "candidate_branches": [
+      "plus25",
+      "plus50"
+    ],
+    "prospective_safety_thresholds": {
+      "maximum_first_cycle_ionization_pairs": 1306,
+      "minimum_first_cycle_electron_wall_losses": 90,
+      "maximum_first_cycle_total_growth_factor": 1.02,
+      "maximum_sampled_absolute_field_V_m": 72857.0
+    },
+    "minimum_absolute_imbalance_improvement_vs_control": 0.05,
+    "require_absolute_population_slope_improvement_vs_control": true,
+    "parsimony_tolerance": 0.02,
+    "selection": "An augmented branch is eligible only if every safety gate passes, its maximum absolute electron/ion source-loss imbalance improves by at least 0.05 versus the reinitialized control, and its absolute population slope decreases. Select the smaller augmentation when its imbalance score is within 0.02 of the best eligible score; otherwise select the best score. No eligible branch means no density accelerator is selected."
+  },
+  "resource_policy": "Run branches and cycles serially, inherit one-CPU affinity and reduced process priority from the launcher, and never retry a failed branch with relaxed gates under this rule.",
+  "claim_boundary": "This short bracket can identify a safer initialization accelerator and quantify reinitialization bias. It cannot establish kinetic equilibrium, validate AuroraPIC against eduPIC, or authorize a publication comparison. A selected state must subsequently pass the already defined strict stationarity and source-loss gates before measurement."
+}
