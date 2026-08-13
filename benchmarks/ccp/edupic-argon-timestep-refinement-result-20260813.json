@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_common_state_timestep_refinement_milestone",
+  "rule_sha256": "d02b420adb3f457b5f6f471db6260fc127fda2435a83ddf7e307d22ab6640174",
+  "common_particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+  "common_particle_state_manifest_sha256": "b4065aa11529983ba743b83400e2721a7bcdad8a504754f8b52f2399c9c50ab0",
+  "baseline_branch_report_sha256": "d2024ff5b4aa82960bd24a5a38c2ee117f9c01694c32b28ecbe73dee489774c6",
+  "refined_branch_report_sha256": "affab8efc46620cbe6320331f8d04c9f53de9cc6b2a4c07fd9a31c4b218a639b",
+  "paired_result_sha256": "2096f94cde91314cb3f0016fec04642e237b2b6539ebfcd12fed2433f05511b4",
+  "execution": {
+    "timestep_refinement_ratio": 2.0,
+    "baseline_steps_per_rf_cycle": 4000,
+    "refined_steps_per_rf_cycle": 8000,
+    "equilibration_cycles_per_branch": 2,
+    "fresh_measurement_cycles_per_branch": 4,
+    "baseline_peak_resident_set_kib": 195044,
+    "refined_recovery_peak_resident_set_kib": 185728,
+    "all_branch_solver_and_diagnostic_gates_passed": true,
+    "interruption_recovery": {
+      "refined_initial_measurement_stopped_at_step": 26800,
+      "equilibration_checkpoint_reused": true,
+      "partial_measurement_preserved": true,
+      "fresh_measurement_restarted_from_step": 16000,
+      "final_measurement_step": 48000
+    }
+  },
+  "prospective_acceptance": {
+    "all_gates_passed": true,
+    "passed_gate_count": 12,
+    "total_gate_count": 12,
+    "metrics": {
+      "electron_density_integral_relative_change": 0.0006805660044390162,
+      "ion_density_integral_relative_change": 0.0006378447059217986,
+      "electron_energy_distribution_total_variation": 0.0022067293919699805,
+      "electron_mean_energy_relative_change": 0.0013425963175321613,
+      "electric_field_phase_space_relative_l2": 0.0052475125854162296,
+      "electron_current_phase_space_relative_l2": 0.03241566356687473,
+      "average_ionization_rate_ratio": 0.9867864693446086,
+      "electron_power_per_particle_relative_change": 0.016118415322596495,
+      "ionization_frequency_relative_change": 0.01254149996947644,
+      "powered_ion_energy_distribution_total_variation": 0.026630858660657696,
+      "grounded_ion_energy_distribution_total_variation": 0.050776245974575814,
+      "maximum_electrode_mean_ion_energy_relative_change": 0.03973297334922066
+    }
+  },
+  "discrepancy_localization": {
+    "previous_independent_window_electron_power_per_particle_deficit_fraction": 0.1853902631241096,
+    "paired_timestep_electron_power_per_particle_change_fraction": 0.016118415322596495,
+    "previous_independent_window_effective_ionization_frequency_deficit_fraction": 0.1434229166822737,
+    "paired_timestep_ionization_frequency_change_fraction": 0.01254149996947644,
+    "ordinary_timestep_or_mcc_splitting_is_material_explanation": false
+  },
+  "assessment": {
+    "paired_timestep_sensitivity_passed": true,
+    "asymptotic_temporal_order_established": false,
+    "full_numerical_convergence_established": false,
+    "next_target": "Run common-state particle-count and mesh refinements, then investigate systematic phase-resolved electron heating and ionization conventions."
+  },
+  "claim_boundary": "This 2:1 common-state refinement rules out material ordinary timestep sensitivity at the predeclared tolerances. It does not establish formal order of accuracy, mesh convergence, particle-count convergence, or physical validation."
+}
