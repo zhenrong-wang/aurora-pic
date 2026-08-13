@@ -148,9 +148,12 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     if (rule.get("scope") != "predeclared_cycle128_density_bracket" or
             execution["cycles_per_branch"] != 4 or
             execution["steps_per_cycle"] != STEPS_PER_CYCLE or
+            execution["branch_order"] != list(branch_contracts) or
             list(branch_contracts) != ["control", "plus25", "plus50"] or
             set(states) != set(branch_contracts)):
         raise BracketError("rule identity, branch order, or cycle contract invalid")
+    if sha256(Path(__file__).resolve()) != rule["provenance"]["runner_sha256"]:
+        raise BracketError("runner SHA-256 does not match the rule")
     for path, expected, label in (
         (executable, execution["solver_sha256"], "solver"),
         (base_path, execution["base_deck_sha256"], "base deck"),
@@ -161,8 +164,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         if sha256(states[name]) != contract["particle_state_sha256"]:
             raise BracketError(f"{name} particle-state SHA-256 mismatch")
     base = base_path.read_text(encoding="utf-8")
-    if global_integer(base, "steps") != STEPS_PER_CYCLE:
-        raise BracketError("base deck is not the one-cycle contract")
+    if (global_integer(base, "steps") != STEPS_PER_CYCLE or
+            global_integer(base, "seed") != execution["seed"]):
+        raise BracketError("base deck cycle or seed contract is invalid")
     total_cap = 2 * global_integer(base, "max_particles_per_species")
     scripts = Path(__file__).resolve().parent
     work.mkdir(parents=True)
