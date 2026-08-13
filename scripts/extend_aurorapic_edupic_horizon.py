@@ -53,6 +53,9 @@ APPROVED_POST_TREND_RULE_SHA256 = (
 APPROVED_DENSITY_ACCELERATED_RULE_SHA256 = (
     "41ec8075a076fea6de40ffed410605a8687547d6890a37b4690bfb8402aedf98"
 )
+APPROVED_REBRACKETED_RULE_SHA256 = (
+    "f8300ee6440dbd539bcc8e4a252ada94e471cfa892ed1c4e769c62fc7a98a878"
+)
 MAX_NORMALIZED_POPULATION_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_FIELD_ENERGY_SLOPE_PER_CYCLE = 0.01
 MAX_NORMALIZED_PEAK_FIELD_SLOPE_PER_CYCLE = 0.01
@@ -83,6 +86,7 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         APPROVED_EXTENSION_RULE_SHA256, APPROVED_PRODUCTION_RULE_SHA256,
         APPROVED_STRICT_RULE_SHA256, APPROVED_POST_TREND_RULE_SHA256,
         APPROVED_DENSITY_ACCELERATED_RULE_SHA256,
+        APPROVED_REBRACKETED_RULE_SHA256,
     }:
         raise HorizonError("extension rule SHA-256 is not approved")
     rule = json.loads(path.read_text(encoding="utf-8"))
@@ -101,6 +105,8 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         APPROVED_DENSITY_ACCELERATED_RULE_SHA256:
             ("predeclared_aurorapic_edupic_density_accelerated_"
              "strict_equilibration"),
+        APPROVED_REBRACKETED_RULE_SHA256:
+            "predeclared_aurorapic_edupic_rebracketed_strict_equilibration",
     }
     expected_scope = scopes[rule_sha256]
     if (
@@ -115,22 +121,26 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
     post_trend = rule_sha256 == APPROVED_POST_TREND_RULE_SHA256
     density_accelerated = (
         rule_sha256 == APPROVED_DENSITY_ACCELERATED_RULE_SHA256)
+    rebracketed = rule_sha256 == APPROVED_REBRACKETED_RULE_SHA256
+    dense_campaign = density_accelerated or rebracketed
     production = rule_sha256 == APPROVED_PRODUCTION_RULE_SHA256
     strict = rule_sha256 in {
         APPROVED_STRICT_RULE_SHA256, APPROVED_POST_TREND_RULE_SHA256,
-        APPROVED_DENSITY_ACCELERATED_RULE_SHA256}
+        APPROVED_DENSITY_ACCELERATED_RULE_SHA256,
+        APPROVED_REBRACKETED_RULE_SHA256}
     expected_execution = {
-        "first_cycle": 5 if density_accelerated else (117 if post_trend else
+        "first_cycle": 5 if dense_campaign else (117 if post_trend else
             (81 if strict else (65 if production else 17))),
-        "maximum_cycle": 36 if density_accelerated else (148 if post_trend else
+        "maximum_cycle": (28 if rebracketed else 36) if dense_campaign else (
+            148 if post_trend else
             (112 if strict else (96 if production else 64))),
         "cycles_per_block": HARD_MAX_CYCLES_PER_BLOCK,
         "maximum_blocks_per_invocation": 1,
         "serial": True,
         "maximum_wall_seconds_per_cycle": (
-            120 if density_accelerated else HARD_TIMEOUT_SECONDS),
+            120 if dense_campaign else HARD_TIMEOUT_SECONDS),
         "minimum_available_memory_kib": (
-            256 * 1024 if density_accelerated else MIN_AVAILABLE_MEMORY_KIB),
+            256 * 1024 if dense_campaign else MIN_AVAILABLE_MEMORY_KIB),
         "maximum_particle_growth_factor_per_cycle": MAX_PARTICLE_GROWTH_FACTOR,
         "maximum_total_particle_cap_fraction": MAX_TOTAL_PARTICLE_CAP_FRACTION,
         "maximum_absolute_field_V_m": MAX_ABSOLUTE_FIELD_V_M,
@@ -182,12 +192,12 @@ def authorized_end_cycle(args: argparse.Namespace) -> int:
         "future_production_measurement_must_start_with_another_fresh_window": True,
     }:
         raise HorizonError("post-trend diagnostic contract differs")
-    if density_accelerated and rule.get("diagnostic_contract") != {
+    if dense_campaign and rule.get("diagnostic_contract") != {
         "wall_impact_spectrum_enabled": False,
         "equilibration_outputs_are_not_comparison_measurements": True,
         "future_production_measurement_must_start_with_a_fresh_window": True,
     }:
-        raise HorizonError("density-accelerated diagnostic contract differs")
+        raise HorizonError("dense-campaign diagnostic contract differs")
     if args.start_cycle < int(baseline.get("cycle", -1)):
         raise HorizonError("extension cannot precede its frozen baseline")
     if args.start_cycle == int(baseline.get("cycle", -1)) and (
@@ -213,12 +223,14 @@ def production_rule(path: Path | None) -> bool:
 def strict_rule(path: Path | None) -> bool:
     return path is not None and sha256(path.resolve()) in {
         APPROVED_STRICT_RULE_SHA256, APPROVED_POST_TREND_RULE_SHA256,
-        APPROVED_DENSITY_ACCELERATED_RULE_SHA256}
+        APPROVED_DENSITY_ACCELERATED_RULE_SHA256,
+        APPROVED_REBRACKETED_RULE_SHA256}
 
 
 def execution_limits(path: Path | None) -> tuple[int, int]:
-    if (path is not None and sha256(path.resolve()) ==
-            APPROVED_DENSITY_ACCELERATED_RULE_SHA256):
+    if (path is not None and sha256(path.resolve()) in {
+            APPROVED_DENSITY_ACCELERATED_RULE_SHA256,
+            APPROVED_REBRACKETED_RULE_SHA256}):
         return 120, 256 * 1024
     return HARD_TIMEOUT_SECONDS, MIN_AVAILABLE_MEMORY_KIB
 

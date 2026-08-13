@@ -50,6 +50,10 @@ def main() -> int:
         "benchmarks/ccp/"
         "edupic-argon-density-accelerated-equilibration-rule-20260813.json"
     )
+    rebracketed_rule = repository / (
+        "benchmarks/ccp/"
+        "edupic-argon-rebracketed-strict-equilibration-rule-20260813.json"
+    )
     extension_args = Namespace(
         extension_rule=rule,
         start_cycle=16,
@@ -114,6 +118,21 @@ def main() -> int:
     require(
         execution_limits(density_rule) == (120, 256 * 1024),
         "density-accelerated execution limits drifted",
+    )
+    extension_args.extension_rule = rebracketed_rule
+    extension_args.expected_prior_report_sha256 = (
+        "c42d1d770871480fadf386d06a46e9cc485d8c8653128fea801abae553f20e50"
+    )
+    extension_args.expected_input_checkpoint_sha256 = (
+        "7d31dfafc4a368bbfcad4c8ef6768805ac0a881a8674e7694fd608f1d9c45b3d"
+    )
+    require(
+        authorized_end_cycle(extension_args) == 28,
+        "approved rebracketed strict extension was not authorized",
+    )
+    require(
+        execution_limits(rebracketed_rule) == (120, 256 * 1024),
+        "rebracketed execution limits drifted",
     )
     require(
         solver_command(Path("aurorapic_cli"), Path("stage.cfg")) == [
