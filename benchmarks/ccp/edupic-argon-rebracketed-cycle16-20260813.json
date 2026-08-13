@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "rebracketed_first_strict_stationarity_pass",
+  "rule_sha256": "f8300ee6440dbd539bcc8e4a252ada94e471cfa892ed1c4e769c62fc7a98a878",
+  "horizon_report_sha256": "96b35699da9ad9864e8a0a76fff7cf81db6fb36d880765a465c92cef66a07914",
+  "block": {
+    "start_cycle": 12,
+    "end_cycle": 16,
+    "hard_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 184136,
+    "total_solver_wall_seconds": 429.70672002001083,
+    "final_checkpoint_sha256": "f427485d3bca28d1e8fea78f82a4afdf445657665af2d4ab4114cc25c6e9e0de"
+  },
+  "stationarity": {
+    "passed": true,
+    "consecutive_passing_blocks": 1,
+    "normalized_total_population_slope_per_cycle": -0.00016764110608867604,
+    "population_efolding_time_cycles": 5965.12408759124,
+    "electron_source_loss_relative_imbalance": 0.033818938605619145,
+    "ion_source_loss_relative_imbalance": 0.04526534859521332,
+    "normalized_field_energy_slope_per_cycle": 0.001105314474364301,
+    "normalized_peak_field_slope_per_cycle": -0.0033483886009077826,
+    "normalized_ionization_slope_per_cycle": -0.013735691987513007,
+    "ionization_coefficient_of_variation": 0.03784918518100564,
+    "passing_gates": [
+      "total_population_slope",
+      "field_energy_slope",
+      "peak_field_slope",
+      "ionization_slope",
+      "ionization_variation",
+      "electron_source_loss_balance",
+      "ion_source_loss_balance"
+    ]
+  },
+  "interpretation": "This is the first complete strict stationarity pass: population, field, ionization, and both species source-loss gates pass simultaneously under the prospectively frozen contract.",
+  "continuation_decision": "Run one confirmatory four-cycle block. Measurement becomes eligible only if it is a second consecutive strict pass.",
+  "comparison_measurement_eligible": false,
+  "claim_boundary": "One strict passing block is an internal credibility milestone, not sufficient authorization for benchmark measurement or a claim of cross-code validation."
+}
