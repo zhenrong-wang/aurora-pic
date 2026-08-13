@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "rebracketed_two_block_strict_stationarity_milestone",
+  "rule_sha256": "f8300ee6440dbd539bcc8e4a252ada94e471cfa892ed1c4e769c62fc7a98a878",
+  "horizon_report_sha256": "be708f06fb7d75f32430751f94e357b3c0d0ba4033794785a10b2a9fabc82ab8",
+  "block": {
+    "start_cycle": 16,
+    "end_cycle": 20,
+    "hard_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 184164,
+    "total_solver_wall_seconds": 431.5873579259787,
+    "final_checkpoint_sha256": "9e6bc1ef864735ac9123a77da494f289279a1fad8465ca15370c91a9f0f2648b"
+  },
+  "stationarity": {
+    "passed": true,
+    "consecutive_passing_blocks": 2,
+    "normalized_total_population_slope_per_cycle": -0.00009588744853700235,
+    "population_efolding_time_cycles": 10428.893617021276,
+    "electron_source_loss_relative_imbalance": 0.03012987012987013,
+    "ion_source_loss_relative_imbalance": 0.00935064935064935,
+    "normalized_field_energy_slope_per_cycle": 0.0021449099928561627,
+    "normalized_peak_field_slope_per_cycle": 0.0012617453723143654,
+    "normalized_ionization_slope_per_cycle": -0.01309090909090909,
+    "ionization_coefficient_of_variation": 0.026827535238805936,
+    "all_gates_passed": true
+  },
+  "prior_passing_block": {
+    "window_cycles": [12, 13, 14, 15, 16],
+    "horizon_report_sha256": "96b35699da9ad9864e8a0a76fff7cf81db6fb36d880765a465c92cef66a07914",
+    "all_gates_passed": true
+  },
+  "decision": {
+    "strict_equilibration_milestone_reached": true,
+    "fresh_comparison_measurement_authorized": true,
+    "production_launch_authorized": false
+  },
+  "scientific_interpretation": "The rebracketed state sustained slow population drift, bounded field trends, stable ionization statistics, and explicit electron and ion source-loss closure across two consecutive prospectively screened blocks. This removes the diagnosed startup-density transient as a known confounder for the next measurement.",
+  "claim_boundary": "This milestone establishes internal stationarity eligibility only. Scientific credibility against eduPIC still requires a fresh measurement window and side-by-side comparison with locked reference observables and acceptance rules."
+}
