@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "recorded_prospective_cycle128_density_bracket",
+  "rule_sha256": "ce4681c045f2fe0d1fef50f3c18d794703141d4ace38886da4bab066a3e01021",
+  "study_report_sha256": "31130e51d53992708a0300a82b415a3d211baec720bc5cd2537485964c109b84",
+  "execution": {
+    "branches": 3,
+    "cycles_per_branch": 4,
+    "serial": true,
+    "cpu_affinity": "0",
+    "nice": 10,
+    "all_numerical_hard_gates_passed": true,
+    "all_prospective_safety_gates_passed": true,
+    "maximum_peak_resident_set_kib": 185800,
+    "total_solver_wall_seconds": 767.1483155090245
+  },
+  "branches": {
+    "control": {
+      "normalized_total_population_slope_per_cycle": 0.004171176904680313,
+      "electron_source_loss_relative_imbalance": 0.38287752675386444,
+      "ion_source_loss_relative_imbalance": 0.3606817281014665,
+      "maximum_absolute_source_loss_imbalance": 0.38287752675386444,
+      "maximum_sampled_absolute_field_V_m": 58268.919642720095,
+      "ionization_pairs": 2523,
+      "electron_wall_losses": 1557,
+      "ion_wall_losses": 1613,
+      "final_checkpoint_sha256": "3c93dc5394d709c37337d6c0be2c0ca82de81567baf135d8c6ef54a9ca2ed01a"
+    },
+    "plus25": {
+      "normalized_total_population_slope_per_cycle": 0.0030970522227587835,
+      "electron_source_loss_relative_imbalance": 0.2867052023121387,
+      "ion_source_loss_relative_imbalance": 0.34142581888246626,
+      "maximum_absolute_source_loss_imbalance": 0.34142581888246626,
+      "maximum_sampled_absolute_field_V_m": 62559.284046561734,
+      "ionization_pairs": 2595,
+      "electron_wall_losses": 1851,
+      "ion_wall_losses": 1709,
+      "absolute_imbalance_improvement_vs_control": 0.04145170787139818,
+      "absolute_population_slope_improvement_vs_control": 0.0010741246819215293,
+      "eligible": false,
+      "final_checkpoint_sha256": "2f0ffa69a0d8f712606e59bfcf2d10e72efcace7917173b6c08fb962c245f571"
+    },
+    "plus50": {
+      "normalized_total_population_slope_per_cycle": 0.002096876818814059,
+      "electron_source_loss_relative_imbalance": 0.18259259259259264,
+      "ion_source_loss_relative_imbalance": 0.30740740740740746,
+      "maximum_absolute_source_loss_imbalance": 0.30740740740740746,
+      "maximum_sampled_absolute_field_V_m": 66256.1185146808,
+      "ionization_pairs": 2700,
+      "electron_wall_losses": 2207,
+      "ion_wall_losses": 1870,
+      "absolute_imbalance_improvement_vs_control": 0.07547011934645698,
+      "absolute_population_slope_improvement_vs_control": 0.0020743000858662536,
+      "eligible": true,
+      "final_checkpoint_sha256": "cc2e22966db54c664542687cf8c5c42ba857a8d43c77c281dc57e115565e6b34"
+    }
+  },
+  "prospective_decision": {
+    "density_acceleration_supported": true,
+    "selected_branch": "plus50",
+    "reason": "Only plus50 passed the frozen minimum 0.05 reduction in worst source-loss imbalance while also reducing absolute population drift and passing every safety gate."
+  },
+  "physical_interpretation": "Raising the warm-state macro-particle density increases wall losses relative to ionization and reduces net population growth. Electron balance responds faster than ion balance over four RF cycles, so the selected state remains transient and must be equilibrated further.",
+  "claim_boundary": "This is prospective evidence for a bounded initialization accelerator, not proof of kinetic equilibrium or agreement with eduPIC. The plus50 checkpoint is eligible only as the starting point for a strict stationarity continuation; it is not eligible for benchmark measurement."
+}
