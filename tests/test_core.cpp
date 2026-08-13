@@ -3915,6 +3915,43 @@ int main() {
                     reset_spectra[1].right.macro_impacts == 0,
                 "1D restart did not begin a fresh wall-impact window");
 
+            const auto disabled_output_dir =
+                std::filesystem::path(
+                    "test_output_1d_boundary_losses_disabled_spectrum");
+            std::filesystem::remove_all(disabled_output_dir);
+            auto disabled_spectrum = cfg;
+            disabled_spectrum.output_dir = disabled_output_dir.string();
+            disabled_spectrum.wall_impact_spectrum = {};
+            pic::Simulation disabled_run(disabled_spectrum);
+            disabled_run.run();
+            const auto disabled_checkpoint =
+                disabled_output_dir / "checkpoint_1.apc";
+            auto enabled_on_restart = disabled_spectrum;
+            enabled_on_restart.wall_impact_spectrum.enabled = true;
+            enabled_on_restart.wall_impact_spectrum.reset_on_restart = true;
+            enabled_on_restart.wall_impact_spectrum.energy_bins = 4;
+            enabled_on_restart.wall_impact_spectrum.energy_max = 200.0;
+            pic::Simulation fresh_impact_window(enabled_on_restart);
+            fresh_impact_window.load_checkpoint(disabled_checkpoint);
+            const auto& fresh_spectra =
+                fresh_impact_window.wall_impact_spectra();
+            require(
+                fresh_impact_window.wall_impact_origin_step() == 1 &&
+                    fresh_spectra.size() == 2 &&
+                    fresh_spectra[0].baseline_loss.absorbed_left == 1 &&
+                    fresh_spectra[1].baseline_loss.absorbed_right == 1 &&
+                    fresh_spectra[0].left.macro_impacts == 0 &&
+                    fresh_spectra[1].right.macro_impacts == 0,
+                "1D restart could not enable a fresh wall-impact window");
+            enabled_on_restart.wall_impact_spectrum.reset_on_restart = false;
+            require_throws(
+                [&] {
+                    pic::Simulation invalid(enabled_on_restart);
+                    invalid.load_checkpoint(disabled_checkpoint);
+                },
+                "1D checkpoint enabled wall-impact spectra without reset");
+            std::filesystem::remove_all(disabled_output_dir);
+
             const auto legacy_v6_path =
                 output_dir / "legacy_v6.apc";
             {

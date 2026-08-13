@@ -2799,8 +2799,14 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             stored_energy_max ==
                 cfg_.wall_impact_spectrum.energy_max &&
             stored_species_count == wall_impact_spectra_.size();
+        const bool enable_with_fresh_window =
+            !enabled && cfg_.wall_impact_spectrum.enabled &&
+            cfg_.wall_impact_spectrum.reset_on_restart &&
+            stored_bins == 0 && stored_energy_max == 0.0 &&
+            stored_species_count == 0;
         if (key != "wall_impact_spectrum" ||
-            !shape_valid || !contract_matches) {
+            !shape_valid ||
+            (!contract_matches && !enable_with_fresh_window)) {
             throw std::runtime_error(
                 "checkpoint wall-impact spectrum contract is "
                 "invalid");
