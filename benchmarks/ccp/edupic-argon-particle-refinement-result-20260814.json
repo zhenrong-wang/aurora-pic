@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_common_state_particle_refinement_milestone",
+  "rule_sha256": "b99ab4d96a1f3740bf6df6a084c5f42e45e7de0a58c9b8ae0a003dae7b18a306",
+  "split_particle_state_sha256": "1c0ac20bc0ec52a82c8938ac23afcc4fb83fec70356d20b7e61fd2c1dfc652cb",
+  "baseline_branch_report_sha256": "d3348cb694b8c21e5ebad6c8fb4ffc0b1f6203396ede8553a30fddcbb8799d0e",
+  "doubled_branch_report_sha256": "422fca2dc88c1632eaf1480e845549a47d5f2300e42aaa92f22cd21a30ea0842",
+  "paired_result_sha256": "447f2ad0342e463403d3ec9ba0770626423fa33b02d1bceff59c7de3b9876e09",
+  "execution": {
+    "nodes": 799,
+    "particle_refinement_ratio": 2,
+    "baseline_macro_weight": 700000000.0,
+    "doubled_macro_weight": 350000000.0,
+    "doubled_initial_electrons": 238898,
+    "doubled_initial_ions": 249890,
+    "equilibration_cycles": 2,
+    "fresh_measurement_cycles": 4,
+    "doubled_peak_resident_set_kib": 214940,
+    "doubled_wall_seconds": 1258.9658616300148,
+    "all_branch_solver_and_diagnostic_gates_passed": true
+  },
+  "prospective_acceptance": {
+    "all_gates_passed": true,
+    "passed_gate_count": 14,
+    "total_gate_count": 14,
+    "metrics": {
+      "electron_density_integral_relative_change": 0.00012505127308081268,
+      "ion_density_integral_relative_change": 0.0002850632167152879,
+      "electron_density_profile_relative_l2": 0.003862981361651555,
+      "ion_density_profile_relative_l2": 0.01608051424011981,
+      "electron_energy_distribution_total_variation": 0.006604663635597009,
+      "electron_mean_energy_relative_change": 0.0025415945568213016,
+      "electric_field_phase_space_relative_l2": 0.00606389269829234,
+      "electron_current_phase_space_relative_l2": 0.030403273426491823,
+      "average_ionization_rate_ratio": 1.0690529875986476,
+      "ionization_frequency_relative_change": 0.06447568220226296,
+      "electron_power_per_particle_relative_change": 0.014946356857778386,
+      "powered_ion_energy_distribution_total_variation": 0.04891989748179487,
+      "grounded_ion_energy_distribution_total_variation": 0.04109375254176631,
+      "maximum_electrode_mean_ion_energy_relative_change": 0.0548479527186596
+    }
+  },
+  "discrepancy_localization": {
+    "ordinary_particle_count_noise_is_material_explanation": false,
+    "most_particle_sensitive_observable": "average ionization rate",
+    "mesh_and_particle_refinement_both_passed": true,
+    "derived_constant_particles_per_cell_ionization_rate_ratio": 1.0023784355179706,
+    "derived_constant_particles_per_cell_ionization_rate_relative_change": 0.0023784355179705674,
+    "derived_observation_status": "diagnostic product of the separately predeclared mesh and particle ratios; not a separately predeclared acceptance result",
+    "remaining_priority": "Audit collision physics, rate normalization, and reference measurement protocol before increasing numerical resolution further."
+  },
+  "assessment": {
+    "fixed_grid_particle_sensitivity_passed": true,
+    "independent_seed_ensemble_established": false,
+    "asymptotic_particle_convergence_established": false,
+    "full_numerical_convergence_established": false,
+    "next_target": "Perform a collision-by-collision argon rate audit against the eduPIC cross sections and normalization, followed by an independent-seed uncertainty ensemble."
+  },
+  "claim_boundary": "This fixed-grid 2x macro-particle comparison rules out material ordinary particle-count sensitivity under the predeclared tolerances. The half-weight children began collocated and were collisionally decorrelated for two RF cycles; this is not an independent-seed ensemble or asymptotic convergence proof."
+}

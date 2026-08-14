@@ -33,6 +33,7 @@ PYTHONPATH=scripts python3 scripts/test_analyze_edupic_eedf_discrepancy.py
 PYTHONPATH=scripts python3 scripts/test_analyze_pic_resolution.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_timestep_refinement.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_mesh_refinement.py
+PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_particle_refinement.py
 PYTHONPATH=scripts python3 scripts/test_compare_aurorapic_measurement_windows.py
 PYTHONPATH=scripts python3 scripts/test_run_aurorapic_timestep_refinement.py
 PYTHONPATH=scripts python3 scripts/test_split_particle_state.py
