@@ -42,6 +42,14 @@ def main() -> None:
             root / "particle", root / "split.aps")
         assert "particles = 238898" in particle
         assert particle.count("weight = 350000000.0") == 2
+        region_rule = json.loads(Path(
+            "benchmarks/ccp/edupic-argon-region-matched-eedf-rule-20260814.json"
+        ).read_text(encoding="utf-8"))
+        region = measurement_deck(
+            base, region_rule, "region_matched", root / "region",
+            root / "checkpoint.apc")
+        assert ("phase_eedf_regions = full_gap:0:0.025,"
+                "edupic_center_10pct:0.01125:0.01375") in region
 
 
 if __name__ == "__main__":

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_region_matched_eedf_and_collision_rate_audit",
+  "axis": "eedf_sampling_region",
+  "question": "After matching eduPIC's central-10-percent EEPF sampling region, do AuroraPIC's EEDF shape and cross-section-folded collision rates still show the previously reported discrepancy?",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "particle_state_manifest_sha256": "b4065aa11529983ba743b83400e2721a7bcdad8a504754f8b52f2399c9c50ab0",
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "known_reset_boundary": "The portable state excludes fields, RNG, and diagnostic history; two RF cycles are discarded before the fresh diagnostic window."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "7333bdaa460971ed274c7985c73e2fcc788b8864b4968c69357a5700d0df3744",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "length_m": 0.025,
+    "seed": 13507,
+    "macro_weight": 700000000.0,
+    "neutral_density_m-3": 2.0694208669001848e21,
+    "electron_mass_kg": 9.10938356e-31
+  },
+  "reference_provenance": {
+    "repository_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "upstream_c_implementation_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "sampling_source_lines": "C/eduPIC.cc:505-506,579-583",
+    "sampling_region_fraction_of_gap": [0.45, 0.55],
+    "aggregated_reference_eepf_sha256": "8ad8222107c7e61ea9d1a2d36b0550bcd69ded55dbf5fe0bcfd10810dfc56260",
+    "reference_sampling_boundary": "The reference EEPF is an equal-time mixture of 64 normalized 16-cycle center-region EEPFs; raw pooled counts are unavailable."
+  },
+  "cross_sections": {
+    "interpolation": "lower_bin",
+    "electron_elastic_sha256": "f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47",
+    "electron_excitation_sha256": "9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c",
+    "electron_ionization_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+    "excitation_threshold_eV": 11.5,
+    "ionization_threshold_eV": 15.8
+  },
+  "branches": {
+    "region_matched": {
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 16,
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "phase_eedf_regions": "full_gap:0:0.025,edupic_center_10pct:0.01125:0.01375",
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "prospective_internal_acceptance": {
+    "maximum_eedf_probability_normalization_residual": 1e-9,
+    "maximum_full_gap_measured_to_folded_frequency_relative_difference_per_channel": 0.08,
+    "maximum_center_region_measured_to_folded_frequency_relative_difference_per_channel": 0.10,
+    "all_internal_gates_required": true
+  },
+  "cross_code_observables_without_acceptance_thresholds": [
+    "center_region_eedf_total_variation",
+    "center_region_mean_energy_ratio",
+    "center_region_elastic_frequency_ratio",
+    "center_region_excitation_frequency_ratio",
+    "center_region_ionization_frequency_ratio"
+  ],
+  "interpretation": {
+    "internal_pass": "The sampled EEDF and event-rate diagnostics close against the same cross sections, supporting the AuroraPIC collision-rate implementation and normalization for this state.",
+    "internal_fail": "At least one channel does not close between EEDF folding and measured events; investigate the collision kernel or diagnostic normalization before cross-code interpretation.",
+    "cross_code_boundary": "Region matching repairs a diagnostic protocol error but does not create a prospective cross-code validation threshold or experimental validation claim.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Run one low-priority inherited CPU only; reuse the locked common stationary state and refuse overwrite.",
+  "physics_claim": "region_matched_collision_diagnostic_only",
+  "branch_claim_boundary": "This branch produces a fresh region-matched diagnostic window. Its solver gates establish execution integrity only; scientific conclusions require the separately locked audit."
+}

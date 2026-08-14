@@ -22,6 +22,7 @@ APPROVED_RULE_SHA256S = {
     "d02b420adb3f457b5f6f471db6260fc127fda2435a83ddf7e307d22ab6640174",
     "c5397fc5a8c129dadaaa91d1134716a20caf53a115fb9cbf138ad7f84480bc57",
     "b99ab4d96a1f3740bf6df6a084c5f42e45e7de0a58c9b8ae0a003dae7b18a306",
+    "f497f445030a8d888ef3c9cf93b9ed1492e000eff1336eec9fbfcc578415f9f7",
 }
 
 
@@ -93,7 +94,8 @@ def measurement_deck(base: str, rule: dict[str, object], branch: str,
         "phase_eedf_species": "electrons",
         "phase_eedf_energy_bins": diagnostics["phase_eedf_energy_bins"],
         "phase_eedf_energy_max": diagnostics["phase_eedf_energy_max_eV"],
-        "phase_eedf_regions": "full_gap:0:0.025",
+        "phase_eedf_regions": diagnostics.get(
+            "phase_eedf_regions", "full_gap:0:0.025"),
         "wall_impact_spectrum": "true",
         "wall_impact_reset_on_restart": "true",
         "wall_impact_energy_bins": diagnostics["wall_impact_raw_energy_bins"],
@@ -220,7 +222,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "schema_version": 1,
         "case_id": rule["case_id"],
         "scope": "common_state_numerical_refinement_branch",
-        "physics_claim": "paired_numerical_sensitivity_evidence_only",
+        "physics_claim": rule.get(
+            "physics_claim", "paired_numerical_sensitivity_evidence_only"),
         "axis": rule.get("axis", "timestep_2x"),
         "branch": branch,
         "rule_sha256": rule_hash,
@@ -261,9 +264,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "spatial_phase_collision_rate.csv", "phase_eedf.csv",
             "phase_eedf_moments.csv", "wall_impact_spectrum.csv",
             "wall_impact_spectrum_summary.csv")},
-        "claim_boundary": (
+        "claim_boundary": rule.get("branch_claim_boundary", (
             "One branch is not a convergence result; both locked branches "
-            "must complete and pass the prospective paired comparison."),
+            "must complete and pass the prospective paired comparison.")),
     }
     atomic_json(work / "branch-report.json", report)
     return report
