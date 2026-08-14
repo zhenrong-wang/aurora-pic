@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_common_state_particle_refinement_on_refined_grid",
+  "axis": "particles_2x_refined_grid",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "1c0ac20bc0ec52a82c8938ac23afcc4fb83fec70356d20b7e61fd2c1dfc652cb",
+    "particle_state_signature": 10109755695430600578,
+    "particle_state_manifest_sha256": "36d3e0c88daa12b7b8ea918e4d6bc1970cf6421ee1c694c321532f4977c542d6",
+    "electrons": 238898,
+    "ions": 249890,
+    "velocity_staggering": "time_centered",
+    "split_factor": 2,
+    "child_macro_weight": 350000000.0,
+    "node_charge_relative_l1_error": 1.828189970566369e-14,
+    "known_split_boundary": "Each source macro-particle is represented by two initially coincident, velocity-identical half-weight children; stochastic collisions decorrelate children during paired equilibration."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "7333bdaa460971ed274c7985c73e2fcc788b8864b4968c69357a5700d0df3744",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 799,
+    "cells": 798,
+    "length_m": 0.025,
+    "timestep_s": 1.8436578171091445e-11,
+    "steps_per_rf_cycle": 4000,
+    "seed": 13507
+  },
+  "paired_baseline": {
+    "particles_per_cell": {
+      "electrons": 149.68546365914787,
+      "ions": 156.57268170426065
+    },
+    "macro_weight": 700000000.0,
+    "branch_report_sha256": "d3348cb694b8c21e5ebad6c8fb4ffc0b1f6203396ede8553a30fddcbb8799d0e",
+    "rule_sha256": "c5397fc5a8c129dadaaa91d1134716a20caf53a115fb9cbf138ad7f84480bc57"
+  },
+  "branches": {
+    "double_particles": {
+      "nodes": 799,
+      "macro_weight": 350000000.0,
+      "particle_refinement_ratio": 2,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 900,
+      "measurement_timeout_seconds": 1800
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 524288,
+    "maximum_peak_resident_set_kib": 524288,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "stop_after_refined_branch": true
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 16,
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0,
+    "ifed_comparison_rebin_factor": 4
+  },
+  "prospective_acceptance": {
+    "maximum_electron_density_integral_relative_change": 0.03,
+    "maximum_ion_density_integral_relative_change": 0.03,
+    "maximum_electron_density_profile_relative_l2": 0.05,
+    "maximum_ion_density_profile_relative_l2": 0.05,
+    "maximum_electron_energy_distribution_total_variation": 0.04,
+    "maximum_electron_mean_energy_relative_change": 0.05,
+    "maximum_electric_field_phase_space_relative_l2": 0.05,
+    "maximum_electron_current_phase_space_relative_l2": 0.10,
+    "allowed_average_ionization_rate_ratio": [0.90, 1.10],
+    "maximum_powered_ion_energy_distribution_total_variation": 0.08,
+    "maximum_grounded_ion_energy_distribution_total_variation": 0.08,
+    "maximum_electrode_mean_ion_energy_relative_change": 0.10,
+    "maximum_electron_power_per_particle_relative_change": 0.08,
+    "maximum_ionization_frequency_relative_change": 0.10,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "Doubling macro-particle count at fixed grid and represented phase space is practically equivalent at the declared tolerances; ordinary particle-count noise is not a material explanation of the stationary discrepancy.",
+    "fail": "At least one observable is particle-count sensitive at the declared tolerance; further decorrelation or particle refinement is required.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Run only the doubled-particle arm on one inherited CPU at nice +10; reuse the immutable 799-node fixed-particle branch as baseline.",
+  "physics_claim": "paired_numerical_sensitivity_evidence_only"
+}

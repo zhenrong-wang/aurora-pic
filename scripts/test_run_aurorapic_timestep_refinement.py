@@ -34,6 +34,14 @@ def main() -> None:
         mesh, _, _ = initial_deck(
             base, mesh_rule, "refined_grid", root / "mesh", root / "state.aps")
         assert "nx = 799" in mesh
+        particle_rule = json.loads(Path(
+            "benchmarks/ccp/edupic-argon-particle-refinement-rule-20260814.json"
+        ).read_text(encoding="utf-8"))
+        particle, _, _ = initial_deck(
+            base, particle_rule, "double_particles",
+            root / "particle", root / "split.aps")
+        assert "particles = 238898" in particle
+        assert particle.count("weight = 350000000.0") == 2
 
 
 if __name__ == "__main__":

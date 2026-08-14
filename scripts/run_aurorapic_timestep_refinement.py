@@ -21,6 +21,7 @@ CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 APPROVED_RULE_SHA256S = {
     "d02b420adb3f457b5f6f471db6260fc127fda2435a83ddf7e307d22ab6640174",
     "c5397fc5a8c129dadaaa91d1134716a20caf53a115fb9cbf138ad7f84480bc57",
+    "b99ab4d96a1f3740bf6df6a084c5f42e45e7de0a58c9b8ae0a003dae7b18a306",
 }
 
 
@@ -38,6 +39,9 @@ def common_deck(base: str, rule: dict[str, object], branch: str,
     result = base
     for species in ("electrons", "ions"):
         result = set_species_value(result, species, "particles", int(state[species]))
+        if "macro_weight" in config:
+            result = set_species_value(
+                result, species, "weight", config["macro_weight"])
     for key, value in {
         "dt": config["timestep_s"],
         "steps": equilibration_steps,
