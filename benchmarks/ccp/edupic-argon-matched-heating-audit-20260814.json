@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "phase_and_order_matched_electron_heating_milestone",
+  "rule_sha256": "3ae87d834ebbec16d8b59f964859a9fa398d6dca85f1d73dd204fd24a5d41842",
+  "branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+  "audit_result_sha256": "9917215585d5c5737c5991f432dbdeef4e3cd07f324dd6bdb7e1d9b0f9ce9b92",
+  "analyzer_sha256": "1067166252ed5c543550628a3b434b04fa5b6d140e79a9580f23ab2851a349a3",
+  "execution": {
+    "equilibration_cycles": 2,
+    "fresh_measurement_cycles": 4,
+    "equilibration_wall_seconds": 204.4242876310018,
+    "measurement_wall_seconds": 429.61882158200024,
+    "peak_resident_set_kib": 204256,
+    "maximum_sampled_absolute_field_V_m": 66545.48885353086,
+    "all_solver_and_diagnostic_gates_passed": true
+  },
+  "matched_protocol": {
+    "candidate_phase_bins": 200,
+    "reference_phase_bins": 200,
+    "candidate_sampling_order": "pre_collision",
+    "reference_sampling_order": "pre_collision",
+    "candidate_samples_per_phase_bin": 80
+  },
+  "prospective_internal_acceptance": {
+    "maximum_phase_binned_to_exact_power_relative_difference": 0.02,
+    "observed_phase_binned_to_exact_power_relative_difference": 0.004601303126973377,
+    "passed": true
+  },
+  "heating_results": {
+    "candidate_phase_binned_j_dot_e_W_m-3": 1562.2023719684785,
+    "candidate_exact_electric_work_W_m-3": 1555.0471287523592,
+    "candidate_volume_phase_average_density_m-3": 3340744111250000.0,
+    "reference_phase_binned_j_dot_e_W_m-3": 1592.8254283811123,
+    "reference_volume_phase_average_density_m-3": 2980972608117795.0,
+    "candidate_to_reference_phase_binned_power_per_particle_ratio": 0.8751527995448057,
+    "matched_cross_code_power_per_particle_deficit_fraction": 0.12484720045519426
+  },
+  "assessment": {
+    "coarse_phase_and_sampling_order_bias_resolved": true,
+    "candidate_internal_heating_diagnostic_credibility_reached": true,
+    "cross_code_heating_agreement_reached": false,
+    "finding": "Matching 200 phase bins and pre-collision sampling changes AuroraPIC's integrated J.E from a 6.27 percent underestimate to a 0.46 percent overestimate of its exact work ledger. A material 12.48 percent eduPIC-relative power-per-electron deficit remains.",
+    "next_target": "Localize the remaining deficit in phase and space, then test independent seeds before considering changes to the field-particle coupling or collision dynamics."
+  },
+  "claim_boundary": "This validates AuroraPIC's electron-heating diagnostic closure for one stationary argon CCP state and removes a cross-code protocol confounder. It does not establish predictive validation, experimental accuracy, or general plasma-platform credibility."
+}
