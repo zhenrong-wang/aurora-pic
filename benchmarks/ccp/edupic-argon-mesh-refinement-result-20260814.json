@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_common_state_mesh_refinement_milestone",
+  "rule_sha256": "c5397fc5a8c129dadaaa91d1134716a20caf53a115fb9cbf138ad7f84480bc57",
+  "common_particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+  "baseline_branch_report_sha256": "d2024ff5b4aa82960bd24a5a38c2ee117f9c01694c32b28ecbe73dee489774c6",
+  "refined_branch_report_sha256": "d3348cb694b8c21e5ebad6c8fb4ffc0b1f6203396ede8553a30fddcbb8799d0e",
+  "paired_result_sha256": "62977f3887bb1bf0860dc7ecf9604b92ce7672ac36533360049796a79c79071d",
+  "execution": {
+    "baseline_nodes": 400,
+    "refined_nodes": 799,
+    "grid_refinement_ratio": 2,
+    "fixed_total_particles": true,
+    "equilibration_cycles": 2,
+    "fresh_measurement_cycles": 4,
+    "refined_peak_resident_set_kib": 198176,
+    "refined_wall_seconds": 628.53909994397,
+    "all_branch_solver_and_diagnostic_gates_passed": true
+  },
+  "prospective_acceptance": {
+    "all_gates_passed": true,
+    "passed_gate_count": 14,
+    "total_gate_count": 14,
+    "metrics": {
+      "electron_density_integral_relative_change": 0.00021173562697025745,
+      "ion_density_integral_relative_change": 0.0002671866240054717,
+      "electron_density_profile_relative_l2": 0.004148292324753933,
+      "ion_density_profile_relative_l2": 0.01665603860875987,
+      "electron_energy_distribution_total_variation": 0.002616135276444153,
+      "electron_mean_energy_relative_change": 0.00035340843974511596,
+      "electric_field_phase_space_relative_l2": 0.004968041947565759,
+      "electron_current_phase_space_relative_l2": 0.03196482416854894,
+      "average_ionization_rate_ratio": 0.9376321353065535,
+      "ionization_frequency_relative_change": 0.0621692925206065,
+      "electron_power_per_particle_relative_change": 0.0026381295020689974,
+      "powered_ion_energy_distribution_total_variation": 0.03697655090642687,
+      "grounded_ion_energy_distribution_total_variation": 0.054233450063977416,
+      "maximum_electrode_mean_ion_energy_relative_change": 0.019493826834991602
+    }
+  },
+  "discrepancy_localization": {
+    "ordinary_field_grid_resolution_is_material_explanation": false,
+    "most_grid_sensitive_observable": "effective ionization frequency",
+    "refinement_direction_for_ionization": "decreases candidate frequency and moves farther below eduPIC",
+    "same_particles_per_cell_followup_required": true
+  },
+  "assessment": {
+    "fixed_particle_mesh_sensitivity_passed": true,
+    "same_particles_per_cell_convergence_established": false,
+    "asymptotic_mesh_order_established": false,
+    "full_numerical_convergence_established": false,
+    "next_target": "Run the 799-node arm with approximately doubled particle count to separate grid resolution from particles-per-cell noise."
+  },
+  "claim_boundary": "This 2:1 coincident-node refinement rules out material ordinary field-grid sensitivity at fixed total particles under the predeclared tolerances. It does not establish same-particles-per-cell or asymptotic mesh convergence."
+}
