@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "region_matched_eedf_collision_audit_milestone",
+  "rule_sha256": "f497f445030a8d888ef3c9cf93b9ed1492e000eff1336eec9fbfcc578415f9f7",
+  "branch_report_sha256": "c81b2590ff5b1998f0312f2d9b9979f94987c5b7c78aae5a159272a3b55f4fab",
+  "audit_result_sha256": "888faf61e8d24fd6453aaeb70bbafd96086fe0a9f1b4a4da6e6774565174e36c",
+  "analyzer_sha256": "316a55abd45b88e888696dd6065b35715bf6880619118f6d2670e2c5d5bbef72",
+  "execution": {
+    "equilibration_cycles": 2,
+    "fresh_measurement_cycles": 4,
+    "wall_seconds": 648.1447694799863,
+    "peak_resident_set_kib": 194952,
+    "maximum_sampled_absolute_field_V_m": 66545.48885353086,
+    "all_solver_and_diagnostic_gates_passed": true
+  },
+  "sampling_protocol_correction": {
+    "edupic_reference_region": "central 10 percent of the gap: 0.45L < x < 0.55L",
+    "prior_candidate_region": "full gap: 0 <= x <= L",
+    "corrected_candidate_region": "central 10 percent of the gap: 0.45L <= x <= 0.55L",
+    "affected_prior_evidence": {
+      "edupic-argon-rebracketed-side-by-side-cycle24-20260813.json": "713856c7fc300687bee05ea1b5bcd9a7dc58fd791d1d8990b70d823e8ac49718",
+      "edupic-argon-rebracketed-coarse-ifed-cycle32-20260813.json": "ea2a1ea5ec62a93eb5d4e5d8ddbc2ce7e4f261fb2341d4dc47c0235f6a8d49e3"
+    },
+    "correction_effect": "The prior cross-code EEDF total variation and mean-energy discrepancy were not region matched and must be superseded by the center-region values below. Other observables in those evidence files are unaffected."
+  },
+  "prospective_internal_acceptance": {
+    "all_gates_passed": true,
+    "passed_gate_count": 7,
+    "total_gate_count": 7,
+    "maximum_probability_normalization_residual": {
+      "full_gap": 0.0,
+      "edupic_center_10pct": 0.0
+    },
+    "measured_to_eedf_folded_frequency_relative_difference": {
+      "full_gap": {
+        "elastic": 0.0011700125428154567,
+        "excitation": 0.0058401166300183025,
+        "ionization": 0.026961836569504023
+      },
+      "edupic_center_10pct": {
+        "elastic": 0.0029911429938340823,
+        "excitation": 0.03409815364685124,
+        "ionization": 0.018429246786945
+      }
+    }
+  },
+  "region_matched_cross_code_diagnostic": {
+    "candidate_center_mean_energy_eV": 1.629441277742636,
+    "reference_center_mean_energy_eV": 1.526021143427366,
+    "candidate_to_reference_mean_energy_ratio": 1.067771101836108,
+    "center_eedf_total_variation": 0.07694902629882894,
+    "candidate_to_reference_folded_frequency_ratio": {
+      "elastic": 1.056967971951615,
+      "excitation": 0.8944674670035565,
+      "ionization": 0.8736601046650799
+    },
+    "cross_code_acceptance_thresholds_declared": false
+  },
+  "discrepancy_localization": {
+    "aurorapic_electron_collision_rate_ledger_closes": true,
+    "broken_cross_section_use_or_event_rate_normalization_supported": false,
+    "remaining_ionization_deficit_explained_by_sampled_eedf_tail": true,
+    "remaining_primary_target": "electron heating and transport distribution, including phase-resolved sheath/bulk power deposition and collision-step ordering",
+    "reason": "The candidate MCC event frequencies agree with independent EEDF folding for all three electron channels, while folding the matched candidate and reference center distributions predicts the observed excitation and ionization deficits."
+  },
+  "assessment": {
+    "internal_collision_rate_credibility_milestone_reached": true,
+    "region_matched_cross_code_validation_reached": false,
+    "experimental_validation_reached": false,
+    "next_target": "Audit phase-resolved electron heating and the reference/candidate time-centering and collision-step ordering, then run a small independent-seed uncertainty ensemble."
+  },
+  "claim_boundary": "This prospectively gated result supports AuroraPIC's electron collision-rate selection and normalization for the tested stationary argon CCP state. The corrected center-region cross-code metrics remain descriptive and do not establish predictive validation or experimental accuracy."
+}
