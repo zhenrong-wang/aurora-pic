@@ -18,8 +18,10 @@ from run_aurorapic_initialization_ab import set_species_value
 
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_TIMESTEP_REFINEMENT_RUN"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
-APPROVED_RULE_SHA256 = (
-    "d02b420adb3f457b5f6f471db6260fc127fda2435a83ddf7e307d22ab6640174")
+APPROVED_RULE_SHA256S = {
+    "d02b420adb3f457b5f6f471db6260fc127fda2435a83ddf7e307d22ab6640174",
+    "c5397fc5a8c129dadaaa91d1134716a20caf53a115fb9cbf138ad7f84480bc57",
+}
 
 
 class RefinementError(RuntimeError):
@@ -50,6 +52,8 @@ def common_deck(base: str, rule: dict[str, object], branch: str,
         "runtime_threads": 1,
     }.items():
         result = set_global(result, key, str(value))
+    if "nodes" in config:
+        result = set_global(result, "nx", str(config["nodes"]))
     return result, equilibration_steps, measurement_steps
 
 
@@ -100,8 +104,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise RefinementError("timestep refinement cost was not acknowledged")
     rule_path = args.rule.resolve()
-    if sha256(rule_path) != APPROVED_RULE_SHA256:
-        raise RefinementError("rule is not the approved timestep refinement")
+    rule_hash = sha256(rule_path)
+    if rule_hash not in APPROVED_RULE_SHA256S:
+        raise RefinementError("rule is not an approved common-state refinement")
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     branch = args.branch
     if branch not in rule["branches"]:
@@ -210,10 +215,11 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     report = {
         "schema_version": 1,
         "case_id": rule["case_id"],
-        "scope": "common_state_timestep_refinement_branch",
+        "scope": "common_state_numerical_refinement_branch",
         "physics_claim": "paired_numerical_sensitivity_evidence_only",
+        "axis": rule.get("axis", "timestep_2x"),
         "branch": branch,
-        "rule_sha256": APPROVED_RULE_SHA256,
+        "rule_sha256": rule_hash,
         "inputs": {
             "solver_sha256": sha256(executable),
             "base_deck_sha256": sha256(base_path),
@@ -266,7 +272,7 @@ def main() -> int:
     parser.add_argument("particle_state", type=Path)
     parser.add_argument("work_dir", type=Path)
     parser.add_argument("--rule", type=Path, required=True)
-    parser.add_argument("--branch", choices=("baseline_dt", "half_dt"), required=True)
+    parser.add_argument("--branch", required=True)
     parser.add_argument("--resume-measurement", action="store_true")
     parser.add_argument("--acknowledge-cost")
     try:

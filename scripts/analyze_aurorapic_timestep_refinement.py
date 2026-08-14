@@ -28,7 +28,9 @@ def report(output: Path, expected_branch: str) -> tuple[Path, dict[str, object]]
     work = output.parent.parent
     path = work / "branch-report.json"
     value = json.loads(path.read_text(encoding="utf-8"))
-    if (value.get("scope") != "common_state_timestep_refinement_branch" or
+    if (value.get("scope") not in {
+            "common_state_timestep_refinement_branch",
+            "common_state_numerical_refinement_branch"} or
             value.get("branch") != expected_branch or
             value.get("rule_sha256") != RULE_SHA256 or
             value.get("all_gates_passed") is not True):

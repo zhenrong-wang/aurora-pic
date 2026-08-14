@@ -28,6 +28,12 @@ def main() -> None:
         assert "steps = 48000" in second
         assert "spatial_average_start_step = 16001" in second
         assert "wall_impact_reset_on_restart = true" in second
+        mesh_rule = json.loads(Path(
+            "benchmarks/ccp/edupic-argon-mesh-refinement-rule-20260814.json"
+        ).read_text(encoding="utf-8"))
+        mesh, _, _ = initial_deck(
+            base, mesh_rule, "refined_grid", root / "mesh", root / "state.aps")
+        assert "nx = 799" in mesh
 
 
 if __name__ == "__main__":

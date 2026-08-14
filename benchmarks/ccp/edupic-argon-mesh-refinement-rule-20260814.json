@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_common_state_mesh_refinement_fixed_particles",
+  "axis": "mesh_2x_fixed_particles",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "particle_state_manifest_sha256": "b4065aa11529983ba743b83400e2721a7bcdad8a504754f8b52f2399c9c50ab0",
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "known_reset_boundary": "The portable state excludes fields, half-step velocities, RNG state, and diagnostic history; the prior baseline and refined arm reconstruct these through the same pathway."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "7333bdaa460971ed274c7985c73e2fcc788b8864b4968c69357a5700d0df3744",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "length_m": 0.025,
+    "timestep_s": 1.8436578171091445e-11,
+    "steps_per_rf_cycle": 4000,
+    "seed": 13507,
+    "macro_weight": 700000000.0
+  },
+  "paired_baseline": {
+    "nodes": 400,
+    "cells": 399,
+    "branch_report_sha256": "d2024ff5b4aa82960bd24a5a38c2ee117f9c01694c32b28ecbe73dee489774c6",
+    "rule_sha256": "d02b420adb3f457b5f6f471db6260fc127fda2435a83ddf7e307d22ab6640174"
+  },
+  "branches": {
+    "refined_grid": {
+      "nodes": 799,
+      "cells": 798,
+      "grid_refinement_ratio": 2,
+      "fixed_total_particles": true,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 480,
+      "measurement_timeout_seconds": 900
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 307200,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "stop_after_refined_branch": true
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 16,
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0,
+    "ifed_comparison_rebin_factor": 4,
+    "spatial_comparison": "coincident_nodes_without_interpolation"
+  },
+  "prospective_acceptance": {
+    "maximum_electron_density_integral_relative_change": 0.03,
+    "maximum_ion_density_integral_relative_change": 0.03,
+    "maximum_electron_density_profile_relative_l2": 0.05,
+    "maximum_ion_density_profile_relative_l2": 0.05,
+    "maximum_electron_energy_distribution_total_variation": 0.04,
+    "maximum_electron_mean_energy_relative_change": 0.05,
+    "maximum_electric_field_phase_space_relative_l2": 0.05,
+    "maximum_electron_current_phase_space_relative_l2": 0.10,
+    "allowed_average_ionization_rate_ratio": [0.90, 1.10],
+    "maximum_powered_ion_energy_distribution_total_variation": 0.08,
+    "maximum_grounded_ion_energy_distribution_total_variation": 0.08,
+    "maximum_electrode_mean_ion_energy_relative_change": 0.10,
+    "maximum_electron_power_per_particle_relative_change": 0.08,
+    "maximum_ionization_frequency_relative_change": 0.10,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "A 2:1 coincident-node grid refinement at fixed total particles is practically equivalent at the declared tolerances; ordinary field-grid resolution is not a material explanation of the stationary discrepancy.",
+    "fail": "At least one observable is grid-sensitive at the declared tolerance; same-particles-per-cell refinement is required before attributing the change solely to field-grid resolution.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Run only the refined arm on one inherited CPU at nice +10; reuse the already completed common-state baseline arm by immutable hash.",
+  "physics_claim": "paired_numerical_sensitivity_evidence_only"
+}
