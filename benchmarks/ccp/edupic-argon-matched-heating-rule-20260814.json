@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_phase_and_order_matched_electron_heating_audit",
+  "axis": "electron_heating_diagnostic_protocol",
+  "question": "After matching eduPIC's 200 phase bins and pre-collision moment sampling, how much of AuroraPIC's electron-heating discrepancy remains?",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "known_reset_boundary": "The portable state excludes fields, RNG, and diagnostic history; two RF cycles are discarded before the fresh diagnostic window."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "length_m": 0.025,
+    "seed": 13507,
+    "macro_weight": 700000000.0,
+    "neutral_density_m-3": 2.0694208669001848e21,
+    "electron_mass_kg": 9.10938356e-31
+  },
+  "reference_provenance": {
+    "repository_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "upstream_c_implementation_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "electron_density_sha256": "43e70f31fd43316bd944e0efbc9d871021dc2541219cc711451440cdf53247a6",
+    "electron_ohmic_power_density_sha256": "8b8c6c9ad18b73f57d25075e013f55800d6536232a33658896f3de1f21d3edcd",
+    "phase_bins": 200,
+    "moment_sampling_order": "pre_collision"
+  },
+  "branches": {
+    "matched_heating": {
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 200,
+    "spatial_sampling_order": "pre_collision",
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "phase_eedf_regions": "full_gap:0:0.025,edupic_center_10pct:0.01125:0.01375",
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "prospective_internal_acceptance": {
+    "maximum_phase_binned_to_exact_electron_power_relative_difference": 0.02,
+    "maximum_eedf_probability_normalization_residual": 1e-9,
+    "all_internal_gates_required": true
+  },
+  "cross_code_observables_without_acceptance_thresholds": [
+    "electron_density_ratio",
+    "electron_power_per_particle_ratio",
+    "phase_resolved_power_profile_difference"
+  ],
+  "resource_policy": "Run one low-priority inherited CPU only; reuse the locked common stationary state and refuse overwrite.",
+  "physics_claim": "matched_electron_heating_diagnostic_only",
+  "branch_claim_boundary": "This run matches phase resolution and collision sampling order. It can remove a diagnostic confounder but cannot by itself establish predictive or experimental validation."
+}

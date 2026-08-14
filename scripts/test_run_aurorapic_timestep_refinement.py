@@ -61,6 +61,14 @@ def main() -> None:
             root / "checkpoint.apc")
         assert "spatial_average_phase_bins = 200" in matched
         assert "spatial_average_sampling_order = pre_collision" in matched
+        heating_rule = json.loads(Path(
+            "benchmarks/ccp/edupic-argon-matched-heating-rule-20260814.json"
+        ).read_text(encoding="utf-8"))
+        heating = measurement_deck(
+            base, heating_rule, "matched_heating", root / "heating",
+            root / "checkpoint.apc")
+        assert "spatial_average_phase_bins = 200" in heating
+        assert "spatial_average_sampling_order = pre_collision" in heating
 
 
 if __name__ == "__main__":
