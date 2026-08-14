@@ -192,6 +192,21 @@ struct SinusoidalVoltageConfig {
     double phase{0.0};
 };
 
+enum class SpatialAverageSamplingOrder1D {
+    PostCollision,
+    PreCollision
+};
+
+inline std::string to_string(SpatialAverageSamplingOrder1D order) {
+    switch (order) {
+        case SpatialAverageSamplingOrder1D::PostCollision:
+            return "post_collision";
+        case SpatialAverageSamplingOrder1D::PreCollision:
+            return "pre_collision";
+    }
+    return "unknown";
+}
+
 struct SpatialAverage1DConfig {
     bool enabled{false};
     bool reset_on_restart{false};
@@ -201,6 +216,8 @@ struct SpatialAverage1DConfig {
     double rf_frequency{0.0};
     std::size_t rf_cycles{0};
     std::size_t phase_bins{0};
+    SpatialAverageSamplingOrder1D sampling_order{
+        SpatialAverageSamplingOrder1D::PostCollision};
 };
 
 struct PhaseEedfRegion1DConfig {

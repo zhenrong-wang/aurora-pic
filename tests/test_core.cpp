@@ -3076,6 +3076,10 @@ int main() {
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
+                    << "spatial_average = true\n"
+                    << "spatial_average_start_step = 1\n"
+                    << "spatial_average_end_step = 2\n"
+                    << "spatial_average_sampling_order = pre_collision\n"
                     << "boundary = dirichlet\n"
                     << "phi_left = -2\n"
                     << "phi_left_amplitude = 3\n"
@@ -3107,6 +3111,10 @@ int main() {
             require(
                 cfg.velocity_dimensions == 3,
                 "1D config did not load velocity_dimensions");
+            require(
+                cfg.spatial_average.sampling_order ==
+                    pic::SpatialAverageSamplingOrder1D::PreCollision,
+                "1D config did not load spatial-average sampling order");
             require(cfg.runtime.backend == pic::RuntimeBackend::Serial && cfg.runtime.threads == 1,
                     "M4 1D runtime config aliases were not parsed");
             require(
@@ -3888,8 +3896,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v15\n") == 0,
-                "1D wall-impact checkpoint did not use v15");
+                    "AuroraPIC-checkpoint-v16\n") == 0,
+                "1D wall-impact checkpoint did not use v16");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -3965,6 +3973,16 @@ int main() {
                         legacy
                             << "AuroraPIC-checkpoint-v6\n";
                         first = false;
+                    } else if (line.starts_with("spatial_average ")) {
+                        std::istringstream row(line);
+                        std::string key;
+                        std::string sampling_order;
+                        int enabled = 0;
+                        row >> key >> enabled >> sampling_order;
+                        std::string remainder;
+                        std::getline(row, remainder);
+                        legacy << key << ' ' << enabled
+                               << remainder << '\n';
                     } else if (
                         line.starts_with("species_timestep_multipliers") ||
                         line.starts_with("power_transfer") ||
@@ -4022,6 +4040,16 @@ int main() {
                         legacy
                             << "AuroraPIC-checkpoint-v5\n";
                         first = false;
+                    } else if (line.starts_with("spatial_average ")) {
+                        std::istringstream row(line);
+                        std::string key;
+                        std::string sampling_order;
+                        int enabled = 0;
+                        row >> key >> enabled >> sampling_order;
+                        std::string remainder;
+                        std::getline(row, remainder);
+                        legacy << key << ' ' << enabled
+                               << remainder << '\n';
                     } else if (
                         line.starts_with("species_timestep_multipliers") ||
                         line.starts_with(
@@ -4247,6 +4275,8 @@ int main() {
             cfg.spatial_average.rf_frequency = 2.5;
             cfg.spatial_average.rf_cycles = 2;
             cfg.spatial_average.phase_bins = 2;
+            cfg.spatial_average.sampling_order =
+                pic::SpatialAverageSamplingOrder1D::PreCollision;
             cfg.phase_eedf.enabled = true;
             cfg.phase_eedf.species = "electrons";
             cfg.phase_eedf.energy_bins = 10;
@@ -4419,8 +4449,8 @@ int main() {
             }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v15\n") == 0,
-                "1D3V checkpoint did not use the collision-event-aware "
+                    "AuroraPIC-checkpoint-v16\n") == 0,
+                "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
             (void)output_simulation.run();
@@ -4436,6 +4466,8 @@ int main() {
                 output_dir / "phase_eedf.csv");
             const auto eedf_moments_csv = read_file_text(
                 output_dir / "phase_eedf_moments.csv");
+            const auto spatial_metadata = read_file_text(
+                output_dir / "spatial_average_metadata.json");
             require(
                 spatial_collision_csv.find(
                     "energy_density_sum_normalized,mean_power_density_normalized") !=
@@ -4464,6 +4496,11 @@ int main() {
                 count_lines(eedf_csv) == 2 * 2 * 10 + 1 &&
                     count_lines(eedf_moments_csv) == 2 * 2 + 1,
                 "1D phase EEDF CSV contract is wrong");
+            require(
+                spatial_metadata.find(
+                    "\"sampling_order\": \"pre_collision\"") !=
+                    std::string::npos,
+                "1D spatial metadata lost its sampling order");
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }

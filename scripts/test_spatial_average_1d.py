@@ -154,7 +154,9 @@ def main() -> int:
             and metadata["moment_samples"] == 4
             and metadata["moments_complete"] is True
             and metadata["expected_samples"] == 4
-            and metadata["final_step"] == 4,
+            and metadata["final_step"] == 4
+            and metadata["spatial_average_version"] == 6
+            and metadata["sampling_order"] == "post_collision",
             "completed spatial-average metadata is incorrect",
         )
         totals: dict[str, float] = {}
@@ -195,6 +197,11 @@ def main() -> int:
         legacy_checkpoint = work / "checkpoint_2_v7.apc"
         legacy_lines = checkpoint.read_text(encoding="utf-8").splitlines()
         legacy_lines[0] = "AuroraPIC-checkpoint-v7"
+        for index, line in enumerate(legacy_lines):
+            if line.startswith("spatial_average "):
+                fields = line.split()
+                del fields[2]
+                legacy_lines[index] = " ".join(fields)
         legacy_checkpoint.write_text(
             "\n".join(
                 line for line in legacy_lines

@@ -197,10 +197,16 @@ def compare(case: int, reference: Path, candidate: Path,
     end_step = steps_per_cycle * TOTAL_RF_CYCLES[case]
     samples = 32 * steps_per_cycle
     start_step = end_step - samples + 1
+    metadata_version = metadata.get("spatial_average_version")
     require(
-        metadata.get("spatial_average_version") in (1, 2, 3, 4, 5),
-        "candidate averaging metadata 'spatial_average_version' must be 1, 2, 3, 4, or 5",
+        metadata_version in (1, 2, 3, 4, 5, 6),
+        "candidate averaging metadata 'spatial_average_version' must be 1 through 6",
     )
+    if metadata_version == 6:
+        require(
+            metadata.get("sampling_order") == "post_collision",
+            "Turner candidate sampling order must be 'post_collision'",
+        )
     common_metadata = {
         "unit_system": "si",
         "interval": 1,

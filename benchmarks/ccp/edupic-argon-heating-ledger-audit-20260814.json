@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "electron_heating_diagnostic_localization_milestone",
+  "branch_report_sha256": "c81b2590ff5b1998f0312f2d9b9979f94987c5b7c78aae5a159272a3b55f4fab",
+  "audit_result_sha256": "17202e5078f5481c3191d7c93f8a6b4235773f95a501070007d084f676a7ebfc",
+  "analyzer_sha256": "2bf170b2dccce66d6e2e74256521e6e75c53535c8a5033a851bee2198fdfd335",
+  "candidate_diagnostic": {
+    "phase_bins": 16,
+    "moment_sampling_order": "post_collision",
+    "volume_phase_average_density_m-3": 3340747422250000.0,
+    "phase_binned_j_dot_e_W_m-3": 1457.584206880891,
+    "exact_electric_work_W_m-3": 1555.0471287523592,
+    "phase_binned_to_exact_power_ratio": 0.937324779378446,
+    "phase_binned_power_relative_deficit": 0.06267522062155395
+  },
+  "reference_diagnostic": {
+    "phase_bins": 200,
+    "moment_sampling_order": "pre_collision",
+    "volume_phase_average_density_m-3": 2980972608117795.0,
+    "phase_binned_j_dot_e_W_m-3": 1592.8254283811123
+  },
+  "cross_code_localization": {
+    "candidate_to_reference_phase_binned_power_per_particle_ratio": 0.8165444233492085,
+    "candidate_exact_to_reference_binned_power_per_particle_ratio": 0.8711435367052509,
+    "apparent_deficit_reduction_fraction": 0.2976149013991112,
+    "alternate_remaining_power_per_particle_deficit_fraction": 0.1288564632947491
+  },
+  "assessment": {
+    "candidate_heating_ledger_closes": true,
+    "coarse_phase_diagnostic_bias_demonstrated": true,
+    "sampling_protocol_is_cross_code_matched": false,
+    "cross_code_heating_acceptance_reached": false,
+    "finding": "AuroraPIC's 16-bin post-collision J.E diagnostic understates its exact electron electric work by 6.27 percent. Substituting the exact candidate ledger removes 29.76 percent of the apparent power-per-electron deficit, but leaves a 12.89 percent alternate-estimator deficit.",
+    "next_target": "Generate 200-bin pre-collision AuroraPIC moments and compare their integrated J.E against both the exact candidate ledger and the locked 200-bin pre-collision eduPIC matrix."
+  },
+  "claim_boundary": "The exact AuroraPIC work ledger and eduPIC's phase-binned J.E matrix are different estimators. Their ratio localizes diagnostic bias but is not a matched cross-code validation or experimental-accuracy result."
+}

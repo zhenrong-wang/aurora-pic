@@ -118,6 +118,22 @@ bool parse_bool(const KeyValue& kv, const std::string& key, bool def) {
     throw std::runtime_error("invalid boolean value for '" + key + "': '" + it->second + "'");
 }
 
+SpatialAverageSamplingOrder1D parse_spatial_average_sampling_order(
+    const KeyValue& values,
+    SpatialAverageSamplingOrder1D default_order) {
+    const auto value = lower(trim(as<std::string>(
+        values, "spatial_average_sampling_order",
+        to_string(default_order))));
+    if (value == "post_collision") {
+        return SpatialAverageSamplingOrder1D::PostCollision;
+    }
+    if (value == "pre_collision") {
+        return SpatialAverageSamplingOrder1D::PreCollision;
+    }
+    throw std::runtime_error(
+        "invalid spatial_average_sampling_order value: '" + value + "'");
+}
+
 std::vector<PhaseEedfRegion1DConfig> parse_phase_eedf_regions(
     const KeyValue& values) {
     const auto found = values.find("phase_eedf_regions");
@@ -1513,10 +1529,12 @@ void validate_spatial_average_1d(const Config& cfg) {
         if (average.reset_on_restart ||
             average.rf_cycles != 0 ||
             average.rf_frequency != 0.0 ||
-            average.phase_bins != 0) {
+            average.phase_bins != 0 ||
+            average.sampling_order !=
+                SpatialAverageSamplingOrder1D::PostCollision) {
             throw std::runtime_error(
                 "disabled spatial_average cannot configure restart "
-                "reset or an RF contract");
+                "reset, sampling order, or an RF contract");
         }
         return;
     }
@@ -1614,7 +1632,7 @@ Config load_config(const std::string& path) {
         "spatial_average_interval",
         "spatial_average_start_step", "spatial_average_end_step",
         "spatial_average_rf_frequency", "spatial_average_rf_cycles",
-        "spatial_average_phase_bins",
+        "spatial_average_phase_bins", "spatial_average_sampling_order",
         "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
         "phase_eedf_energy_max", "phase_eedf_regions",
         "wall_impact_spectrum", "wall_impact_reset_on_restart",
@@ -1703,6 +1721,9 @@ Config load_config(const std::string& path) {
     cfg.spatial_average.phase_bins = as<std::size_t>(
         global, "spatial_average_phase_bins",
         cfg.spatial_average.phase_bins);
+    cfg.spatial_average.sampling_order =
+        parse_spatial_average_sampling_order(
+            global, cfg.spatial_average.sampling_order);
     cfg.phase_eedf.enabled = parse_bool(
         global, "phase_eedf", cfg.phase_eedf.enabled);
     cfg.phase_eedf.species = as<std::string>(

@@ -36,6 +36,7 @@ constexpr const char* kCheckpointMagicV12 = "AuroraPIC-checkpoint-v12";
 constexpr const char* kCheckpointMagicV13 = "AuroraPIC-checkpoint-v13";
 constexpr const char* kCheckpointMagicV14 = "AuroraPIC-checkpoint-v14";
 constexpr const char* kCheckpointMagicV15 = "AuroraPIC-checkpoint-v15";
+constexpr const char* kCheckpointMagicV16 = "AuroraPIC-checkpoint-v16";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -1309,10 +1310,17 @@ void Simulation::step() {
         }
     }
     begin_spatial_collision_step();
+    if (cfg_.spatial_average.sampling_order ==
+        SpatialAverageSamplingOrder1D::PreCollision) {
+        accumulate_spatial_average(step_ + 1);
+    }
     apply_collisions();
     ++step_;
     time_ += cfg_.dt;
-    accumulate_spatial_average();
+    if (cfg_.spatial_average.sampling_order ==
+        SpatialAverageSamplingOrder1D::PostCollision) {
+        accumulate_spatial_average(step_);
+    }
 }
 
 DiagnosticSample Simulation::sample() const {
@@ -1538,12 +1546,12 @@ void Simulation::accumulate_phase_eedf(std::size_t phase) {
     }
 }
 
-void Simulation::accumulate_spatial_average() {
+void Simulation::accumulate_spatial_average(std::size_t sample_step) {
     const auto& average = cfg_.spatial_average;
     if (!average.enabled ||
-        step_ < average.start_step ||
-        step_ > average.end_step ||
-        (step_ - average.start_step) %
+        sample_step < average.start_step ||
+        sample_step > average.end_step ||
+        (sample_step - average.start_step) %
                 average.interval !=
             0) {
         return;
@@ -1570,7 +1578,7 @@ void Simulation::accumulate_spatial_average() {
             1.0 / (average.rf_frequency * cfg_.dt)));
         const auto samples_per_cycle = steps_per_cycle / average.interval;
         const auto sample_in_cycle =
-            ((step_ - average.start_step) / average.interval) %
+            ((sample_step - average.start_step) / average.interval) %
             samples_per_cycle;
         phase_id =
             sample_in_cycle * spatial_phase_bins_.size() /
@@ -2194,7 +2202,7 @@ void Simulation::write_spatial_average() const {
     }
     metadata << std::setprecision(17)
              << "{\n"
-             << "  \"spatial_average_version\": 5,\n"
+             << "  \"spatial_average_version\": 6,\n"
              << "  \"reset_on_restart\": "
              << (cfg_.spatial_average.reset_on_restart
                      ? "true" : "false")
@@ -2208,6 +2216,9 @@ void Simulation::write_spatial_average() const {
              << cfg_.spatial_average.end_step << ",\n"
              << "  \"interval\": "
              << cfg_.spatial_average.interval << ",\n"
+             << "  \"sampling_order\": "
+             << json_string(to_string(
+                    cfg_.spatial_average.sampling_order)) << ",\n"
              << "  \"samples\": "
              << spatial_average_samples_ << ",\n"
              << "  \"moment_samples\": "
@@ -2275,7 +2286,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV15 << '\n';
+    out << kCheckpointMagicV16 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -2372,6 +2383,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     }
     out << "spatial_average "
         << (cfg_.spatial_average.enabled ? 1 : 0) << ' '
+        << to_string(cfg_.spatial_average.sampling_order) << ' '
         << cfg_.spatial_average.interval << ' '
         << cfg_.spatial_average.start_step << ' '
         << cfg_.spatial_average.end_step << ' '
@@ -2557,7 +2569,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v15 = magic == kCheckpointMagicV15;
+    const bool checkpoint_v16 = magic == kCheckpointMagicV16;
+    const bool checkpoint_v15 =
+        magic == kCheckpointMagicV15 || checkpoint_v16;
     const bool checkpoint_v14 =
         magic == kCheckpointMagicV14 || checkpoint_v15;
     const bool checkpoint_v13 =
@@ -2982,6 +2996,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         checkpoint_v7 || checkpoint_v8 || checkpoint_v9 || checkpoint_v10 ||
         checkpoint_v11 || checkpoint_v12 || checkpoint_v13) {
         int enabled = 0;
+        std::string stored_sampling_order_name = "post_collision";
         std::size_t interval = 0;
         std::size_t start_step = 0;
         std::size_t end_step = 0;
@@ -2990,11 +3005,24 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         std::size_t stored_samples = 0;
         std::size_t stored_species_count = 0;
         std::size_t stored_nx = 0;
-        in >> enabled >> interval >> start_step >>
+        in >> enabled;
+        if (checkpoint_v16) in >> stored_sampling_order_name;
+        in >> interval >> start_step >>
             end_step >> rf_frequency >> rf_cycles >>
             stored_samples >> stored_species_count >>
             stored_nx;
         const auto& configured = cfg_.spatial_average;
+        SpatialAverageSamplingOrder1D stored_sampling_order{};
+        if (stored_sampling_order_name == "post_collision") {
+            stored_sampling_order =
+                SpatialAverageSamplingOrder1D::PostCollision;
+        } else if (stored_sampling_order_name == "pre_collision") {
+            stored_sampling_order =
+                SpatialAverageSamplingOrder1D::PreCollision;
+        } else {
+            throw std::runtime_error(
+                "checkpoint spatial-average sampling order is invalid");
+        }
         const bool reset =
             configured.reset_on_restart;
         const bool stored_enabled = enabled == 1;
@@ -3025,6 +3053,7 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             end_step == configured.end_step &&
             rf_frequency == configured.rf_frequency &&
             rf_cycles == configured.rf_cycles &&
+            stored_sampling_order == configured.sampling_order &&
             stored_species_count ==
                 spatial_density_sums_.size() &&
             stored_samples <=

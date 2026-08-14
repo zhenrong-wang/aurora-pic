@@ -72,7 +72,8 @@ def main() -> int:
         }), encoding="utf-8")
         metadata = work / "spatial_average_metadata.json"
         metadata.write_text(json.dumps({
-            "spatial_average_version": 5,
+            "spatial_average_version": 6,
+            "sampling_order": "post_collision",
             "moment_samples": 12800,
             "moments_complete": True,
             "unit_system": "si",
@@ -97,6 +98,19 @@ def main() -> int:
         ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         require(completed.returncode == 0,
                 f"Turner comparator rejected valid fixture: {completed.stderr}")
+        pre_collision = json.loads(metadata.read_text(encoding="utf-8"))
+        pre_collision["sampling_order"] = "pre_collision"
+        metadata.write_text(json.dumps(pre_collision), encoding="utf-8")
+        rejected = subprocess.run([
+            sys.executable, str(COMPARATOR), "--case", "1",
+            "--reference", str(reference), "--candidate", str(candidate),
+            "--candidate-metadata", str(metadata),
+            "--normalization-audit", str(audit),
+        ], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        require(rejected.returncode != 0,
+                "Turner comparator accepted pre-collision diagnostics")
+        pre_collision["sampling_order"] = "post_collision"
+        metadata.write_text(json.dumps(pre_collision), encoding="utf-8")
         value = json.loads(report.read_text(encoding="utf-8"))
         require(
             abs(value["statistic"]["x_squared"] - 129.0) < 1e-12

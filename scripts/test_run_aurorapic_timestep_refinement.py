@@ -27,6 +27,8 @@ def main() -> None:
             base, rule, "half_dt", root / "measurement", root / "checkpoint.apc")
         assert "steps = 48000" in second
         assert "spatial_average_start_step = 16001" in second
+        assert "spatial_average_phase_bins = 16" in second
+        assert "spatial_average_sampling_order = post_collision" in second
         assert "wall_impact_reset_on_restart = true" in second
         mesh_rule = json.loads(Path(
             "benchmarks/ccp/edupic-argon-mesh-refinement-rule-20260814.json"
@@ -50,6 +52,15 @@ def main() -> None:
             root / "checkpoint.apc")
         assert ("phase_eedf_regions = full_gap:0:0.025,"
                 "edupic_center_10pct:0.01125:0.01375") in region
+        matched_rule = json.loads(json.dumps(region_rule))
+        matched_rule["fresh_measurement_contract"]["spatial_phase_bins"] = 200
+        matched_rule["fresh_measurement_contract"][
+            "spatial_sampling_order"] = "pre_collision"
+        matched = measurement_deck(
+            base, matched_rule, "region_matched", root / "matched",
+            root / "checkpoint.apc")
+        assert "spatial_average_phase_bins = 200" in matched
+        assert "spatial_average_sampling_order = pre_collision" in matched
 
 
 if __name__ == "__main__":

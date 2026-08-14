@@ -304,8 +304,12 @@ acceptance gate.
 
 ## Restart-safe density averaging
 
-The primary Turner observable is now produced by a generic 1D post-step
-spatial averager. It deposits each species' represented particle number with
+The primary Turner observable is now produced by a generic 1D spatial
+averager. By default it samples after the collision operator. The optional
+`spatial_average_sampling_order = pre_collision` mode samples the same
+completed-step state immediately before collisions, without changing particle
+evolution; this exists for matched external-code diagnostic protocols. It
+deposits each species' represented particle number with
 the same linear particle-grid shape and node-volume convention used for
 charge, then accumulates nodal density independently of the ordinary output
 interval. For Case 1, the exact final-32-cycle contract is:
@@ -320,7 +324,7 @@ spatial_average_rf_cycles = 32
 spatial_average_phase_bins = 16
 ```
 
-This selects 12,800 post-step samples. Configuration validation requires an
+This selects 12,800 post-collision samples. Configuration validation requires an
 integer number of timesteps per RF cycle, a whole-cycle window ending at the
 time-zero drive phase, an interval that divides the cycle, and agreement with
 every active electrode-drive frequency. `spatial_average.csv` uses long-form
@@ -340,7 +344,8 @@ density, mean three-velocity, mean kinetic energy, and drift-separated
 temperature in each phase bin, plus `spatial_phase_fields.csv` with matching
 potential and electric-field statistics. The drift-separated definition is
 `2/d * (<K> - m|<v>|^2/2)`, where `d` is the configured velocity dimension.
-Checkpoint v9 preserves every phase-bin accumulator and sample count; bounded
+Metadata explicitly records `sampling_order`. Checkpoint v16 preserves that
+contract in addition to every phase-bin accumulator and sample count; bounded
 regressions require byte-identical continuous and checkpoint-split products.
 
 1D checkpoint v5 and later stores the density averaging contract, sample

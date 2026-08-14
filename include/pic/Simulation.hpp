@@ -158,7 +158,7 @@ private:
         double offset,
         const SinusoidalVoltageConfig& drive,
         double field_time) const;
-    void accumulate_spatial_average();
+    void accumulate_spatial_average(std::size_t sample_step);
     void accumulate_phase_eedf(std::size_t phase);
     void deposit_spatial_collision_energy(
         double position,

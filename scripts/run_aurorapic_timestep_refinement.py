@@ -34,6 +34,7 @@ def common_deck(base: str, rule: dict[str, object], branch: str,
                 output: Path) -> tuple[str, int, int]:
     state = rule["common_stationary_state"]
     config = rule["branches"][branch]
+    diagnostics = rule["fresh_measurement_contract"]
     steps_per_cycle = int(config["steps_per_rf_cycle"])
     equilibration_steps = int(config["equilibration_cycles"]) * steps_per_cycle
     measurement_steps = int(config["measurement_cycles"]) * steps_per_cycle
@@ -51,7 +52,7 @@ def common_deck(base: str, rule: dict[str, object], branch: str,
         "spatial_average_start_step": 1,
         "spatial_average_end_step": equilibration_steps,
         "spatial_average_rf_cycles": int(config["equilibration_cycles"]),
-        "spatial_average_phase_bins": 16,
+        "spatial_average_phase_bins": diagnostics["spatial_phase_bins"],
         "checkpoint_interval": equilibration_steps,
         "runtime_backend": "serial",
         "runtime_threads": 1,
@@ -90,6 +91,8 @@ def measurement_deck(base: str, rule: dict[str, object], branch: str,
         result = set_global(result, key, str(value))
     for key, value in {
         "spatial_average_reset_on_restart": "true",
+        "spatial_average_sampling_order": diagnostics.get(
+            "spatial_sampling_order", "post_collision"),
         "phase_eedf": "true",
         "phase_eedf_species": "electrons",
         "phase_eedf_energy_bins": diagnostics["phase_eedf_energy_bins"],
