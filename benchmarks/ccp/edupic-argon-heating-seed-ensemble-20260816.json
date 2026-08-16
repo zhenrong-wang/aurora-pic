@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "matched_heating_continuation_seed_repeatability_milestone",
+  "rule_sha256": "d44301f76436fcc832b626d9611fbb03d047c9ae6775ab6e94face1e4a01cd49",
+  "ensemble_result_sha256": "4c45b8a40b8e06c5ecee3a3166595203e7a07174b30ee0a1bbe04b70ab95e5b7",
+  "analyzer_sha256": "448e89d8de750947c18347509cef48950747eaa091b0bfb53b3f865afa4e7712",
+  "members": [
+    {
+      "seed": 13507,
+      "branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+      "power_density_W_m-3": 1562.202371968467,
+      "electron_density_m-3": 3340744111250007.0,
+      "power_per_electron_ratio_to_reference": 0.8751527995447977
+    },
+    {
+      "seed": 24601,
+      "branch_report_sha256": "9803394cd111e0ec2f15bbea9390f0d098beac510a217310b4c97270b697da8e",
+      "power_density_W_m-3": 1551.0646232689132,
+      "electron_density_m-3": 3339243234250011.5,
+      "power_per_electron_ratio_to_reference": 0.8693039298020193
+    },
+    {
+      "seed": 35713,
+      "branch_report_sha256": "0ff115551bb527f39048254c5dc860c811cbe2c640ffbe23d2186837f948155f",
+      "power_density_W_m-3": 1558.1977607233814,
+      "electron_density_m-3": 3339205348499990.0,
+      "power_per_electron_ratio_to_reference": 0.8733116498340978
+    }
+  ],
+  "prospective_repeatability": {
+    "power_density_relative_range": 0.007152627247380277,
+    "maximum_power_density_relative_range": 0.08,
+    "power_density_gate_passed": true,
+    "electron_density_relative_range": 0.00046074453212337793,
+    "maximum_electron_density_relative_range": 0.03,
+    "electron_density_gate_passed": true,
+    "all_gates_passed": true
+  },
+  "ensemble_cross_code": {
+    "mean_power_density_W_m-3": 1557.1549186535874,
+    "mean_electron_density_m-3": 3339730898000002.5,
+    "mean_power_per_electron_ratio": 0.8725894597269717,
+    "power_per_electron_ratio_range": [
+      0.8693039298020193,
+      0.8751527995447977
+    ],
+    "local_power_phase_space_relative_l2": 0.20795169023755533,
+    "local_power_phase_space_correlation": 0.9798171322801636,
+    "spatially_integrated_phase_power_relative_l2": 0.1212555755615885,
+    "spatially_integrated_phase_power_correlation": 0.9857994364805598,
+    "cycle_average_spatial_power_relative_l2": 0.11085829148521742,
+    "cycle_average_spatial_power_correlation": 0.9911828067220059
+  },
+  "stochastic_localization": {
+    "member_to_ensemble_local_power_relative_l2_range": [
+      0.2102383025444042,
+      0.22315601752338046
+    ],
+    "member_to_ensemble_phase_power_relative_l2_range": [
+      0.1302430065926149,
+      0.14539517344496833
+    ],
+    "member_to_ensemble_spatial_power_relative_l2_range": [
+      0.029543128378620588,
+      0.03305767633568249
+    ]
+  },
+  "assessment": {
+    "volume_power_repeatable_across_continuation_seeds": true,
+    "electron_density_repeatable_across_continuation_seeds": true,
+    "power_per_electron_deficit_persistent": true,
+    "fine_local_power_converged": false,
+    "cycle_average_spatial_mismatch_exceeds_seed_scatter": true,
+    "finding": "The 12.74 percent ensemble-mean power-per-electron deficit is robust to continuation seed, but fine 200-by-400 local power remains noise-limited. The 11.09 percent cycle-average spatial-profile mismatch exceeds the approximately 3 percent member-to-ensemble spatial scatter and is the strongest persistent localization.",
+    "next_target": "Separate the persistent spatial-profile mismatch into density, current, and field factors, then add independent initial particle realizations or longer windows before interpreting individual RF-phase structures."
+  },
+  "claim_boundary": "All members reuse one particle realization and vary collision/source RNG continuation only. This demonstrates continuation-seed repeatability, not complete sampling uncertainty or experimental validation."
+}
