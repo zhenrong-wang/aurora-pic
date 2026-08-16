@@ -117,6 +117,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_aurorapic_region_matched_collisions.py
   scripts/analyze_aurorapic_heating_ledger.py
   scripts/analyze_aurorapic_matched_heating.py
+  scripts/analyze_aurorapic_heating_localization.py
   scripts/compare_aurorapic_measurement_windows.py
   scripts/run_aurorapic_timestep_refinement.py
   scripts/split_particle_state.py

@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "matched_electron_heating_phase_space_localization_milestone",
+  "branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+  "audit_result_sha256": "942ea607d9216f14e5f1bce6b14573e0cda767c607e5d0ffb0d2d987d4a930c3",
+  "analyzer_sha256": "f5d5831ea4b584aa22625c6c14ce29d0b30e1412ca82a698fa083c48a82d3879",
+  "comparison_contract": {
+    "phase_bins": 200,
+    "spatial_nodes": 400,
+    "sampling_order": "pre_collision",
+    "phase_alignment": "direct_no_fitted_shift",
+    "orientation": "direct_powered_left_no_reflection",
+    "acceptance_thresholds_declared": false
+  },
+  "volume_phase_averages": {
+    "candidate_to_reference_power_density_ratio": 0.9807743799998414,
+    "candidate_to_reference_electron_density_ratio": 1.1206893019253115,
+    "candidate_to_reference_power_per_electron_ratio": 0.8751527995447977
+  },
+  "phase_space_comparisons": {
+    "electric_field": {
+      "relative_l2": 0.03132564533105525,
+      "pearson_correlation": 0.9995809841085168,
+      "candidate_to_reference_peak_absolute_ratio": 1.0324734457831315
+    },
+    "electron_density": {
+      "relative_l2": 0.1196525537490818,
+      "pearson_correlation": 0.9992094193609141,
+      "candidate_to_reference_peak_absolute_ratio": 1.155574186278819
+    },
+    "electron_current_density": {
+      "relative_l2": 0.3020709285838332,
+      "pearson_correlation": 0.9608127444689489,
+      "candidate_to_reference_peak_absolute_ratio": 1.9244163735745576
+    },
+    "electron_ohmic_power_density": {
+      "relative_l2": 0.3119599603002249,
+      "pearson_correlation": 0.9562663437107366,
+      "candidate_to_reference_peak_absolute_ratio": 1.5968793716192324
+    }
+  },
+  "reduced_power_comparisons": {
+    "spatially_integrated_phase_profile_relative_l2": 0.18969458671133232,
+    "spatially_integrated_phase_profile_correlation": 0.9662235110527948,
+    "cycle_average_spatial_profile_relative_l2": 0.11865884623584204,
+    "cycle_average_spatial_profile_correlation": 0.9898487682270101
+  },
+  "localization": {
+    "first_half_cycle_net_tendency": "candidate heating is generally lower or electron cooling is stronger",
+    "second_half_cycle_net_tendency": "candidate heating is generally equal or higher",
+    "spatial_tendency": "candidate heating is higher in the 0.0-0.2 and 0.8-0.9 gap fractions and lower in the 0.2-0.4 and 0.6-0.8 fractions",
+    "interpretation_boundary": "Opposing phase and spatial differences cancel strongly in the volume-cycle integral; four-cycle local current and power fluctuations require seed uncertainty before mechanistic interpretation."
+  },
+  "assessment": {
+    "field_phase_space_agreement_is_close": true,
+    "density_shape_agreement_is_close_but_amplitude_is_high": true,
+    "cycle_volume_power_density_is_close": true,
+    "local_current_and_power_agreement_reached": false,
+    "cross_code_power_per_electron_agreement_reached": false,
+    "finding": "The 12.48 percent power-per-electron deficit is the ratio of a 1.92 percent power-density deficit to a 12.07 percent electron-density excess. It is not evidence of a 12.48 percent total power-deposition error. Local current and power remain the principal mismatch.",
+    "next_target": "Run independent candidate seeds with the same matched protocol to quantify uncertainty in phase-resolved current and power before changing solver physics."
+  },
+  "claim_boundary": "This descriptive public-simulation comparison localizes discrepancies but does not establish experimental accuracy, predictive validation, or prospectively accepted cross-code agreement."
+}
