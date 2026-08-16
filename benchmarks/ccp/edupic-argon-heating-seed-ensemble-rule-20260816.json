@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_matched_heating_independent_continuation_seed_ensemble",
+  "axis": "collision_rng_continuation_seed",
+  "question": "Are the matched phase-resolved current and heating differences persistent beyond four-cycle continuation-seed noise?",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "known_reset_boundary": "All arms reuse one portable particle state; independent RNG continuations are not independent initial-condition realizations. Two RF cycles are discarded before each fresh measurement."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "length_m": 0.025,
+    "macro_weight": 700000000.0,
+    "neutral_density_m-3": 2.0694208669001848e21,
+    "electron_mass_kg": 9.10938356e-31
+  },
+  "branches": {
+    "seed_24601": {
+      "seed": 24601,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    },
+    "seed_35713": {
+      "seed": 35713,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 200,
+    "spatial_sampling_order": "pre_collision",
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "phase_eedf_regions": "full_gap:0:0.025,edupic_center_10pct:0.01125:0.01375",
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "prospective_internal_repeatability": {
+    "members": [13507, 24601, 35713],
+    "baseline_seed_result_sha256": "9917215585d5c5737c5991f432dbdeef4e3cd07f324dd6bdb7e1d9b0f9ce9b92",
+    "maximum_relative_range_volume_phase_power_density": 0.08,
+    "maximum_relative_range_volume_phase_electron_density": 0.03,
+    "all_repeatability_gates_required": true
+  },
+  "cross_code_observables_without_acceptance_thresholds": [
+    "power_density_ratio",
+    "electron_density_ratio",
+    "power_per_electron_ratio",
+    "phase_integrated_power_profile",
+    "cycle_average_spatial_power_profile"
+  ],
+  "resource_policy": "Run branches sequentially on one low-priority inherited CPU; refuse overwrite and retain the 256 MiB per-branch ceiling.",
+  "physics_claim": "matched_heating_continuation_seed_uncertainty_only",
+  "branch_claim_boundary": "One independently seeded RNG continuation is not an ensemble; combine both new branches with the locked seed-13507 baseline before interpretation."
+}

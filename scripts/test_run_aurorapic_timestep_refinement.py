@@ -69,6 +69,12 @@ def main() -> None:
             root / "checkpoint.apc")
         assert "spatial_average_phase_bins = 200" in heating
         assert "spatial_average_sampling_order = pre_collision" in heating
+        seeded_rule = json.loads(json.dumps(heating_rule))
+        seeded_rule["branches"]["matched_heating"]["seed"] = 24601
+        seeded, _, _ = initial_deck(
+            base, seeded_rule, "matched_heating", root / "seeded",
+            root / "state.aps")
+        assert "seed = 24601" in seeded
 
 
 if __name__ == "__main__":
