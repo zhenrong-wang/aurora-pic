@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "matched_heating_current_field_attribution_milestone",
+  "ensemble_result_sha256": "4c45b8a40b8e06c5ecee3a3166595203e7a07174b30ee0a1bbe04b70ab95e5b7",
+  "attribution_result_sha256": "1bc674d77283bd4a1b59b5a4e9faaf510620c72a5cbfaa819fbfbd02774963e7",
+  "analyzer_sha256": "27855b3e7bf3942d4ee56a66efea3ebd1729ba4db8e9dd082dbc3296567edfab",
+  "method": {
+    "power_identity": "P = J_e E",
+    "attribution": "pointwise two-factor symmetric Shapley decomposition",
+    "exact_closure": "delta_P = phi_current + phi_field",
+    "maximum_member_volume_closure_residual_W_m-3": 1.6427748050773516e-11,
+    "density_drift_boundary": "An exact density-versus-drift split is not claimed because reference mean velocity is undefined in empty sheath cells where density and current are both zero.",
+    "acceptance_thresholds_declared": false
+  },
+  "reference_power_factorization": {
+    "current_times_field_to_published_power_relative_l2": 2.3031028839288217e-07,
+    "pearson_correlation": 0.9999999999999731
+  },
+  "ensemble_volume_phase_attribution": {
+    "current_contribution_W_m-3": 132.07518029861816,
+    "field_contribution_W_m-3": -167.7456910411325,
+    "total_power_difference_W_m-3": -35.670510742514324,
+    "interpretation": "The current difference alone raises candidate heating, but the field difference more than cancels it. Contribution percentages are intentionally omitted because opposing signed terms make them misleading."
+  },
+  "reduced_profile_comparisons": {
+    "spatially_integrated_phase_current_relative_l2": 0.051557044231796544,
+    "spatially_integrated_phase_current_correlation": 0.9995990918252876,
+    "spatially_integrated_phase_current_per_electron_relative_l2": 0.07549564260557592,
+    "spatially_integrated_phase_density_relative_l2": 0.12034979615783417,
+    "cycle_average_spatial_current_relative_l2": 0.329370796196792,
+    "cycle_average_spatial_current_correlation": 0.995306031795959,
+    "cycle_average_spatial_density_relative_l2": 0.11886692899871924,
+    "cycle_average_spatial_density_correlation": 0.999350954491296
+  },
+  "spatial_localization": {
+    "powered_side_0_to_0.4_gap": "positive current contribution opposed by a larger negative field contribution over much of the region",
+    "central_0.4_to_0.6_gap": "both contributions are near zero",
+    "grounded_side_0.8_to_1.0_gap": "current and field contributions change sign by subregion and partially cancel",
+    "strongest_negative_field_band": "0.2 <= x/L < 0.4"
+  },
+  "assessment": {
+    "exact_attribution_closes": true,
+    "single_factor_explanation_supported": false,
+    "phase_integrated_current_shape_is_close": true,
+    "cycle_average_spatial_current_amplitude_agrees": false,
+    "finding": "The remaining small total-power deficit is a cancellation between materially larger current and field effects. Spatially integrated RF current agrees well in shape, while cycle-average spatial current has a persistent amplitude mismatch despite high shape correlation.",
+    "next_target": "Test the persistent cycle-average spatial current and density amplitudes with longer matched windows or independent initial particle realizations before changing field-particle or collision physics."
+  },
+  "claim_boundary": "This exact algebraic decomposition localizes correlated differences but does not demonstrate causality, predictive validation, or experimental accuracy."
+}
