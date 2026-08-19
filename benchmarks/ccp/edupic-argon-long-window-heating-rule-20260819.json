@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_long_window_matched_heating_run",
+  "axis": "measurement_window_3x",
+  "question": "Does the persistent matched heating and spatial-current result survive a twelve-cycle window with reduced stochastic noise?",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "known_reset_boundary": "The portable state excludes fields, RNG, and diagnostic history; two RF cycles are discarded before the fresh twelve-cycle measurement."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "length_m": 0.025,
+    "macro_weight": 700000000.0,
+    "neutral_density_m-3": 2.0694208669001848e21,
+    "electron_mass_kg": 9.10938356e-31
+  },
+  "branches": {
+    "long_window": {
+      "seed": 46829,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 12,
+      "output_interval": 400,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 1800
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 200,
+    "spatial_sampling_order": "pre_collision",
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "phase_eedf_regions": "full_gap:0:0.025,edupic_center_10pct:0.01125:0.01375",
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "prospective_internal_acceptance": {
+    "maximum_phase_binned_to_exact_electron_power_relative_difference": 0.02,
+    "maximum_relative_difference_from_four_cycle_ensemble_mean_power_density": 0.03,
+    "maximum_relative_difference_from_four_cycle_ensemble_mean_electron_density": 0.01,
+    "maximum_relative_difference_from_four_cycle_ensemble_mean_power_per_electron_ratio": 0.03,
+    "all_gates_required": true
+  },
+  "locked_four_cycle_ensemble": {
+    "result_sha256": "4c45b8a40b8e06c5ecee3a3166595203e7a07174b30ee0a1bbe04b70ab95e5b7",
+    "mean_power_density_W_m-3": 1557.1549186535874,
+    "mean_electron_density_m-3": 3339730898000002.5,
+    "mean_power_per_electron_ratio": 0.8725894597269717
+  },
+  "cross_code_observables_without_acceptance_thresholds": [
+    "power_density_ratio",
+    "electron_density_ratio",
+    "power_per_electron_ratio",
+    "phase_integrated_current_and_power_profiles",
+    "cycle_average_spatial_current_and_power_profiles"
+  ],
+  "resource_policy": "Run one low-priority inherited CPU only; preserve per-step averaging, reduce ordinary field snapshots to ten per RF cycle, refuse overwrite, and retain the 256 MiB ceiling.",
+  "physics_claim": "matched_heating_long_window_sampling_evidence_only",
+  "branch_claim_boundary": "One longer continuation still shares the locked initial particle realization; it tests window-length sensitivity, not complete initial-condition uncertainty."
+}

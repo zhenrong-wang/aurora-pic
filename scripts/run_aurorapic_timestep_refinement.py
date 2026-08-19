@@ -25,6 +25,7 @@ APPROVED_RULE_SHA256S = {
     "f497f445030a8d888ef3c9cf93b9ed1492e000eff1336eec9fbfcc578415f9f7",
     "3ae87d834ebbec16d8b59f964859a9fa398d6dca85f1d73dd204fd24a5d41842",
     "d44301f76436fcc832b626d9611fbb03d047c9ae6775ab6e94face1e4a01cd49",
+    "c85c7cbd9ede314ff5e744699fe630ac2ff19af74c0039c44cf2f5543fd0b2a0",
 }
 
 
@@ -49,7 +50,8 @@ def common_deck(base: str, rule: dict[str, object], branch: str,
     for key, value in {
         "dt": config["timestep_s"],
         "steps": equilibration_steps,
-        "output_interval": max(1, steps_per_cycle // 40),
+        "output_interval": int(config.get(
+            "output_interval", max(1, steps_per_cycle // 40))),
         "output_dir": output,
         "spatial_average_start_step": 1,
         "spatial_average_end_step": equilibration_steps,
@@ -247,6 +249,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "equilibration_steps": equilibration_steps,
             "measurement_steps": measurement_steps,
             "seed": config.get("seed", state.get("seed")),
+            "output_interval": int(config.get(
+                "output_interval", max(1, steps_per_cycle // 40))),
         },
         "resources": {
             "equilibration": equilibration_resources,

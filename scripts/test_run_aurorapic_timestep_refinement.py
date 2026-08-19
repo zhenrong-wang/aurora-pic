@@ -71,10 +71,20 @@ def main() -> None:
         assert "spatial_average_sampling_order = pre_collision" in heating
         seeded_rule = json.loads(json.dumps(heating_rule))
         seeded_rule["branches"]["matched_heating"]["seed"] = 24601
+        seeded_rule["branches"]["matched_heating"]["output_interval"] = 400
         seeded, _, _ = initial_deck(
             base, seeded_rule, "matched_heating", root / "seeded",
             root / "state.aps")
         assert "seed = 24601" in seeded
+        assert "output_interval = 400" in seeded
+        long_rule = json.loads(Path(
+            "benchmarks/ccp/edupic-argon-long-window-heating-rule-20260819.json"
+        ).read_text(encoding="utf-8"))
+        long_window, equilibration, measurement = initial_deck(
+            base, long_rule, "long_window", root / "long", root / "state.aps")
+        assert equilibration == 8000 and measurement == 48000
+        assert "output_interval = 400" in long_window
+        assert "seed = 46829" in long_window
 
 
 if __name__ == "__main__":
