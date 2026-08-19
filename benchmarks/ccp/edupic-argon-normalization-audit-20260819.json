@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "cross_code_normalization_audit_milestone",
+  "audit_result_sha256": "6d491333d81802f59b02516751f2e8fba443bcc4f4e9228714ec13b0c83c8744",
+  "analyzer_sha256": "e94a9b472d7e56560934df22e6f4f2046008a212196d5971a9398028ee4c0bbf",
+  "candidate_branch_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+  "source_contract": {
+    "edupic_upstream_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "edupic_upstream_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "reviewed_local_source_sha256": "a850889bbc3c5917505eb31752cde607b7550c8212f7df01fa739b70d1a6a79f",
+    "local_patch_boundary": "Only main() is changed to export cross sections and return; audited normalization code is unmodified."
+  },
+  "weight_contract": {
+    "edupic_superparticle_weight": 70000.0,
+    "edupic_fictive_area_m2": 0.0001,
+    "edupic_effective_1d_line_weight_m-2": 700000000.0,
+    "aurorapic_1d_line_weight_m-2": 700000000.0,
+    "ratio": 1.0,
+    "equivalent": true
+  },
+  "deposition_and_phase_contract": {
+    "nodes": 400,
+    "phase_bins": 200,
+    "shape": "linear_CIC",
+    "boundary_equivalence": "eduPIC endpoint factor two equals AuroraPIC half-cell node volume",
+    "edupic_phase_normalization": "1 / (measurement_cycles * 20 samples_per_bin)",
+    "aurorapic_phase_normalization": "1 / 240 samples_per_bin",
+    "both_are_arithmetic_time_averages": true,
+    "sampling_order": "pre_collision"
+  },
+  "density_conservation": {
+    "reference_implied_macro_particle_count_mean": 106463.3074327779,
+    "reference_implied_macro_particle_count_range": [
+      106388.36935718339,
+      106566.47927616297
+    ],
+    "candidate_implied_macro_particle_count_mean": 119130.4915,
+    "candidate_implied_macro_particle_count_range": [
+      119023.2625,
+      119259.47083333333
+    ],
+    "candidate_to_reference_mean_implied_count_ratio": 1.1189816883645127,
+    "candidate_to_reference_physical_density_ratio": 1.118981688364513,
+    "ratio_identity_relative_error": 2.220446049250313e-16
+  },
+  "current_and_power_contract": {
+    "electron_current_definition_both_codes": "-elementary_charge * density * mean_velocity_x",
+    "mean_velocity_time_centering": "pre-push position with leapfrog-centered velocity",
+    "reference_power_matrix_jE_relative_l2_reconstruction_error": 2.3031028839288217e-07
+  },
+  "spatial_quadrature_sensitivity": {
+    "candidate_to_reference_density_ratio_trapezoid": 1.118981688364513,
+    "candidate_to_reference_density_ratio_simple_node_average": 1.1189815164780668,
+    "ratio_change": 1.5360972782652027e-07
+  },
+  "assessment": {
+    "normalization_mismatch_found": false,
+    "density_excess_explained_by_normalization": false,
+    "finding": "The persistent 11.898 percent electron-density excess is a simulated population/state difference, not a macro-weight, area, endpoint-volume, phase-average, current-unit, or quadrature mismatch.",
+    "next_target": "Run independent initial particle realizations from the same macroscopic state to quantify state/seed uncertainty in density and spatial-current amplitudes."
+  },
+  "claim_boundary": "This rules out the audited 1D normalization conventions. It does not prove that the two kinetic states, stochastic processes, or algorithms are equal."
+}

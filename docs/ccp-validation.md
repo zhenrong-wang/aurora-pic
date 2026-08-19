@@ -2095,6 +2095,48 @@ For a final window embedded in a full numerical-sensitivity output, add exact
 selects matching rows from every diagnostic, requires all endpoints and counter
 coverage, and records that the published numerical contract changed.
 
+## eduPIC normalization audit
+
+The twelve-cycle matched-heating comparison left a stable `+11.898%`
+AuroraPIC electron-density difference and a `-13.560%` power-per-electron
+difference. Before launching more kinetic trajectories, the complete 1D
+normalization path was audited against the pinned eduPIC C implementation and
+the published 400-by-200 phase matrices.
+
+The two codes are normalization-equivalent. eduPIC's superparticle weight of
+`7.0e4` over its fictive `1.0e-4 m2` electrode area is exactly AuroraPIC's
+`7.0e8 m-2` line weight. Both use linear CIC deposition. eduPIC's factor of two
+at either boundary is the same half-cell control volume that AuroraPIC uses
+directly. Both phase diagnostics are arithmetic means, both use pre-collision
+moments with leapfrog-centered longitudinal velocity, and both form electron
+current as `-e n u`.
+
+The archived result provides a direct conservation check. Trapezoidal spatial
+integration of every published density phase implies a mean of `106463.3074`
+eduPIC electron macroparticles; the twelve-cycle AuroraPIC phases imply
+`119130.4915`. Their ratio, `1.118981688364513`, equals the independently
+reported physical-density ratio to `2.22e-16` relative error. Replacing the
+physical half-cell quadrature with a simple 400-node average changes that
+cross-code ratio by only `1.54e-7`. The published eduPIC heating matrix also
+reconstructs from its current and electric-field matrices to `2.30e-7`
+relative L2, consistent with text-output rounding.
+
+This rules out macro weight, electrode area, endpoint volume, phase averaging,
+current units, and spatial quadrature as explanations for the density and
+heating discrepancies. It does not show that the kinetic states are equal.
+The next discriminator is an independent-initial-realization ensemble from
+the same macroscopic state.
+
+The checksum-bearing evidence is
+[`benchmarks/ccp/edupic-argon-normalization-audit-20260819.json`](../benchmarks/ccp/edupic-argon-normalization-audit-20260819.json).
+The audit can be reproduced locally with:
+
+```sh
+PYTHONPATH=scripts python3 scripts/audit_edupic_normalization.py \
+  candidate-run-root reference-raw-data eduPIC.cc \
+  --output normalization-audit.json
+```
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
