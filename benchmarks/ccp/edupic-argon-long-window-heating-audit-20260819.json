@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "long_window_matched_heating_milestone",
+  "rule_sha256": "c85c7cbd9ede314ff5e744699fe630ac2ff19af74c0039c44cf2f5543fd0b2a0",
+  "branch_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+  "audit_result_sha256": "7175b8848ab5284dfb44128478058f05fc7000b63dc60f1985c3d456f5a92d5a",
+  "analyzer_sha256": "363da2d2c109807295e0ea8c5a43bacc052d532d2da29d1827f3c15d2114e9f7",
+  "sampling": {
+    "measurement_cycles": 12,
+    "samples": 48000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 240,
+    "sampling_order": "pre_collision"
+  },
+  "prospective_acceptance": {
+    "all_gates_passed": true,
+    "phase_binned_to_exact_power_relative_difference": 0.003958201901232528,
+    "phase_binned_to_exact_power_limit": 0.02,
+    "power_from_four_cycle_ensemble_mean_relative_difference": 0.01059677865613673,
+    "power_from_four_cycle_ensemble_mean_limit": 0.03,
+    "density_from_four_cycle_ensemble_mean_relative_difference": 0.0012207977602270992,
+    "density_from_four_cycle_ensemble_mean_limit": 0.01,
+    "power_per_electron_ratio_from_ensemble_mean_relative_difference": 0.009387008237475292,
+    "power_per_electron_ratio_from_ensemble_mean_limit": 0.03
+  },
+  "cross_code_results": {
+    "candidate_to_reference_power_density_ratio": 0.9672460429095255,
+    "candidate_to_reference_electron_density_ratio": 1.1189816883644952,
+    "candidate_to_reference_power_per_electron_ratio": 0.8643984552805805,
+    "electric_field_phase_space_relative_l2": 0.031853157879842234,
+    "electron_current_phase_space_relative_l2": 0.1857388705652023,
+    "electron_power_phase_space_relative_l2": 0.2081868166610923,
+    "spatially_integrated_phase_current_relative_l2": 0.055281292549996565,
+    "spatially_integrated_phase_current_correlation": 0.9996123842931155,
+    "cycle_average_spatial_current_relative_l2": 0.2957901640728028,
+    "cycle_average_spatial_current_correlation": 0.9967470667399797,
+    "cycle_average_spatial_power_relative_l2": 0.11668858909322626,
+    "cycle_average_spatial_power_correlation": 0.9903732331489529
+  },
+  "recovery_record": {
+    "simulation_completed": true,
+    "postprocessing_initially_failed": true,
+    "cause": "runner reporting referenced an out-of-scope steps_per_cycle variable",
+    "completed_outputs_reused_without_rerunning_physics": true,
+    "resource_record_lost_with_reporting_exception": true,
+    "resource_values_fabricated": false,
+    "live_observed_rss_range_kib": [198628, 204124],
+    "resource_ceiling_reverified_in_branch_report": false,
+    "runner_now_persists_stage_resources_before downstream postprocessing": true,
+    "runner_supports_finalize_existing": true
+  },
+  "assessment": {
+    "window_length_consistency_reached": true,
+    "power_per_electron_deficit_persistent": true,
+    "spatial_current_amplitude_mismatch_persistent": true,
+    "fine_local_power_fully_converged": false,
+    "finding": "Tripling the measurement window preserves the approximately 13.56 percent power-per-electron deficit and the approximately 29.58 percent cycle-average spatial-current L2 mismatch. The high current-profile correlation indicates an amplitude/localization discrepancy rather than an incorrect RF waveform shape.",
+    "next_target": "Generate independent initial particle realizations from the same macroscopic state and test density/current amplitudes, while separately checking whether reference and candidate particle-weight and density normalization conventions are exactly equivalent."
+  },
+  "claim_boundary": "This establishes twelve-cycle consistency from one common initial particle realization. It is not complete initial-condition uncertainty, experimental validation, or general predictive credibility."
+}

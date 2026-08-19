@@ -130,10 +130,12 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     base_path = args.base_deck.resolve()
     state_path = args.particle_state.resolve()
     work = args.work_dir.resolve()
-    if work.exists() and not args.resume_measurement:
+    if work.exists() and not args.resume_measurement and not args.finalize_existing:
         raise RefinementError(f"refusing to overwrite {work}")
-    if not work.exists() and args.resume_measurement:
-        raise RefinementError("measurement recovery requires an existing work directory")
+    if not work.exists() and (args.resume_measurement or args.finalize_existing):
+        raise RefinementError("recovery requires an existing work directory")
+    if args.resume_measurement and args.finalize_existing:
+        raise RefinementError("recovery modes are mutually exclusive")
     fixed = rule["fixed_inputs"]
     state = rule["common_stationary_state"]
     for path, expected, label in (
@@ -149,20 +151,37 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         raise RefinementError("available memory is below the launch floor")
     config = rule["branches"][branch]
     base = base_path.read_text(encoding="utf-8")
-    work.mkdir(parents=True, exist_ok=args.resume_measurement)
+    work.mkdir(
+        parents=True,
+        exist_ok=args.resume_measurement or args.finalize_existing)
     equilibration = work / "equilibration"
     measurement = work / (
         "measurement-recovery" if args.resume_measurement else "measurement")
-    if measurement.exists():
+    if measurement.exists() and not args.finalize_existing:
         raise RefinementError(f"refusing to overwrite {measurement}")
-    if not args.resume_measurement:
+    if not args.resume_measurement and not args.finalize_existing:
         equilibration.mkdir()
-    measurement.mkdir()
+    if not args.finalize_existing:
+        measurement.mkdir()
     initial, equilibration_steps, measurement_steps = initial_deck(
         base, rule, branch, equilibration / "output", state_path)
     initial_path = equilibration / "input.cfg"
     checkpoint = equilibration / "output" / f"checkpoint_{equilibration_steps}.apc"
-    if args.resume_measurement:
+    if args.finalize_existing:
+        if (not initial_path.is_file() or
+                initial_path.read_text(encoding="utf-8") != initial):
+            raise RefinementError("completed equilibration deck differs")
+        if not checkpoint.is_file():
+            raise RefinementError("completed equilibration checkpoint is missing")
+        resource_path = equilibration / "resources.json"
+        equilibration_resources = (
+            json.loads(resource_path.read_text(encoding="utf-8"))
+            if resource_path.is_file() else {
+                "unavailable_after_reporting_failure": True,
+                "wall_seconds": None,
+                "peak_resident_set_kib": None,
+            })
+    elif args.resume_measurement:
         if (not initial_path.is_file() or
                 initial_path.read_text(encoding="utf-8") != initial):
             raise RefinementError("completed equilibration deck differs")
@@ -178,19 +197,37 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT,
             str(initial_path)], equilibration / "stdout.txt",
             equilibration / "stderr.txt", float(config["equilibration_timeout_seconds"]))
+        atomic_json(equilibration / "resources.json", equilibration_resources)
     measured = measurement_deck(
         base, rule, branch, measurement / "output", checkpoint)
     measured_path = measurement / "input.cfg"
-    atomic_text(measured_path, measured)
-    measurement_resources = run_process([
-        str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT,
-        str(measured_path)], measurement / "stdout.txt", measurement / "stderr.txt",
-        float(config["measurement_timeout_seconds"]))
-    maximum_rss = int(measurement_resources["peak_resident_set_kib"])
-    if "peak_resident_set_kib" in equilibration_resources:
-        maximum_rss = max(
-            maximum_rss, int(equilibration_resources["peak_resident_set_kib"]))
-    if maximum_rss > int(execution["maximum_peak_resident_set_kib"]):
+    if args.finalize_existing:
+        if (not measured_path.is_file() or
+                measured_path.read_text(encoding="utf-8") != measured):
+            raise RefinementError("completed measurement deck differs")
+        resource_path = measurement / "resources.json"
+        measurement_resources = (
+            json.loads(resource_path.read_text(encoding="utf-8"))
+            if resource_path.is_file() else {
+                "unavailable_after_reporting_failure": True,
+                "wall_seconds": None,
+                "peak_resident_set_kib": None,
+            })
+    else:
+        atomic_text(measured_path, measured)
+        measurement_resources = run_process([
+            str(executable), "--allow-large-run", CLI_ACKNOWLEDGEMENT,
+            str(measured_path)], measurement / "stdout.txt", measurement / "stderr.txt",
+            float(config["measurement_timeout_seconds"]))
+        atomic_json(measurement / "resources.json", measurement_resources)
+    recorded_rss = [
+        value.get("peak_resident_set_kib")
+        for value in (equilibration_resources, measurement_resources)
+        if value.get("peak_resident_set_kib") is not None
+    ]
+    maximum_rss = max(map(int, recorded_rss)) if recorded_rss else None
+    if (maximum_rss is not None and
+            maximum_rss > int(execution["maximum_peak_resident_set_kib"])):
         raise RefinementError("branch exceeded its predeclared memory ceiling")
 
     output = measurement / "output"
@@ -250,16 +287,20 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "measurement_steps": measurement_steps,
             "seed": config.get("seed", state.get("seed")),
             "output_interval": int(config.get(
-                "output_interval", max(1, steps_per_cycle // 40))),
+                "output_interval", max(
+                    1, int(config["steps_per_rf_cycle"]) // 40))),
         },
         "resources": {
             "equilibration": equilibration_resources,
             "measurement": measurement_resources,
             "maximum_peak_resident_set_kib": maximum_rss,
+            "resource_ceiling_reverified": maximum_rss is not None,
             "available_memory_before_launch_kib": available,
         },
         "interruption_recovery": {
             "measurement_only_resume": args.resume_measurement,
+            "finalized_existing_after_reporting_failure":
+                args.finalize_existing,
             "preserved_partial_measurement_directory": (
                 str(work / "measurement") if args.resume_measurement else None),
         },
@@ -293,6 +334,7 @@ def main() -> int:
     parser.add_argument("--rule", type=Path, required=True)
     parser.add_argument("--branch", required=True)
     parser.add_argument("--resume-measurement", action="store_true")
+    parser.add_argument("--finalize-existing", action="store_true")
     parser.add_argument("--acknowledge-cost")
     try:
         report = execute(parser.parse_args())

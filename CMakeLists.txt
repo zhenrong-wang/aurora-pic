@@ -120,6 +120,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_aurorapic_heating_localization.py
   scripts/analyze_aurorapic_heating_seed_ensemble.py
   scripts/analyze_aurorapic_heating_factor_attribution.py
+  scripts/analyze_aurorapic_long_window_heating.py
   scripts/compare_aurorapic_measurement_windows.py
   scripts/run_aurorapic_timestep_refinement.py
   scripts/split_particle_state.py
