@@ -26,6 +26,7 @@ APPROVED_RULE_SHA256S = {
     "3ae87d834ebbec16d8b59f964859a9fa398d6dca85f1d73dd204fd24a5d41842",
     "d44301f76436fcc832b626d9611fbb03d047c9ae6775ab6e94face1e4a01cd49",
     "c85c7cbd9ede314ff5e744699fe630ac2ff19af74c0039c44cf2f5543fd0b2a0",
+    "53f372d3ad10fb6c24c5265c962c559ca92d94cd4a3008c82c320b88912aabb4",
 }
 
 
@@ -33,9 +34,22 @@ class RefinementError(RuntimeError):
     pass
 
 
+def branch_state(rule: dict[str, object], branch: str) -> dict[str, object]:
+    state = dict(rule["common_stationary_state"])
+    config = rule["branches"][branch]
+    state_name = config.get("particle_state")
+    if state_name is not None:
+        states = rule.get("particle_states", {})
+        if state_name not in states:
+            raise RefinementError("branch references an unknown particle state")
+        state.update(states[state_name])
+        state["name"] = state_name
+    return state
+
+
 def common_deck(base: str, rule: dict[str, object], branch: str,
                 output: Path) -> tuple[str, int, int]:
-    state = rule["common_stationary_state"]
+    state = branch_state(rule, branch)
     config = rule["branches"][branch]
     diagnostics = rule["fresh_measurement_contract"]
     steps_per_cycle = int(config["steps_per_rf_cycle"])
@@ -73,7 +87,7 @@ def initial_deck(base: str, rule: dict[str, object], branch: str,
                  output: Path, state_path: Path) -> tuple[str, int, int]:
     result, equilibration_steps, measurement_steps = common_deck(
         base, rule, branch, output)
-    state = rule["common_stationary_state"]
+    state = branch_state(rule, branch)
     result = insert_global(result, "initial_state_path", str(state_path))
     result = insert_global(
         result, "initial_state_signature", str(state["particle_state_signature"]))
@@ -137,7 +151,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     if args.resume_measurement and args.finalize_existing:
         raise RefinementError("recovery modes are mutually exclusive")
     fixed = rule["fixed_inputs"]
-    state = rule["common_stationary_state"]
+    state = branch_state(rule, branch)
     for path, expected, label in (
         (executable, fixed["solver_sha256"], "solver"),
         (base_path, fixed["base_deck_sha256"], "base deck"),
@@ -279,6 +293,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "particle_state_sha256": sha256(state_path),
             "initial_config_sha256": sha256(initial_path),
             "measurement_config_sha256": sha256(measured_path),
+            "particle_state_name": state.get("name"),
         },
         "numerics": {
             "timestep_s": config["timestep_s"],

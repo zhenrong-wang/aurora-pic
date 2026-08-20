@@ -45,6 +45,7 @@ PYTHONPATH=scripts python3 scripts/test_audit_edupic_normalization.py
 PYTHONPATH=scripts python3 scripts/test_compare_aurorapic_measurement_windows.py
 PYTHONPATH=scripts python3 scripts/test_run_aurorapic_timestep_refinement.py
 PYTHONPATH=scripts python3 scripts/test_split_particle_state.py
+PYTHONPATH=scripts python3 scripts/test_randomize_particle_state.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_post_trend_horizon.py
 python3 scripts/test_export_checkpoint_particle_state.py
 python3 scripts/test_prepare_quasineutral_particle_state.py

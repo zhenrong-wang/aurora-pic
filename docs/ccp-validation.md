@@ -2137,6 +2137,26 @@ PYTHONPATH=scripts python3 scripts/audit_edupic_normalization.py \
   --output normalization-audit.json
 ```
 
+### Constrained initial-microstate ensemble
+
+The next test is predeclared in
+[`benchmarks/ccp/edupic-argon-microstate-ensemble-rule-20260820.json`](../benchmarks/ccp/edupic-argon-microstate-ensemble-rule-20260820.json).
+Two deterministic conditional randomizations preserve the source state much
+more tightly than an unconstrained bootstrap: cell occupancy and cellwise
+velocity-tuple multisets are exact, while each cell's summed CIC fraction—and
+therefore its nodal number deposition—is preserved to roundoff. Subcell
+positions are redrawn under pair-sum constraints and velocity tuples are
+independently re-paired with positions inside each cell.
+
+For seeds 51,949 and 63,059, more than 99.8% of particle positions change,
+with approximately `18 micrometres` RMS displacement. Species nodal-number
+relative L1 errors are between `9.3e-16` and `1.1e-15`. These are controlled
+independent microstates conditional on the empirical cell populations and
+velocity samples; they are not independent draws from an unknown continuous
+distribution. The two branches will use the same collision RNG seed, discard
+two RF cycles, and measure four fresh cycles with the established 200-bin
+pre-collision protocol. Runs remain serial with a 256 MiB RSS ceiling.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

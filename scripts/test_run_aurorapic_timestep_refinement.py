@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 import tempfile
 
-from run_aurorapic_timestep_refinement import initial_deck, measurement_deck
+from run_aurorapic_timestep_refinement import (
+    branch_state, initial_deck, measurement_deck,
+)
 
 
 def main() -> None:
@@ -77,6 +79,22 @@ def main() -> None:
             root / "state.aps")
         assert "seed = 24601" in seeded
         assert "output_interval = 400" in seeded
+        multi_state = json.loads(json.dumps(seeded_rule))
+        multi_state["particle_states"] = {
+            "randomized": {
+                "particle_state_sha256": "a" * 64,
+                "particle_state_signature": 123456789,
+            }}
+        multi_state["branches"]["matched_heating"][
+            "particle_state"] = "randomized"
+        selected = branch_state(multi_state, "matched_heating")
+        assert selected["particle_state_sha256"] == "a" * 64
+        assert selected["particle_state_signature"] == 123456789
+        assert selected["electrons"] == 119449
+        randomized, _, _ = initial_deck(
+            base, multi_state, "matched_heating", root / "randomized",
+            root / "randomized.aps")
+        assert "initial_state_signature = 123456789" in randomized
         long_rule = json.loads(Path(
             "benchmarks/ccp/edupic-argon-long-window-heating-rule-20260819.json"
         ).read_text(encoding="utf-8"))

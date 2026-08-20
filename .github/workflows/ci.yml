@@ -82,6 +82,7 @@ jobs:
           PYTHONPATH=scripts python3 scripts/test_compare_aurorapic_measurement_windows.py
           PYTHONPATH=scripts python3 scripts/test_run_aurorapic_timestep_refinement.py
           PYTHONPATH=scripts python3 scripts/test_split_particle_state.py
+          PYTHONPATH=scripts python3 scripts/test_randomize_particle_state.py
 
       - name: Validate electron-swarm CLI
         run: python3 scripts/test_swarm_cli.py build/aurorapic_swarm

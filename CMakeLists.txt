@@ -125,6 +125,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/compare_aurorapic_measurement_windows.py
   scripts/run_aurorapic_timestep_refinement.py
   scripts/split_particle_state.py
+  scripts/randomize_particle_state.py
   scripts/export_phase_eedf.py
   scripts/compare_phase_eedf.py
   scripts/run_edupic_stage.py

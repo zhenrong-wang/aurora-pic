@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_constrained_initial_microstate_ensemble",
+  "axis": "constrained_initial_particle_microstate",
+  "question": "Does the persistent density and spatial-current mismatch survive independent subcell position and position-velocity pairing realizations that preserve the same macroscopic state?",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "source_particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "randomization_contract": "Each branch preserves cell occupancy, CIC nodal number density to roundoff, and the exact cellwise velocity-tuple multiset while redrawing constrained subcell positions and independently re-pairing velocity tuples within each cell.",
+    "known_boundary": "These are independent conditional microstate randomizations, not independent samples from an unknown continuous distribution. Two RF cycles are discarded before each fresh measurement."
+  },
+  "particle_states": {
+    "microstate_51949": {
+      "randomization_seed": 51949,
+      "particle_state_sha256": "6821ccb4cfe5da26465776a3d35b37b8e30894f54cb0523e963d01407ce6592c",
+      "particle_state_signature": 6173257635412446812,
+      "particle_state_manifest_sha256": "b5e3a1deb936f748577aea41d4ab2420c628c7a54231ac5e0c53030b557b3903"
+    },
+    "microstate_63059": {
+      "randomization_seed": 63059,
+      "particle_state_sha256": "c0c6a6c9ec01ada12d50cc15ded16260d221237540fc83b659bbea520c04ab5f",
+      "particle_state_signature": 6757078206608649055,
+      "particle_state_manifest_sha256": "9b9ffa2bbb87980c34c86d0b891bdb4533e10194593f74e321d80a352a7959a7"
+    }
+  },
+  "fixed_inputs": {
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "randomizer_sha256": "3c6e0ba033183c9fef7a0e5321f630e2274fc10e394413ddafc95a06553cc620",
+    "nodes": 400,
+    "length_m": 0.025,
+    "macro_weight": 700000000.0,
+    "neutral_density_m-3": 2.0694208669001848e+21,
+    "collision_rng_seed": 13507
+  },
+  "branches": {
+    "microstate_51949": {
+      "particle_state": "microstate_51949",
+      "seed": 13507,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "output_interval": 400,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    },
+    "microstate_63059": {
+      "particle_state": "microstate_63059",
+      "seed": 13507,
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 4,
+      "output_interval": 400,
+      "equilibration_timeout_seconds": 360,
+      "measurement_timeout_seconds": 720
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 262144,
+    "maximum_peak_resident_set_kib": 262144,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_phase_bins": 200,
+    "spatial_sampling_order": "pre_collision",
+    "phase_eedf_energy_bins": 2000,
+    "phase_eedf_energy_max_eV": 500.0,
+    "phase_eedf_regions": "full_gap:0:0.025,edupic_center_10pct:0.01125:0.01375",
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0
+  },
+  "prospective_internal_repeatability": {
+    "members": [
+      "locked_source_microstate",
+      "microstate_51949",
+      "microstate_63059"
+    ],
+    "locked_source_branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+    "maximum_relative_range_volume_phase_power_density": 0.08,
+    "maximum_relative_range_volume_phase_electron_density": 0.03,
+    "maximum_member_to_ensemble_cycle_average_spatial_current_relative_l2": 0.08,
+    "all_repeatability_gates_required": true
+  },
+  "cross_code_observables_without_acceptance_thresholds": [
+    "electron_density_ratio",
+    "power_density_ratio",
+    "power_per_electron_ratio",
+    "cycle_average_spatial_density_profile",
+    "cycle_average_spatial_current_profile",
+    "cycle_average_spatial_power_profile"
+  ],
+  "resource_policy": "Run branches sequentially on one low-priority inherited CPU, refuse overwrite, emit ten ordinary field snapshots per RF cycle, and retain the 256 MiB per-branch ceiling.",
+  "physics_claim": "constrained_initial_microstate_uncertainty_only",
+  "branch_claim_boundary": "One conditional microstate branch is not an ensemble result; both new branches and the locked source-state member are required before interpretation."
+}
