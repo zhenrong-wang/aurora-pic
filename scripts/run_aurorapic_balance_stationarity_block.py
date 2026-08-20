@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import statistics
 
 from run_aurorapic_edupic_pilot import (
@@ -56,6 +57,22 @@ def build_deck(base: str, output: Path, checkpoint: Path,
     result = base
     for key, value in values.items():
         result = set_global(result, key, value)
+    disabled_options = (
+        "spatial_average_interval", "spatial_average_start_step",
+        "spatial_average_end_step", "spatial_average_rf_frequency",
+        "spatial_average_rf_cycles", "spatial_average_phase_bins",
+        "spatial_average_reset_on_restart", "spatial_average_sampling_order",
+        "phase_eedf_species", "phase_eedf_energy_bins",
+        "phase_eedf_energy_max", "phase_eedf_regions",
+        "wall_impact_reset_on_restart", "wall_impact_energy_bins",
+        "wall_impact_energy_max",
+    )
+    for key in disabled_options:
+        result, count = re.subn(
+            rf"(?m)^\s*{re.escape(key)}\s*=.*\n?", "", result, count=1)
+        if count != 1:
+            raise BalanceBlockError(
+                f"base config does not contain exactly one {key!r}")
     return result
 
 

@@ -23,8 +23,23 @@ def test_deck_and_slope() -> None:
 output_interval = 1
 output_dir = old
 spatial_average = true
+spatial_average_interval = 1
+spatial_average_start_step = 1
+spatial_average_end_step = 1
+spatial_average_rf_frequency = 1
+spatial_average_rf_cycles = 1
+spatial_average_phase_bins = 1
+spatial_average_reset_on_restart = true
+spatial_average_sampling_order = pre_collision
 phase_eedf = true
+phase_eedf_species = electrons
+phase_eedf_energy_bins = 1
+phase_eedf_energy_max = 1
+phase_eedf_regions = full:0:1
 wall_impact_spectrum = true
+wall_impact_reset_on_restart = true
+wall_impact_energy_bins = 1
+wall_impact_energy_max = 1
 checkpoint_interval = 1
 runtime_backend = serial
 runtime_threads = 1
@@ -39,6 +54,9 @@ particles = 1
                      "checkpoint_interval = 120000",
                      "restart_path = state.apc"):
         assert expected in deck
+    for removed in ("phase_eedf_species", "spatial_average_interval",
+                    "wall_impact_energy_bins"):
+        assert removed not in deck
     assert abs(normalized_slope([100.0, 101.0, 102.0]) - 1.0 / 101.0) < 1e-15
 
 
