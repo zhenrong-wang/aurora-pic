@@ -1,0 +1,129 @@
+{
+  "all_hard_safety_gates_passed": true,
+  "block_index": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "Passing blocks establish internal source/loss stationarity for this numerical state. They do not by themselves establish cross-code agreement, experimental validation, or predictive accuracy.",
+  "cycle_endpoint_populations": {
+    "electrons": [
+      118924,
+      118872,
+      118860,
+      118835,
+      118771,
+      118752,
+      118724,
+      118710,
+      118682,
+      118672,
+      118670,
+      118637,
+      118587,
+      118520,
+      118492,
+      118427,
+      118398
+    ],
+    "ions": [
+      124456,
+      124425,
+      124432,
+      124365,
+      124328,
+      124340,
+      124250,
+      124276,
+      124248,
+      124220,
+      124208,
+      124182,
+      124165,
+      124086,
+      124027,
+      123966,
+      123962
+    ]
+  },
+  "field_diagnostics": {
+    "files": 161,
+    "manifest_sha256": "cb4431cc12b980948ff5fa4c50efaa81dc3ce10353b6b868a9c305e598233cc9",
+    "maximum_absolute_field_V_m": 66698.39199468833
+  },
+  "final_checkpoint_sha256": "09daaddb103282d7fde18589356103876a16a461b80d1fda01dad5c8e7e40706",
+  "hard_safety_gates": {
+    "absolute_field": true,
+    "finite_scalar_history": true,
+    "particle_cap": true,
+    "particle_ledger_closure": true,
+    "resident_memory": true
+  },
+  "inputs": {
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "deck_sha256": "e0665dd36cad9a21305e3c484d8391bda75a845dc478b3f76e4c6270fe50e239",
+    "input_checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e"
+  },
+  "ionization_macro_events_per_cycle": [
+    463,
+    513,
+    479,
+    463,
+    519,
+    480,
+    528,
+    498,
+    495,
+    497,
+    483,
+    469,
+    437,
+    475,
+    454,
+    482
+  ],
+  "maximum_live_particles": 243436,
+  "metrics": {
+    "electron_source_loss_relative_imbalance": -0.06800258564964447,
+    "ion_source_loss_relative_imbalance": -0.06386554621848739,
+    "ionization_count_coefficient_of_variation": 0.048582526602087395,
+    "normalized_electron_population_slope_per_cycle": -0.0002547046318449314,
+    "normalized_field_energy_slope_per_cycle": 0.00024744416648082363,
+    "normalized_ion_population_slope_per_cycle": -0.00024180025657343152
+  },
+  "output_sha256": {
+    "boundary_losses.csv": "9df8e271fea7197980d3537b597db4dc5e24c2f58b526efe5df962250777395b",
+    "collisions.csv": "bd153db2f37129d624ad7a00ceb1cddae4b7356c74cc30539a4505e5c5cb6348",
+    "scalars.csv": "aeb191e8a593c7cbc7adc24a881f4b0de21e80c78f2f7a22522780477258b7df"
+  },
+  "particle_ledger": {
+    "electron_live_particle_change": -526,
+    "electron_wall_loss_macro_events": 8261,
+    "exact_species_closure": true,
+    "ion_live_particle_change": -494,
+    "ion_wall_loss_macro_events": 8229,
+    "ionization_macro_events": 7735
+  },
+  "physics_claim": "none_predeclared_internal_stationarity_only",
+  "resources": {
+    "available_memory_before_launch_kib": 9429760,
+    "peak_resident_set_kib": 183956,
+    "wall_seconds": 1230.9759116880596
+  },
+  "rule_sha256": "077d706c783d833041750fdfaedbf272f464e1a8242c6bed5cf23cd1f6f014c0",
+  "schema_version": 1,
+  "scope": "aurorapic_source_loss_stationarity_block",
+  "stationarity_block_passed": false,
+  "stationarity_gates": {
+    "electron_population_slope": true,
+    "electron_source_loss_balance": false,
+    "field_energy_slope": true,
+    "ion_population_slope": true,
+    "ion_source_loss_balance": false,
+    "ionization_variation": true
+  },
+  "window": {
+    "cycles": 16,
+    "end_step": 120000,
+    "start_step": 56000
+  }
+}

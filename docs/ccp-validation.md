@@ -2243,6 +2243,18 @@ ionization-variation gates. Two consecutive passing blocks are required before
 a fresh density measurement; eight blocks are targeted before blockwise
 uncertainty is assessed. Contiguous blocks will not be assumed independent.
 
+Block 1 subsequently completed 16 cycles safely. Its checksum-bearing report
+is
+[`benchmarks/ccp/edupic-argon-balance-stationarity-block01-20260820.json`](../benchmarks/ccp/edupic-argon-balance-stationarity-block01-20260820.json).
+Both species particle ledgers close exactly, peak RSS is `183956 KiB`, and all
+hard-safety gates pass. Four of six stationarity gates pass: electron and ion
+population slopes are `-2.55e-4` and `-2.42e-4` per cycle, field-energy slope
+is `+2.47e-4` per cycle, and ionization-count CV is `4.86%`. Electron and ion
+source-minus-wall-loss remain `-6.80%` and `-6.39%`, failing the prospective
+`3%` limits. The imbalance is therefore persistent across a longer window,
+even though macroscopic slopes are slow; block 2 remains warranted to test
+whether balance is approaching zero or has settled at a biased plateau.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
