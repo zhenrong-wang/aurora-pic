@@ -1,0 +1,363 @@
+{
+  "assessment": {
+    "coarse_current_relative_l2": 0.053253653430938803,
+    "coarse_density_relative_l2": 0.11874063896412529,
+    "coarse_field_relative_l2": 0.03027642432037095,
+    "finding": "Conservative RF-phase coarse graining recovers strong current and field waveform agreement. The remaining material discrepancy is electron density and the associated source/loss balance.",
+    "fine_current_error_is_resolution_sensitive": true,
+    "long_window_aurorapic_electron_source_minus_loss_fraction": -0.07590233545647553,
+    "mean_matched_aurorapic_electron_source_minus_loss_fraction": -0.09970236565540162,
+    "mean_native_edupic_electron_source_minus_loss_fraction": 0.0028020474541156134
+  },
+  "aurorapic_continuous_ledgers": {
+    "cycles_20_24": {
+      "duration_s": 2.9498525073757024e-07,
+      "electron_live_particle_change": -65,
+      "electron_source_minus_loss_fraction": -0.03381893860561919,
+      "electron_wall_flux_m-2_s-1": 4.715150999998288e+18,
+      "electron_wall_loss_macro_events": 1987,
+      "exact_macro_particle_ledger_closure": true,
+      "first_step": 80000,
+      "input_sha256": {
+        "boundary_losses.csv": "b25dcebd50070deb6c9030048d33881bd6cef6c967da46d04debe1623d0bb631",
+        "collisions.csv": "c1ac657b470fa6d3f9a336b07f504a13bbd7be92b9e1d6adbdaa119bf8207ef6",
+        "scalars.csv": "da9b985bfc00a5ff33d8b9cf3509e06446ae67d83c7c362563fec20aa37ccd6a"
+      },
+      "ion_live_particle_change": -81,
+      "ion_source_minus_loss_fraction": -0.04214360041623302,
+      "ion_wall_flux_m-2_s-1": 4.753118999998274e+18,
+      "ion_wall_loss_macro_events": 2003,
+      "ionization_macro_events": 1922,
+      "ionization_source_flux_m-2_s-1": 4.5609059999983437e+18,
+      "last_step": 96000
+    },
+    "cycles_24_28": {
+      "duration_s": 2.9498525073757024e-07,
+      "electron_live_particle_change": -103,
+      "electron_source_minus_loss_fraction": -0.05350649350649343,
+      "electron_wall_flux_m-2_s-1": 4.812443999998252e+18,
+      "electron_wall_loss_macro_events": 2028,
+      "exact_macro_particle_ledger_closure": true,
+      "first_step": 96000,
+      "input_sha256": {
+        "boundary_losses.csv": "46f0c33d0484d5eae719368e95e046c419b2a4f1192e808ccb3804b1f6aa5226",
+        "collisions.csv": "9cbb859778d00dcb23c2c21b8a042c46400b38d6e0bde080e8662e85ebec55cf",
+        "scalars.csv": "3a2573ae6f22f06f03f6920f4ded64f211224778fce2f3e86acbb8f7428a82fe"
+      },
+      "ion_live_particle_change": -66,
+      "ion_source_minus_loss_fraction": -0.034285714285714405,
+      "ion_wall_flux_m-2_s-1": 4.724642999998285e+18,
+      "ion_wall_loss_macro_events": 1991,
+      "ionization_macro_events": 1925,
+      "ionization_source_flux_m-2_s-1": 4.568024999998341e+18,
+      "last_step": 112000
+    },
+    "cycles_28_32": {
+      "duration_s": 2.9498525073757024e-07,
+      "electron_live_particle_change": -145,
+      "electron_source_minus_loss_fraction": -0.07708665603402447,
+      "electron_wall_flux_m-2_s-1": 4.807697999998254e+18,
+      "electron_wall_loss_macro_events": 2026,
+      "exact_macro_particle_ledger_closure": true,
+      "first_step": 112000,
+      "input_sha256": {
+        "boundary_losses.csv": "4f9da0e8c011deefc36c0cc7d7a9107a79360ca0d317d21256871fbc3ce2f0cd",
+        "collisions.csv": "cabc7fe9b8097337c9a8b8c43063f37706109215c4ac270ba85a324602bbddad",
+        "scalars.csv": "f695882f1d816464d8874c270f252f45ab36f59d6df4dd36b35ea6f302effb12"
+      },
+      "ion_live_particle_change": -153,
+      "ion_source_minus_loss_fraction": -0.08133971291866023,
+      "ion_wall_flux_m-2_s-1": 4.826681999998247e+18,
+      "ion_wall_loss_macro_events": 2034,
+      "ionization_macro_events": 1881,
+      "ionization_source_flux_m-2_s-1": 4.463612999998379e+18,
+      "last_step": 128000
+    }
+  },
+  "aurorapic_long_window_ledger": {
+    "duration_s": 8.849557522127105e-07,
+    "electron_live_particle_change": -429,
+    "electron_source_minus_loss_fraction": -0.07590233545647553,
+    "electron_wall_flux_m-2_s-1": 4.810070999998254e+18,
+    "electron_wall_loss_macro_events": 6081,
+    "exact_macro_particle_ledger_closure": true,
+    "first_step": 8000,
+    "input_sha256": {
+      "boundary_losses.csv": "24dde8d917d97630a78888d582250d2f3880f18e39108941e0b86b33382056ba",
+      "collisions.csv": "18ba2dae7fe421698670b0a12f49a09ef15f29df0c0ed5e543d71f1eca5e918a",
+      "scalars.csv": "ca837d7745abc7e63971b16f880521c9a8866ffb0ec76ae4eebabe993092defb"
+    },
+    "ion_live_particle_change": -393,
+    "ion_source_minus_loss_fraction": -0.06953290870488338,
+    "ion_wall_flux_m-2_s-1": 4.781594999998265e+18,
+    "ion_wall_loss_macro_events": 6045,
+    "ionization_macro_events": 5652,
+    "ionization_source_flux_m-2_s-1": 4.4707319999983775e+18,
+    "last_step": 56000
+  },
+  "aurorapic_matched_microstate_ledgers": {
+    "locked_source_microstate": {
+      "duration_s": 2.9498525073757024e-07,
+      "electron_live_particle_change": -140,
+      "electron_source_minus_loss_fraction": -0.07399577167019022,
+      "electron_wall_flux_m-2_s-1": 4.821935999998249e+18,
+      "electron_wall_loss_macro_events": 2032,
+      "exact_macro_particle_ledger_closure": true,
+      "first_step": 8000,
+      "input_sha256": {
+        "boundary_losses.csv": "27444a01288b63cf46f41230616897768542e01fdd2277cd1afdfdb4d01c293f",
+        "collisions.csv": "7705b6dc9fc04f387b8cedca8c58c5b69d3c6dc7d57c3f4890a9853770fdd819",
+        "scalars.csv": "6143df010d2f09209eaa1b263c6a58dc6c2fb9ab927ba08dab1af3093cfbd54b"
+      },
+      "ion_live_particle_change": -97,
+      "ion_source_minus_loss_fraction": -0.05126849894291746,
+      "ion_wall_flux_m-2_s-1": 4.719896999998286e+18,
+      "ion_wall_loss_macro_events": 1989,
+      "ionization_macro_events": 1892,
+      "ionization_source_flux_m-2_s-1": 4.48971599999837e+18,
+      "last_step": 24000
+    },
+    "microstate_51949": {
+      "duration_s": 2.9498525073757024e-07,
+      "electron_live_particle_change": -228,
+      "electron_source_minus_loss_fraction": -0.12624584717607956,
+      "electron_wall_flux_m-2_s-1": 4.826681999998247e+18,
+      "electron_wall_loss_macro_events": 2034,
+      "exact_macro_particle_ledger_closure": true,
+      "first_step": 8000,
+      "input_sha256": {
+        "boundary_losses.csv": "895841de03f7e01a7e9fdfde4ee170981ad5e6b4b4f73af0915fd5e126f1a78e",
+        "collisions.csv": "6644fff1340b60063628c885d32953ea7a6ef5f45853fc8b3aaaf77620882d8b",
+        "scalars.csv": "0cd435f866d9e20a0c7a49ab87346ae786b0984ab30f3835a3c249731be4bdea"
+      },
+      "ion_live_particle_change": -201,
+      "ion_source_minus_loss_fraction": -0.11129568106312283,
+      "ion_wall_flux_m-2_s-1": 4.76261099999827e+18,
+      "ion_wall_loss_macro_events": 2007,
+      "ionization_macro_events": 1806,
+      "ionization_source_flux_m-2_s-1": 4.285637999998444e+18,
+      "last_step": 24000
+    },
+    "microstate_63059": {
+      "duration_s": 2.9498525073757024e-07,
+      "electron_live_particle_change": -183,
+      "electron_source_minus_loss_fraction": -0.09886547811993505,
+      "electron_wall_flux_m-2_s-1": 4.826681999998247e+18,
+      "electron_wall_loss_macro_events": 2034,
+      "exact_macro_particle_ledger_closure": true,
+      "first_step": 8000,
+      "input_sha256": {
+        "boundary_losses.csv": "4fa2f1704fb82785c447332ce7c879cc5827df04752c86eae3c60e9656d6f419",
+        "collisions.csv": "8527fff2af518c8292f866b3157215fd50d3282aa92db4436f57f09882d8f1bd",
+        "scalars.csv": "dcde9c6c90d9446f4284b7a984e00131dea46221af57238841c0004577432019"
+      },
+      "ion_live_particle_change": -152,
+      "ion_source_minus_loss_fraction": -0.08211777417612087,
+      "ion_wall_flux_m-2_s-1": 4.753118999998274e+18,
+      "ion_wall_loss_macro_events": 2003,
+      "ionization_macro_events": 1851,
+      "ionization_source_flux_m-2_s-1": 4.392422999998405e+18,
+      "last_step": 24000
+    }
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This post-hoc diagnostic localizes discrepancies in checksum-bound simulation outputs. It is not an experimental validation or a predeclared statistical acceptance test.",
+  "edupic_native_production_balance": {
+    "blocks": 64,
+    "campaign_report_sha256": "6d690d2c786043935d6677139acbefd5cedb03fc2d58dc131d18e825afcf4693",
+    "cycles_per_block": 16,
+    "electron_source_minus_loss_fraction": {
+      "maximum": 0.021086149521575965,
+      "mean": 0.0028020474541156134,
+      "minimum": -0.02415402503530546,
+      "sample_standard_deviation": 0.011033020369970859
+    },
+    "electron_wall_flux_m-2_s-1": {
+      "maximum": 4.644e+18,
+      "mean": 4.60878125e+18,
+      "minimum": 4.571e+18,
+      "sample_standard_deviation": 1.726862348720526e+16
+    },
+    "ion_source_minus_loss_fraction": {
+      "maximum": 0.02271130656937883,
+      "mean": 0.002853394608532991,
+      "minimum": -0.024600279512445023,
+      "sample_standard_deviation": 0.011187509916272037
+    },
+    "ion_wall_flux_m-2_s-1": {
+      "maximum": 4.659e+18,
+      "mean": 4.6085625e+18,
+      "minimum": 4.565e+18,
+      "sample_standard_deviation": 2.3453347816666256e+16
+    },
+    "ionization_source_flux_m-2_s-1": {
+      "maximum": 4.721842893203281e+18,
+      "mean": 4.622239407017774e+18,
+      "minimum": 4.4817477525822054e+18,
+      "sample_standard_deviation": 4.952871721061044e+16
+    },
+    "stage_report_sha256": [
+      "f3d86776b1f636812b36070e2ff8474e46269cd14fa9af6b51348994acf6b436",
+      "ce7f1644af7d028f9c44354e5848b59ec3b575ccb8ba5c335cbc17e92aa7b934",
+      "e921911b92bc9ce50a060be6675ac2ce89d082b119d49d35114267c189be244f",
+      "c116c71928d3ac3c994effaa00caa49795495defb0e83f5e7fe3b9dd7a6eb67e",
+      "61d8f1550f35739dff966ea7dcac9fc56574b4e25da122e2f50f2948743ea105",
+      "2a8073c486937923d7726f9cd894e3422fee9c041862d7f5701254ef8cbb6bb7",
+      "a805a79f8bf12b9c24fe762b765b983a57f9c8fb20cd2eb2566410dbb9e0515c",
+      "8550ff52cbfac2dc47b2a8369f3bd85880a2a9bc9bf8b477cd32f9a80e0aa18b",
+      "dcd747965feb5695a3ca019a92d5c30a261afbea3440258f8cb8b9399c54507c",
+      "cb9131ae2f93d384277af31ce72951f357f9db5e77cd3a8eac18668bb6221307",
+      "6b0aec51738d2a69087ff6e94561dbafe9535576b218d2a7e047285006cab25b",
+      "6d26b2b20da13ed05e809718f5ed0fe1a17bbf86c3415478ef4b4283ebcb0fc4",
+      "f98f5e422f70407fe611bfc01ab650be6c21d891d42aa2c4c7f03d4113b671c0",
+      "505e2fa81337bcc00bda1f4b962f4a76865ee14664f91e72228da865446d3eac",
+      "c27ac71732abdca83154b948ef08cca35b95a804a43747e9ca0cf713156d9fe0",
+      "f338bfaae5dcd98797712755565d9640a06f5e2420745003b81bc8d49909461c",
+      "ddcadb0b5d4fa3f61873094d96f0f071f2c1351692c2e85996dad25d9599cc82",
+      "a5c30ac1ee4dc5e7cad034cdbeba3f6962de0401c07a16775ef42a6a366053f8",
+      "3f20a6406967a857b748349cba9c46d717724755e3efc8ebe5e3d16686c90fc3",
+      "32d01acd6a644d830b941fdc01e2ac6916a5e5a3f7b0a9a627fd4a17551c2e8a",
+      "df54c8a3cdf58572fa464ca9105a0fb2becb7814cb68e682644636b689eabe3e",
+      "d2988b55e79ecb792e51036009fc621b78548adf4791d12401dd279c20981766",
+      "1a2d62171f155f5cc13525dc5a652214834be80335f27298603b27d22b04ba62",
+      "a5083f50e97cecb63f08f6948b45fc53e176e368c71147577666bcfda14f18ab",
+      "505bcbfae4fe93a34354393c23f76e17acbed68b88bb903b1e4579547f556dee",
+      "4382b05aeee3d8d7f14e63aa9c3840e41485bf5948c48b5c4ca31174647343ce",
+      "efa7ef2167456c11cba3e9e2adac30f0c6c3e9b0c72220fbad3c90a27f68b4cf",
+      "c2d44f1af56ffa68341c5d1d0746086d66d40245a2988f0a1f83b015ed2c4e10",
+      "0ddfefbdddd8692d77b99aa4f9900064863a76fc6fcd68e19545288045f9dd18",
+      "be455b15dca1ee82d4e801ccc4a5922d533047572ef65f19812160f5b2cadc34",
+      "4f7bcf581fbb169fe50eec11a638dbef3fc80ae70d6be02ead3e3ebe4af756bf",
+      "31bc0f40e3b971b85ac055faf821a11d22ce7deb10875ad7d62803311799efb1",
+      "c918aea464ee34db38ea7e32d4bd01e13ce9a46aa024cebadc4f6bd5df83cc3e",
+      "1147c1656ec9173f758a69cd6a412136e8acdd10f66d9ae493ee8449fca5cb6e",
+      "1ef37082eee26c6feb9339c1b1f5a9623da3964d23713e0d9a7c81f1373df884",
+      "52c04b9a674fc4ad7ba9765d44bd117279b37dcffc2b61c93ca4f8a38849c69c",
+      "35d00f397334ca869ff409cb2bf7259e76cb0a0c681b0654f064274e56fc5091",
+      "bf5c3aa3b33259bd24749f2e8530e583efde42918c8f3a7767ae2ce4f6f65a36",
+      "1c4addf817318b82e7fc6bdc8a3921b2080fdefebd574366901e582931403cd9",
+      "c2e20d8b85648f02e80b7094a681ad5e627faacd31e467ca3eda3d06dbbb6970",
+      "99a2ab9f463594b6f313ddd85daaf4ab28737f06af6ea07fbe8bff219370329b",
+      "1c7d6e2856d79c5f44587401481388700d51ae9ab869e4fa686b6195519aa6ca",
+      "df0e36f3f37019fccf04fcfb7ecafd9aec040d1f4c5c690e562b70a893e89ed7",
+      "9426b2e721780e4c8cabf1a60adb84b8cb02c51ed6c7d7438137c223ee682cde",
+      "4fcf8da08d73e73ade087da5c5a4e1077f5f5d95aab67ed7b68f1698420b0125",
+      "631e8c664e88cf932b1ba16ae059015921175f3d9c3ecf4799c7b1e87f79d950",
+      "9aaadb5f6e83cc6fdeeca3cbd2ba399e44c726b00844512fe47604cb8583616f",
+      "d309568ad651523290d0030fb747942a778f6f8fb0810c6c1bbad9eb1c00ae34",
+      "7891b6d64ecab6cb844949d9b4bccb4390246b84847ce0ba0fdcaa729f56d661",
+      "fea7fc0e929d02523f784a580566ce1f6d9d2209189e3886f16fda5abb5137f6",
+      "94de429cd5c28223579cb8d3d32ddeeae82e10d9290cdf26f5067dd94d3f7d3d",
+      "9b3c3edd273a674752c45bb5f7f17bb640ad5f643fc98562909d94e7f3f8b3ad",
+      "7c0bff054ce201b4d4e1074b6be3dd9d2499cfb48996151b5b4a9ccc32ed1cc2",
+      "47205b13640bb1e50bccb1f47150d98b1417298ae5cf0f1801d70c6010a2937f",
+      "1ea8320c2cf1c046ceabe7b10859dc4ce8e4fece3f79ceef19f8d4ec17a09a94",
+      "f7b234703f8992e2aef05df8fc69cbeacc129a4066772d7ba8cb4fdc8cf4924a",
+      "fa98e2ff1150314810d1fad6e6b6a3537c23d69509a3f8189553d33c9c4343f1",
+      "abd6c21ba11c99bb6db2eb88e58b93304f5b30d5ec5582bf930d341a64f664ac",
+      "a51bcfa822e94a43650f0d1f6bb7ebd00ea57eb4eacd940543aac41c9d1981b6",
+      "e17d085bb3f29cdc04d9df7b95e785a815ba080c5f38707ca3d86ee8971079d1",
+      "b5a2379e7810af38a96c9fbc764e13822de9e0278de34bfd63a721b108a1cdbb",
+      "678d0ac88434a01ebce1fc692e749fcbea9b3da543eabae523fbd1648ced5c85",
+      "fe976947c13f512a90525119d6711f905fe7cee57479c4a76e209f0922dfbdc9",
+      "477d29d75af02b7294f5f49afffe5459bbc9574b34fa2daf6b6a120e2864c9b0"
+    ],
+    "statistical_boundary": "Contiguous blocks are summarized descriptively; they are not treated as independent samples."
+  },
+  "phase_resolution": {
+    "current": {
+      "coarse_grained_16_phase_bins": {
+        "candidate_peak_absolute": 21.955452370845595,
+        "candidate_to_reference_peak_absolute_ratio": 1.044287233965786,
+        "mean_bias_over_reference_rms": -0.00785809165093009,
+        "pearson_correlation": 0.9993638439290797,
+        "reference_peak_absolute": 21.024342400000002,
+        "relative_l2": 0.053253653430938803
+      },
+      "fine_200_phase_bins": {
+        "candidate_peak_absolute": 33.055017055164946,
+        "candidate_to_reference_peak_absolute_ratio": 1.4816910972695725,
+        "mean_bias_over_reference_rms": -0.007790137042125407,
+        "pearson_correlation": 0.9860588758070065,
+        "reference_peak_absolute": 22.30898,
+        "relative_l2": 0.17903637116156615
+      },
+      "fine_to_coarse_relative_l2_ratio": 3.3619547134685654
+    },
+    "density": {
+      "coarse_grained_16_phase_bins": {
+        "candidate_peak_absolute": 8398508007436727.0,
+        "candidate_to_reference_peak_absolute_ratio": 1.1311206047863889,
+        "mean_bias_over_reference_rms": 0.08541167610439733,
+        "pearson_correlation": 0.9993161226325777,
+        "reference_peak_absolute": 7424944759999998.0,
+        "relative_l2": 0.11874063896412529
+      },
+      "fine_200_phase_bins": {
+        "candidate_peak_absolute": 8493508786110400.0,
+        "candidate_to_reference_peak_absolute_ratio": 1.1427124841106018,
+        "mean_bias_over_reference_rms": 0.08541009869874659,
+        "pearson_correlation": 0.9992838446217005,
+        "reference_peak_absolute": 7432761000000000.0,
+        "relative_l2": 0.11890315903633134
+      },
+      "fine_to_coarse_relative_l2_ratio": 1.0013686979758898
+    },
+    "field": {
+      "coarse_grained_16_phase_bins": {
+        "candidate_peak_absolute": 65674.9411514674,
+        "candidate_to_reference_peak_absolute_ratio": 1.0320062802021392,
+        "mean_bias_over_reference_rms": -8.46547204967173e-05,
+        "pearson_correlation": 0.9996105877631304,
+        "reference_peak_absolute": 63638.12159999999,
+        "relative_l2": 0.03027642432037095
+      },
+      "fine_200_phase_bins": {
+        "candidate_peak_absolute": 66450.29694259269,
+        "candidate_to_reference_peak_absolute_ratio": 1.032098459463527,
+        "mean_bias_over_reference_rms": -8.442949282865064e-05,
+        "pearson_correlation": 0.9996033124204782,
+        "reference_peak_absolute": 64383.68,
+        "relative_l2": 0.03052240240887046
+      },
+      "fine_to_coarse_relative_l2_ratio": 1.0081244101316813
+    },
+    "power": {
+      "coarse_grained_16_phase_bins": {
+        "candidate_peak_absolute": 59352.66671197047,
+        "candidate_to_reference_peak_absolute_ratio": 1.0664311803490103,
+        "mean_bias_over_reference_rms": -0.004413734612296461,
+        "pearson_correlation": 0.9922789161908178,
+        "reference_peak_absolute": 55655.412,
+        "relative_l2": 0.12796504894057067
+      },
+      "fine_200_phase_bins": {
+        "candidate_peak_absolute": 78115.67985937347,
+        "candidate_to_reference_peak_absolute_ratio": 1.3068509050154176,
+        "mean_bias_over_reference_rms": -0.0043159582368099,
+        "pearson_correlation": 0.9797405186714176,
+        "reference_peak_absolute": 59773.98,
+        "relative_l2": 0.20726857066449647
+      },
+      "fine_to_coarse_relative_l2_ratio": 1.6197279833867435
+    }
+  },
+  "provenance": {
+    "analyzer_sha256": "cdef7a614767d9d8211a30d335797893c0d6b36cac5535391c0eea881e9d5ec6",
+    "candidate_branch_report_sha256": {
+      "locked_source_microstate": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+      "microstate_51949": "b0c25c681fa06ef95ed44ae133ccc3a1218d21555204e4c89e7f135ef5745d55",
+      "microstate_63059": "3d58bab5368c4a4c16b5c0ca83d96203cfda46a6df47e15ba814ff61026ce9f2"
+    },
+    "continuous_measurement_report_sha256": {
+      "cycles_20_24": "cdcda4685741833aad2806e4c7a44cab5565c0815b1bb3ba382a3ef3ce7722f3",
+      "cycles_24_28": "169d8e5cb0748d65e209dacdc21f9b278177fce3c882fbab033a0eae7017f95f",
+      "cycles_28_32": "8d96f51fa9b65e3cf848f5e74c2baa2bd2dfa4948c7819e01f61486365469eb9"
+    },
+    "long_window_branch_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "microstate_rule_sha256": "53f372d3ad10fb6c24c5265c962c559ca92d94cd4a3008c82c320b88912aabb4",
+    "native_campaign_report_sha256": "6d690d2c786043935d6677139acbefd5cedb03fc2d58dc131d18e825afcf4693"
+  },
+  "schema_version": 1,
+  "scope": "descriptive_phase_resolution_and_particle_balance_audit"
+}

@@ -2178,6 +2178,54 @@ The next prospective discriminator is electron current per represented
 particle together with ionization and wall-loss balance, separating transport
 and heating from population regulation.
 
+### Phase-resolution and particle-balance audit
+
+That discriminator is now recorded in
+[`benchmarks/ccp/edupic-argon-transport-balance-audit-20260820.json`](../benchmarks/ccp/edupic-argon-transport-balance-audit-20260820.json).
+It is a post-hoc localization audit, not a new acceptance test. The analyzer
+validates the three matched branch contracts, verifies the locked continuous
+reports, all 64 native eduPIC stage reports, and their relevant diagnostic
+hashes, and records direct hashes for the AuroraPIC ledgers. AuroraPIC's
+ionization, wall-loss, and live-particle counters close exactly for electrons
+and ions.
+
+Conservatively averaging both codes from 200 to 16 RF phase bins changes the
+matched-ensemble electron-current phase-space relative L2 error from `17.90%`
+to `5.33%`, while correlation rises to `0.99936`. The field error is `3.03%`
+at 16 bins. Density is effectively unchanged at `11.87%`. This reproduces the
+earlier 16-bin current result and shows that the large 200-bin local-current
+error is dominated by the short candidate window's per-bin sampling noise;
+it is not evidence by itself of an incorrect current definition or particle
+push. Power-density error similarly falls from `20.73%` to `12.80%`.
+
+The particle balance isolates the remaining concern. Across the three
+four-cycle matched members, mean electron source-minus-wall-loss is `-9.97%`
+of the ionization source. The independently run twelve-cycle window remains
+negative at `-7.59%`. In contrast, the checksum-bound 1,024-cycle native
+eduPIC campaign has mean ionization source `4.6222e18 m-2 s-1`, electron wall
+flux `4.6088e18 m-2 s-1`, and mean imbalance `+0.280%` across its 64 contiguous
+blocks. Those blocks are descriptive and are not treated as independent
+samples.
+
+The strongest justified conclusion is therefore narrower and more useful:
+AuroraPIC reproduces the published electric-field and electron-current RF
+waveforms closely at a common noise-reduced phase resolution, while its present
+candidate state has an unresolved density/source-loss stationarity error. The
+candidate event counts are finite and the constrained members share a
+collision seed, so this audit does not assign formal confidence intervals. The
+next prospective run should qualify source/loss balance over longer independent
+blocks before density agreement is claimed; changing the pusher or current
+normalization is not supported by this evidence.
+
+The audit can be reproduced without advancing either simulation:
+
+```sh
+PYTHONPATH=scripts python3 scripts/analyze_edupic_transport_balance.py \
+  microstate-rule baseline branch-51949 branch-63059 \
+  continuous-cycle24 continuous-cycle28 continuous-cycle32 long-window \
+  reference-raw-data native-campaign-root --output transport-audit.json
+```
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
