@@ -2157,6 +2157,27 @@ distribution. The two branches will use the same collision RNG seed, discard
 two RF cycles, and measure four fresh cycles with the established 200-bin
 pre-collision protocol. Runs remain serial with a 256 MiB RSS ceiling.
 
+Both branches subsequently completed and passed every solver, diagnostic, and
+resource gate. Across the locked source member and the two constrained
+microstates, the volume-density range is only `0.0859%`, the power range is
+`2.75%`, and maximum member-to-ensemble cycle-average spatial-current scatter
+is `4.01%`; all pass their prospective `3%`, `8%`, and `8%` limits.
+
+The ensemble does not close the cross-code differences. Mean density remains
+`3.3396e15 m-3`, corresponding to an `11.87%` spatial-profile L2 mismatch.
+Mean power per electron is `0.8643` of eduPIC, a `13.57%` deficit. The
+cycle-average spatial-current mismatch is `36.95%` L2 with `0.9955`
+correlation, versus at most `4.01%` member scatter. Density-profile scatter is
+at most `0.232%`. The electric-field phase-space mismatch is only `3.05%`.
+Thus the persistent density and current-amplitude/localization differences are
+not explained by the audited constrained microscopic realization.
+
+The retained result is
+[`benchmarks/ccp/edupic-argon-microstate-ensemble-20260820.json`](../benchmarks/ccp/edupic-argon-microstate-ensemble-20260820.json).
+The next prospective discriminator is electron current per represented
+particle together with ionization and wall-loss balance, separating transport
+and heating from population regulation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

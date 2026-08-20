@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "constrained_initial_microstate_ensemble_milestone",
+  "rule_sha256": "53f372d3ad10fb6c24c5265c962c559ca92d94cd4a3008c82c320b88912aabb4",
+  "analysis_sha256": "502e8a1475ac69d441f086969a8ca41c81c6573be16b75144480949915b66040",
+  "analyzer_sha256": "7a3d85478d9c86a688ee2ca7f4aca539cc7a56ea5f102addf71f7b9038b733e3",
+  "randomizer_sha256": "3c6e0ba033183c9fef7a0e5321f630e2274fc10e394413ddafc95a06553cc620",
+  "members": [
+    {
+      "name": "locked_source_microstate",
+      "branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+      "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+      "electron_density_m-3": 3340744111250007.0,
+      "power_density_W_m-3": 1562.202371968467,
+      "power_per_electron_ratio_to_reference": 0.8751527995447977,
+      "phase_binned_to_exact_power_relative_difference": 0.00460130312696605,
+      "peak_resident_set_kib": 204256
+    },
+    {
+      "name": "microstate_51949",
+      "branch_report_sha256": "b0c25c681fa06ef95ed44ae133ccc3a1218d21555204e4c89e7f135ef5745d55",
+      "particle_state_sha256": "6821ccb4cfe5da26465776a3d35b37b8e30894f54cb0523e963d01407ce6592c",
+      "electron_density_m-3": 3337876407249990.0,
+      "power_density_W_m-3": 1544.8076598754863,
+      "power_per_electron_ratio_to_reference": 0.8661517105724287,
+      "phase_binned_to_exact_power_relative_difference": 0.004160289801566686,
+      "peak_resident_set_kib": 203876
+    },
+    {
+      "name": "microstate_63059",
+      "branch_report_sha256": "3d58bab5368c4a4c16b5c0ca83d96203cfda46a6df47e15ba814ff61026ce9f2",
+      "particle_state_sha256": "c0c6a6c9ec01ada12d50cc15ded16260d221237540fc83b659bbea520c04ab5f",
+      "electron_density_m-3": 3340264460749992.5,
+      "power_density_W_m-3": 1519.79825722739,
+      "power_per_electron_ratio_to_reference": 0.8515200814272795,
+      "phase_binned_to_exact_power_relative_difference": 0.003853214885654932,
+      "peak_resident_set_kib": 203692
+    }
+  ],
+  "prospective_repeatability": {
+    "all_gates_passed": true,
+    "electron_density_relative_range": 0.00085868956654047,
+    "electron_density_relative_range_limit": 0.03,
+    "power_density_relative_range": 0.027494621837630642,
+    "power_density_relative_range_limit": 0.08,
+    "maximum_member_to_ensemble_cycle_average_spatial_current_relative_l2": 0.04014972403102253,
+    "spatial_current_relative_l2_limit": 0.08
+  },
+  "ensemble_results": {
+    "mean_electron_density_m-3": 3339628326416663.5,
+    "mean_power_density_W_m-3": 1542.2694296904476,
+    "mean_power_per_electron_ratio_to_reference": 0.8642748638481687,
+    "power_per_electron_deficit_fraction": 0.13572513615183135,
+    "cross_code_phase_space_relative_l2": {
+      "electric_field": 0.03052240240887046,
+      "electron_density": 0.11890315903633134,
+      "electron_current": 0.17903637116156615,
+      "electron_power": 0.20726857066449647
+    },
+    "cross_code_cycle_average_spatial_relative_l2": {
+      "electric_field": 0.02620373495124211,
+      "electron_density": 0.11865284543467075,
+      "electron_current": 0.3694840157067993,
+      "electron_power": 0.11670612249000842
+    },
+    "cross_code_cycle_average_spatial_correlation": {
+      "electric_field": 0.9997132044692215,
+      "electron_density": 0.9993541230286825,
+      "electron_current": 0.9954578173406411,
+      "electron_power": 0.9903597409712522
+    }
+  },
+  "microstate_scatter": {
+    "maximum_cycle_average_spatial_density_relative_l2": 0.0023190813433246653,
+    "maximum_cycle_average_spatial_field_relative_l2": 0.002908370167897031,
+    "maximum_cycle_average_spatial_current_relative_l2": 0.04014972403102253,
+    "maximum_cycle_average_spatial_power_relative_l2": 0.034188220770824826
+  },
+  "assessment": {
+    "constrained_microstate_repeatability_reached": true,
+    "density_mismatch_exceeds_microstate_scatter": true,
+    "spatial_current_mismatch_exceeds_microstate_scatter": true,
+    "finding": "The 11.87 percent density-profile mismatch, 13.57 percent power-per-electron deficit, and 36.95 percent cycle-average spatial-current mismatch survive constrained independent microstates and materially exceed their observed scatter.",
+    "next_target": "Prospectively compare electron current per represented particle and source-loss balance against eduPIC to separate transport/heating differences from population regulation."
+  },
+  "claim_boundary": "The ensemble varies constrained subcell positions and position-velocity pairings while holding cell populations, CIC first moments, and cellwise empirical velocity tuples fixed. It does not cover arbitrary macroscopic initial states, long-window local-profile convergence, or experimental validation."
+}

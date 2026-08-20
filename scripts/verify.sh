@@ -42,6 +42,7 @@ PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_heating_seed_ensemble.
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_heating_factor_attribution.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_long_window_heating.py
 PYTHONPATH=scripts python3 scripts/test_audit_edupic_normalization.py
+PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_microstate_ensemble.py
 PYTHONPATH=scripts python3 scripts/test_compare_aurorapic_measurement_windows.py
 PYTHONPATH=scripts python3 scripts/test_run_aurorapic_timestep_refinement.py
 PYTHONPATH=scripts python3 scripts/test_split_particle_state.py
