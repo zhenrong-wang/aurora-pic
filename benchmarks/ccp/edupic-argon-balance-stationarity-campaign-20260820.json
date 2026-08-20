@@ -1,0 +1,87 @@
+{
+  "analyzer_sha256": "6af57d4a460b1f6a4fe68b6cb45816d65f0be3f1ea0e125566bb106e4886ec44",
+  "assessment": {
+    "all_blocks_passed_stationarity": false,
+    "finding": "The quiet macroscopic state retains a material source/loss deficit. From block 1 to block 2, ionization per cycle declines while electron wall loss remains stable, worsening population decay; more averaging alone cannot resolve this mismatch.",
+    "ionization_declined_while_wall_loss_was_stable": true,
+    "next_discriminator": "Audit the effective ionization probability per electron against the native eduPIC energy distribution and collision sampling before spending additional blocks on final density measurement.",
+    "source_loss_error_persisted": true
+  },
+  "block_report_sha256": [
+    "4d607fbcd246fc433e2342c30553cbca1ebd6175c625f02f3f83819ed8c00efb",
+    "b5c054c46847d93a7b9a0cea6daca7b8d654e92178c007214601fa493aab4a28"
+  ],
+  "blocks": [
+    {
+      "block_index": 1,
+      "cycles": 16,
+      "electron_wall_loss_macro_events_per_cycle": 516.3125,
+      "electron_wall_losses_per_live_electron_per_cycle": 0.004350517438872127,
+      "ionization_events_per_live_electron_per_cycle": 0.004073508339144886,
+      "ionization_macro_events_per_cycle": 483.4375,
+      "mean_live_electron_macroparticles": 118678.41176470589,
+      "metrics": {
+        "electron_source_loss_relative_imbalance": -0.06800258564964447,
+        "ion_source_loss_relative_imbalance": -0.06386554621848739,
+        "ionization_count_coefficient_of_variation": 0.048582526602087395,
+        "normalized_electron_population_slope_per_cycle": -0.0002547046318449314,
+        "normalized_field_energy_slope_per_cycle": 0.00024744416648082363,
+        "normalized_ion_population_slope_per_cycle": -0.00024180025657343152
+      },
+      "stationarity_block_passed": false,
+      "stationarity_gates": {
+        "electron_population_slope": true,
+        "electron_source_loss_balance": false,
+        "field_energy_slope": true,
+        "ion_population_slope": true,
+        "ion_source_loss_balance": false,
+        "ionization_variation": true
+      }
+    },
+    {
+      "block_index": 2,
+      "cycles": 16,
+      "electron_wall_loss_macro_events_per_cycle": 516.875,
+      "electron_wall_losses_per_live_electron_per_cycle": 0.0043809190238892366,
+      "ionization_events_per_live_electron_per_cycle": 0.0039703734079866776,
+      "ionization_macro_events_per_cycle": 468.4375,
+      "mean_live_electron_macroparticles": 117983.23529411765,
+      "metrics": {
+        "electron_source_loss_relative_imbalance": -0.10340226817878585,
+        "ion_source_loss_relative_imbalance": -0.10046697798532354,
+        "ionization_count_coefficient_of_variation": 0.035721059498290665,
+        "normalized_electron_population_slope_per_cycle": -0.00041354745481453413,
+        "normalized_field_energy_slope_per_cycle": 0.0001449118222345654,
+        "normalized_ion_population_slope_per_cycle": -0.00039755506018555105
+      },
+      "stationarity_block_passed": false,
+      "stationarity_gates": {
+        "electron_population_slope": true,
+        "electron_source_loss_balance": false,
+        "field_energy_slope": true,
+        "ion_population_slope": true,
+        "ion_source_loss_balance": false,
+        "ionization_variation": true
+      }
+    }
+  ],
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "Two contiguous blocks localize a persistent internal imbalance but do not provide independent-sample confidence intervals or identify a unique causal implementation defect.",
+  "combined": {
+    "cycles": 32,
+    "electron_source_loss_relative_imbalance": -0.08542350623768877,
+    "electron_wall_loss_macro_events": 16531,
+    "ion_source_loss_relative_imbalance": -0.08187787261982929,
+    "ion_wall_loss_macro_events": 16477,
+    "ionization_macro_events": 15230
+  },
+  "first_to_last_change": {
+    "electron_wall_loss_macro_events_per_cycle_relative_change": 0.0010894564822661046,
+    "electron_wall_losses_per_live_electron_per_cycle_relative_change": 0.006988038881414305,
+    "ionization_events_per_live_electron_per_cycle_relative_change": -0.025318453424317378,
+    "ionization_macro_events_per_cycle_relative_change": -0.031027795733678087
+  },
+  "rule_sha256": "077d706c783d833041750fdfaedbf272f464e1a8242c6bed5cf23cd1f6f014c0",
+  "schema_version": 1,
+  "scope": "aurorapic_source_loss_stationarity_campaign_analysis"
+}

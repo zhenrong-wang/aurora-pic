@@ -2255,6 +2255,27 @@ source-minus-wall-loss remain `-6.80%` and `-6.39%`, failing the prospective
 even though macroscopic slopes are slow; block 2 remains warranted to test
 whether balance is approaching zero or has settled at a biased plateau.
 
+Block 2 and the chained campaign analysis are retained in
+[`benchmarks/ccp/edupic-argon-balance-stationarity-block02-20260820.json`](../benchmarks/ccp/edupic-argon-balance-stationarity-block02-20260820.json)
+and
+[`benchmarks/ccp/edupic-argon-balance-stationarity-campaign-20260820.json`](../benchmarks/ccp/edupic-argon-balance-stationarity-campaign-20260820.json).
+Block 2 again passes every hard, population-slope, field-energy, and
+ionization-variation gate, but electron and ion balance worsen to `-10.34%`
+and `-10.05%`. Across both blocks, `15230` ionizations compete with `16531`
+electron and `16477` ion wall losses, producing combined imbalances of
+`-8.54%` and `-8.19%`.
+
+The two-block trend localizes the deficit further. From block 1 to block 2,
+ionization events per cycle fall `3.10%`, and ionization per live electron per
+cycle falls `2.53%`; electron wall losses per cycle change only `+0.109%`.
+Thus the quiet candidate state is not merely obscured by short-window noise:
+its ionization source is weakening relative to a stable wall-loss sink. More
+measurement averaging cannot repair that state. Additional expensive balance
+blocks are paused while effective ionization probability per electron, EEDF,
+and collision sampling are audited against native eduPIC. The two contiguous
+blocks do not identify a unique causal defect or support independent-sample
+confidence intervals.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
