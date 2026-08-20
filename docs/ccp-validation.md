@@ -2226,6 +2226,18 @@ PYTHONPATH=scripts python3 scripts/analyze_edupic_transport_balance.py \
   reference-raw-data native-campaign-root --output transport-audit.json
 ```
 
+The follow-up source/loss campaign is prospectively locked in
+[`benchmarks/ccp/edupic-argon-balance-stationarity-rule-20260820.json`](../benchmarks/ccp/edupic-argon-balance-stationarity-rule-20260820.json).
+It continues the full cycle-14 checkpoint in one low-priority serial 16-cycle
+block per invocation. High-volume phase diagnostics are disabled, while
+scalar, collision, boundary-loss, field, resource, and final-checkpoint
+evidence remains checksum-bound. A block must close both species ledgers
+exactly, keep each source/loss imbalance within `3%`, keep each normalized
+species-population slope within `5e-4` per cycle, and pass field-energy and
+ionization-variation gates. Two consecutive passing blocks are required before
+a fresh density measurement; eight blocks are targeted before blockwise
+uncertainty is assessed. Contiguous blocks will not be assumed independent.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

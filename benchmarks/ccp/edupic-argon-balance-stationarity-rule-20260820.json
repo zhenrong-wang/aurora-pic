@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_aurorapic_source_loss_stationarity_campaign",
+  "question": "Does the matched AuroraPIC state reach sustained particle-source/loss balance before a final density comparison?",
+  "locked_initial_state": {
+    "local_cycle": 14,
+    "step": 56000,
+    "checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e"
+  },
+  "execution_contract": {
+    "cycles_per_block": 16,
+    "steps_per_cycle": 4000,
+    "maximum_blocks": 8,
+    "maximum_blocks_per_invocation": 1,
+    "serial": true,
+    "runtime_threads": 1,
+    "output_interval_steps": 400,
+    "minimum_available_memory_kib": 524288,
+    "maximum_peak_resident_set_kib": 307200,
+    "timeout_seconds_per_block": 2400,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_total_particles": 500000
+  },
+  "diagnostic_contract": {
+    "spatial_phase_average": false,
+    "phase_eedf": false,
+    "wall_impact_spectrum": false,
+    "ordinary_snapshots_per_cycle": 10,
+    "one_final_checkpoint_per_block": true,
+    "exact_species_particle_ledger_closure": true
+  },
+  "prospective_block_stationarity": {
+    "maximum_absolute_electron_source_loss_relative_imbalance": 0.03,
+    "maximum_absolute_ion_source_loss_relative_imbalance": 0.03,
+    "maximum_absolute_normalized_electron_population_slope_per_cycle": 0.0005,
+    "maximum_absolute_normalized_ion_population_slope_per_cycle": 0.0005,
+    "maximum_absolute_normalized_field_energy_slope_per_cycle": 0.01,
+    "maximum_ionization_count_coefficient_of_variation": 0.10,
+    "all_gates_required": true
+  },
+  "campaign_interpretation": {
+    "minimum_consecutive_passing_blocks_before_fresh_measurement": 2,
+    "target_blocks_for_blockwise_uncertainty": 8,
+    "contiguous_blocks_are_not_assumed_independent": true,
+    "autocorrelation_must_be_reported_before_formal_confidence_intervals": true,
+    "failed_blocks_remain_evidence_and_must_not_be_discarded": true
+  },
+  "stopping_policy": {
+    "stop_on_hard_safety_failure": true,
+    "stop_after_eight_blocks": true,
+    "do_not_relax_thresholds_after_observing_results": true,
+    "review_after_every_block": true
+  },
+  "resource_policy": "Run at most one low-priority, one-CPU 16-cycle block per invocation. Disable high-volume phase diagnostics, retain counter/scalar snapshots and one final checkpoint, and review host health before continuing.",
+  "claim_boundary": "Passing blocks establish internal source/loss stationarity for this numerical state. They do not by themselves establish cross-code agreement, experimental validation, or predictive accuracy.",
+  "physics_claim": "none_predeclared_internal_stationarity_only"
+}

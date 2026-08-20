@@ -124,6 +124,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/audit_edupic_normalization.py
   scripts/analyze_aurorapic_microstate_ensemble.py
   scripts/analyze_edupic_transport_balance.py
+  scripts/run_aurorapic_balance_stationarity_block.py
   scripts/compare_aurorapic_measurement_windows.py
   scripts/run_aurorapic_timestep_refinement.py
   scripts/split_particle_state.py
