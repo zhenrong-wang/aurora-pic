@@ -47,15 +47,18 @@ restart_path = old.apc
 [species.electrons]
 particles = 1
 """
-    deck = build_deck(base, Path("new-output"), Path("state.apc"), 120000, 400)
+    deck = build_deck(
+        base, Path("new-output"), Path("state.apc"), 56000, 120000, 400)
     for expected in ("steps = 120000", "output_interval = 400",
-                     "spatial_average = false", "phase_eedf = false",
-                     "wall_impact_spectrum = false",
+                     "spatial_average = true", "phase_eedf = false",
+                     "wall_impact_spectrum = true",
                      "checkpoint_interval = 120000",
+                     "spatial_average_start_step = 56001",
+                     "spatial_average_phase_bins = 10",
+                     "wall_impact_energy_bins = 200",
                      "restart_path = state.apc"):
         assert expected in deck
-    for removed in ("phase_eedf_species", "spatial_average_interval",
-                    "wall_impact_energy_bins"):
+    for removed in ("phase_eedf_species", "phase_eedf_energy_bins"):
         assert removed not in deck
     assert abs(normalized_slope([100.0, 101.0, 102.0]) - 1.0 / 101.0) < 1e-15
 

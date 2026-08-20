@@ -17,7 +17,7 @@ from run_aurorapic_edupic_pilot import (
 )
 
 
-RULE_SHA256 = "e2371b9ac8df48091f02ee8bacc7b04b6e81f80c23ae1146b0802bc8b1c70c42"
+RULE_SHA256 = "077d706c783d833041750fdfaedbf272f464e1a8242c6bed5cf23cd1f6f014c0"
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_ONE_BOUNDED_BALANCE_BLOCK"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 
@@ -41,14 +41,25 @@ def normalized_slope(values: list[float]) -> float:
 
 
 def build_deck(base: str, output: Path, checkpoint: Path,
-               end_step: int, interval: int) -> str:
+               start_step: int, end_step: int, interval: int) -> str:
     values = {
         "steps": str(end_step),
         "output_interval": str(interval),
         "output_dir": str(output),
-        "spatial_average": "false",
+        "spatial_average": "true",
+        "spatial_average_interval": str(interval),
+        "spatial_average_start_step": str(start_step + 1),
+        "spatial_average_end_step": str(end_step),
+        "spatial_average_rf_frequency": "13560000",
+        "spatial_average_rf_cycles": "16",
+        "spatial_average_phase_bins": "10",
+        "spatial_average_reset_on_restart": "true",
+        "spatial_average_sampling_order": "pre_collision",
         "phase_eedf": "false",
-        "wall_impact_spectrum": "false",
+        "wall_impact_spectrum": "true",
+        "wall_impact_reset_on_restart": "true",
+        "wall_impact_energy_bins": "200",
+        "wall_impact_energy_max": "500.0",
         "checkpoint_interval": str(end_step),
         "runtime_backend": "serial",
         "runtime_threads": "1",
@@ -57,16 +68,8 @@ def build_deck(base: str, output: Path, checkpoint: Path,
     result = base
     for key, value in values.items():
         result = set_global(result, key, value)
-    disabled_options = (
-        "spatial_average_interval", "spatial_average_start_step",
-        "spatial_average_end_step", "spatial_average_rf_frequency",
-        "spatial_average_rf_cycles", "spatial_average_phase_bins",
-        "spatial_average_reset_on_restart", "spatial_average_sampling_order",
-        "phase_eedf_species", "phase_eedf_energy_bins",
-        "phase_eedf_energy_max", "phase_eedf_regions",
-        "wall_impact_reset_on_restart", "wall_impact_energy_bins",
-        "wall_impact_energy_max",
-    )
+    disabled_options = ("phase_eedf_species", "phase_eedf_energy_bins",
+                        "phase_eedf_energy_max", "phase_eedf_regions")
     for key in disabled_options:
         result, count = re.subn(
             rf"(?m)^\s*{re.escape(key)}\s*=.*\n?", "", result, count=1)
@@ -281,7 +284,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     deck = work / "input.cfg"
     atomic_text(deck, build_deck(
         args.base_config.read_text(encoding="utf-8"), output,
-        args.checkpoint.resolve(), end_step,
+        args.checkpoint.resolve(), start_step, end_step,
         int(execution["output_interval_steps"])))
     resources = run_process([
         str(args.executable.resolve()), "--allow-large-run", CLI_ACKNOWLEDGEMENT,

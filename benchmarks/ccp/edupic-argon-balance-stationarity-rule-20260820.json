@@ -26,9 +26,16 @@
     "maximum_total_particles": 500000
   },
   "diagnostic_contract": {
-    "spatial_phase_average": false,
+    "spatial_phase_average": true,
+    "spatial_average_interval_steps": 400,
+    "spatial_phase_bins": 10,
+    "spatial_sampling_order": "pre_collision",
+    "spatial_average_reset_on_restart": true,
     "phase_eedf": false,
-    "wall_impact_spectrum": false,
+    "wall_impact_spectrum": true,
+    "wall_impact_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0,
+    "wall_impact_reset_on_restart": true,
     "ordinary_snapshots_per_cycle": 10,
     "one_final_checkpoint_per_block": true,
     "exact_species_particle_ledger_closure": true
@@ -55,7 +62,8 @@
     "do_not_relax_thresholds_after_observing_results": true,
     "review_after_every_block": true
   },
-  "resource_policy": "Run at most one low-priority, one-CPU 16-cycle block per invocation. Disable high-volume phase diagnostics, retain counter/scalar snapshots and one final checkpoint, and review host health before continuing.",
+  "operational_amendment": "Before any solver step completed, two strict-parser rejections established that the full checkpoint requires compatible diagnostic restart contracts. Spatial accumulation is reset and reduced to the ordinary 400-step interval with ten phase bins; the stored 200-bin wall-impact shape is retained and reset. Phase EEDF remains disabled through the spatial reset path. Physics, stationarity thresholds, block length, and resource limits are unchanged.",
+  "resource_policy": "Run at most one low-priority, one-CPU 16-cycle block per invocation. Reduce spatial phase diagnostics to the ordinary 400-step interval, retain the checkpoint-compatible wall spectrum, counter/scalar snapshots, and one final checkpoint, and review host health before continuing.",
   "claim_boundary": "Passing blocks establish internal source/loss stationarity for this numerical state. They do not by themselves establish cross-code agreement, experimental validation, or predictive accuracy.",
   "physics_claim": "none_predeclared_internal_stationarity_only"
 }
