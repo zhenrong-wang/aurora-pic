@@ -45,6 +45,7 @@ PYTHONPATH=scripts python3 scripts/test_run_aurorapic_balance_stationarity_block
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_balance_campaign.py
 PYTHONPATH=scripts python3 scripts/test_audit_edupic_ionization_path.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_spatial_ionization.py
+PYTHONPATH=scripts python3 scripts/test_run_aurorapic_ionizing_tail_block.py
 PYTHONPATH=scripts python3 scripts/test_audit_edupic_normalization.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_microstate_ensemble.py
 PYTHONPATH=scripts python3 scripts/test_compare_aurorapic_measurement_windows.py
