@@ -1,0 +1,63 @@
+{
+  "assessment": {
+    "collision_opportunity_algorithm_cannot_explain_balance_deficit": true,
+    "finding": "AuroraPIC's exact ionization count closes against its measured EEDF and the locked sigma(E)v(E) kernel. The persistent source deficit is carried by the energetic electron population, not by ionization event acceptance or particle creation accounting.",
+    "independent_windows_reproduce_sampler_closure": true,
+    "next_discriminator": "Localize why the high-energy EEDF tail and power per electron differ despite strong coarse current and field waveform agreement.",
+    "sampler_closes_against_measured_eedf": true
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "The 0.25 eV histogram gives conservative within-bin kernel bounds. This post-hoc closure excludes a material sampler deficit but does not uniquely identify the kinetic cause of the EEDF difference.",
+  "collision_opportunity_algorithm_bound": {
+    "direction": "For an identical fixed distribution AuroraPIC's Poisson opportunity count is at most this fraction above eduPIC's one-collision-per-step Bernoulli probability.",
+    "maximum_null_frequency_timestep_product": 0.018436578171091445,
+    "maximum_relative_poisson_mean_minus_single_bernoulli_probability": 0.009161898003643717
+  },
+  "cross_code_effective_ionization": {
+    "locked_cycle32_candidate_to_reference_ratio": 0.8565770833177263,
+    "locked_cycle32_measured_to_eedf_prediction_ratio": 1.0223164210136608,
+    "long_window_candidate_frequency_s-1": 53611.46352695103,
+    "long_window_candidate_to_reference_ratio": 0.8604895525222194,
+    "prospective_region_audit_measured_to_eedf_relative_difference": 0.026961836569504023,
+    "reference_frequency_s-1_from_locked_cycle32_comparison": 62303.44502127664,
+    "region_matched_candidate_to_reference_folded_frequency_ratio": 0.8736601046650799
+  },
+  "locked_contract_equivalence": {
+    "aurorapic_interpolation": "lower_bin",
+    "edupic_interpolation": "nearest_bin",
+    "ejected_energy_scale_eV": 10.0,
+    "energy_frame": "laboratory",
+    "energy_grid_eV": 0.001,
+    "inelastic_transform": "finite_mass_center_of_mass",
+    "ionization_kinematics": "opal_beaty_peterson",
+    "neutral_model": "cold_argon",
+    "threshold_eV": 15.8
+  },
+  "long_window_eedf_ledger": {
+    "energy_bin_width_eV": 0.25,
+    "fraction_of_observations_in_bins_at_or_above_threshold": 0.002555768156691158,
+    "macro_particle_timestep_observations": 5718263592.0,
+    "measured_effective_ionization_frequency_s-1": 53611.46352695103,
+    "measured_inside_within_bin_kernel_bounds": true,
+    "measured_ionization_macro_events": 5652,
+    "measured_to_bin_center_prediction_ratio": 1.0199444174917682,
+    "predicted_effective_ionization_frequency_s-1": 52563.12266387175,
+    "predicted_ionization_macro_events_bin_center": 5541.478440461797,
+    "predicted_ionization_macro_events_within_bin_kernel_maximum": 5810.03840172158,
+    "predicted_ionization_macro_events_within_bin_kernel_minimum": 5283.744651267093
+  },
+  "provenance": {
+    "analyzer_sha256": "11d5c98328e66ade375e726b41b35f5acc6c79ff7028f4347f887777c31f3365",
+    "cycle32_evidence_sha256": "ea2a1ea5ec62a93eb5d4e5d8ddbc2ce7e4f261fb2341d4dc47c0235f6a8d49e3",
+    "cycle32_phase_space_comparison_sha256": "1ac435f66ed64d7f8cf8495b609877a0335ac855a96d0908f304b0158340832c",
+    "gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "ionization_cross_section_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+    "long_window_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "native_edupic_source_sha256": "a850889bbc3c5917505eb31752cde607b7550c8212f7df01fa739b70d1a6a79f",
+    "phase_eedf_sha256": "a3f89d62e98904454c0afbc163d36cbbe4b6ae5d472333a041f82e1cf0d87da5",
+    "region_matched_collision_audit_sha256": "82c00f2eb2cd0a0914deed0bc84e30f1f1a385884ebd79b5b3745832ea2cbebf",
+    "transport_audit_sha256": "2fe563de8b83303d4640a18707f5b7f99df90d27db8673f21e3701d50dca7548"
+  },
+  "schema_version": 1,
+  "scope": "descriptive_edupic_ionization_path_audit"
+}

@@ -2276,6 +2276,41 @@ and collision sampling are audited against native eduPIC. The two contiguous
 blocks do not identify a unique causal defect or support independent-sample
 confidence intervals.
 
+### Ionization-path closure
+
+The requested follow-up is retained in
+[`benchmarks/ccp/edupic-argon-ionization-path-audit-20260821.json`](../benchmarks/ccp/edupic-argon-ionization-path-audit-20260821.json).
+It checksum-locks the native eduPIC source, AuroraPIC gas manifest and
+ionization table, long-window EEDF and counters, the earlier cycle-32
+phase-space comparison, and the prospectively gated region-matched collision
+audit. Both implementations use the same 0.001 eV energy grid, 15.8 eV
+threshold, laboratory collision energy, cold argon target, finite-mass
+center-of-mass transform, and 10 eV Opal--Beaty--Peterson ejected-energy law.
+eduPIC selects the nearest table bin while AuroraPIC selects the lower bin.
+
+Folding the 12-cycle full-gap AuroraPIC EEDF through the locked
+`n_g sigma_ion(E) v(E) dt` kernel predicts `5541.48` ionization events at the
+0.25 eV histogram-bin centers. Conservative minimum and maximum kernels within
+each histogram bin give `5283.74` to `5810.04`; the exact counter records
+`5652`, inside those bounds and only `1.99%` above the center estimate. The
+independent cycle-32 window closed at `2.23%`, and the earlier prospective
+region audit closed its full-gap ionization rate within `2.70%`.
+
+The direct-collision algorithm difference is also bounded. At the configured
+maximum null frequency, `nu_max dt = 0.01844`; the Poisson mean used by
+AuroraPIC exceeds eduPIC's one-collision-per-step Bernoulli probability by at
+most `0.916%`, and in the direction of slightly more AuroraPIC opportunities.
+It cannot explain an `8--10%` source deficit.
+
+The long-window measured effective ionization frequency is `53.61 kHz`, versus
+the locked eduPIC value `62.30 kHz`, or a ratio of `0.8605`. This independently
+reproduces the cycle-32 ratio `0.8566`; the region-matched EEDF fold gave
+`0.8737`. The collision sampler and particle creation ledger are therefore
+credible for this case. The deficit is carried by the energetic electron
+distribution. The next discriminator is a spatially and phase-resolved audit
+of the ionizing EEDF tail and electron power deposition; this result does not
+yet identify the unique kinetic cause.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
