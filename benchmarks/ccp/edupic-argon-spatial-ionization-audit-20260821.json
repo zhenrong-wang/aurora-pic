@@ -1,0 +1,296 @@
+{
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This is a checksum-bound descriptive comparison with published simulation output. It has no prospective spatial acceptance threshold and does not uniquely identify the kinetic cause or constitute experimental validation.",
+  "comparison_contract": {
+    "acceptance_thresholds_declared": false,
+    "band_boundaries_node_indices": [
+      0,
+      40,
+      80,
+      160,
+      240,
+      320,
+      360,
+      400
+    ],
+    "measurement_cycles": 12,
+    "orientation": "direct_powered_left_no_reflection",
+    "phase_alignment": "direct_no_fitted_shift",
+    "phase_band_boundaries": [
+      0,
+      25,
+      50,
+      75,
+      100,
+      125,
+      150,
+      175,
+      200
+    ],
+    "phase_bins": 200,
+    "samples_per_phase_bin": 240,
+    "spatial_nodes": 400,
+    "spatial_quadrature": "whole_gap_trapezoid_nodal_weights"
+  },
+  "localization": {
+    "finding": "The 0.2-0.6 gap region and first half of the RF cycle account for most of the small net ionization-rate deficit. Effective ionization per electron is lower through nearly the entire gap despite a higher electron density.",
+    "fraction_of_net_source_gap_in_0p2_to_0p6_gap": 0.9470531615159532,
+    "fraction_of_net_source_gap_in_first_half_rf_cycle": 0.9248596651155963,
+    "interpretation": "This favors a distributed energetic-tail/heating mismatch over an ionization sampler defect confined to an electrode."
+  },
+  "phase_octants": [
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9274683779967938,
+      "candidate_to_reference_ionization_rate_ratio": 1.038217859621465,
+      "candidate_to_reference_signed_electron_power_ratio": 0.9372196790275943,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.837243944013181,
+      "first_phase_bin": 0,
+      "fraction_of_net_source_gap": -0.06350840342882318,
+      "lower_phase_fraction": 0.0,
+      "past_last_phase_bin": 25,
+      "reference_ionization_fraction": 0.0616972458500877,
+      "upper_phase_fraction": 0.125
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.7798030564163042,
+      "candidate_to_reference_ionization_rate_ratio": 0.8729250663265867,
+      "candidate_to_reference_signed_electron_power_ratio": 0.9260720540204377,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.8272804230789305,
+      "first_phase_bin": 25,
+      "fraction_of_net_source_gap": 0.3480055218012611,
+      "lower_phase_fraction": 0.125,
+      "past_last_phase_bin": 50,
+      "reference_ionization_fraction": 0.10167804490445721,
+      "upper_phase_fraction": 0.25
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8268828581556448,
+      "candidate_to_reference_ionization_rate_ratio": 0.9254940853681051,
+      "candidate_to_reference_signed_electron_power_ratio": 0.976228684524994,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.8722116949591167,
+      "first_phase_bin": 50,
+      "fraction_of_net_source_gap": 0.4022633510236694,
+      "lower_phase_fraction": 0.25,
+      "past_last_phase_bin": 75,
+      "reference_ionization_fraction": 0.20045673865862684,
+      "upper_phase_fraction": 0.375
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8357353177820734,
+      "candidate_to_reference_ionization_rate_ratio": 0.9352083553029048,
+      "candidate_to_reference_signed_electron_power_ratio": 1.209275482721706,
+      "candidate_to_reference_signed_power_per_electron_ratio": 1.0806514121777289,
+      "first_phase_bin": 75,
+      "fraction_of_net_source_gap": 0.23809919571948895,
+      "lower_phase_fraction": 0.375,
+      "past_last_phase_bin": 100,
+      "reference_ionization_fraction": 0.13643942096377285,
+      "upper_phase_fraction": 0.5
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9204845753408335,
+      "candidate_to_reference_ionization_rate_ratio": 1.0297862542419576,
+      "candidate_to_reference_signed_electron_power_ratio": 1.0345449532978592,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.9247381853124201,
+      "first_phase_bin": 100,
+      "fraction_of_net_source_gap": -0.04950432212351095,
+      "lower_phase_fraction": 0.5,
+      "past_last_phase_bin": 125,
+      "reference_ionization_fraction": 0.0617061100643348,
+      "upper_phase_fraction": 0.625
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8819772545502189,
+      "candidate_to_reference_ionization_rate_ratio": 0.9866871172098269,
+      "candidate_to_reference_signed_electron_power_ratio": 1.0137006632999985,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.9061240512405914,
+      "first_phase_bin": 125,
+      "fraction_of_net_source_gap": 0.03646476590857493,
+      "lower_phase_fraction": 0.625,
+      "past_last_phase_bin": 150,
+      "reference_ionization_fraction": 0.10169562391822352,
+      "upper_phase_fraction": 0.75
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8887014801377306,
+      "candidate_to_reference_ionization_rate_ratio": 0.9941433270731925,
+      "candidate_to_reference_signed_electron_power_ratio": 0.9812711102554283,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.8771945295531711,
+      "first_phase_bin": 150,
+      "fraction_of_net_source_gap": 0.031518533631923445,
+      "lower_phase_fraction": 0.75,
+      "past_last_phase_bin": 175,
+      "reference_ionization_fraction": 0.19980942812558103,
+      "upper_phase_fraction": 0.875
+    },
+    {
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8801729855529372,
+      "candidate_to_reference_ionization_rate_ratio": 0.9845900954092421,
+      "candidate_to_reference_signed_electron_power_ratio": 1.06421176584181,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.9513506702626502,
+      "first_phase_bin": 175,
+      "fraction_of_net_source_gap": 0.05666135746741676,
+      "lower_phase_fraction": 0.875,
+      "past_last_phase_bin": 200,
+      "reference_ionization_fraction": 0.13651738751491604,
+      "upper_phase_fraction": 1.0
+    }
+  ],
+  "phase_space_comparisons": {
+    "electron_density": {
+      "candidate_peak_absolute": 8465250045912771.0,
+      "candidate_to_reference_peak_absolute_ratio": 1.1389105671382103,
+      "mean_bias_over_reference_rms": 0.08446370971598763,
+      "pearson_correlation": 0.9993203335616038,
+      "reference_peak_absolute": 7432761000000000.0,
+      "relative_l2": 0.11577201216260162
+    },
+    "electron_power": {
+      "candidate_peak_absolute": 79124.36242198576,
+      "candidate_to_reference_peak_absolute_ratio": 1.3237258489728432,
+      "mean_bias_over_reference_rms": -0.004454733007032606,
+      "pearson_correlation": 0.9794488608882105,
+      "reference_peak_absolute": 59773.98,
+      "relative_l2": 0.2081868166610923
+    },
+    "ionization_rate": {
+      "candidate_peak_absolute": 8.29443775968377e+21,
+      "candidate_to_reference_peak_absolute_ratio": 8.060654594480065,
+      "mean_bias_over_reference_rms": -0.023396565595593177,
+      "pearson_correlation": 0.3705478007184134,
+      "reference_peak_absolute": 1.029003e+21,
+      "relative_l2": 1.861550047473585
+    }
+  },
+  "provenance": {
+    "analyzer_sha256": "d9b91e36acdfde06bc6f25016ae2e54e8216fedb0445702773e0b5c6ee626e93",
+    "candidate_output_sha256": {
+      "spatial_phase_collision_rate.csv": "ee5d74f4dda9e7e3dbaae5f7799d0bc228d0793ff9c8b43604f58f3fc73fa1cc",
+      "spatial_phase_fields.csv": "902b6090033a2439b159385ba9c79baea788a31423f91794e07ab5b07319c8a5",
+      "spatial_phase_moments.csv": "ad483d5d47da43bb441015628c2f9d37b4bc10c9fec466bbb3cbadb409ba2f35"
+    },
+    "ionization_path_audit_sha256": "10a3ee8261a23486525363e7674c228e63055ea7e743c7c33bba81f6a263f3ee",
+    "long_window_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "reference_sha256": {
+      "Figure11a)_ne_xt.dat": "43e70f92717daf5ccb9a7fb491b9f0ba42b952bb24bc851dcab84401f99619e8",
+      "Figure11g)_heate_xt.dat": "8b8c6c453d5c1c0865f0697938794377cd8b695154aca97714d304060e7ca335",
+      "Figure11k)_ioniz_xt.dat": "59baed449b6972eddbd719ad6019fe9c9e6eb981c2ecf952870f0b3925856be4"
+    }
+  },
+  "schema_version": 1,
+  "scope": "descriptive_spatial_ionization_localization",
+  "spatial_bands": [
+    {
+      "candidate_ionization_fraction": 0.0023000707714083512,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9010222424229475,
+      "candidate_to_reference_electron_density_ratio": 1.06179871842624,
+      "candidate_to_reference_ionization_rate_ratio": 0.9567042622782226,
+      "candidate_to_reference_signed_electron_power_ratio": 1.4083597223777837,
+      "candidate_to_reference_signed_power_per_electron_ratio": 1.3263904899651828,
+      "first_node": 0,
+      "fraction_of_net_source_gap": 0.002699456118185793,
+      "lower_gap_fraction": 0.0,
+      "past_last_node": 40,
+      "reference_ionization_fraction": 0.0023148991296751084,
+      "reference_minus_candidate_source_fraction_of_reference_total": 0.0001002252655707843,
+      "upper_gap_fraction": 0.1
+    },
+    {
+      "candidate_ionization_fraction": 0.025083553326966195,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8380568213924707,
+      "candidate_to_reference_electron_density_ratio": 1.1769918401145987,
+      "candidate_to_reference_ionization_rate_ratio": 0.9863860403313157,
+      "candidate_to_reference_signed_electron_power_ratio": 1.0340801667038741,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.8785788749420643,
+      "first_node": 40,
+      "fraction_of_net_source_gap": 0.008978302600059992,
+      "lower_gap_fraction": 0.1,
+      "past_last_node": 80,
+      "reference_ionization_fraction": 0.024485598420304087,
+      "reference_minus_candidate_source_fraction_of_reference_total": 0.0003333459493576189,
+      "upper_gap_fraction": 0.2
+    },
+    {
+      "candidate_ionization_fraction": 0.30013062050774575,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8219112655132094,
+      "candidate_to_reference_electron_density_ratio": 1.1532395697882074,
+      "candidate_to_reference_ionization_rate_ratio": 0.9478605942445347,
+      "candidate_to_reference_signed_electron_power_ratio": 0.8302473386754191,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.7199261631543689,
+      "first_node": 80,
+      "fraction_of_net_source_gap": 0.4281535530437009,
+      "lower_gap_fraction": 0.2,
+      "past_last_node": 160,
+      "reference_ionization_fraction": 0.30488384925116757,
+      "reference_minus_candidate_source_fraction_of_reference_total": 0.01589646272439475,
+      "upper_gap_fraction": 0.4
+    },
+    {
+      "candidate_ionization_fraction": 0.33084216570887787,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8473525115853733,
+      "candidate_to_reference_electron_density_ratio": 1.1128441885317064,
+      "candidate_to_reference_ionization_rate_ratio": 0.942971318155528,
+      "candidate_to_reference_signed_electron_power_ratio": 1.4186208453617721,
+      "candidate_to_reference_signed_power_per_electron_ratio": 1.274770412588944,
+      "first_node": 160,
+      "fraction_of_net_source_gap": 0.5188996084722522,
+      "lower_gap_fraction": 0.4,
+      "past_last_node": 240,
+      "reference_ionization_fraction": 0.33782435260813704,
+      "reference_minus_candidate_source_fraction_of_reference_total": 0.019265677524204175,
+      "upper_gap_fraction": 0.6
+    },
+    {
+      "candidate_ionization_fraction": 0.3127313422694316,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9035614676295958,
+      "candidate_to_reference_electron_density_ratio": 1.0965125470503416,
+      "candidate_to_reference_ionization_rate_ratio": 0.9907664862870729,
+      "candidate_to_reference_signed_electron_power_ratio": 0.9083540825639271,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.8284028167369653,
+      "first_node": 240,
+      "fraction_of_net_source_gap": 0.07558484684227805,
+      "lower_gap_fraction": 0.6,
+      "past_last_node": 320,
+      "reference_ionization_fraction": 0.30392657959029573,
+      "reference_minus_candidate_source_fraction_of_reference_total": 0.00280631024037005,
+      "upper_gap_fraction": 0.8
+    },
+    {
+      "candidate_ionization_fraction": 0.027673747769427336,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 1.0148878368008782,
+      "candidate_to_reference_electron_density_ratio": 1.080166884189107,
+      "candidate_to_reference_ionization_rate_ratio": 1.0962482324786276,
+      "candidate_to_reference_signed_electron_power_ratio": 1.0375402607570867,
+      "candidate_to_reference_signed_power_per_electron_ratio": 0.9605370021466446,
+      "first_node": 320,
+      "fraction_of_net_source_gap": -0.06301144986077632,
+      "lower_gap_fraction": 0.8,
+      "past_last_node": 360,
+      "reference_ionization_fraction": 0.02430679249477202,
+      "reference_minus_candidate_source_fraction_of_reference_total": -0.002339485814846577,
+      "upper_gap_fraction": 0.9
+    },
+    {
+      "candidate_ionization_fraction": 0.0012384996461429583,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.4857338287629044,
+      "candidate_to_reference_electron_density_ratio": 1.08731638091056,
+      "candidate_to_reference_ionization_rate_ratio": 0.5281463487763108,
+      "candidate_to_reference_signed_electron_power_ratio": 1.3804339745615533,
+      "candidate_to_reference_signed_power_per_electron_ratio": 1.269578936542394,
+      "first_node": 360,
+      "fraction_of_net_source_gap": 0.02869568278429784,
+      "lower_gap_fraction": 0.9,
+      "past_last_node": 400,
+      "reference_ionization_fraction": 0.0022579285056484387,
+      "reference_minus_candidate_source_fraction_of_reference_total": 0.001065411809592264,
+      "upper_gap_fraction": 1.0
+    }
+  ],
+  "whole_gap": {
+    "candidate_to_reference_effective_ionization_frequency_ratio": 0.8604895525222369,
+    "candidate_to_reference_electron_density_ratio": 1.118981688364513,
+    "candidate_to_reference_electron_power_ratio": 0.9672460429095255,
+    "candidate_to_reference_ionization_rate_ratio": 0.9628720523013569,
+    "candidate_to_reference_power_per_electron_ratio": 0.8643984552805668
+  }
+}

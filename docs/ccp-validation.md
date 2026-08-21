@@ -2311,6 +2311,51 @@ distribution. The next discriminator is a spatially and phase-resolved audit
 of the ionizing EEDF tail and electron power deposition; this result does not
 yet identify the unique kinetic cause.
 
+### Spatial and RF-phase ionization localization
+
+The next discriminator is retained in
+[`benchmarks/ccp/edupic-argon-spatial-ionization-audit-20260821.json`](../benchmarks/ccp/edupic-argon-spatial-ionization-audit-20260821.json).
+It reuses the checksum-bound 12-cycle window and the published 200-phase by
+400-node eduPIC matrices; no additional solver run was required. Candidate and
+reference ionization rate, electron density, and signed electron `J E` power
+are compared without a fitted phase shift or spatial reflection. Whole-gap
+integrals use trapezoidal nodal weights, and the non-overlapping spatial and
+phase contributions add exactly to the reported net source difference.
+
+The total AuroraPIC ionization rate is `96.287%` of eduPIC while its electron
+density is `111.898%`, reproducing the effective-ionization-frequency ratio
+`0.86049` from the independent ionization-path audit. The total electron power
+ratio is `0.96725`, but power per electron is only `0.86440`. Thus the large
+per-electron discrepancy is not an event-counter normalization error: a denser
+candidate population nearly hides a substantially less ionizing population.
+
+The source difference is strongly localized. The `0.2--0.4` and `0.4--0.6`
+gap bands account for `42.82%` and `51.89%` of the net deficit, respectively;
+together they account for `94.71%`. The `0.8--0.9` band instead has `9.62%`
+more ionization than the reference and offsets `6.30%` of the net gap. The
+electrode-adjacent `0--0.1` and `0.9--1.0` bands together contribute only
+`3.14%` of the net gap, even though the final band has a large relative error
+where the absolute ionization contribution is tiny.
+
+The RF-phase result is similarly selective: `92.49%` of the net source gap is
+accumulated in phase fractions `0--0.5`. The largest octant contributions are
+`0.125--0.25` (`34.80%` of the net gap) and `0.25--0.375` (`40.23%`). In the
+opposite half-cycle the total source is much closer to the reference. This
+combination favors a phase-specific creation and transport difference in the
+energetic electron tail that reaches the discharge interior, rather than a
+collision sampler defect localized at either electrode.
+
+The signed local power ratios do not map monotonically to local ionization:
+for example, the `0.4--0.6` band has more cycle-averaged signed power per
+electron but lower ionization per electron. Signed `J E` includes alternating
+heating and cooling and does not resolve energy-selective tail production.
+The next targeted diagnostic should therefore resolve the above-threshold EEDF
+or ionization kernel jointly in space and RF phase, especially over
+`x/L=0.2--0.6` and phase `0.125--0.5`, rather than extending the same scalar
+balance campaign. These results remain descriptive cross-simulation evidence;
+they have no prospective spatial acceptance threshold and are not experimental
+validation or a unique diagnosis of the kinetic cause.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
