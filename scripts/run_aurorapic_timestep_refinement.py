@@ -13,6 +13,7 @@ from run_aurorapic_edupic_pilot import (
     atomic_json, atomic_text, available_memory_kib, insert_global, run_analyzer,
     run_process, set_global, sha256, table,
 )
+from run_aurorapic_ionizing_tail_block import analyze_surface_flux
 from run_aurorapic_initialization_ab import set_species_value
 
 
@@ -27,6 +28,7 @@ APPROVED_RULE_SHA256S = {
     "d44301f76436fcc832b626d9611fbb03d047c9ae6775ab6e94face1e4a01cd49",
     "c85c7cbd9ede314ff5e744699fe630ac2ff19af74c0039c44cf2f5543fd0b2a0",
     "53f372d3ad10fb6c24c5265c962c559ca92d94cd4a3008c82c320b88912aabb4",
+    "b617c59d7c9e2837bcec1c82ec86028f7fdf0772327f438474e3549c4678318e",
 }
 
 
@@ -126,6 +128,19 @@ def measurement_deck(base: str, rule: dict[str, object], branch: str,
         "restart_path": checkpoint,
     }.items():
         result = insert_global(result, key, str(value))
+    surface = diagnostics.get("surface_flux")
+    if surface is not None:
+        for key, value in {
+            "phase_surface_flux": "true",
+            "phase_surface_flux_reset_on_restart": str(
+                bool(surface["reset_on_restart"])).lower(),
+            "phase_surface_flux_species": surface["species"],
+            "phase_surface_flux_positions": ",".join(
+                str(position) for position in surface["positions_m"]),
+            "phase_surface_flux_energy_bins": surface["energy_bins"],
+            "phase_surface_flux_energy_max": surface["energy_max_eV"],
+        }.items():
+            result = insert_global(result, key, str(value))
     return result
 
 
@@ -275,6 +290,19 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             int(scalars[-1]["step"]) == end_step,
         "phase_eedf": phase_report.get("passes") is True,
     }
+    surface_result = None
+    if "surface_flux" in diagnostics:
+        surface_diagnostic = {
+            "phase_bins": diagnostics["spatial_phase_bins"],
+            "surface_flux": {
+                **diagnostics["surface_flux"],
+                "direction_order": ["left_to_right", "right_to_left"],
+            },
+        }
+        surface_result = analyze_surface_flux(
+            output, surface_diagnostic, metadata)
+        gates.update({f"surface_flux_{key}": value for key, value in
+                      surface_result.items() if isinstance(value, bool)})
     if not all(gates.values()):
         raise RefinementError("branch failed a solver/diagnostic gate")
     final_checkpoint = output / f"checkpoint_{end_step}.apc"
@@ -321,6 +349,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         },
         "gates": gates,
         "all_gates_passed": True,
+        "surface_flux": surface_result,
         "maximum_sampled_absolute_field_V_m": maximum_field,
         "energy_analysis_sha256": sha256(energy),
         "phase_eedf_analysis_sha256": sha256(phase),
@@ -331,7 +360,11 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             "spatial_phase_moments.csv", "spatial_collision_rate.csv",
             "spatial_phase_collision_rate.csv", "phase_eedf.csv",
             "phase_eedf_moments.csv", "wall_impact_spectrum.csv",
-            "wall_impact_spectrum_summary.csv")},
+            "wall_impact_spectrum_summary.csv",
+            *(("spatial_phase_collision_power.csv",
+               "phase_surface_flux.csv",
+               "phase_surface_flux_summary.csv")
+              if "surface_flux" in diagnostics else ()))},
         "claim_boundary": rule.get("branch_claim_boundary", (
             "One branch is not a convergence result; both locked branches "
             "must complete and pass the prospective paired comparison.")),

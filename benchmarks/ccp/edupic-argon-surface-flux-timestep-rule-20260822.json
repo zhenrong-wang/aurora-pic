@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_common_state_surface_flux_timestep_refinement",
+  "axis": "surface_flux_timestep_2x",
+  "question": "Is the directly measured interior electron-energy transport closure stable when the electron timestep is halved?",
+  "common_stationary_state": {
+    "source_cycle": 32,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "particle_state_signature": 7816361585110270686,
+    "particle_state_manifest_sha256": "b4065aa11529983ba743b83400e2721a7bcdad8a504754f8b52f2399c9c50ab0",
+    "electrons": 119449,
+    "ions": 124945,
+    "velocity_staggering": "time_centered",
+    "rf_phase_at_reinitialization": 0.0,
+    "known_reset_boundary": "Both arms reconstruct fields, half-step velocities, RNG state, and diagnostics identically, then discard two equilibration cycles."
+  },
+  "fixed_inputs": {
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "length_m": 0.025,
+    "seed": 13507,
+    "macro_weight": 700000000.0
+  },
+  "branches": {
+    "baseline_dt": {
+      "timestep_s": 1.8436578171091445e-11,
+      "steps_per_rf_cycle": 4000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 2,
+      "equilibration_timeout_seconds": 480,
+      "measurement_timeout_seconds": 480
+    },
+    "half_dt": {
+      "timestep_s": 9.218289085545723e-12,
+      "steps_per_rf_cycle": 8000,
+      "equilibration_cycles": 2,
+      "measurement_cycles": 2,
+      "equilibration_timeout_seconds": 900,
+      "measurement_timeout_seconds": 900
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 2097152,
+    "maximum_peak_resident_set_kib": 307200,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "maximum_relative_energy_residual": 1e-10,
+    "minimum_available_disk_kib": 10485760,
+    "stop_after_each_branch": true,
+    "run_baseline_before_half_dt": true
+  },
+  "fresh_measurement_contract": {
+    "equilibration_statistics_excluded": true,
+    "spatial_sampling_order": "pre_collision",
+    "spatial_phase_bins": 200,
+    "phase_eedf_energy_bins": 320,
+    "phase_eedf_energy_max_eV": 80.0,
+    "phase_eedf_regions": "full_gap:0:0.025",
+    "wall_impact_raw_energy_bins": 200,
+    "wall_impact_energy_max_eV": 500.0,
+    "ifed_comparison_rebin_factor": 4,
+    "surface_flux": {
+      "species": "electrons",
+      "positions_m": [0.005, 0.015],
+      "energy_bins": 320,
+      "energy_max_eV": 80.0,
+      "reset_on_restart": true,
+      "minimum_total_macro_crossings_per_surface": 25000
+    }
+  },
+  "prospective_acceptance": {
+    "maximum_critical_phase_direct_flux_relative_change": 0.15,
+    "maximum_exceptional_octant_direct_flux_relative_change": 0.10,
+    "maximum_exceptional_octant_tail_flux_relative_change": 0.20,
+    "maximum_critical_phase_closure_error_each_branch": 0.10,
+    "maximum_exceptional_octant_closure_error_each_branch": 0.06,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "Ordinary timestep error is not a material explanation of the direct internal transport result at the declared tolerances.",
+    "fail": "The direct transport observable is timestep-sensitive at a declared tolerance; further temporal refinement or longer sampling is required.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Run the baseline and half-timestep branches sequentially on one inherited CPU at nice +10. Stop and review after each branch.",
+  "branch_claim_boundary": "One branch is not a refinement result. Both common-state branches and the prospectively locked paired comparison are required.",
+  "physics_claim": "paired_surface_transport_numerical_sensitivity_only"
+}

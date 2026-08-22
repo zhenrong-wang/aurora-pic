@@ -32,6 +32,22 @@ def main() -> None:
         assert "spatial_average_phase_bins = 16" in second
         assert "spatial_average_sampling_order = post_collision" in second
         assert "wall_impact_reset_on_restart = true" in second
+        surface_rule = json.loads(Path(
+            "benchmarks/ccp/"
+            "edupic-argon-surface-flux-timestep-rule-20260822.json"
+        ).read_text(encoding="utf-8"))
+        surface = measurement_deck(
+            base, surface_rule, "baseline_dt", root / "surface",
+            root / "checkpoint.apc")
+        for expected in (
+            "phase_surface_flux = true",
+            "phase_surface_flux_reset_on_restart = true",
+            "phase_surface_flux_species = electrons",
+            "phase_surface_flux_positions = 0.005,0.015",
+            "phase_surface_flux_energy_bins = 320",
+            "phase_surface_flux_energy_max = 80.0",
+        ):
+            assert expected in surface, expected
         mesh_rule = json.loads(Path(
             "benchmarks/ccp/edupic-argon-mesh-refinement-rule-20260814.json"
         ).read_text(encoding="utf-8"))
