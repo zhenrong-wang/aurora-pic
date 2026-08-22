@@ -175,6 +175,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         if sha256(path) != expected:
             raise RefinementError(f"{label} SHA-256 differs")
     execution = rule["execution_contract"]
+    diagnostics = rule["fresh_measurement_contract"]
     available = available_memory_kib()
     if available < int(execution["minimum_available_memory_kib"]):
         raise RefinementError("available memory is below the launch floor")
