@@ -3,8 +3,9 @@
 
 import json
 from pathlib import Path
+import tempfile
 
-from run_aurorapic_ionizing_tail_block import build_deck
+from run_aurorapic_ionizing_tail_block import analyze_surface_flux, build_deck
 
 
 def main() -> None:
@@ -28,6 +29,70 @@ def main() -> None:
     for text in required:
         assert text in deck, text
     assert deck.count("phase_eedf_regions =") == 1
+
+    surface_rule = json.loads(Path(
+        "benchmarks/ccp/edupic-argon-surface-flux-rule-20260822.json"
+    ).read_text(encoding="utf-8"))
+    surface_deck = build_deck(
+        base, Path("surface-output"), Path("checkpoint-72000.apc"),
+        surface_rule)
+    surface_required = (
+        "steps = 88000", "spatial_average_start_step = 72001",
+        "phase_surface_flux = true",
+        "phase_surface_flux_reset_on_restart = true",
+        "phase_surface_flux_species = electrons",
+        "phase_surface_flux_positions = 0.005,0.015",
+        "phase_surface_flux_energy_bins = 320",
+        "phase_surface_flux_energy_max = 80.0",
+    )
+    for text in surface_required:
+        assert text in surface_deck, text
+    assert surface_deck.count("phase_surface_flux =") == 1
+
+    diagnostic = {
+        "phase_bins": 2,
+        "surface_flux": {
+            "species": "electrons", "positions_m": [0.5],
+            "energy_bins": 2, "energy_max_eV": 2.0,
+            "direction_order": ["left_to_right", "right_to_left"],
+            "minimum_total_macro_crossings_per_surface": 1,
+        },
+    }
+    metadata = {
+        "phase_surface_flux_enabled": True,
+        "phase_surface_flux_species": "electrons",
+        "phase_surface_flux_positions": [0.5],
+        "phase_surface_flux_energy_bins": 2,
+        "phase_surface_flux_energy_max": 2.0,
+    }
+    with tempfile.TemporaryDirectory() as directory:
+        output = Path(directory)
+        summary_header = (
+            "phase_bin,surface_id,direction,macro_crossings,"
+            "represented_crossings,overflow_fraction,"
+            "represented_particle_flux_m-2_s-1,"
+            "kinetic_energy_flux_W_m-2\n")
+        histogram_header = (
+            "phase_bin,surface_id,direction,represented_crossings,"
+            "probability_density\n")
+        summary_rows = []
+        histogram_rows = []
+        for phase in range(2):
+            for direction in ("left_to_right", "right_to_left"):
+                summary_rows.append(
+                    f"{phase},0,{direction},1,2,0,1,1\n")
+                histogram_rows.extend((
+                    f"{phase},0,{direction},1,0.5\n",
+                    f"{phase},0,{direction},1,0.5\n",
+                ))
+        (output / "phase_surface_flux_summary.csv").write_text(
+            summary_header + "".join(summary_rows), encoding="utf-8")
+        (output / "phase_surface_flux.csv").write_text(
+            histogram_header + "".join(histogram_rows), encoding="utf-8")
+        result = analyze_surface_flux(output, diagnostic, metadata)
+        assert all(result[key] for key in (
+            "contract", "shape", "finite", "histogram_closure",
+            "crossing_sufficiency")), result
 
 
 if __name__ == "__main__":

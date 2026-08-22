@@ -12,12 +12,14 @@ import shutil
 
 from run_aurorapic_edupic_pilot import (
     PilotError, atomic_json, atomic_text, available_memory_kib, finite, integer,
-    run_process, set_global, sha256, table,
+    insert_global, run_process, set_global, sha256, table,
 )
 
 
-RULE_SHA256 = (
-    "a8cded31a57af98b6c32dda816d122cda8ebf9f7daf31d906b516d1a5b12b9f2")
+RULE_SHA256S = {
+    "a8cded31a57af98b6c32dda816d122cda8ebf9f7daf31d906b516d1a5b12b9f2",
+    "e0216347692759a4c775f3cc5b932ce5c36c62a6a0a45bee364ac0bae5380704",
+}
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_ONE_BOUNDED_TAIL_BLOCK"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 
@@ -62,7 +64,102 @@ def build_deck(base: str, output: Path, checkpoint: Path,
     result = base
     for key, value in values.items():
         result = set_global(result, key, value)
+    surface = diagnostic.get("surface_flux")
+    if surface is not None:
+        additions = {
+            "phase_surface_flux": "true",
+            "phase_surface_flux_reset_on_restart": str(
+                bool(surface["reset_on_restart"])).lower(),
+            "phase_surface_flux_species": str(surface["species"]),
+            "phase_surface_flux_positions": ",".join(
+                str(position) for position in surface["positions_m"]),
+            "phase_surface_flux_energy_bins": str(surface["energy_bins"]),
+            "phase_surface_flux_energy_max": str(surface["energy_max_eV"]),
+        }
+        for key, value in additions.items():
+            result = insert_global(result, key, value)
     return result
+
+
+def analyze_surface_flux(output: Path, diagnostic: dict[str, object],
+                         metadata: dict[str, object]) -> dict[str, object]:
+    surface = diagnostic["surface_flux"]
+    phases = int(diagnostic["phase_bins"])
+    positions = [float(value) for value in surface["positions_m"]]
+    bins = int(surface["energy_bins"])
+    directions = list(surface["direction_order"])
+    contract_ok = (
+        metadata.get("phase_surface_flux_enabled") is True and
+        metadata.get("phase_surface_flux_species") == surface["species"] and
+        metadata.get("phase_surface_flux_energy_bins") == bins and
+        metadata.get("phase_surface_flux_energy_max") ==
+            float(surface["energy_max_eV"]) and
+        metadata.get("phase_surface_flux_positions") == positions)
+
+    summary = table(output / "phase_surface_flux_summary.csv")
+    expected_summary_rows = phases * len(positions) * len(directions)
+    summary_shape = len(summary) == expected_summary_rows
+    summary_counts: dict[tuple[int, int, str], tuple[float, float]] = {}
+    totals = [0 for _ in positions]
+    finite_summary = True
+    for row in summary:
+        phase = integer(row, "phase_bin", "surface-flux summary")
+        surface_id = integer(row, "surface_id", "surface-flux summary")
+        direction = row.get("direction", "")
+        represented = finite(
+            row, "represented_crossings", "surface-flux summary")
+        overflow = finite(row, "overflow_fraction", "surface-flux summary")
+        macro = integer(row, "macro_crossings", "surface-flux summary")
+        finite_summary = finite_summary and all(math.isfinite(float(row[key]))
+            for key in ("represented_particle_flux_m-2_s-1",
+                        "kinetic_energy_flux_W_m-2"))
+        if (phase < 0 or phase >= phases or surface_id < 0 or
+                surface_id >= len(positions) or direction not in directions or
+                represented < 0.0 or overflow < 0.0 or overflow > 1.0):
+            summary_shape = False
+            continue
+        key = (phase, surface_id, direction)
+        if key in summary_counts:
+            summary_shape = False
+        summary_counts[key] = (represented, represented * overflow)
+        totals[surface_id] += macro
+
+    histogram_sums: dict[tuple[int, int, str], float] = {}
+    histogram_rows = 0
+    finite_histogram = True
+    with (output / "phase_surface_flux.csv").open(
+            newline="", encoding="utf-8") as stream:
+        for row in csv.DictReader(stream):
+            histogram_rows += 1
+            phase = integer(row, "phase_bin", "surface-flux histogram")
+            surface_id = integer(row, "surface_id", "surface-flux histogram")
+            direction = row.get("direction", "")
+            count = finite(
+                row, "represented_crossings", "surface-flux histogram")
+            density = finite(
+                row, "probability_density", "surface-flux histogram")
+            finite_histogram = finite_histogram and count >= 0.0 and density >= 0.0
+            key = (phase, surface_id, direction)
+            histogram_sums[key] = histogram_sums.get(key, 0.0) + count
+    expected_histogram_rows = expected_summary_rows * bins
+    closure = summary_shape and len(histogram_sums) == expected_summary_rows
+    if closure:
+        for key, (represented, overflow) in summary_counts.items():
+            difference = abs(histogram_sums.get(key, -1.0) + overflow - represented)
+            if difference > 1e-9 * max(1.0, represented):
+                closure = False
+                break
+    minimum = int(surface["minimum_total_macro_crossings_per_surface"])
+    return {
+        "contract": contract_ok,
+        "shape": summary_shape and histogram_rows == expected_histogram_rows,
+        "finite": finite_summary and finite_histogram,
+        "histogram_closure": closure,
+        "crossing_sufficiency": all(total >= minimum for total in totals),
+        "total_macro_crossings_per_surface": totals,
+        "summary_rows": len(summary),
+        "histogram_rows": histogram_rows,
+    }
 
 
 def validate_inputs(args: argparse.Namespace,
@@ -149,12 +246,16 @@ def analyze_output(output: Path, rule: dict[str, object],
     shape_ok = region_names == expected_names
 
     checkpoint = output / f"checkpoint_{end}.apc"
-    required = (
+    required = [
         "phase_eedf.csv", "phase_eedf_moments.csv",
         "spatial_phase_collision_power.csv",
         "spatial_phase_collision_rate.csv", "spatial_phase_moments.csv",
         "spatial_phase_fields.csv", "scalars.csv", "collisions.csv",
-        "boundary_losses.csv", "spatial_average_metadata.json")
+        "boundary_losses.csv", "spatial_average_metadata.json"]
+    surface_result = None
+    if "surface_flux" in diagnostic:
+        required.extend((
+            "phase_surface_flux.csv", "phase_surface_flux_summary.csv"))
     if not checkpoint.is_file() or any(not (output / name).is_file()
                                        for name in required):
         raise TailBlockError("required output is missing")
@@ -173,6 +274,10 @@ def analyze_output(output: Path, rule: dict[str, object],
         "resident_memory": int(resources["peak_resident_set_kib"]) <= int(
             execution["maximum_peak_resident_set_kib"]),
     }
+    if "surface_flux" in diagnostic:
+        surface_result = analyze_surface_flux(output, diagnostic, metadata)
+        gates.update({f"surface_flux_{key}": value for key, value in
+                      surface_result.items() if isinstance(value, bool)})
     return {
         "sampling": {
             "samples": metadata.get("samples"),
@@ -187,6 +292,7 @@ def analyze_output(output: Path, rule: dict[str, object],
             "maximum_sampled_absolute_field_V_m": maximum_field,
             "field_snapshot_files": len(field_files),
         },
+        "surface_flux": surface_result,
         "gates": gates,
         "all_gates_passed": all(gates.values()),
         "final_checkpoint_sha256": sha256(checkpoint),
@@ -196,7 +302,8 @@ def analyze_output(output: Path, rule: dict[str, object],
 
 def execute(args: argparse.Namespace) -> dict[str, object]:
     rule_path = args.rule.resolve()
-    if sha256(rule_path) != RULE_SHA256:
+    rule_sha256 = sha256(rule_path)
+    if rule_sha256 not in RULE_SHA256S:
         raise TailBlockError("ionizing-tail rule differs")
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     validate_inputs(args, rule)
@@ -226,7 +333,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "schema_version": 1,
         "case_id": rule["case_id"],
         "scope": "aurorapic_spatial_phase_ionizing_tail_block",
-        "rule_sha256": RULE_SHA256,
+        "rule_sha256": rule_sha256,
         "inputs": {
             "solver_sha256": sha256(args.executable.resolve()),
             "base_config_sha256": sha256(args.base_config.resolve()),

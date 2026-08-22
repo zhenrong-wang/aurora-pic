@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_phase_resolved_internal_surface_flux_continuation",
+  "question": "Does phase-dependent transport of energetic electrons across x/L=0.2 and 0.6 explain the exceptional ionization deficit during RF phase 0.375--0.5?",
+  "locked_initial_state": {
+    "step": 72000,
+    "checkpoint_sha256": "8cbd5c31e1ee5bb32dbe618184b7b2e4981e31bff85a53e01a5113b498441610",
+    "prior_report_sha256": "c00bfff25a5fc9aa0b596302dbae8f0417de11d1641a329cc1a2bec03a697d42",
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "start_step": 72000,
+    "end_step": 88000,
+    "serial": true,
+    "runtime_threads": 1,
+    "output_interval_steps": 400,
+    "minimum_available_memory_kib": 2097152,
+    "minimum_available_disk_kib": 10485760,
+    "maximum_peak_resident_set_kib": 409600,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "reset_on_restart": true,
+    "phase_eedf_species": "electrons",
+    "energy_bin_width_eV": 0.25,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "ionization_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_spatial_region_names": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.375, 0.5],
+    "maximum_overflow_fraction": 0.000001,
+    "minimum_macro_observations_per_region_phase_bin": 100000,
+    "surface_flux": {
+      "species": "electrons",
+      "positions_m": [0.005, 0.015],
+      "energy_bins": 320,
+      "energy_max_eV": 80.0,
+      "energy_bin_width_eV": 0.25,
+      "minimum_total_macro_crossings_per_surface": 1000,
+      "reset_on_restart": true,
+      "direction_order": ["left_to_right", "right_to_left"]
+    }
+  },
+  "analysis_contract": {
+    "compare_directional_total_and_above_threshold_particle_flux": true,
+    "compare_directional_total_and_above_threshold_energy_flux": true,
+    "evaluate_critical_phase_fraction_without_fitted_alignment": true,
+    "relate_direct_surface_transport_to_local_power_ionization_mismatch": true,
+    "prospective_cross_code_acceptance_threshold": false
+  },
+  "stopping_policy": {
+    "stop_on_resource_or_finite_output_failure": true,
+    "retain_failed_diagnostic_sufficiency_as_evidence": true,
+    "do_not_extend_the_run_before_review": true
+  },
+  "resource_policy": "Run one low-priority serial four-cycle continuation only. Require at least 2 GiB available RAM and 10 GiB free disk, then review before extension.",
+  "claim_boundary": "This continuation directly diagnoses AuroraPIC internal electron transport. Published eduPIC output does not contain matching internal crossing spectra, so the result localizes the candidate mechanism but is not a direct cross-code flux validation or experimental validation.",
+  "physics_claim": "none_predeclared_transport_discriminator_only"
+}
