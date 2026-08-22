@@ -11,7 +11,7 @@ import shutil
 import sys
 
 from run_aurorapic_edupic_pilot import (
-    atomic_json, atomic_text, available_memory_kib, insert_global, integer,
+    PilotError, atomic_json, atomic_text, available_memory_kib, insert_global, integer,
     run_process, set_global, sha256, table,
 )
 from run_aurorapic_ionizing_tail_block import analyze_surface_flux
@@ -59,6 +59,10 @@ def build_deck(base: str, output: Path, checkpoint: Path,
         "phase_eedf_energy_bins": diagnostic["phase_eedf_energy_bins"],
         "phase_eedf_energy_max": diagnostic["phase_eedf_energy_max_eV"],
         "phase_eedf_regions": diagnostic["phase_eedf_regions"],
+        "wall_impact_spectrum": "true",
+        "wall_impact_reset_on_restart": "true",
+        "wall_impact_energy_bins": 200,
+        "wall_impact_energy_max": 500.0,
         "phase_surface_flux": "true",
         "phase_surface_flux_reset_on_restart": "true",
         "phase_surface_flux_species": diagnostic["surface_flux_species"],
@@ -207,7 +211,7 @@ def main() -> int:
     parser.add_argument("--acknowledge-cost")
     try:
         report = execute(parser.parse_args())
-    except (MeshRunError, OSError, ValueError, KeyError) as error:
+    except (MeshRunError, PilotError, OSError, ValueError, KeyError) as error:
         print(f"surface-flux mesh run rejected: {error}", file=sys.stderr)
         return 2
     print(json.dumps(report, indent=2, sort_keys=True))

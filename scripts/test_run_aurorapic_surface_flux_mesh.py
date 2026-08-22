@@ -23,6 +23,7 @@ def main() -> None:
         "spatial_average_phase_bins = 200",
         "phase_surface_flux_positions = 0.005,0.015",
         "phase_surface_flux_reset_on_restart = true",
+        "wall_impact_reset_on_restart = true",
         "restart_path = checkpoint.apc",
     ):
         assert expected in deck, expected
