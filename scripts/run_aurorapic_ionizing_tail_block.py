@@ -151,6 +151,7 @@ def analyze_output(output: Path, rule: dict[str, object],
     checkpoint = output / f"checkpoint_{end}.apc"
     required = (
         "phase_eedf.csv", "phase_eedf_moments.csv",
+        "spatial_phase_collision_power.csv",
         "spatial_phase_collision_rate.csv", "spatial_phase_moments.csv",
         "spatial_phase_fields.csv", "scalars.csv", "collisions.csv",
         "boundary_losses.csv", "spatial_average_metadata.json")

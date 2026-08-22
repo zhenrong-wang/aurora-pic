@@ -1,0 +1,271 @@
+{
+  "assessment": {
+    "finding": "Most phase-resolved ionization variation follows electric power per electron. Phase 0.375-0.5 has the largest extra ionization deficit relative to its power ratio, isolating an energy-selective tail, transport, or cooling effect.",
+    "next_discriminator": "Measure energy-resolved directional electron crossings at the 0.2 and 0.6 gap surfaces to separate tail transport from local energy-space redistribution."
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This post-hoc energy decomposition uses phase-averaged moments and an inferred transport residual. It is descriptive and does not uniquely separate transport from energy-space redistribution.",
+  "comparison_contract": {
+    "acceptance_thresholds_declared": false,
+    "candidate_collision_power_sign": "positive_adds_tracked_plasma_kinetic_energy",
+    "critical_phase_fraction": [
+      0.125,
+      0.5
+    ],
+    "phase_bins": 200,
+    "spatial_fraction": [
+      0.2,
+      0.6
+    ],
+    "spatial_nodes": 400,
+    "transport_approximation_boundary": "The ionization channel includes newborn ion kinetic energy; the inferred term is electron-dominated but is not an exact species-separated energy flux.",
+    "transport_definition": "JE_plus_collision_power_minus_kinetic_storage_rate"
+  },
+  "critical_interior_phase_0p125_to_0p5": {
+    "candidate_collision_channel_power_W_m-2": {
+      "electron_mcc.elastic": -0.10577597697193182,
+      "electron_mcc.excitation": -20.862711744550978,
+      "electron_mcc.ionization": -10.234628408970588
+    },
+    "candidate_collision_kinetic_power_W_m-2": -31.2031161304935,
+    "candidate_discrete_balance_residual_W_m-2": -3.552713678800501e-15,
+    "candidate_electric_power_W_m-2": 56.58663678802458,
+    "candidate_electron_column_density_m-2": 60709327452241.38,
+    "candidate_inferred_outward_energy_flux_divergence_W_m-2": 22.918975392559755,
+    "candidate_kinetic_energy_storage_rate_W_m-2": 2.4645452649713273,
+    "candidate_to_reference_density_ratio": 1.120734126863194,
+    "candidate_to_reference_effective_ionization_frequency_ratio": 0.8166921346642958,
+    "candidate_to_reference_electric_power_per_electron_ratio": 0.857139984515662,
+    "candidate_to_reference_electric_power_ratio": 0.960626032145692,
+    "ionization_ratio_divided_by_power_per_electron_ratio": 0.9528106836898739,
+    "published_edupic_electric_power_W_m-2": 58.9059997277301,
+    "published_edupic_electron_column_density_m-2": 54169250312881.8,
+    "published_edupic_kinetic_energy_storage_rate_W_m-2": -2.0383474723250954
+  },
+  "critical_phase_octants": [
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.08902434959900513,
+        "electron_mcc.excitation": -10.806281832558764,
+        "electron_mcc.ionization": -3.9406298208169948
+      },
+      "candidate_collision_kinetic_power_W_m-2": -14.835936002974764,
+      "candidate_discrete_balance_residual_W_m-2": -1.4210854715202004e-14,
+      "candidate_electric_power_W_m-2": 19.465670622532468,
+      "candidate_electron_column_density_m-2": 61144608111197.74,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": -38.605692704448636,
+      "candidate_kinetic_energy_storage_rate_W_m-2": 43.23542732400635,
+      "candidate_to_reference_density_ratio": 1.1186258622457637,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9098428463271373,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.8933157933387166,
+      "candidate_to_reference_electric_power_ratio": 0.9992861495812805,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 1.018500795700311,
+      "lower_phase_fraction": 0.0,
+      "published_edupic_electric_power_W_m-2": 19.47957612610657,
+      "published_edupic_electron_column_density_m-2": 54660463497994.99,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": 41.07478400596414,
+      "upper_phase_fraction": 0.125
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.0990479368663667,
+        "electron_mcc.excitation": -15.53648926921524,
+        "electron_mcc.ionization": -7.32521782631058
+      },
+      "candidate_collision_kinetic_power_W_m-2": -22.960755032392186,
+      "candidate_discrete_balance_residual_W_m-2": 0.0,
+      "candidate_electric_power_W_m-2": 52.74518579681846,
+      "candidate_electron_column_density_m-2": 61099949239584.61,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": -78.32368400795707,
+      "candidate_kinetic_energy_storage_rate_W_m-2": 108.10811477238335,
+      "candidate_to_reference_density_ratio": 1.1188976349929451,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8690282311297083,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.8573303747293481,
+      "candidate_to_reference_electric_power_ratio": 0.959264928692283,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 1.0136445141163382,
+      "lower_phase_fraction": 0.125,
+      "published_edupic_electric_power_W_m-2": 54.98500384948221,
+      "published_edupic_electron_column_density_m-2": 54607273559899.75,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": 111.93452080607493,
+      "upper_phase_fraction": 0.25
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.11184338111300711,
+        "electron_mcc.excitation": -26.000002027323557,
+        "electron_mcc.ionization": -14.474226528221834
+      },
+      "candidate_collision_kinetic_power_W_m-2": -40.5860719366584,
+      "candidate_discrete_balance_residual_W_m-2": 0.0,
+      "candidate_electric_power_W_m-2": 73.10923070136907,
+      "candidate_electron_column_density_m-2": 60849615607152.91,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": 33.4449265182878,
+      "candidate_kinetic_energy_storage_rate_W_m-2": -0.921767753577126,
+      "candidate_to_reference_density_ratio": 1.1205957365840669,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8049550678053009,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.8183755396002977,
+      "candidate_to_reference_electric_power_ratio": 0.9170681406007788,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 0.9836010839210181,
+      "lower_phase_fraction": 0.25,
+      "published_edupic_electric_power_W_m-2": 79.7206090416298,
+      "published_edupic_electron_column_density_m-2": 54301130747330.83,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": -13.730076008112546,
+      "upper_phase_fraction": 0.375
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.10643661293642159,
+        "electron_mcc.excitation": -21.051643937114147,
+        "electron_mcc.ionization": -8.904440872379347
+      },
+      "candidate_collision_kinetic_power_W_m-2": -30.062521422429914,
+      "candidate_discrete_balance_residual_W_m-2": 0.0,
+      "candidate_electric_power_W_m-2": 43.90549386588621,
+      "candidate_electron_column_density_m-2": 60178417509986.64,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": 113.63568366734853,
+      "candidate_kinetic_energy_storage_rate_W_m-2": -99.79271122389224,
+      "candidate_to_reference_density_ratio": 1.1227453559054361,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.7958356474793292,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.9308083043292942,
+      "candidate_to_reference_electric_power_ratio": 1.045060700923929,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 0.854994141949323,
+      "lower_phase_fraction": 0.375,
+      "published_edupic_electric_power_W_m-2": 42.0123862920783,
+      "published_edupic_electron_column_density_m-2": 53599346631414.79,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": -104.31948721493765,
+      "upper_phase_fraction": 0.5
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.09322420135839281,
+        "electron_mcc.excitation": -13.11397013068335,
+        "electron_mcc.ionization": -4.159333299710434
+      },
+      "candidate_collision_kinetic_power_W_m-2": -17.366527631752177,
+      "candidate_discrete_balance_residual_W_m-2": 1.7763568394002505e-14,
+      "candidate_electric_power_W_m-2": -23.670574377057395,
+      "candidate_electron_column_density_m-2": 60129475432161.96,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": 31.68173500087465,
+      "candidate_kinetic_energy_storage_rate_W_m-2": -72.71883700968424,
+      "candidate_to_reference_density_ratio": 1.122646311856792,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.910449695258121,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.9363330652163067,
+      "candidate_to_reference_electric_power_ratio": 1.0511708623346516,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 0.9723566635423623,
+      "lower_phase_fraction": 0.5,
+      "published_edupic_electric_power_W_m-2": -22.518293861841855,
+      "published_edupic_electron_column_density_m-2": 53560480088079.83,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": -68.21054855120467,
+      "upper_phase_fraction": 0.625
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.08505329308409758,
+        "electron_mcc.excitation": -9.29509255445377,
+        "electron_mcc.ionization": -2.981738234397776
+      },
+      "candidate_collision_kinetic_power_W_m-2": -12.361884081935644,
+      "candidate_discrete_balance_residual_W_m-2": 0.0,
+      "candidate_electric_power_W_m-2": -47.418701498831695,
+      "candidate_electron_column_density_m-2": 60867261386841.09,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": -58.11666468827931,
+      "candidate_kinetic_energy_storage_rate_W_m-2": -1.6639208924880273,
+      "candidate_to_reference_density_ratio": 1.1203558535171858,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.8568129550787026,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.8728817273132651,
+      "candidate_to_reference_electric_power_ratio": 0.9779381526236085,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 0.9815911231364388,
+      "lower_phase_fraction": 0.625,
+      "published_edupic_electric_power_W_m-2": -48.488446198378696,
+      "published_edupic_electron_column_density_m-2": 54328507496754.39,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": 8.898371676109868,
+      "upper_phase_fraction": 0.75
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.08667884238347652,
+        "electron_mcc.excitation": -14.560811183585146,
+        "electron_mcc.ionization": -8.990498825965073
+      },
+      "candidate_collision_kinetic_power_W_m-2": -23.637988851933695,
+      "candidate_discrete_balance_residual_W_m-2": 1.4210854715202004e-14,
+      "candidate_electric_power_W_m-2": -37.40398507937655,
+      "candidate_electron_column_density_m-2": 61142536421772.72,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": -79.2926709328459,
+      "candidate_kinetic_energy_storage_rate_W_m-2": 18.250697001535645,
+      "candidate_to_reference_density_ratio": 1.1179467679176593,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9744037933156661,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.9519431889282971,
+      "candidate_to_reference_electric_power_ratio": 1.0642218113036197,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 1.0235944798477472,
+      "lower_phase_fraction": 0.75,
+      "published_edupic_electric_power_W_m-2": -35.14679428864411,
+      "published_edupic_electron_column_density_m-2": 54691813757518.8,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": 17.834301060910917,
+      "upper_phase_fraction": 0.875
+    },
+    {
+      "candidate_collision_channel_power_W_m-2": {
+        "electron_mcc.elastic": -0.08913860135345615,
+        "electron_mcc.excitation": -16.071910492189257,
+        "electron_mcc.ionization": -7.650032965757191
+      },
+      "candidate_collision_kinetic_power_W_m-2": -23.811082059299906,
+      "candidate_discrete_balance_residual_W_m-2": -7.105427357601002e-15,
+      "candidate_electric_power_W_m-2": -21.714094445325564,
+      "candidate_electron_column_density_m-2": 61136734030109.92,
+      "candidate_inferred_outward_energy_flux_divergence_W_m-2": -51.028174286341745,
+      "candidate_kinetic_energy_storage_rate_W_m-2": 5.502997781716283,
+      "candidate_to_reference_density_ratio": 1.1179205706447874,
+      "candidate_to_reference_effective_ionization_frequency_ratio": 0.9350413087610925,
+      "candidate_to_reference_electric_power_per_electron_ratio": 0.9310517844952719,
+      "candidate_to_reference_electric_power_ratio": 1.0408419422228021,
+      "ionization_ratio_divided_by_power_per_electron_ratio": 1.0042849649528176,
+      "lower_phase_fraction": 0.875,
+      "published_edupic_electric_power_W_m-2": -20.86204789072331,
+      "published_edupic_electron_column_density_m-2": 54687905058270.68,
+      "published_edupic_kinetic_energy_storage_rate_W_m-2": 6.518134225195025,
+      "upper_phase_fraction": 1.0
+    }
+  ],
+  "most_energy_selective_octant": {
+    "candidate_collision_channel_power_W_m-2": {
+      "electron_mcc.elastic": -0.10643661293642159,
+      "electron_mcc.excitation": -21.051643937114147,
+      "electron_mcc.ionization": -8.904440872379347
+    },
+    "candidate_collision_kinetic_power_W_m-2": -30.062521422429914,
+    "candidate_discrete_balance_residual_W_m-2": 0.0,
+    "candidate_electric_power_W_m-2": 43.90549386588621,
+    "candidate_electron_column_density_m-2": 60178417509986.64,
+    "candidate_inferred_outward_energy_flux_divergence_W_m-2": 113.63568366734853,
+    "candidate_kinetic_energy_storage_rate_W_m-2": -99.79271122389224,
+    "candidate_to_reference_density_ratio": 1.1227453559054361,
+    "candidate_to_reference_effective_ionization_frequency_ratio": 0.7958356474793292,
+    "candidate_to_reference_electric_power_per_electron_ratio": 0.9308083043292942,
+    "candidate_to_reference_electric_power_ratio": 1.045060700923929,
+    "ionization_ratio_divided_by_power_per_electron_ratio": 0.854994141949323,
+    "lower_phase_fraction": 0.375,
+    "published_edupic_electric_power_W_m-2": 42.0123862920783,
+    "published_edupic_electron_column_density_m-2": 53599346631414.79,
+    "published_edupic_kinetic_energy_storage_rate_W_m-2": -104.31948721493765,
+    "upper_phase_fraction": 0.5
+  },
+  "provenance": {
+    "analyzer_sha256": "5596110b3881f0cec29e61f7145d2ca27cd2d11f217568289f82762c463ef009",
+    "block_report_sha256": "c00bfff25a5fc9aa0b596302dbae8f0417de11d1641a329cc1a2bec03a697d42",
+    "candidate_output_sha256": {
+      "spatial_phase_collision_power.csv": "de6235d79ce1f0dc91e3f721e4b16329902e2072b75a594920f96c75647b8570",
+      "spatial_phase_fields.csv": "b8fd257a7f7bed6f9f673f6e33731e5cbe33efc1924d9b5a6682521c8fea5c9e",
+      "spatial_phase_moments.csv": "00f47334aa3a521512bc4c177e5283c45c65537effca0b6b0f0b66ee6ee9bf1d"
+    },
+    "ionizing_tail_audit_sha256": "de14b4599a141b99692b6585cb4ad2761903c6e7d018dc5d4d5a3a80c2657d30",
+    "reference_sha256": {
+      "Figure11a)_ne_xt.dat": "43e70f92717daf5ccb9a7fb491b9f0ba42b952bb24bc851dcab84401f99619e8",
+      "Figure11g)_heate_xt.dat": "8b8c6c453d5c1c0865f0697938794377cd8b695154aca97714d304060e7ca335",
+      "Figure11i)_meanee_xt.dat": "3e334607f0c23fee92c36e2868714de99f92fa841096b51b9636955f9dcf9d05"
+    }
+  },
+  "schema_version": 1,
+  "scope": "descriptive_interior_electron_energy_pathway_audit"
+}

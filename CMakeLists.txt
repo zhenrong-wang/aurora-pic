@@ -130,6 +130,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_edupic_spatial_ionization.py
   scripts/run_aurorapic_ionizing_tail_block.py
   scripts/analyze_aurorapic_ionizing_tail.py
+  scripts/analyze_aurorapic_energy_pathway.py
   scripts/compare_aurorapic_measurement_windows.py
   scripts/run_aurorapic_timestep_refinement.py
   scripts/split_particle_state.py

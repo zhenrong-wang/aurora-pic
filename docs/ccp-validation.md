@@ -2405,6 +2405,46 @@ bulk, and inelastic cooling. The comparison remains against published
 simulation output, not experiment, and no retrospective cross-code acceptance
 threshold is assigned.
 
+### Interior electron-energy pathway
+
+The same checksum-bound continuation contains phase-resolved electric power,
+tracked collision-energy exchange, density, and mean electron energy. The
+post-hoc decomposition is retained in
+[`benchmarks/ccp/edupic-argon-energy-pathway-audit-20260822.json`](../benchmarks/ccp/edupic-argon-energy-pathway-audit-20260822.json).
+It uses the same predeclared `x/L=0.2--0.6`, phase `0.125--0.5` scope and
+introduces no new simulation or fitted alignment.
+
+AuroraPIC's integrated electric power in this window is `56.59 W/m2`, versus
+`58.91 W/m2` for eduPIC, a seemingly close ratio of `0.96063`. The candidate
+electron column density is `1.12073` times the reference, however, so electric
+power per electron is only `0.85714` of eduPIC. The independently measured
+effective-ionization ratio is `0.81669`; ionization divided by the power-per-
+electron ratio is `0.95281`. Lower energy input per electron therefore explains
+most, but not all, of the localized ionization deficit.
+
+The candidate tracked collisional kinetic-power change is `-31.20 W/m2`:
+`-20.86 W/m2` from excitation, `-10.23 W/m2` from ionization, and
+`-0.106 W/m2` from elastic collisions. The electron kinetic-energy storage rate
+is `+2.46 W/m2`. Applying the phase-averaged kinetic-energy equation leaves an
+inferred outward energy-flux divergence of `+22.92 W/m2`. This final term is a
+residual, not a directly measured flux; the ionization collision channel also
+contains the very small newborn-ion kinetic contribution. It cannot yet be
+used as an exact species-separated transport measurement.
+
+Seven of eight phase octants have an ionization ratio within about `3%` of
+their electric-power-per-electron ratio. The clear exception is phase
+`0.375--0.5`: electric power per electron remains `0.93081` of eduPIC while
+ionization falls to `0.79584`, giving an ionization-to-power ratio of `0.85499`.
+This isolates an energy-selective redistribution or transport effect during
+that octant rather than a uniform heating-amplitude error.
+
+The next diagnostic should directly record directional, energy-resolved
+electron crossings at internal surfaces near `x/L=0.2` and `0.6`, with RF
+phase. That will distinguish loss or arrival of the ionizing tail through
+transport from local energy-space redistribution and cooling. The current
+transport term is inferred, and the published reference lacks matching
+collision-power data, so this decomposition remains descriptive.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
