@@ -1,0 +1,69 @@
+{
+  "all_gates_passed": true,
+  "branch": "refined_grid",
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "A passing continuation compares fresh surface transport from the established paired mesh states. It does not establish asymptotic spatial order, same-particles-per-cell convergence, cross-code flux agreement, or experimental validation.",
+  "final_checkpoint_sha256": "8b8fa01ef32d0e24d1fb5d4239eb9fad0aa214016780fe3088cfc7e03abcdda1",
+  "gates": {
+    "absolute_field": true,
+    "measurement_window": true,
+    "particle_cap": true,
+    "resident_memory": true,
+    "surface_flux_contract": true,
+    "surface_flux_crossing_sufficiency": true,
+    "surface_flux_finite": true,
+    "surface_flux_histogram_closure": true,
+    "surface_flux_shape": true
+  },
+  "inputs": {
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "deck_sha256": "8623420c4baba0604d3e56094c1c4cfc3dd275a3e4a0e6e0d04a2b73ff68aa11",
+    "input_checkpoint_sha256": "79f282569575ae65a6f24e44ed45505492c4389cc00d0c4478ad50bc6806fd13",
+    "prior_branch_report_sha256": "d3348cb694b8c21e5ebad6c8fb4ffc0b1f6203396ede8553a30fddcbb8799d0e",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "numerics": {
+    "cells": 798,
+    "end_step": 32000,
+    "nodes": 799,
+    "start_step": 24000
+  },
+  "output_hashes": {
+    "phase_eedf.csv": "4281008a33437a9eb4242b196aaf16ed185a3fbe4cf58a67e9df00f8fa31497f",
+    "phase_eedf_moments.csv": "973c528d07746ffe946cd176c4a142372a52b5f444003f4c0186f859eb77a6c3",
+    "phase_surface_flux.csv": "9df731606b23f662748627b9ff8aadbef302ea967e0a45ed300e84db22fbab16",
+    "phase_surface_flux_summary.csv": "59de60fb4a3d07b58e9d350bb82d5e8948305da25f7b8ad948883a59024848bb",
+    "scalars.csv": "569299a236840a3eba827fed063ab94471ab1220bea8b1858440d90fa97123e7",
+    "spatial_average_metadata.json": "0f092a6064712dd4ae60fb9c69838ecb0c4aeef8b265e1add344cf9771a0c75f",
+    "spatial_phase_collision_power.csv": "ef2da6f3139b3e6ab4fec3c04ec369e01824c09b946b6135370cc8a9741b73bf",
+    "spatial_phase_fields.csv": "17f33d9f57d8b79fd445f17a1541dbe044d960615d31c8dccdba8737d3a6220b",
+    "spatial_phase_moments.csv": "3fffb0f238e44379833ddc9cdf3d90d07aab492620bfc45527f2f80119e2159d"
+  },
+  "physics_claim": "paired_surface_transport_mesh_sensitivity_only",
+  "resources": {
+    "available_disk_before_launch_kib": 24494612,
+    "available_memory_before_launch_kib": 6167552,
+    "peak_resident_set_kib": 208988,
+    "wall_seconds": 222.12498941307422
+  },
+  "rule_sha256": "4bea77b968db89ca6a2e066a599d3e85b99c480de2f0cb6e56b12bdaeb891f54",
+  "safety": {
+    "maximum_live_particles": 243915,
+    "maximum_sampled_absolute_field_V_m": 66560.79186141922
+  },
+  "schema_version": 1,
+  "scope": "surface_flux_mesh_refinement_branch",
+  "surface_flux": {
+    "contract": true,
+    "crossing_sufficiency": true,
+    "finite": true,
+    "histogram_closure": true,
+    "histogram_rows": 256000,
+    "shape": true,
+    "summary_rows": 800,
+    "total_macro_crossings_per_surface": [
+      57471,
+      513993
+    ]
+  }
+}

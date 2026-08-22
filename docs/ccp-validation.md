@@ -2509,6 +2509,38 @@ continuation because the state, seed, equilibration history, and measurement
 window differ; only the within-pair timestep change carries the refinement
 claim.
 
+### Direct-transport mesh sensitivity
+
+The next prospective rule continued the already paired 400-node and 799-node
+fixed-particle checkpoints for two fresh RF cycles, avoiding a redundant
+equilibration replay while resetting every measurement accumulator. The rule,
+branch reports, and paired result are retained in
+[`mesh rule`](../benchmarks/ccp/edupic-argon-surface-flux-mesh-rule-20260822.json),
+[`400-node branch`](../benchmarks/ccp/edupic-argon-surface-flux-mesh-baseline-20260822.json),
+[`799-node branch`](../benchmarks/ccp/edupic-argon-surface-flux-mesh-refined-20260822.json),
+and
+[`paired mesh result`](../benchmarks/ccp/edupic-argon-surface-flux-mesh-result-20260822.json).
+Both branches completed in about `222 s` on one low-priority CPU with peak RSS
+below `209 MiB`; every surface, finite-value, histogram, sampling, field,
+particle, and resource gate passed.
+
+All five prospective paired gates pass. The directly measured transport over
+phase `0.125--0.5` changes from `20.85 W/m2` to `24.40 W/m2`, a `14.55%`
+relative change against the declared `20%` limit. The exceptional
+`0.375--0.5` result is much more stable: `112.12 W/m2` versus `113.55 W/m2`,
+or `1.27%` against a `12%` limit. Its approximate above-15.8-eV component
+changes from `17.68 W/m2` to `20.27 W/m2`, or `12.76%` against a `25%` limit.
+Direct-versus-inferred closure remains within `4.29%` in the broad critical
+window and `0.65%` in the exceptional octant; both spectra have zero overflow.
+
+The result rules out material ordinary field-grid error for the exceptional
+transport signal at these declared tolerances. It also reveals that the
+broader phase-window difference is appreciably more grid-sensitive and should
+not be described as fully mesh independent. This comparison holds total
+particle count fixed, so the next direct-transport discriminator is the
+already motivated same-grid particle-count refinement; neither this result nor
+that follow-up establishes asymptotic spatial order by itself.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,78 @@
+{
+  "all_gates_passed": true,
+  "assessment": {
+    "critical_window_has_larger_mesh_sensitivity": true,
+    "exceptional_transport_mesh_stable": true
+  },
+  "baseline": {
+    "critical_phase_0p125_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -11.492833727266085,
+      "direct_outward_energy_flux_divergence_W_m-2": 20.85354379426343,
+      "inferred_outward_energy_flux_divergence_W_m-2": 21.786746852412353,
+      "relative_closure_error": 0.04283352005100262
+    },
+    "exceptional_phase_0p375_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 17.68370031722427,
+      "direct_outward_energy_flux_divergence_W_m-2": 112.11522624648116,
+      "inferred_outward_energy_flux_divergence_W_m-2": 112.16000382558904,
+      "relative_closure_error": 0.00039922947200961956
+    },
+    "maximum_surface_overflow_fraction": 0.0,
+    "nodes": 400
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "A passing continuation compares fresh surface transport from the established paired mesh states. It does not establish asymptotic spatial order, same-particles-per-cell convergence, cross-code flux agreement, or experimental validation.",
+  "gates": {
+    "critical_phase_closure": true,
+    "critical_phase_direct_flux": true,
+    "exceptional_octant_closure": true,
+    "exceptional_octant_direct_flux": true,
+    "exceptional_octant_tail_flux": true
+  },
+  "interpretation": "Ordinary field-grid resolution at fixed total particles is not a material explanation of the direct transport result at the declared tolerances.",
+  "mesh_refinement": {
+    "baseline_nodes": 400,
+    "fixed_total_particles": true,
+    "refined_nodes": 799
+  },
+  "metrics": {
+    "baseline_critical_phase_closure_error": 0.04283352005100262,
+    "baseline_exceptional_octant_closure_error": 0.00039922947200961956,
+    "critical_phase_direct_flux_relative_change": 0.14547964264492572,
+    "exceptional_octant_direct_flux_relative_change": 0.012657895894141347,
+    "exceptional_octant_tail_flux_relative_change": 0.12764919914475423,
+    "refined_critical_phase_closure_error": 0.018009507176247972,
+    "refined_exceptional_octant_closure_error": 0.0064045208194450885
+  },
+  "provenance": {
+    "analyzer_sha256": "b792a4422e0f52c5547af0625fe394fa271db187cb8908c0e521ea4ecee5e432",
+    "baseline_branch_report_sha256": "b30e997cd4b44374afc2bfeec6a56da20cb521bd9a26e2558b5d4120ee9e6807",
+    "refined_branch_report_sha256": "648318d2862b68603a454bc5a6941ec110c93c046828ceed5f555a734c3360be",
+    "rule_sha256": "4bea77b968db89ca6a2e066a599d3e85b99c480de2f0cb6e56b12bdaeb891f54"
+  },
+  "refined_grid": {
+    "critical_phase_0p125_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -8.190953724507217,
+      "direct_outward_energy_flux_divergence_W_m-2": 24.403799879981406,
+      "inferred_outward_energy_flux_divergence_W_m-2": 24.85136063772606,
+      "relative_closure_error": 0.018009507176247972
+    },
+    "exceptional_phase_0p375_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 20.271317800003523,
+      "direct_outward_energy_flux_divergence_W_m-2": 113.55256276446673,
+      "inferred_outward_energy_flux_divergence_W_m-2": 112.82531301214036,
+      "relative_closure_error": 0.0064045208194450885
+    },
+    "maximum_surface_overflow_fraction": 0.0,
+    "nodes": 799
+  },
+  "schema_version": 1,
+  "scope": "prospective_surface_transport_mesh_refinement_result",
+  "thresholds": {
+    "maximum_critical_phase_closure_error_each_branch": 0.1,
+    "maximum_critical_phase_direct_flux_relative_change": 0.2,
+    "maximum_exceptional_octant_closure_error_each_branch": 0.06,
+    "maximum_exceptional_octant_direct_flux_relative_change": 0.12,
+    "maximum_exceptional_octant_tail_flux_relative_change": 0.25
+  }
+}
