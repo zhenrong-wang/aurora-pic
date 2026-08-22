@@ -49,6 +49,7 @@ PYTHONPATH=scripts python3 scripts/test_run_aurorapic_ionizing_tail_block.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_ionizing_tail.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_energy_pathway.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_surface_flux_timestep.py
+PYTHONPATH=scripts python3 scripts/test_run_aurorapic_surface_flux_mesh.py
 PYTHONPATH=scripts python3 scripts/test_audit_edupic_normalization.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_microstate_ensemble.py
 PYTHONPATH=scripts python3 scripts/test_compare_aurorapic_measurement_windows.py

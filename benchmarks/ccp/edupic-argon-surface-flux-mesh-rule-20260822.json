@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_checkpoint_continuation_surface_flux_mesh_refinement",
+  "axis": "surface_flux_mesh_2x_fixed_particles",
+  "question": "Is the directly measured interior electron-energy transport stable under a 2:1 coincident-node field-grid refinement at fixed total particles?",
+  "fixed_inputs": {
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "length_m": 0.025,
+    "timestep_s": 1.8436578171091445e-11,
+    "steps_per_rf_cycle": 4000,
+    "start_step": 24000,
+    "end_step": 32000,
+    "measurement_cycles": 2,
+    "macro_weight": 700000000.0
+  },
+  "branches": {
+    "baseline_grid": {
+      "nodes": 400,
+      "cells": 399,
+      "input_checkpoint_sha256": "b5d1fb578a8e46d0663f44fdcc61c3a61ded5a7af6a05a8a59074fd86dca5e3e",
+      "prior_branch_report_sha256": "d2024ff5b4aa82960bd24a5a38c2ee117f9c01694c32b28ecbe73dee489774c6",
+      "timeout_seconds": 480
+    },
+    "refined_grid": {
+      "nodes": 799,
+      "cells": 798,
+      "input_checkpoint_sha256": "79f282569575ae65a6f24e44ed45505492c4389cc00d0c4478ad50bc6806fd13",
+      "prior_branch_report_sha256": "d3348cb694b8c21e5ebad6c8fb4ffc0b1f6203396ede8553a30fddcbb8799d0e",
+      "timeout_seconds": 600
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 2097152,
+    "minimum_available_disk_kib": 10485760,
+    "maximum_peak_resident_set_kib": 307200,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "stop_after_each_branch": true,
+    "run_baseline_before_refined": true
+  },
+  "diagnostic_contract": {
+    "spatial_sampling_order": "pre_collision",
+    "spatial_average_interval_steps": 1,
+    "phase_bins": 200,
+    "phase_eedf_energy_bins": 320,
+    "phase_eedf_energy_max_eV": 80.0,
+    "phase_eedf_regions": "full_gap:0:0.025",
+    "surface_flux_species": "electrons",
+    "surface_positions_m": [0.005, 0.015],
+    "surface_energy_bins": 320,
+    "surface_energy_max_eV": 80.0,
+    "minimum_total_macro_crossings_per_surface": 25000,
+    "reset_on_restart": true
+  },
+  "prospective_acceptance": {
+    "maximum_critical_phase_direct_flux_relative_change": 0.20,
+    "maximum_exceptional_octant_direct_flux_relative_change": 0.12,
+    "maximum_exceptional_octant_tail_flux_relative_change": 0.25,
+    "maximum_critical_phase_closure_error_each_branch": 0.10,
+    "maximum_exceptional_octant_closure_error_each_branch": 0.06,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "Ordinary field-grid resolution at fixed total particles is not a material explanation of the direct transport result at the declared tolerances.",
+    "fail": "The direct transport result is grid-sensitive or under-sampled at a declared tolerance; same-particles-per-cell refinement is required before attribution.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Continue the two already-paired final checkpoints sequentially for two fresh RF cycles each, on one inherited CPU at nice +10. Do not rerun equilibration and stop after each branch for review.",
+  "claim_boundary": "A passing continuation compares fresh surface transport from the established paired mesh states. It does not establish asymptotic spatial order, same-particles-per-cell convergence, cross-code flux agreement, or experimental validation.",
+  "physics_claim": "paired_surface_transport_mesh_sensitivity_only"
+}
