@@ -1,0 +1,300 @@
+{
+  "assessment": {
+    "finding": "Direct internal-surface transport closes the independently inferred interior electron-energy transport term. The exceptional 0.375--0.5 octant has the strongest positive outward kinetic-energy divergence and a positive above-ionization-threshold contribution.",
+    "interpretation": "The prior residual is a physical transport signal rather than an event-ledger artifact. Energetic-electron transport materially contributes to the exceptional octant, but matching published eduPIC crossing spectra do not exist, so this does not establish that AuroraPIC transport is excessive relative to eduPIC."
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This is a same-code, same-block conservation and mechanism-localization result. It validates internal consistency and directly measures candidate transport; it is not a cross-code surface-flux validation or experimental validation.",
+  "contract": {
+    "interior_surface_positions_m": [
+      0.005,
+      0.015
+    ],
+    "ionizing_tail_threshold_eV": 15.8,
+    "phase_bins": 200,
+    "prospective_cross_code_acceptance_threshold": false,
+    "tail_energy_uses_histogram_bin_centers": true
+  },
+  "critical_phase_0p125_to_0p5": {
+    "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -10.55019983379405,
+    "direct_minus_inferred_W_m-2": -1.17408906967189,
+    "direct_outward_kinetic_energy_flux_divergence_W_m-2": 20.119831587913353,
+    "direct_to_inferred_ratio": 0.9448627104161929,
+    "inferred_outward_kinetic_energy_flux_divergence_W_m-2": 21.293920657585243,
+    "lower_phase_fraction": 0.125,
+    "relative_closure_error": 0.05513728958380711,
+    "surfaces": [
+      {
+        "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 27.593775951512104,
+        "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 8.688343999999998e+18,
+        "net_rightward_kinetic_energy_flux_W_m-2": 90.9419228367183,
+        "net_rightward_particle_flux_m-2_s-1": 6.059692799999998e+19,
+        "position_m": 0.005
+      },
+      {
+        "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 17.043576117718054,
+        "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 5.448407999999999e+18,
+        "net_rightward_kinetic_energy_flux_W_m-2": 111.06175442463166,
+        "net_rightward_particle_flux_m-2_s-1": 1.0674070400000013e+20,
+        "position_m": 0.015
+      }
+    ],
+    "upper_phase_fraction": 0.5
+  },
+  "exceptional_phase_0p375_to_0p5": {
+    "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 16.555657256482867,
+    "direct_minus_inferred_W_m-2": -1.741361178101755,
+    "direct_outward_kinetic_energy_flux_divergence_W_m-2": 110.47458544222653,
+    "direct_to_inferred_ratio": 0.9844820524128047,
+    "inferred_outward_kinetic_energy_flux_divergence_W_m-2": 112.21594662032828,
+    "lower_phase_fraction": 0.375,
+    "relative_closure_error": 0.015517947587195257,
+    "surfaces": [
+      {
+        "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 0.8774935571928453,
+        "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 2.6577599999999994e+17,
+        "net_rightward_kinetic_energy_flux_W_m-2": 5.3911374133469145,
+        "net_rightward_particle_flux_m-2_s-1": 4.385304e+18,
+        "position_m": 0.005
+      },
+      {
+        "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 17.433150813675713,
+        "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 5.752151999999999e+18,
+        "net_rightward_kinetic_energy_flux_W_m-2": 115.86572285557344,
+        "net_rightward_particle_flux_m-2_s-1": 6.7848816000000066e+19,
+        "position_m": 0.015
+      }
+    ],
+    "upper_phase_fraction": 0.5
+  },
+  "execution_outcome": {
+    "global_phase_eedf_observation_gate_passed": false,
+    "maximum_octant_absolute_closure_error_W_m-2": 2.517945309538341,
+    "surface_flux_gates_passed": true
+  },
+  "phase_octants": [
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -4.274549420935513,
+      "direct_minus_inferred_W_m-2": 0.9744316917107056,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": -40.45653576578988,
+      "direct_to_inferred_ratio": 0.976480595276703,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": -41.430967457500586,
+      "lower_phase_fraction": 0.0,
+      "relative_closure_error": 0.02351940472329705,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -0.30567799825955255,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -1.51872e+17,
+          "net_rightward_kinetic_energy_flux_W_m-2": 19.101743639137652,
+          "net_rightward_particle_flux_m-2_s-1": 4.992792e+19,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -4.580227419195065,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -1.575671999999999e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": -21.354792126652228,
+          "net_rightward_particle_flux_m-2_s-1": 5.723676000000016e+19,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.125
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -40.14152827642019,
+      "direct_minus_inferred_W_m-2": 0.5876843327693138,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": -87.04586483259556,
+      "direct_to_inferred_ratio": 0.993293843073041,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": -87.63354916536487,
+      "lower_phase_fraction": 0.125,
+      "relative_closure_error": 0.0067061569269590005,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 46.92689548405481,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 1.4807519999999996e+19,
+          "net_rightward_kinetic_energy_flux_W_m-2": 163.32937232006532,
+          "net_rightward_particle_flux_m-2_s-1": 1.1392298399999993e+20,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 6.785367207634625,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 2.1831599999999995e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": 76.28350748746976,
+          "net_rightward_particle_flux_m-2_s-1": 1.254842400000002e+20,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.25
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -8.064728481444817,
+      "direct_minus_inferred_W_m-2": -2.368590363683495,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": 36.9307741541088,
+      "direct_to_inferred_ratio": 0.939729550522092,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": 39.2993645177923,
+      "lower_phase_fraction": 0.25,
+      "relative_closure_error": 0.060270449477908106,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 34.976938813288655,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 1.0991735999999998e+19,
+          "net_rightward_kinetic_energy_flux_W_m-2": 104.10525877674274,
+          "net_rightward_particle_flux_m-2_s-1": 6.3482496e+19,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 26.912210331843838,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 8.409911999999998e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": 141.03603293085155,
+          "net_rightward_particle_flux_m-2_s-1": 1.2688905599999987e+20,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.375
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 16.555657256482867,
+      "direct_minus_inferred_W_m-2": -1.741361178101755,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": 110.47458544222653,
+      "direct_to_inferred_ratio": 0.9844820524128047,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": 112.21594662032828,
+      "lower_phase_fraction": 0.375,
+      "relative_closure_error": 0.015517947587195257,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 0.8774935571928453,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 2.6577599999999994e+17,
+          "net_rightward_kinetic_energy_flux_W_m-2": 5.3911374133469145,
+          "net_rightward_particle_flux_m-2_s-1": 4.385304e+18,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 17.433150813675713,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 5.752151999999999e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": 115.86572285557344,
+          "net_rightward_particle_flux_m-2_s-1": 6.7848816000000066e+19,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.5
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 8.821319546788734,
+      "direct_minus_inferred_W_m-2": 1.0013796240083295,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": 37.53452422583048,
+      "direct_to_inferred_ratio": 1.0274101678057679,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": 36.53314460182215,
+      "lower_phase_fraction": 0.5,
+      "relative_closure_error": 0.026678894821829148,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 0.0,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 0.0,
+          "net_rightward_kinetic_energy_flux_W_m-2": -0.6867819713643433,
+          "net_rightward_particle_flux_m-2_s-1": -8.5428e+17,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": 8.821319546788734,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": 2.923536e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": 36.84774225446614,
+          "net_rightward_particle_flux_m-2_s-1": -5.087711999999987e+19,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.625
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -26.970760595192054,
+      "direct_minus_inferred_W_m-2": 0.3844360856942046,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": -66.49586562106107,
+      "direct_to_inferred_ratio": 0.9942518787163998,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": -66.88030170675528,
+      "lower_phase_fraction": 0.625,
+      "relative_closure_error": 0.005748121283600228,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -1.4306794868789763,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -4.7459999999999994e+17,
+          "net_rightward_kinetic_energy_flux_W_m-2": -43.02839668489899,
+          "net_rightward_particle_flux_m-2_s-1": -5.028861599999999e+19,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -28.40144008207103,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -8.732639999999999e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": -109.52426230596006,
+          "net_rightward_particle_flux_m-2_s-1": -1.266232799999998e+20,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.75
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -50.44941619782937,
+      "direct_minus_inferred_W_m-2": 0.9112465189122076,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": -77.69043605582988,
+      "direct_to_inferred_ratio": 0.988406781012026,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": -78.60168257474209,
+      "lower_phase_fraction": 0.75,
+      "relative_closure_error": 0.011593218987974033,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -5.975928826671207,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -1.8983999999999995e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": -95.82822905167268,
+          "net_rightward_particle_flux_m-2_s-1": -1.2533236799999997e+20,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -56.42534502450058,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -1.7598167999999998e+19,
+          "net_rightward_kinetic_energy_flux_W_m-2": -173.51866510750256,
+          "net_rightward_particle_flux_m-2_s-1": -1.228264799999998e+20,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 0.875
+    },
+    {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -22.363539223414364,
+      "direct_minus_inferred_W_m-2": 2.517945309538341,
+      "direct_outward_kinetic_energy_flux_divergence_W_m-2": -42.714485543527175,
+      "direct_to_inferred_ratio": 0.9443331861221937,
+      "inferred_outward_kinetic_energy_flux_divergence_W_m-2": -45.232430853065516,
+      "lower_phase_fraction": 0.875,
+      "relative_closure_error": 0.05566681387780629,
+      "surfaces": [
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -5.545166174894995,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -1.8034799999999997e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": -71.64937870044777,
+          "net_rightward_particle_flux_m-2_s-1": -7.0772352e+19,
+          "position_m": 0.005
+        },
+        {
+          "approximate_above_15p8_eV_net_rightward_energy_flux_W_m-2": -27.90870539830936,
+          "approximate_above_15p8_eV_net_rightward_particle_flux_m-2_s-1": -9.188255999999998e+18,
+          "net_rightward_kinetic_energy_flux_W_m-2": -114.36386424397494,
+          "net_rightward_particle_flux_m-2_s-1": -6.4507632000000066e+19,
+          "position_m": 0.015
+        }
+      ],
+      "upper_phase_fraction": 1.0
+    }
+  ],
+  "provenance": {
+    "analyzer_sha256": "9723050ed2f21d1e7fbd94acaca3db463489e7641ddb31808ee93dac165700fe",
+    "block_report_sha256": "ad300d1610ae31730787d3ec56acbf2dbb3a8f07c3ef7febabfd24941a8b85f2",
+    "output_sha256": {
+      "phase_surface_flux.csv": "583950e92368cb1347e6b126bdcb4a792c7fadb8602823bf0c4e219638475b79",
+      "phase_surface_flux_summary.csv": "298f8051e4d914859999782af0aaa0104478f98c0b573f86e7cf94355ac14cce",
+      "spatial_average_metadata.json": "951d00c42cf420f10a5df977aa6207ee01e3e9d97d49b4e977a73bfddb6f07d1",
+      "spatial_phase_collision_power.csv": "d954e47aae2b612ec897fc2bf368918aa6afe124580383688dd5389da7e42e29",
+      "spatial_phase_fields.csv": "b8889831973a7094258a74eb68208ded6cccc9c6b9d4a23a66f3de8f05604f6b",
+      "spatial_phase_moments.csv": "b7d513d3c8a9eeb3ddec2ac516045eeb831d17dd6ece3351b48a0352614e0ba5"
+    },
+    "rule_sha256": "e0216347692759a4c775f3cc5b932ce5c36c62a6a0a45bee364ac0bae5380704"
+  },
+  "schema_version": 1,
+  "scope": "same_block_direct_internal_energy_transport_closure"
+}

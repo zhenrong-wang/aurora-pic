@@ -2438,16 +2438,42 @@ ionization falls to `0.79584`, giving an ionization-to-power ratio of `0.85499`.
 This isolates an energy-selective redistribution or transport effect during
 that octant rather than a uniform heating-amplitude error.
 
-AuroraPIC now has the generic, checkpoint-safe diagnostic needed for the next
-test: it directly records directional, energy-resolved particle crossings at
-arbitrary internal 1D surfaces with RF phase (see
-[`phase-surface-flux.md`](phase-surface-flux.md)). The implementation has unit
-and restart coverage, but it has not yet been applied to this CCP continuation.
-The next prospectively declared run will place surfaces at `x/L=0.2` and `0.6`
-and determine whether transport of the ionizing tail explains the exceptional
-`0.375--0.5` octant. Until that run completes, the transport term remains
-inferred; the published reference also lacks matching energy-resolved crossing
-data, so the decomposition remains descriptive.
+### Direct internal electron-energy transport
+
+The required generic, checkpoint-safe surface diagnostic is documented in
+[`phase-surface-flux.md`](phase-surface-flux.md). Its first CCP use was locked
+before execution in
+[`benchmarks/ccp/edupic-argon-surface-flux-rule-20260822.json`](../benchmarks/ccp/edupic-argon-surface-flux-rule-20260822.json).
+The four-cycle continuation placed surfaces at `x/L=0.2` and `0.6`, retained
+200 RF phase bins and 0.25 eV energy bins, and ran serially at nice level 10.
+It completed in `379.35 s` with `198284 KiB` peak RSS and at most `243214`
+live macro-particles. All surface-flux shape, finite-value, histogram-closure,
+crossing-sufficiency, field, particle, memory, and sampling gates passed. The
+surface totals contain `118462` and `1004429` macro-crossings. The retained
+global EEDF observation gate again failed only because an electrode-adjacent
+region is empty in some sheath phases; this does not affect either interior
+surface and is recorded in
+[`benchmarks/ccp/edupic-argon-surface-flux-block-20260822.json`](../benchmarks/ccp/edupic-argon-surface-flux-block-20260822.json).
+
+The checksum-bound same-block closure is
+[`benchmarks/ccp/edupic-argon-surface-flux-audit-20260822.json`](../benchmarks/ccp/edupic-argon-surface-flux-audit-20260822.json).
+Over phase `0.125--0.5`, the directly measured outward electron kinetic-energy
+flux divergence is `20.12 W/m2`, versus `21.29 W/m2` independently inferred
+from electric power, collision exchange, and kinetic-energy storage: a `5.51%`
+closure error. In the exceptional `0.375--0.5` octant, direct transport is
+`110.47 W/m2` versus `112.22 W/m2` inferred, closing to `1.55%`. Across all
+eight octants the largest absolute difference is only `2.52 W/m2`.
+
+The exceptional octant also carries a positive approximate `16.56 W/m2`
+outward divergence in electrons above the `15.8 eV` ionization threshold; the
+tail energy uses 0.25 eV histogram-bin centers and had zero overflow. This
+shows that the former balance residual is a real particle-transport signal,
+not an event-ledger artifact, and that energetic-electron transport materially
+contributes during the phase with the extra ionization deficit. It does not
+yet prove that AuroraPIC transport is excessive relative to eduPIC: the
+published reference has no matching internal crossing spectrum. The result is
+a strong same-code conservation and mechanism-localization milestone, not a
+cross-code flux validation or experimental validation.
 
 ## Bounded execution ladder
 

@@ -1,0 +1,77 @@
+{
+  "all_gates_passed": false,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This continuation directly diagnoses AuroraPIC internal electron transport. Published eduPIC output does not contain matching internal crossing spectra, so the result localizes the candidate mechanism but is not a direct cross-code flux validation or experimental validation.",
+  "final_checkpoint_sha256": "7654782bf1d4fad1d6b350fa959452bcd8bb146f16ab36fb2cb8b8a9ebfe8600",
+  "gates": {
+    "absolute_field": true,
+    "finite_diagnostics": true,
+    "particle_cap": true,
+    "phase_eedf_observations": false,
+    "phase_eedf_overflow": true,
+    "phase_eedf_shape": true,
+    "resident_memory": true,
+    "sampling_contract": true,
+    "surface_flux_contract": true,
+    "surface_flux_crossing_sufficiency": true,
+    "surface_flux_finite": true,
+    "surface_flux_histogram_closure": true,
+    "surface_flux_shape": true
+  },
+  "inputs": {
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "deck_sha256": "639f2d64cc631b2dfdb4823965d078fa670e803c24e11fa7ce96dc6c323f352e",
+    "input_checkpoint_sha256": "8cbd5c31e1ee5bb32dbe618184b7b2e4981e31bff85a53e01a5113b498441610",
+    "prior_report_sha256": "c00bfff25a5fc9aa0b596302dbae8f0417de11d1641a329cc1a2bec03a697d42",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "output_hashes": {
+    "boundary_losses.csv": "2dcd9c2a12c52ef8e999afa494a8248a7b3776702b88563da4902195a83c7019",
+    "collisions.csv": "1d7c6de46176eedc06d3b9dd0606704759a87c9b169b61a5e40709ca656cfdb0",
+    "phase_eedf.csv": "33bd15ed2b4b9dbe9b9b571d2225c2b170dae5a0638394638b9075540ce01ade",
+    "phase_eedf_moments.csv": "eaaf4404073813061549f1306b0822fdd14411c4f1289ebd5823f1951285a2da",
+    "phase_surface_flux.csv": "583950e92368cb1347e6b126bdcb4a792c7fadb8602823bf0c4e219638475b79",
+    "phase_surface_flux_summary.csv": "298f8051e4d914859999782af0aaa0104478f98c0b573f86e7cf94355ac14cce",
+    "scalars.csv": "2e56b70a923ac2d50abcf7c8294fa2c4d3831099a9f5e601eb320224a794edf6",
+    "spatial_average_metadata.json": "951d00c42cf420f10a5df977aa6207ee01e3e9d97d49b4e977a73bfddb6f07d1",
+    "spatial_phase_collision_power.csv": "d954e47aae2b612ec897fc2bf368918aa6afe124580383688dd5389da7e42e29",
+    "spatial_phase_collision_rate.csv": "86925350c79f83f9959f30244fc196d4eeb348b41a7887b29f2831a17df46892",
+    "spatial_phase_fields.csv": "b8889831973a7094258a74eb68208ded6cccc9c6b9d4a23a66f3de8f05604f6b",
+    "spatial_phase_moments.csv": "b7d513d3c8a9eeb3ddec2ac516045eeb831d17dd6ece3351b48a0352614e0ba5"
+  },
+  "physics_claim": "none_predeclared_transport_discriminator_only",
+  "resources": {
+    "available_disk_before_launch_kib": 29759052,
+    "available_memory_before_launch_kib": 6683744,
+    "peak_resident_set_kib": 198284,
+    "wall_seconds": 379.34634579496924
+  },
+  "rule_sha256": "e0216347692759a4c775f3cc5b932ce5c36c62a6a0a45bee364ac0bae5380704",
+  "safety": {
+    "field_snapshot_files": 41,
+    "maximum_live_particles": 243214,
+    "maximum_sampled_absolute_field_V_m": 66658.30922856102
+  },
+  "sampling": {
+    "maximum_phase_region_overflow_fraction": 0.0,
+    "minimum_macro_observations_per_region_phase_bin": 0,
+    "phase_bins": 200,
+    "samples": 8000,
+    "samples_per_phase_bin": 40
+  },
+  "schema_version": 1,
+  "scope": "aurorapic_spatial_phase_ionizing_tail_block",
+  "surface_flux": {
+    "contract": true,
+    "crossing_sufficiency": true,
+    "finite": true,
+    "histogram_closure": true,
+    "histogram_rows": 256000,
+    "shape": true,
+    "summary_rows": 800,
+    "total_macro_crossings_per_surface": [
+      118462,
+      1004429
+    ]
+  }
+}
