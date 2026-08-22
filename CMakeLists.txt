@@ -153,6 +153,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/run_swarm_campaign.py
   scripts/generate_real_case_mesh.py scripts/import_lxcat.py
   scripts/analyze_aurorapic_surface_flux.py
+  scripts/analyze_aurorapic_surface_flux_timestep.py
   scripts/validate_kinetic_benchmarks.py scripts/validate_hall_case.py
   DESTINATION ${CMAKE_INSTALL_DATADIR}/aurorapic/scripts)
 install(FILES README.md docs/ccp-validation.md docs/collisions.md docs/external-particle-state.md docs/gas-data-workflow.md docs/hall-thruster-validation.md docs/kinetic-validation.md docs/methodology.md docs/multidimensional-roadmap.md docs/performance-envelope.md docs/phase-eedf-interchange.md docs/phase-surface-flux.md docs/real-case-validation.md docs/swarm-validation.md docs/units.md DESTINATION ${CMAKE_INSTALL_DOCDIR})

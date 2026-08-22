@@ -1,0 +1,88 @@
+{
+  "all_gates_passed": true,
+  "axis": "surface_flux_timestep_2x",
+  "branch": "half_dt",
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "One branch is not a refinement result. Both common-state branches and the prospectively locked paired comparison are required.",
+  "energy_analysis_sha256": "32deddedd938c9d83623bd55a9d91844eebb8a939a61d555bfb141282e92a934",
+  "equilibration_checkpoint_sha256": "e30bf5c1467921f25d1bc5e357eaa917d28e6e5c8c4a8e26298d96fe5d2054c5",
+  "final_checkpoint_sha256": "6f09328ecadf92944bc0340e05d41eb21fd536f8284338e14d58cab10eb6222f",
+  "gates": {
+    "absolute_field": true,
+    "energy_closure": true,
+    "measurement_window": true,
+    "phase_eedf": true,
+    "surface_flux_contract": true,
+    "surface_flux_crossing_sufficiency": true,
+    "surface_flux_finite": true,
+    "surface_flux_histogram_closure": true,
+    "surface_flux_shape": true
+  },
+  "inputs": {
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "initial_config_sha256": "c6b9842362b1df2714efc73378140df3115cb742b747e097bb9ad4d283a74072",
+    "measurement_config_sha256": "dbac798e6139ff22c5c212471e74b809853a56506a5f57bec617bceca88bf864",
+    "particle_state_name": null,
+    "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "interruption_recovery": {
+    "finalized_existing_after_reporting_failure": false,
+    "measurement_only_resume": false,
+    "preserved_partial_measurement_directory": null
+  },
+  "maximum_sampled_absolute_field_V_m": 66341.55529755812,
+  "numerics": {
+    "equilibration_steps": 16000,
+    "measurement_steps": 16000,
+    "output_interval": 200,
+    "seed": null,
+    "steps_per_rf_cycle": 8000,
+    "timestep_s": 9.218289085545723e-12
+  },
+  "output_hashes": {
+    "phase_eedf.csv": "788d7a11c24b8c0b1c7233c16aff7f02b028f6018b434c72bc78754ae1512fb6",
+    "phase_eedf_moments.csv": "392768c91f944661fa1e2c5d4783331a980f8480e6efab2ffdb9e98d29c5b42a",
+    "phase_surface_flux.csv": "a985b066ecd90443e8264b15d4e028e0ca6dee5ea03c9a8dfa21a63936fd1ffc",
+    "phase_surface_flux_summary.csv": "c42486761f7450e22ee9e816d645a1dfcc74e7829ae06180ba69e76cc727c2c2",
+    "spatial_average.csv": "d9fdbd57f4894b02687cef4f23649e406e6d768d67492c02c5362ae713f5ddce",
+    "spatial_collision_rate.csv": "3562585f8d4d8fdb93de418c615fc87a97087f1462b3964d7685eb3cdc79f5b0",
+    "spatial_phase_collision_power.csv": "db1e0d9ce5c9ca1ee759132bb685b238e7a3403ce153f890c200fc8995b6682e",
+    "spatial_phase_collision_rate.csv": "cd898d04b2535bc029747c82d515c58b2f4b8c391eb61be26c2bd81b112962c7",
+    "spatial_phase_fields.csv": "e0cc3e65dd2b42fb0a5a9ffd908197972bbb9306fdc435a16d740b25e601914e",
+    "spatial_phase_moments.csv": "18bef717765d969fc051fae83ed98c8cf6ee200ec85f55eabf9e442696bdd471",
+    "wall_impact_spectrum.csv": "4786e97291bc4daf967a1c04155866066762d06a6acb22b50cf0125bff51510b",
+    "wall_impact_spectrum_summary.csv": "06f7032a364a5164aac5ed059d0979c208439e5922812292fdba4acbd738aed2"
+  },
+  "phase_eedf_analysis_sha256": "716334e5570545a20dbc6aedab5a4092b865672e4ef3f6315ed5576f98dd2962",
+  "physics_claim": "paired_surface_transport_numerical_sensitivity_only",
+  "resources": {
+    "available_memory_before_launch_kib": 6533804,
+    "equilibration": {
+      "peak_resident_set_kib": 204272,
+      "wall_seconds": 404.111209350056
+    },
+    "maximum_peak_resident_set_kib": 204272,
+    "measurement": {
+      "peak_resident_set_kib": 194996,
+      "wall_seconds": 424.9218710929854
+    },
+    "resource_ceiling_reverified": true
+  },
+  "rule_sha256": "b617c59d7c9e2837bcec1c82ec86028f7fdf0772327f438474e3549c4678318e",
+  "schema_version": 1,
+  "scope": "common_state_numerical_refinement_branch",
+  "surface_flux": {
+    "contract": true,
+    "crossing_sufficiency": true,
+    "finite": true,
+    "histogram_closure": true,
+    "histogram_rows": 256000,
+    "shape": true,
+    "summary_rows": 800,
+    "total_macro_crossings_per_surface": [
+      57699,
+      512910
+    ]
+  }
+}

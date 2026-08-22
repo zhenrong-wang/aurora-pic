@@ -1,0 +1,68 @@
+{
+  "all_gates_passed": true,
+  "baseline": {
+    "critical_phase_0p125_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -8.88139059619795,
+      "direct_outward_energy_flux_divergence_W_m-2": 27.04050900345804,
+      "inferred_outward_energy_flux_divergence_W_m-2": 28.069652051249292,
+      "relative_closure_error": 0.03666390470078689
+    },
+    "exceptional_phase_0p375_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 19.88579853354185,
+      "direct_outward_energy_flux_divergence_W_m-2": 116.11561322949387,
+      "inferred_outward_energy_flux_divergence_W_m-2": 116.22607277960097,
+      "relative_closure_error": 0.0009503852919177492
+    },
+    "maximum_surface_overflow_fraction": 0.0
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "A passing paired 2:1 refinement rules out material ordinary timestep sensitivity at the declared tolerances. It does not establish formal temporal order, asymptotic convergence, cross-code flux agreement, or experimental validation.",
+  "gates": {
+    "critical_phase_closure": true,
+    "critical_phase_direct_flux": true,
+    "exceptional_octant_closure": true,
+    "exceptional_octant_direct_flux": true,
+    "exceptional_octant_tail_flux": true
+  },
+  "half_dt": {
+    "critical_phase_0p125_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -7.769949449955714,
+      "direct_outward_energy_flux_divergence_W_m-2": 25.77271811228711,
+      "inferred_outward_energy_flux_divergence_W_m-2": 26.843033584844008,
+      "relative_closure_error": 0.03987311900400169
+    },
+    "exceptional_phase_0p375_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 19.35504419825536,
+      "direct_outward_energy_flux_divergence_W_m-2": 116.19350431873697,
+      "inferred_outward_energy_flux_divergence_W_m-2": 116.99656746027398,
+      "relative_closure_error": 0.0068639889098429194
+    },
+    "maximum_surface_overflow_fraction": 0.0
+  },
+  "interpretation": "Ordinary timestep error is not a material explanation of the direct internal transport result at the declared tolerances.",
+  "metrics": {
+    "baseline_critical_phase_closure_error": 0.03666390470078689,
+    "baseline_exceptional_octant_closure_error": 0.0009503852919177492,
+    "critical_phase_direct_flux_relative_change": 0.046884875244352926,
+    "exceptional_octant_direct_flux_relative_change": 0.0006703566580574787,
+    "exceptional_octant_tail_flux_relative_change": 0.026690119302539065,
+    "refined_critical_phase_closure_error": 0.03987311900400169,
+    "refined_exceptional_octant_closure_error": 0.0068639889098429194
+  },
+  "provenance": {
+    "analyzer_sha256": "d7b3eab33081984dbb6bffc74f3c7b2ba73877c42756fc9194ac56d2f84d2262",
+    "baseline_branch_report_sha256": "55332e63a4cc74adb073420d423ae24f5f591cbcf40916dfb3305a98a92e4ad0",
+    "refined_branch_report_sha256": "021edfd94d3975543757b158b261d88d41ad864c356e27da72f5f2fc0bac9b74",
+    "rule_sha256": "b617c59d7c9e2837bcec1c82ec86028f7fdf0772327f438474e3549c4678318e"
+  },
+  "schema_version": 1,
+  "scope": "prospective_surface_transport_timestep_refinement_result",
+  "thresholds": {
+    "maximum_critical_phase_closure_error_each_branch": 0.1,
+    "maximum_critical_phase_direct_flux_relative_change": 0.15,
+    "maximum_exceptional_octant_closure_error_each_branch": 0.06,
+    "maximum_exceptional_octant_direct_flux_relative_change": 0.1,
+    "maximum_exceptional_octant_tail_flux_relative_change": 0.2
+  },
+  "timestep_refinement_ratio": 2.0
+}

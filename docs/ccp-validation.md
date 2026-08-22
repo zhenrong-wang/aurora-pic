@@ -2475,6 +2475,40 @@ published reference has no matching internal crossing spectrum. The result is
 a strong same-code conservation and mechanism-localization milestone, not a
 cross-code flux validation or experimental validation.
 
+### Direct-transport timestep sensitivity
+
+The direct transport result was next subjected to a prospectively locked 2:1
+timestep refinement from the same portable cycle-32 particle state. The rule
+is retained in
+[`benchmarks/ccp/edupic-argon-surface-flux-timestep-rule-20260822.json`](../benchmarks/ccp/edupic-argon-surface-flux-timestep-rule-20260822.json).
+Each branch discarded two equilibration cycles and measured two fresh cycles
+with identical 200-bin RF, internal-surface, and energy-spectrum contracts.
+The baseline used 4000 steps per RF cycle and the refined branch used 8000.
+They ran sequentially on one nice-level-10 CPU; both branches passed energy,
+field, EEDF, surface-shape, finite-value, histogram-closure, crossing-count,
+and resource gates. Their immutable reports are
+[`baseline`](../benchmarks/ccp/edupic-argon-surface-flux-dt-baseline-20260822.json)
+and
+[`half-dt`](../benchmarks/ccp/edupic-argon-surface-flux-dt-half-20260822.json).
+
+The paired result is retained in
+[`benchmarks/ccp/edupic-argon-surface-flux-timestep-result-20260822.json`](../benchmarks/ccp/edupic-argon-surface-flux-timestep-result-20260822.json).
+All five prospective gates pass. Halving the timestep changes the directly
+measured `0.125--0.5` transport divergence by `4.69%` (limit `15%`) and the
+exceptional `0.375--0.5` divergence by only `0.067%` (limit `10%`). The
+exceptional above-15.8-eV contribution changes by `2.67%` (limit `20%`).
+Baseline/refined direct-versus-inferred closure errors are `3.67%`/`3.99%`
+over `0.125--0.5` and `0.095%`/`0.686%` in the exceptional octant, within the
+declared `10%` and `6%` ceilings. Neither spectrum has overflow above 80 eV.
+
+This rules out material ordinary timestep error as the source of the direct
+transport finding at the declared resolution and sampling horizon. It does not
+establish formal temporal order or asymptotic convergence. Absolute values in
+this paired common-state experiment need not equal the adjacent cycle-18--22
+continuation because the state, seed, equilibration history, and measurement
+window differ; only the within-pair timestep change carries the refinement
+claim.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
