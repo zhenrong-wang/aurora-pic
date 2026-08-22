@@ -1,0 +1,56 @@
+{
+  "all_gates_passed": false,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This adjacent continuation diagnoses the candidate energetic tail and compares it descriptively with published eduPIC output. It is not an independent realization, a prospectively accepted cross-code validation, or experimental validation.",
+  "final_checkpoint_sha256": "8cbd5c31e1ee5bb32dbe618184b7b2e4981e31bff85a53e01a5113b498441610",
+  "gates": {
+    "absolute_field": true,
+    "finite_diagnostics": true,
+    "particle_cap": true,
+    "phase_eedf_observations": false,
+    "phase_eedf_overflow": true,
+    "phase_eedf_shape": true,
+    "resident_memory": true,
+    "sampling_contract": true
+  },
+  "inputs": {
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "deck_sha256": "7e1abf8032898f0dcba0acc4b7114e6597c5b434e33dc1e02c11c9df6e41e3c0",
+    "input_checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "solver_sha256": "a50341f9298cdc6ab1f61cc0bacf82d8db10cf760d214460a28d2cd447e3715e"
+  },
+  "output_hashes": {
+    "boundary_losses.csv": "db830e434cf8e944b4e65add5518e6e370a5920e10fea197fa75f70236902b3b",
+    "collisions.csv": "930dfb47c7543b2225ea7c8a8685d364ede4bb89669dff5afd5ed9e45c1f29ef",
+    "phase_eedf.csv": "88dc5343099b0571342d224dd48191d8a4b0a8b9fe289e342b1eb5603b0753b3",
+    "phase_eedf_moments.csv": "82cb4a0071c8f47d5d96227e6b27900ea5592987fdd7ca864fad738ef77cb11e",
+    "scalars.csv": "1c2553d1dd3f04e7343ef49526958f5a4a2601f73076da840099d8265ee20648",
+    "spatial_average_metadata.json": "121dc24a7047a5476142721dac438cfb26d65ffd0ad059621b77aedb02ff36fc",
+    "spatial_phase_collision_rate.csv": "5325a71bc5f62aa566276c056f262407ba96c1fc533620b2fe7b4cfb497fb24d",
+    "spatial_phase_fields.csv": "b8fd257a7f7bed6f9f673f6e33731e5cbe33efc1924d9b5a6682521c8fea5c9e",
+    "spatial_phase_moments.csv": "00f47334aa3a521512bc4c177e5283c45c65537effca0b6b0f0b66ee6ee9bf1d"
+  },
+  "physics_claim": "none_predeclared_diagnostic_localization_only",
+  "resources": {
+    "available_disk_before_launch_kib": 32186744,
+    "available_memory_before_launch_kib": 7637308,
+    "peak_resident_set_kib": 196124,
+    "wall_seconds": 363.30764521297533
+  },
+  "rule_sha256": "a8cded31a57af98b6c32dda816d122cda8ebf9f7daf31d906b516d1a5b12b9f2",
+  "safety": {
+    "field_snapshot_files": 41,
+    "maximum_live_particles": 243436,
+    "maximum_sampled_absolute_field_V_m": 66698.39199468833
+  },
+  "sampling": {
+    "maximum_phase_region_overflow_fraction": 0.0,
+    "minimum_macro_observations_per_region_phase_bin": 0,
+    "phase_bins": 200,
+    "samples": 8000,
+    "samples_per_phase_bin": 40
+  },
+  "schema_version": 1,
+  "scope": "aurorapic_spatial_phase_ionizing_tail_block"
+}

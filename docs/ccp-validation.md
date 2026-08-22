@@ -2356,6 +2356,55 @@ balance campaign. These results remain descriptive cross-simulation evidence;
 they have no prospective spatial acceptance threshold and are not experimental
 validation or a unique diagnosis of the kinetic cause.
 
+### Regional ionizing-tail closure
+
+The follow-up diagnostic was prospectively locked in
+[`benchmarks/ccp/edupic-argon-ionizing-tail-rule-20260821.json`](../benchmarks/ccp/edupic-argon-ionizing-tail-rule-20260821.json)
+before execution. It continued the checksum-locked cycle-14 state for exactly
+four RF cycles on one low-priority CPU. Seven contiguous gap bands, 200 RF
+phase bins, and 320 energy bins from 0 to 80 eV were sampled every second
+timestep. The run completed in `363.31 s` with `196124 KiB` peak RSS, no energy
+overflow, a maximum sampled field of `66.70 kV/m`, and `243436` maximum live
+macro-particles.
+
+The execution record is retained in
+[`benchmarks/ccp/edupic-argon-ionizing-tail-block-20260822.json`](../benchmarks/ccp/edupic-argon-ionizing-tail-block-20260822.json).
+The global prospective observation gate failed and is retained as a failed
+gate: the electrode-adjacent 10% bands contain no electrons during 102 of 200
+phase bins as the sheaths expand. This is physical depletion rather than a
+missing accumulator. All safety, finite-output, shape, sampling, and resource
+gates passed. The prospectively named interior `x/L=0.2--0.4` and `0.4--0.6`
+bands have at least `1181067` macro-particle observations in every phase bin,
+so the declared critical scope is statistically populated despite the honest
+global failure.
+
+The checksum-bound result is
+[`benchmarks/ccp/edupic-argon-ionizing-tail-audit-20260822.json`](../benchmarks/ccp/edupic-argon-ionizing-tail-audit-20260822.json).
+Over the predeclared `x/L=0.2--0.6`, phase `0.125--0.5` window, the measured
+AuroraPIC effective ionization frequency is `66.60 kHz`, versus `81.54 kHz`
+from the published eduPIC density and ionization matrices: a ratio of
+`0.81669`. Independently folding the sampled AuroraPIC EEDF through the locked
+argon `n_g sigma_ion(E) v(E)` kernel predicts `67.10 kHz`, or `0.82286` of
+eduPIC. Candidate measurement divided by its EEDF prediction is `0.99250`.
+Thus the localized EEDF accounts for the cross-code ionization deficit to
+within `0.75%` in the combined critical window.
+
+Across the full cycle in the same interior region, the measured candidate to
+eduPIC frequency ratio is `0.86710`, the EEDF-folded ratio is `0.85206`, and
+the candidate measurement closes against its fold at `1.01765`. The strongest
+measured octant deficits are phase `0.25--0.375` (`0.80496` of eduPIC) and
+`0.375--0.5` (`0.79584`), independently confirming the phase localization
+found from collision-rate matrices.
+
+This is direct evidence that the remaining ionization discrepancy is encoded
+in AuroraPIC's energetic electron distribution rather than introduced by its
+ionization-event sampler. It still does not identify which kinetic mechanism
+creates that distribution difference. The next discriminator must separate
+phase-dependent sheath energization, energetic-electron transport into the
+bulk, and inelastic cooling. The comparison remains against published
+simulation output, not experiment, and no retrospective cross-code acceptance
+threshold is assigned.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

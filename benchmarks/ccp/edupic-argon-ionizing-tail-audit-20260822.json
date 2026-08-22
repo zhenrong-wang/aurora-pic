@@ -1,0 +1,227 @@
+{
+  "assessment": {
+    "finding": "In the predeclared interior and RF-phase window, the EEDF fold independently reproduces the measured candidate ionization deficit relative to eduPIC. The discrepancy is therefore carried by the energetic electron distribution, not by the candidate ionization event sampler.",
+    "localized_candidate_eedf_to_reference_ratio": 0.8228624669355235,
+    "localized_candidate_to_reference_measured_ratio": 0.8166921346642958,
+    "localized_measured_to_eedf_folded_ratio": 0.9925013808270937,
+    "next_discriminator": "Separate phase-dependent sheath energization, bulk transport, and inelastic cooling effects on the energetic tail; this audit does not distinguish those mechanisms."
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This adjacent continuation diagnoses the candidate energetic tail and compares it descriptively with published eduPIC output. It is not an independent realization, a prospectively accepted cross-code validation, or experimental validation.",
+  "critical_interior_full_cycle": {
+    "candidate_eedf_folded_to_published_edupic_ratio": 0.8520611396647644,
+    "candidate_measured_to_eedf_folded_ratio": 1.0176467890643373,
+    "candidate_measured_to_published_edupic_ratio": 0.8670972828663472,
+    "eedf_folded_ionization_frequency_s-1": 46614.392868208044,
+    "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0023550042082848594,
+    "measured_candidate_ionization_frequency_s-1": 47436.987226515455,
+    "published_edupic_ionization_frequency_s-1": 54707.802877324095,
+    "represented_particle_timestep_observations": 4.880655822e+17
+  },
+  "critical_interior_phase_0p125_to_0p5": {
+    "candidate_eedf_folded_to_published_edupic_ratio": 0.8228624669355235,
+    "candidate_measured_to_eedf_folded_ratio": 0.9925013808270937,
+    "candidate_measured_to_published_edupic_ratio": 0.8166921346642958,
+    "eedf_folded_ionization_frequency_s-1": 67099.89863357625,
+    "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.00310489378052132,
+    "measured_candidate_ionization_frequency_s-1": 66596.74204718244,
+    "published_edupic_ionization_frequency_s-1": 81544.48808859568,
+    "represented_particle_timestep_observations": 1.826940759e+17
+  },
+  "critical_phase_octants": [
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.8732591224909549,
+      "candidate_measured_to_eedf_folded_ratio": 1.041893319971085,
+      "candidate_measured_to_published_edupic_ratio": 0.9098428463271373,
+      "eedf_folded_ionization_frequency_s-1": 24435.439692297456,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0016752774000960118,
+      "lower_phase_fraction": 0.0,
+      "measured_candidate_ionization_frequency_s-1": 25459.12138596102,
+      "published_edupic_ionization_frequency_s-1": 27981.888837984116,
+      "represented_particle_timestep_observations": 6.13386774e+16,
+      "upper_phase_fraction": 0.125
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.8124448491775865,
+      "candidate_measured_to_eedf_folded_ratio": 1.0696458128935145,
+      "candidate_measured_to_published_edupic_ratio": 0.8690282311297083,
+      "eedf_folded_ionization_frequency_s-1": 44276.76945997266,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0022080162115412443,
+      "lower_phase_fraction": 0.125,
+      "measured_candidate_ionization_frequency_s-1": 47360.461061311194,
+      "published_edupic_ionization_frequency_s-1": 54498.184713451876,
+      "represented_particle_timestep_observations": 6.1293617e+16,
+      "upper_phase_fraction": 0.25
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.8237787789398697,
+      "candidate_measured_to_eedf_folded_ratio": 0.9771495556625127,
+      "candidate_measured_to_published_edupic_ratio": 0.8049550678053009,
+      "eedf_folded_ionization_frequency_s-1": 96164.09094794646,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0038937326774515723,
+      "lower_phase_fraction": 0.25,
+      "measured_candidate_ionization_frequency_s-1": 93966.69874047535,
+      "published_edupic_ionization_frequency_s-1": 116735.33405619058,
+      "represented_particle_timestep_observations": 6.10391929e+16,
+      "upper_phase_fraction": 0.375
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.8289554101887503,
+      "candidate_measured_to_eedf_folded_ratio": 0.9600463881381993,
+      "candidate_measured_to_published_edupic_ratio": 0.7958356474793292,
+      "eedf_folded_ionization_frequency_s-1": 60884.94113332838,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0032179262111566714,
+      "lower_phase_fraction": 0.375,
+      "measured_candidate_ionization_frequency_s-1": 58452.36782705879,
+      "published_edupic_ionization_frequency_s-1": 73447.78788459211,
+      "represented_particle_timestep_observations": 6.0361266e+16,
+      "upper_phase_fraction": 0.5
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.9025191347591356,
+      "candidate_measured_to_eedf_folded_ratio": 1.0087871383481546,
+      "candidate_measured_to_published_edupic_ratio": 0.910449695258121,
+      "eedf_folded_ionization_frequency_s-1": 27087.735901656477,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0019432890019538392,
+      "lower_phase_fraction": 0.5,
+      "measured_candidate_ionization_frequency_s-1": 27325.75958456261,
+      "published_edupic_ionization_frequency_s-1": 30013.475458208046,
+      "represented_particle_timestep_observations": 6.03120791e+16,
+      "upper_phase_fraction": 0.625
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.8526380252551383,
+      "candidate_measured_to_eedf_folded_ratio": 1.004896485612772,
+      "candidate_measured_to_published_edupic_ratio": 0.8568129550787026,
+      "eedf_folded_ionization_frequency_s-1": 19257.530299204434,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0012915702831062625,
+      "lower_phase_fraction": 0.625,
+      "measured_candidate_ionization_frequency_s-1": 19351.82451925201,
+      "published_edupic_ionization_frequency_s-1": 22585.821566475322,
+      "represented_particle_timestep_observations": 6.1054672e+16,
+      "upper_phase_fraction": 0.75
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.9186238768761988,
+      "candidate_measured_to_eedf_folded_ratio": 1.0607211698319319,
+      "candidate_measured_to_published_edupic_ratio": 0.9744037933156661,
+      "eedf_folded_ionization_frequency_s-1": 54761.5372987156,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0022456705695508383,
+      "lower_phase_fraction": 0.75,
+      "measured_candidate_ionization_frequency_s-1": 58086.72190528858,
+      "published_edupic_ionization_frequency_s-1": 59612.57776679335,
+      "represented_particle_timestep_observations": 6.1335666e+16,
+      "upper_phase_fraction": 0.875
+    },
+    {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.87130864544419,
+      "candidate_measured_to_eedf_folded_ratio": 1.0731459094892968,
+      "candidate_measured_to_published_edupic_ratio": 0.9350413087610925,
+      "eedf_folded_ionization_frequency_s-1": 46061.55343268785,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.002373889164070475,
+      "lower_phase_fraction": 0.875,
+      "measured_candidate_ionization_frequency_s-1": 49430.76765101164,
+      "published_edupic_ionization_frequency_s-1": 52864.7955848135,
+      "represented_particle_timestep_observations": 6.13304118e+16,
+      "upper_phase_fraction": 1.0
+    }
+  ],
+  "critical_region_phase_0p125_to_0p5": {
+    "x020_040": {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.7970259108546496,
+      "candidate_measured_to_eedf_folded_ratio": 1.04806262889053,
+      "candidate_measured_to_published_edupic_ratio": 0.8353330714241931,
+      "eedf_folded_ionization_frequency_s-1": 114933.07838087744,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.005141130986730731,
+      "measured_candidate_ionization_frequency_s-1": 120457.06427434373,
+      "published_edupic_ionization_frequency_s-1": 144202.43660288898,
+      "represented_particle_timestep_observations": 6.4265334e+16
+    },
+    "x040_060": {
+      "candidate_eedf_folded_to_published_edupic_ratio": 0.8333267715004306,
+      "candidate_measured_to_eedf_folded_ratio": 0.9160391039231172,
+      "candidate_measured_to_published_edupic_ratio": 0.7633599090403986,
+      "eedf_folded_ionization_frequency_s-1": 41143.23284936979,
+      "fraction_in_histogram_bins_at_or_above_15p8_eV": 0.0019999300524529175,
+      "measured_candidate_ionization_frequency_s-1": 37688.810151836864,
+      "published_edupic_ionization_frequency_s-1": 49372.268186332396,
+      "represented_particle_timestep_observations": 1.184287419e+17
+    }
+  },
+  "execution_outcome": {
+    "all_safety_and_finite_output_gates_passed": true,
+    "critical_interior_scope_sufficient": true,
+    "critical_maximum_overflow_fraction": 0.0,
+    "critical_minimum_macro_observations_per_region_phase_bin": 1181067,
+    "failed_global_gates": [
+      "phase_eedf_observations"
+    ],
+    "global_prospective_gates_passed": false,
+    "regional_sampling": {
+      "x000_010": {
+        "maximum_macro_observations_per_phase_bin": 41656,
+        "minimum_macro_observations_per_phase_bin": 0,
+        "zero_observation_phase_bins": 102
+      },
+      "x010_020": {
+        "maximum_macro_observations_per_phase_bin": 85958,
+        "minimum_macro_observations_per_phase_bin": 5,
+        "zero_observation_phase_bins": 0
+      },
+      "x020_040": {
+        "maximum_macro_observations_per_phase_bin": 1251493,
+        "minimum_macro_observations_per_phase_bin": 1181067,
+        "zero_observation_phase_bins": 0
+      },
+      "x040_060": {
+        "maximum_macro_observations_per_phase_bin": 2258000,
+        "minimum_macro_observations_per_phase_bin": 2252799,
+        "zero_observation_phase_bins": 0
+      },
+      "x060_080": {
+        "maximum_macro_observations_per_phase_bin": 1195170,
+        "minimum_macro_observations_per_phase_bin": 1121702,
+        "zero_observation_phase_bins": 0
+      },
+      "x080_090": {
+        "maximum_macro_observations_per_phase_bin": 81808,
+        "minimum_macro_observations_per_phase_bin": 0,
+        "zero_observation_phase_bins": 4
+      },
+      "x090_100": {
+        "maximum_macro_observations_per_phase_bin": 42629,
+        "minimum_macro_observations_per_phase_bin": 0,
+        "zero_observation_phase_bins": 102
+      }
+    },
+    "resource_record": {
+      "available_disk_before_launch_kib": 32186744,
+      "available_memory_before_launch_kib": 7637308,
+      "peak_resident_set_kib": 196124,
+      "wall_seconds": 363.30764521297533
+    }
+  },
+  "provenance": {
+    "analyzer_sha256": "febe2a66f6e4411e9c7318cda5185fe309a8ba0229a4c4ba7715f1c422856d0b",
+    "block_report_sha256": "c00bfff25a5fc9aa0b596302dbae8f0417de11d1641a329cc1a2bec03a697d42",
+    "candidate_output_sha256": {
+      "boundary_losses.csv": "db830e434cf8e944b4e65add5518e6e370a5920e10fea197fa75f70236902b3b",
+      "collisions.csv": "930dfb47c7543b2225ea7c8a8685d364ede4bb89669dff5afd5ed9e45c1f29ef",
+      "phase_eedf.csv": "88dc5343099b0571342d224dd48191d8a4b0a8b9fe289e342b1eb5603b0753b3",
+      "phase_eedf_moments.csv": "82cb4a0071c8f47d5d96227e6b27900ea5592987fdd7ca864fad738ef77cb11e",
+      "scalars.csv": "1c2553d1dd3f04e7343ef49526958f5a4a2601f73076da840099d8265ee20648",
+      "spatial_average_metadata.json": "121dc24a7047a5476142721dac438cfb26d65ffd0ad059621b77aedb02ff36fc",
+      "spatial_phase_collision_rate.csv": "5325a71bc5f62aa566276c056f262407ba96c1fc533620b2fe7b4cfb497fb24d",
+      "spatial_phase_fields.csv": "b8fd257a7f7bed6f9f673f6e33731e5cbe33efc1924d9b5a6682521c8fea5c9e",
+      "spatial_phase_moments.csv": "00f47334aa3a521512bc4c177e5283c45c65537effca0b6b0f0b66ee6ee9bf1d"
+    },
+    "ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+    "reference_sha256": {
+      "Figure11a)_ne_xt.dat": "43e70f92717daf5ccb9a7fb491b9f0ba42b952bb24bc851dcab84401f99619e8",
+      "Figure11k)_ioniz_xt.dat": "59baed449b6972eddbd719ad6019fe9c9e6eb981c2ecf952870f0b3925856be4"
+    },
+    "rule_sha256": "a8cded31a57af98b6c32dda816d122cda8ebf9f7daf31d906b516d1a5b12b9f2"
+  },
+  "schema_version": 1,
+  "scope": "descriptive_spatial_phase_ionizing_tail_audit"
+}
