@@ -69,6 +69,15 @@ struct PhaseEedfAccumulator1D {
     std::vector<double> histogram{};
 };
 
+struct PhaseSurfaceFluxAccumulator1D {
+    std::uint64_t macro_crossings{0};
+    std::uint64_t overflow_macro_crossings{0};
+    double represented_crossings{0.0};
+    double overflow_represented_crossings{0.0};
+    double represented_kinetic_energy{0.0};
+    std::vector<double> represented_histogram{};
+};
+
 class Simulation {
 public:
     explicit Simulation(Config cfg);
@@ -133,6 +142,9 @@ public:
     phase_eedf_accumulators() const {
         return phase_eedf_accumulators_;
     }
+    const auto& phase_surface_flux_accumulators() const {
+        return phase_surface_flux_accumulators_;
+    }
 private:
     struct IonizationChannelRuntime {
         std::size_t secondary_species_id{0};
@@ -160,6 +172,11 @@ private:
         double field_time) const;
     void accumulate_spatial_average(std::size_t sample_step);
     void accumulate_phase_eedf(std::size_t phase);
+    std::size_t phase_surface_flux_phase(std::size_t sample_step) const;
+    void accumulate_phase_surface_crossing(
+        std::size_t chunk, std::size_t surface, std::size_t direction,
+        const Particle& particle, const Species& species);
+    void merge_phase_surface_flux_chunks(std::size_t phase);
     void deposit_spatial_collision_energy(
         double position,
         std::size_t channel,
@@ -228,6 +245,11 @@ private:
     std::size_t phase_eedf_species_id_{0};
     std::vector<std::vector<PhaseEedfAccumulator1D>>
         phase_eedf_accumulators_{};
+    std::size_t phase_surface_flux_species_id_{0};
+    std::vector<std::vector<std::vector<PhaseSurfaceFluxAccumulator1D>>>
+        phase_surface_flux_accumulators_{};
+    std::vector<std::vector<std::vector<PhaseSurfaceFluxAccumulator1D>>>
+        phase_surface_flux_chunks_{};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

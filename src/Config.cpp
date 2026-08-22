@@ -163,6 +163,20 @@ std::vector<PhaseEedfRegion1DConfig> parse_phase_eedf_regions(
     return regions;
 }
 
+std::vector<double> parse_phase_surface_flux_positions(
+    const KeyValue& values) {
+    const auto found = values.find("phase_surface_flux_positions");
+    if (found == values.end()) return {};
+    std::vector<double> positions;
+    std::istringstream entries(found->second);
+    std::string entry;
+    while (std::getline(entries, entry, ',')) {
+        KeyValue value{{"position", trim(entry)}};
+        positions.push_back(as<double>(value, "position", 0.0));
+    }
+    return positions;
+}
+
 std::optional<std::uint64_t> parse_optional_uint64(
     const KeyValue& values, const std::string& key) {
     const auto found = values.find(key);
@@ -1475,6 +1489,7 @@ ParsedBlocks parse_config_blocks(const std::string& path,
 void validate_spatial_average_1d(const Config& cfg) {
     const auto& average = cfg.spatial_average;
     const auto& eedf = cfg.phase_eedf;
+    const auto& flux = cfg.phase_surface_flux;
     if (!eedf.enabled) {
         if (!eedf.species.empty() || eedf.energy_bins != 0 ||
             eedf.energy_max != 0.0 || !eedf.regions.empty()) {
@@ -1517,6 +1532,48 @@ void validate_spatial_average_1d(const Config& cfg) {
                     "phase_eedf regions require unique safe names and "
                     "0 <= x_min < x_max <= length");
             }
+        }
+    }
+    if (!flux.enabled) {
+        if (flux.reset_on_restart || !flux.species.empty() ||
+            !flux.positions.empty() || flux.energy_bins != 0 ||
+            flux.energy_max != 0.0) {
+            throw std::runtime_error(
+                "disabled phase_surface_flux cannot configure restart "
+                "reset, species, positions, bins, or energy maximum");
+        }
+    } else {
+        if (!average.enabled || average.phase_bins == 0 ||
+            average.rf_frequency <= 0.0) {
+            throw std::runtime_error(
+                "phase_surface_flux requires phase-resolved spatial averaging");
+        }
+        if (cfg.boundary == Boundary::Periodic) {
+            throw std::runtime_error(
+                "phase_surface_flux does not yet support periodic boundaries");
+        }
+        if (flux.species.empty() || flux.positions.empty() ||
+            flux.energy_bins == 0 || flux.energy_bins > 1000000 ||
+            !std::isfinite(flux.energy_max) || flux.energy_max <= 0.0 ||
+            std::none_of(cfg.species.begin(), cfg.species.end(),
+                         [&](const auto& species) {
+                             return species.name == flux.species;
+                         })) {
+            throw std::runtime_error(
+                "phase_surface_flux requires an existing species, at least "
+                "one position, 1..1000000 bins, and a positive energy maximum");
+        }
+        double previous = 0.0;
+        for (std::size_t index = 0; index < flux.positions.size(); ++index) {
+            const double position = flux.positions[index];
+            if (!std::isfinite(position) || position <= 0.0 ||
+                position >= cfg.length ||
+                (index != 0 && position <= previous)) {
+                throw std::runtime_error(
+                    "phase_surface_flux_positions must be finite, strictly "
+                    "increasing, and internal to the domain");
+            }
+            previous = position;
         }
     }
     if (!std::isfinite(average.rf_frequency) ||
@@ -1635,6 +1692,9 @@ Config load_config(const std::string& path) {
         "spatial_average_phase_bins", "spatial_average_sampling_order",
         "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
         "phase_eedf_energy_max", "phase_eedf_regions",
+        "phase_surface_flux", "phase_surface_flux_reset_on_restart",
+        "phase_surface_flux_species", "phase_surface_flux_positions",
+        "phase_surface_flux_energy_bins", "phase_surface_flux_energy_max",
         "wall_impact_spectrum", "wall_impact_reset_on_restart",
         "wall_impact_energy_bins",
         "wall_impact_energy_max",
@@ -1733,6 +1793,22 @@ Config load_config(const std::string& path) {
     cfg.phase_eedf.energy_max = as<double>(
         global, "phase_eedf_energy_max", cfg.phase_eedf.energy_max);
     cfg.phase_eedf.regions = parse_phase_eedf_regions(global);
+    cfg.phase_surface_flux.enabled = parse_bool(
+        global, "phase_surface_flux", cfg.phase_surface_flux.enabled);
+    cfg.phase_surface_flux.reset_on_restart = parse_bool(
+        global, "phase_surface_flux_reset_on_restart",
+        cfg.phase_surface_flux.reset_on_restart);
+    cfg.phase_surface_flux.species = as<std::string>(
+        global, "phase_surface_flux_species",
+        cfg.phase_surface_flux.species);
+    cfg.phase_surface_flux.positions =
+        parse_phase_surface_flux_positions(global);
+    cfg.phase_surface_flux.energy_bins = as<std::size_t>(
+        global, "phase_surface_flux_energy_bins",
+        cfg.phase_surface_flux.energy_bins);
+    cfg.phase_surface_flux.energy_max = as<double>(
+        global, "phase_surface_flux_energy_max",
+        cfg.phase_surface_flux.energy_max);
     cfg.wall_impact_spectrum.enabled = parse_bool(
         global, "wall_impact_spectrum",
         cfg.wall_impact_spectrum.enabled);

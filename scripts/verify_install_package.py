@@ -275,6 +275,10 @@ def smoke_install_tree(
     )
     require_file(
         prefix / "share" / "doc" / "AuroraPIC" /
+        "phase-surface-flux.md"
+    )
+    require_file(
+        prefix / "share" / "doc" / "AuroraPIC" /
         "kinetic-validation.md"
     )
     smoke_installed_cli(prefix, work)

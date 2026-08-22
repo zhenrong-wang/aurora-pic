@@ -344,7 +344,7 @@ density, mean three-velocity, mean kinetic energy, and drift-separated
 temperature in each phase bin, plus `spatial_phase_fields.csv` with matching
 potential and electric-field statistics. The drift-separated definition is
 `2/d * (<K> - m|<v>|^2/2)`, where `d` is the configured velocity dimension.
-Metadata explicitly records `sampling_order`. Checkpoint v16 preserves that
+Metadata explicitly records `sampling_order`. Checkpoint v17 preserves that
 contract in addition to every phase-bin accumulator and sample count; bounded
 regressions require byte-identical continuous and checkpoint-split products.
 
@@ -2438,12 +2438,16 @@ ionization falls to `0.79584`, giving an ionization-to-power ratio of `0.85499`.
 This isolates an energy-selective redistribution or transport effect during
 that octant rather than a uniform heating-amplitude error.
 
-The next diagnostic should directly record directional, energy-resolved
-electron crossings at internal surfaces near `x/L=0.2` and `0.6`, with RF
-phase. That will distinguish loss or arrival of the ionizing tail through
-transport from local energy-space redistribution and cooling. The current
-transport term is inferred, and the published reference lacks matching
-collision-power data, so this decomposition remains descriptive.
+AuroraPIC now has the generic, checkpoint-safe diagnostic needed for the next
+test: it directly records directional, energy-resolved particle crossings at
+arbitrary internal 1D surfaces with RF phase (see
+[`phase-surface-flux.md`](phase-surface-flux.md)). The implementation has unit
+and restart coverage, but it has not yet been applied to this CCP continuation.
+The next prospectively declared run will place surfaces at `x/L=0.2` and `0.6`
+and determine whether transport of the ionizing tail explains the exceptional
+`0.375--0.5` octant. Until that run completes, the transport term remains
+inferred; the published reference also lacks matching energy-resolved crossing
+data, so the decomposition remains descriptive.
 
 ## Bounded execution ladder
 

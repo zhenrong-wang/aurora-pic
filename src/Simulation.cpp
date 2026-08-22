@@ -37,6 +37,7 @@ constexpr const char* kCheckpointMagicV13 = "AuroraPIC-checkpoint-v13";
 constexpr const char* kCheckpointMagicV14 = "AuroraPIC-checkpoint-v14";
 constexpr const char* kCheckpointMagicV15 = "AuroraPIC-checkpoint-v15";
 constexpr const char* kCheckpointMagicV16 = "AuroraPIC-checkpoint-v16";
+constexpr const char* kCheckpointMagicV17 = "AuroraPIC-checkpoint-v17";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -117,6 +118,36 @@ void validate_runtime_config(const Config& cfg) {
     }
     if (!std::isfinite(cfg.collisions.neutral_temperature_velocity) || cfg.collisions.neutral_temperature_velocity < 0.0) {
         throw std::invalid_argument("neutral_temperature_velocity must be non-negative and finite");
+    }
+}
+
+void clear_surface_flux_accumulator(
+    PhaseSurfaceFluxAccumulator1D& value) {
+    value.macro_crossings = 0;
+    value.overflow_macro_crossings = 0;
+    value.represented_crossings = 0.0;
+    value.overflow_represented_crossings = 0.0;
+    value.represented_kinetic_energy = 0.0;
+    std::fill(value.represented_histogram.begin(),
+              value.represented_histogram.end(), 0.0);
+}
+
+void add_surface_flux_accumulator(
+    PhaseSurfaceFluxAccumulator1D& target,
+    const PhaseSurfaceFluxAccumulator1D& source) {
+    target.macro_crossings += source.macro_crossings;
+    target.overflow_macro_crossings += source.overflow_macro_crossings;
+    target.represented_crossings += source.represented_crossings;
+    target.overflow_represented_crossings +=
+        source.overflow_represented_crossings;
+    target.represented_kinetic_energy += source.represented_kinetic_energy;
+    if (target.represented_histogram.size() !=
+        source.represented_histogram.size()) {
+        throw std::logic_error("surface-flux histogram shape differs");
+    }
+    for (std::size_t bin = 0; bin < target.represented_histogram.size(); ++bin) {
+        target.represented_histogram[bin] +=
+            source.represented_histogram[bin];
     }
 }
 std::filesystem::path checkpoint_path_for_step(const Config& cfg, std::size_t step) {
@@ -691,6 +722,33 @@ Simulation::Simulation(Config cfg)
             }
         }
     }
+    if (cfg_.phase_surface_flux.enabled) {
+        phase_surface_flux_species_id_ =
+            species_id(cfg_.phase_surface_flux.species);
+        const auto make_surfaces = [&] {
+            auto surfaces = std::vector<std::vector<
+                PhaseSurfaceFluxAccumulator1D>>(
+                    cfg_.phase_surface_flux.positions.size(),
+                    std::vector<PhaseSurfaceFluxAccumulator1D>(2));
+            for (auto& surface : surfaces) {
+                for (auto& direction : surface) {
+                    direction.represented_histogram.assign(
+                        cfg_.phase_surface_flux.energy_bins, 0.0);
+                }
+            }
+            return surfaces;
+        };
+        phase_surface_flux_accumulators_.resize(
+            cfg_.spatial_average.phase_bins);
+        for (auto& phase : phase_surface_flux_accumulators_) {
+            phase = make_surfaces();
+        }
+        phase_surface_flux_chunks_.resize(
+            runtime_info(cfg_.runtime).active_threads);
+        for (auto& chunk : phase_surface_flux_chunks_) {
+            chunk = make_surfaces();
+        }
+    }
 }
 
 std::uint64_t Simulation::collision_signature() const {
@@ -1149,6 +1207,8 @@ void Simulation::apply_collisions() {
 
 void Simulation::step() {
     if (!initialized_) initialize();
+    const std::size_t surface_flux_phase =
+        phase_surface_flux_phase(step_ + 1);
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
         auto& sp = species_[species_id];
@@ -1186,10 +1246,29 @@ void Simulation::step() {
                      particle_id < end; ++particle_id) {
                     auto& p = particles[particle_id];
                     if (!p.alive) continue;
+                    const double old_position = p.x;
                     kick_leapfrog(
                         p, interpolate_electric(grid_, p.x),
                         qm, timestep);
                     drift_leapfrog(p, timestep);
+                    if (species_id == phase_surface_flux_species_id_ &&
+                        surface_flux_phase <
+                            phase_surface_flux_accumulators_.size()) {
+                        for (std::size_t surface = 0;
+                             surface < cfg_.phase_surface_flux.positions.size();
+                             ++surface) {
+                            const double position =
+                                cfg_.phase_surface_flux.positions[surface];
+                            if (old_position < position && p.x >= position) {
+                                accumulate_phase_surface_crossing(
+                                    chunk, surface, 0, p, sp);
+                            } else if (old_position > position &&
+                                       p.x <= position) {
+                                accumulate_phase_surface_crossing(
+                                    chunk, surface, 1, p, sp);
+                            }
+                        }
+                    }
                     if (grid_.boundary() ==
                         Boundary::Periodic) {
                         p.x = std::fmod(
@@ -1246,6 +1325,10 @@ void Simulation::step() {
                     }
                 }
             });
+        if (species_id == phase_surface_flux_species_id_ &&
+            surface_flux_phase < phase_surface_flux_accumulators_.size()) {
+            merge_phase_surface_flux_chunks(surface_flux_phase);
+        }
         auto& total_loss =
             species_boundary_losses_[species_id];
         for (const auto& loss : chunk_losses) {
@@ -1541,6 +1624,79 @@ void Simulation::accumulate_phase_eedf(std::size_t phase) {
                         energy / cfg_.phase_eedf.energy_max *
                         cfg_.phase_eedf.energy_bins));
                 accumulator.histogram[bin] += weight;
+            }
+        }
+    }
+}
+
+std::size_t Simulation::phase_surface_flux_phase(
+    std::size_t sample_step) const {
+    if (!cfg_.phase_surface_flux.enabled) {
+        return phase_surface_flux_accumulators_.size();
+    }
+    const auto& average = cfg_.spatial_average;
+    if (sample_step < average.start_step ||
+        sample_step > average.end_step ||
+        phase_surface_flux_accumulators_.empty()) {
+        return phase_surface_flux_accumulators_.size();
+    }
+    const auto steps_per_cycle = static_cast<std::size_t>(std::llround(
+        1.0 / (average.rf_frequency * cfg_.dt)));
+    const std::size_t step_in_cycle =
+        (sample_step - average.start_step) % steps_per_cycle;
+    return std::min(
+        phase_surface_flux_accumulators_.size() - 1,
+        step_in_cycle * phase_surface_flux_accumulators_.size() /
+            steps_per_cycle);
+}
+
+void Simulation::accumulate_phase_surface_crossing(
+    std::size_t chunk, std::size_t surface, std::size_t direction,
+    const Particle& particle, const Species& species) {
+    if (chunk >= phase_surface_flux_chunks_.size() ||
+        surface >= cfg_.phase_surface_flux.positions.size() ||
+        direction >= 2) {
+        throw std::logic_error("surface-flux crossing index differs");
+    }
+    auto& value = phase_surface_flux_chunks_[chunk][surface][direction];
+    const double speed_squared =
+        particle.v_half * particle.v_half +
+        (cfg_.velocity_dimensions == 3
+             ? particle.velocity_y * particle.velocity_y +
+                   particle.velocity_z * particle.velocity_z
+             : 0.0);
+    const double particle_energy_joule =
+        0.5 * species.mass() * speed_squared;
+    const double energy_scale =
+        cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
+    const double diagnostic_energy = particle_energy_joule / energy_scale;
+    ++value.macro_crossings;
+    value.represented_crossings += species.weight();
+    value.represented_kinetic_energy +=
+        species.weight() * particle_energy_joule;
+    if (diagnostic_energy >= cfg_.phase_surface_flux.energy_max) {
+        ++value.overflow_macro_crossings;
+        value.overflow_represented_crossings += species.weight();
+        return;
+    }
+    const auto bin = std::min(
+        cfg_.phase_surface_flux.energy_bins - 1,
+        static_cast<std::size_t>(
+            diagnostic_energy / cfg_.phase_surface_flux.energy_max *
+            cfg_.phase_surface_flux.energy_bins));
+    value.represented_histogram[bin] += species.weight();
+}
+
+void Simulation::merge_phase_surface_flux_chunks(std::size_t phase) {
+    if (phase >= phase_surface_flux_accumulators_.size()) return;
+    for (auto& chunk : phase_surface_flux_chunks_) {
+        for (std::size_t surface = 0;
+             surface < chunk.size(); ++surface) {
+            for (std::size_t direction = 0; direction < 2; ++direction) {
+                add_surface_flux_accumulator(
+                    phase_surface_flux_accumulators_[phase][surface][direction],
+                    chunk[surface][direction]);
+                clear_surface_flux_accumulator(chunk[surface][direction]);
             }
         }
     }
@@ -2189,6 +2345,85 @@ void Simulation::write_spatial_average() const {
         require_stream(moments, "failed while writing phase EEDF moments");
     }
 
+    if (cfg_.phase_surface_flux.enabled) {
+        std::ofstream histogram(output_dir / "phase_surface_flux.csv");
+        std::ofstream summary(output_dir / "phase_surface_flux_summary.csv");
+        if (!histogram || !summary) {
+            throw std::runtime_error("cannot open 1D phase surface-flux output");
+        }
+        const char* energy_name = si ? "energy_eV" : "energy_normalized";
+        const char* position_name = si ? "position_m" : "position_normalized";
+        const char* energy_flux_name =
+            si ? "kinetic_energy_flux_W_m-2" :
+                 "kinetic_energy_flux_normalized";
+        const char* particle_flux_name =
+            si ? "represented_particle_flux_m-2_s-1" :
+                 "represented_particle_flux_normalized";
+        histogram << "phase_bin,phase_fraction,surface_id," << position_name
+                  << ",direction,energy_bin," << energy_name <<
+                     ",represented_crossings,probability_density\n"
+                  << std::setprecision(17);
+        summary << "phase_bin,phase_fraction,surface_id," << position_name <<
+                   ",direction,"
+                   "macro_crossings,overflow_macro_crossings,"
+                   "represented_crossings,overflow_fraction," <<
+                   particle_flux_name << ',' << energy_flux_name << "\n"
+                << std::setprecision(17);
+        const double bin_width = cfg_.phase_surface_flux.energy_max /
+            static_cast<double>(cfg_.phase_surface_flux.energy_bins);
+        const double phase_duration =
+            static_cast<double>(cfg_.spatial_average.rf_cycles) /
+            cfg_.spatial_average.rf_frequency /
+            static_cast<double>(phase_surface_flux_accumulators_.size());
+        for (std::size_t phase = 0;
+             phase < phase_surface_flux_accumulators_.size(); ++phase) {
+            const double phase_fraction =
+                (static_cast<double>(phase) + 0.5) /
+                static_cast<double>(phase_surface_flux_accumulators_.size());
+            for (std::size_t surface = 0;
+                 surface < cfg_.phase_surface_flux.positions.size(); ++surface) {
+                for (std::size_t direction = 0; direction < 2; ++direction) {
+                    const auto& value =
+                        phase_surface_flux_accumulators_[phase][surface][direction];
+                    const char* direction_name =
+                        direction == 0 ? "left_to_right" : "right_to_left";
+                    for (std::size_t bin = 0;
+                         bin < value.represented_histogram.size(); ++bin) {
+                        histogram << phase << ',' << phase_fraction << ','
+                            << surface << ','
+                            << cfg_.phase_surface_flux.positions[surface] << ','
+                            << direction_name << ',' << bin << ','
+                            << (static_cast<double>(bin) + 0.5) * bin_width << ','
+                            << value.represented_histogram[bin] << ','
+                            << (value.represented_crossings > 0.0
+                                    ? value.represented_histogram[bin] /
+                                          value.represented_crossings /
+                                          bin_width
+                                    : 0.0)
+                            << '\n';
+                    }
+                    summary << phase << ',' << phase_fraction << ',' << surface
+                        << ',' << cfg_.phase_surface_flux.positions[surface]
+                        << ',' << direction_name << ',' << value.macro_crossings
+                        << ',' << value.overflow_macro_crossings << ','
+                        << value.represented_crossings << ','
+                        << (value.represented_crossings > 0.0
+                                ? value.overflow_represented_crossings /
+                                      value.represented_crossings
+                                : 0.0)
+                        << ',' << value.represented_crossings / phase_duration
+                        << ',' << value.represented_kinetic_energy /
+                                      phase_duration
+                        << '\n';
+                }
+            }
+        }
+        require_stream(histogram,
+            "failed while writing phase surface-flux histogram");
+        require_stream(summary,
+            "failed while writing phase surface-flux summary");
+    }
+
     const auto expected =
         expected_spatial_average_samples();
     const bool complete =
@@ -2202,7 +2437,7 @@ void Simulation::write_spatial_average() const {
     }
     metadata << std::setprecision(17)
              << "{\n"
-             << "  \"spatial_average_version\": 6,\n"
+             << "  \"spatial_average_version\": 7,\n"
              << "  \"reset_on_restart\": "
              << (cfg_.spatial_average.reset_on_restart
                      ? "true" : "false")
@@ -2258,6 +2493,24 @@ void Simulation::write_spatial_average() const {
              << cfg_.phase_eedf.energy_bins << ",\n"
              << "  \"phase_eedf_energy_max\": "
              << cfg_.phase_eedf.energy_max << ",\n"
+             << "  \"phase_surface_flux_enabled\": "
+             << (cfg_.phase_surface_flux.enabled ? "true" : "false") << ",\n"
+             << "  \"phase_surface_flux_reset_on_restart\": "
+             << (cfg_.phase_surface_flux.reset_on_restart ? "true" : "false")
+             << ",\n"
+             << "  \"phase_surface_flux_species\": "
+             << json_string(cfg_.phase_surface_flux.species) << ",\n"
+             << "  \"phase_surface_flux_energy_bins\": "
+             << cfg_.phase_surface_flux.energy_bins << ",\n"
+             << "  \"phase_surface_flux_energy_max\": "
+             << cfg_.phase_surface_flux.energy_max << ",\n"
+             << "  \"phase_surface_flux_positions\": [";
+    for (std::size_t surface = 0;
+         surface < cfg_.phase_surface_flux.positions.size(); ++surface) {
+        if (surface != 0) metadata << ", ";
+        metadata << cfg_.phase_surface_flux.positions[surface];
+    }
+    metadata << "],\n"
              << "  \"complete\": "
              << (complete ? "true" : "false") << ",\n"
              << "  \"effective_kinetic_temperature_definition\": "
@@ -2286,7 +2539,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV16 << '\n';
+    out << kCheckpointMagicV17 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -2535,6 +2788,41 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             out << "\n";
         }
     }
+    out << "phase_surface_flux "
+        << (cfg_.phase_surface_flux.enabled ? 1 : 0) << ' '
+        << (cfg_.phase_surface_flux.species.empty()
+                ? "-" : cfg_.phase_surface_flux.species) << ' '
+        << cfg_.phase_surface_flux.energy_bins << ' '
+        << cfg_.phase_surface_flux.energy_max << ' '
+        << phase_surface_flux_accumulators_.size() << ' '
+        << cfg_.phase_surface_flux.positions.size() << "\n";
+    for (std::size_t surface = 0;
+         surface < cfg_.phase_surface_flux.positions.size(); ++surface) {
+        out << "phase_surface_flux_position " << surface << ' '
+            << cfg_.phase_surface_flux.positions[surface] << "\n";
+    }
+    for (std::size_t phase = 0;
+         phase < phase_surface_flux_accumulators_.size(); ++phase) {
+        for (std::size_t surface = 0;
+             surface < phase_surface_flux_accumulators_[phase].size();
+             ++surface) {
+            for (std::size_t direction = 0; direction < 2; ++direction) {
+                const auto& value =
+                    phase_surface_flux_accumulators_[phase][surface][direction];
+                out << "phase_surface_flux_accumulator " << phase << ' '
+                    << surface << ' ' << direction << ' '
+                    << value.macro_crossings << ' '
+                    << value.overflow_macro_crossings << ' '
+                    << value.represented_crossings << ' '
+                    << value.overflow_represented_crossings << ' '
+                    << value.represented_kinetic_energy;
+                for (const double count : value.represented_histogram) {
+                    out << ' ' << count;
+                }
+                out << "\n";
+            }
+        }
+    }
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -2569,7 +2857,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v16 = magic == kCheckpointMagicV16;
+    const bool checkpoint_v17 = magic == kCheckpointMagicV17;
+    const bool checkpoint_v16 =
+        magic == kCheckpointMagicV16 || checkpoint_v17;
     const bool checkpoint_v15 =
         magic == kCheckpointMagicV15 || checkpoint_v16;
     const bool checkpoint_v14 =
@@ -3588,6 +3878,105 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         } else if (!reset && cfg_.phase_eedf.enabled && stored_samples != 0) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore phase EEDF state");
+        }
+        if (checkpoint_v17) {
+            int stored_enabled = 0;
+            std::string stored_species;
+            std::size_t stored_bins = 0;
+            double stored_max = 0.0;
+            std::size_t stored_phases = 0;
+            std::size_t stored_surfaces = 0;
+            in >> stored_enabled >> stored_species >> stored_bins >> stored_max >>
+                stored_phases >> stored_surfaces;
+            const bool enabled_shape = stored_enabled == 1;
+            const bool shape_valid =
+                (stored_enabled == 0 || stored_enabled == 1) &&
+                std::isfinite(stored_max) && stored_max >= 0.0 &&
+                stored_phases == (enabled_shape ? stored_phase_count : 0) &&
+                (!enabled_shape || (stored_bins > 0 && stored_max > 0.0 &&
+                                    stored_surfaces > 0));
+            const auto& configured = cfg_.phase_surface_flux;
+            const bool contract_matches =
+                stored_enabled == (configured.enabled ? 1 : 0) &&
+                stored_species ==
+                    (configured.species.empty() ? "-" : configured.species) &&
+                stored_bins == configured.energy_bins &&
+                stored_max == configured.energy_max &&
+                stored_phases == phase_surface_flux_accumulators_.size() &&
+                stored_surfaces == configured.positions.size();
+            if (key != "phase_surface_flux" || !shape_valid ||
+                (!configured.reset_on_restart && !contract_matches)) {
+                throw std::runtime_error(
+                    "checkpoint phase surface-flux contract is invalid");
+            }
+            std::vector<double> stored_positions(stored_surfaces);
+            for (std::size_t surface = 0; surface < stored_surfaces; ++surface) {
+                std::size_t stored_surface = 0;
+                in >> key >> stored_surface >> stored_positions[surface];
+                if (key != "phase_surface_flux_position" ||
+                    stored_surface != surface ||
+                    !std::isfinite(stored_positions[surface]) ||
+                    (!configured.reset_on_restart &&
+                     stored_positions[surface] != configured.positions[surface])) {
+                    throw std::runtime_error(
+                        "checkpoint phase surface-flux position is invalid");
+                }
+            }
+            for (std::size_t phase = 0; phase < stored_phases; ++phase) {
+                for (std::size_t surface = 0;
+                     surface < stored_surfaces; ++surface) {
+                    for (std::size_t direction = 0; direction < 2; ++direction) {
+                        std::size_t stored_phase = 0;
+                        std::size_t stored_surface = 0;
+                        std::size_t stored_direction = 0;
+                        PhaseSurfaceFluxAccumulator1D value;
+                        in >> key >> stored_phase >> stored_surface >>
+                            stored_direction >> value.macro_crossings >>
+                            value.overflow_macro_crossings >>
+                            value.represented_crossings >>
+                            value.overflow_represented_crossings >>
+                            value.represented_kinetic_energy;
+                        value.represented_histogram.resize(stored_bins);
+                        for (auto& count : value.represented_histogram) {
+                            in >> count;
+                        }
+                        const bool finite =
+                            std::isfinite(value.represented_crossings) &&
+                            std::isfinite(value.overflow_represented_crossings) &&
+                            std::isfinite(value.represented_kinetic_energy) &&
+                            std::all_of(
+                                value.represented_histogram.begin(),
+                                value.represented_histogram.end(),
+                                [](double count) {
+                                    return std::isfinite(count) && count >= 0.0;
+                                });
+                        if (key != "phase_surface_flux_accumulator" ||
+                            stored_phase != phase ||
+                            stored_surface != surface ||
+                            stored_direction != direction || !finite ||
+                            value.overflow_macro_crossings >
+                                value.macro_crossings ||
+                            value.represented_crossings < 0.0 ||
+                            value.overflow_represented_crossings < 0.0 ||
+                            value.overflow_represented_crossings >
+                                value.represented_crossings ||
+                            value.represented_kinetic_energy < 0.0) {
+                            throw std::runtime_error(
+                                "checkpoint phase surface-flux accumulator is invalid");
+                        }
+                        if (!configured.reset_on_restart) {
+                            phase_surface_flux_accumulators_[phase]
+                                [surface][direction] = std::move(value);
+                        }
+                    }
+                }
+            }
+            in >> key;
+        } else if (cfg_.phase_surface_flux.enabled &&
+                   !cfg_.phase_surface_flux.reset_on_restart &&
+                   stored_samples != 0) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore phase surface-flux state");
         }
         if (reset) {
             spatial_moment_samples_ = 0;

@@ -234,6 +234,15 @@ struct PhaseEedf1DConfig {
     std::vector<PhaseEedfRegion1DConfig> regions{};
 };
 
+struct PhaseSurfaceFlux1DConfig {
+    bool enabled{false};
+    bool reset_on_restart{false};
+    std::string species{};
+    std::vector<double> positions{};
+    std::size_t energy_bins{0};
+    double energy_max{0.0};
+};
+
 struct WallImpactSpectrum1DConfig {
     bool enabled{false};
     bool reset_on_restart{false};
@@ -251,6 +260,7 @@ struct Config {
     std::size_t output_interval{10};
     SpatialAverage1DConfig spatial_average{};
     PhaseEedf1DConfig phase_eedf{};
+    PhaseSurfaceFlux1DConfig phase_surface_flux{};
     WallImpactSpectrum1DConfig wall_impact_spectrum{};
     Boundary boundary{Boundary::Periodic};
     RunMode mode{RunMode::Transient};

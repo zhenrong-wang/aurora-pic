@@ -3896,8 +3896,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v16\n") == 0,
-                "1D wall-impact checkpoint did not use v16");
+                    "AuroraPIC-checkpoint-v17\n") == 0,
+                "1D wall-impact checkpoint did not use v17");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -3995,6 +3995,7 @@ int main() {
                         line.starts_with("phase_species") ||
                         line.starts_with("spatial_collision") ||
                         line.starts_with("phase_eedf") ||
+                        line.starts_with("phase_surface_flux") ||
                         line.starts_with("wall_impact") ||
                         line.starts_with("phase_fields")) {
                         continue;
@@ -4065,6 +4066,7 @@ int main() {
                         line.starts_with("phase_species") ||
                         line.starts_with("spatial_collision") ||
                         line.starts_with("phase_eedf") ||
+                        line.starts_with("phase_surface_flux") ||
                         line.starts_with("wall_impact") ||
                         line.starts_with("phase_fields")) {
                         continue;
@@ -4449,7 +4451,7 @@ int main() {
             }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v16\n") == 0,
+                    "AuroraPIC-checkpoint-v17\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4505,6 +4507,158 @@ int main() {
             std::filesystem::remove(table_path);
         }
         {
+            const auto output_dir = std::filesystem::path(
+                "test_output_phase_surface_flux");
+            const auto checkpoint_path = output_dir / "split.apc";
+            std::filesystem::remove_all(output_dir);
+            pic::Config cfg;
+            cfg.nx = 16;
+            cfg.length = 1.0;
+            cfg.dt = 0.1;
+            cfg.steps = 4;
+            cfg.output_interval = 4;
+            cfg.output_dir = output_dir.string();
+            cfg.boundary = pic::Boundary::Dirichlet;
+            cfg.spatial_average.enabled = true;
+            cfg.spatial_average.interval = 1;
+            cfg.spatial_average.start_step = 1;
+            cfg.spatial_average.end_step = 4;
+            cfg.spatial_average.rf_frequency = 2.5;
+            cfg.spatial_average.rf_cycles = 1;
+            cfg.spatial_average.phase_bins = 2;
+            cfg.phase_surface_flux.enabled = true;
+            cfg.phase_surface_flux.species = "tracers";
+            cfg.phase_surface_flux.positions = {0.5};
+            cfg.phase_surface_flux.energy_bins = 4;
+            cfg.phase_surface_flux.energy_max = 2.0;
+            pic::SpeciesConfig tracer;
+            tracer.name = "tracers";
+            tracer.charge = 0.0;
+            tracer.mass = 1.0;
+            tracer.weight = 2.0;
+            tracer.particles = 32;
+            tracer.drift_velocity = 1.0;
+            tracer.thermal_velocity = 0.0;
+            tracer.init_x_min = 0.1;
+            tracer.init_x_max = 0.2;
+            cfg.species = {tracer};
+
+            pic::Simulation continuous(cfg);
+            continuous.initialize();
+            continuous.step();
+            continuous.step();
+            continuous.save_checkpoint(checkpoint_path);
+            continuous.step();
+            continuous.step();
+            pic::Simulation restarted(cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            restarted.step();
+            restarted.step();
+            const auto& flux = continuous.phase_surface_flux_accumulators();
+            const auto& restarted_flux =
+                restarted.phase_surface_flux_accumulators();
+            require(flux.size() == 2 && flux[0].size() == 1 &&
+                    flux[0][0].size() == 2,
+                    "phase surface-flux accumulator shape is wrong");
+            std::uint64_t right_crossings = 0;
+            std::uint64_t left_crossings = 0;
+            double represented_crossings = 0.0;
+            for (std::size_t phase = 0; phase < flux.size(); ++phase) {
+                right_crossings += flux[phase][0][0].macro_crossings;
+                left_crossings += flux[phase][0][1].macro_crossings;
+                represented_crossings +=
+                    flux[phase][0][0].represented_crossings;
+                for (std::size_t direction = 0; direction < 2; ++direction) {
+                    const auto& expected = flux[phase][0][direction];
+                    const auto& actual = restarted_flux[phase][0][direction];
+                    require(expected.macro_crossings == actual.macro_crossings &&
+                            expected.overflow_macro_crossings ==
+                                actual.overflow_macro_crossings,
+                            "restart lost phase surface-flux integer state");
+                    require_near(actual.represented_crossings,
+                                 expected.represented_crossings, 1e-12,
+                                 "restart lost represented surface crossings");
+                    require_near(actual.represented_kinetic_energy,
+                                 expected.represented_kinetic_energy, 1e-12,
+                                 "restart lost surface-crossing energy");
+                    require_vector_near(actual.represented_histogram,
+                                        expected.represented_histogram, 1e-12,
+                                        "restart lost surface-flux histogram");
+                    const double binned = std::accumulate(
+                        expected.represented_histogram.begin(),
+                        expected.represented_histogram.end(), 0.0);
+                    require_near(
+                        binned + expected.overflow_represented_crossings,
+                        expected.represented_crossings, 1e-12,
+                        "surface-flux histogram does not close");
+                }
+            }
+            require(right_crossings == 32 && left_crossings == 0 &&
+                    represented_crossings == 64.0,
+                    "phase surface-flux crossing ledger is wrong");
+
+            pic::Simulation output_simulation(cfg);
+            (void)output_simulation.run();
+            const auto histogram = read_file_text(
+                output_dir / "phase_surface_flux.csv");
+            const auto summary = read_file_text(
+                output_dir / "phase_surface_flux_summary.csv");
+            require(count_lines(histogram) == 2 * 1 * 2 * 4 + 1 &&
+                    count_lines(summary) == 2 * 1 * 2 + 1,
+                    "phase surface-flux CSV shape is wrong");
+            require(summary.find("left_to_right") != std::string::npos &&
+                    summary.find("right_to_left") != std::string::npos,
+                    "phase surface-flux output lost direction labels");
+
+            auto mismatched = cfg;
+            mismatched.phase_surface_flux.positions = {0.4, 0.6};
+            bool rejected_mismatch = false;
+            try {
+                pic::Simulation simulation(mismatched);
+                simulation.load_checkpoint(checkpoint_path);
+            } catch (const std::exception&) {
+                rejected_mismatch = true;
+            }
+            require(rejected_mismatch,
+                    "phase surface flux accepted a changed restart contract");
+            mismatched.phase_surface_flux.reset_on_restart = true;
+            pic::Simulation reset_surface_flux(mismatched);
+            reset_surface_flux.load_checkpoint(checkpoint_path);
+            for (const auto& phase :
+                 reset_surface_flux.phase_surface_flux_accumulators()) {
+                for (const auto& surface : phase) {
+                    for (const auto& direction : surface) {
+                        require(direction.macro_crossings == 0 &&
+                                direction.represented_crossings == 0.0,
+                                "surface-flux restart reset retained samples");
+                    }
+                }
+            }
+
+            auto invalid = cfg;
+            invalid.boundary = pic::Boundary::Periodic;
+            bool rejected_periodic = false;
+            try {
+                pic::Simulation simulation(invalid);
+            } catch (const std::exception&) {
+                rejected_periodic = true;
+            }
+            require(rejected_periodic,
+                    "phase surface flux accepted a periodic boundary");
+            std::filesystem::remove_all(output_dir);
+        }
+        {
+            const auto surface_flux = pic::load_config(
+                (std::filesystem::path(AURORA_TEST_SOURCE_DIR) /
+                 "examples" / "phase_surface_flux_1d.cfg").string());
+            require(surface_flux.phase_surface_flux.enabled &&
+                    surface_flux.phase_surface_flux.species == "electrons" &&
+                    surface_flux.phase_surface_flux.positions ==
+                        std::vector<double>({0.2, 0.6}) &&
+                    surface_flux.phase_surface_flux.energy_bins == 40 &&
+                    surface_flux.phase_surface_flux.energy_max == 20.0,
+                    "phase surface-flux example did not parse correctly");
+
             const auto parsed =
                 pic::load_config(
                     (std::filesystem::path(
