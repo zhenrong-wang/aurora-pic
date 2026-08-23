@@ -2538,8 +2538,40 @@ transport signal at these declared tolerances. It also reveals that the
 broader phase-window difference is appreciably more grid-sensitive and should
 not be described as fully mesh independent. This comparison holds total
 particle count fixed, so the next direct-transport discriminator is the
-already motivated same-grid particle-count refinement; neither this result nor
-that follow-up establishes asymptotic spatial order by itself.
+same-grid particle-count refinement; neither result establishes asymptotic
+spatial order by itself.
+
+### Direct-transport particle-count sensitivity
+
+The fixed-799-node particle refinement was prospectively locked in the
+[`particle rule`](../benchmarks/ccp/edupic-argon-surface-flux-particle-rule-20260823.json).
+It reuses the completed standard-particle surface branch and continues the
+previously equilibrated doubled-particle state for two fresh measurement
+cycles. Halving macro weight from `7e8` to `3.5e8` doubles represented phase-
+space sampling. The doubled branch completed serially in `436.22 s`, peaked at
+`220704 KiB` RSS and `488227` live macroparticles, and passed every declared
+surface, histogram, crossing-count, field, particle, and resource gate. Its
+immutable report is the
+[`doubled-particle branch`](../benchmarks/ccp/edupic-argon-surface-flux-particle-double-20260823.json).
+
+The checksum-bound
+[`paired particle result`](../benchmarks/ccp/edupic-argon-surface-flux-particle-result-20260823.json)
+passes all five prospective physics gates. Doubling particle count changes the
+direct `0.125--0.5` transport from `24.40` to `25.57 W/m2`, or `4.57%`
+against a `20%` limit. Exceptional `0.375--0.5` transport changes from
+`113.55` to `119.28 W/m2`, or `4.80%` against a `15%` limit, while its
+approximate above-15.8-eV component changes from `20.27` to `20.93 W/m2`, or
+`3.14%` against a `25%` limit. Direct-versus-inferred closure errors are
+`1.80%`/`1.65%` in the broad window and `0.64%`/`0.20%` in the exceptional
+octant; neither spectrum overflows its 80 eV range.
+
+Ordinary macroparticle-count sensitivity is therefore not a material
+explanation of the direct transport finding at these declared tolerances.
+The doubled particles originated from a split state and were collisionally
+decorrelated during the preceding paired equilibration, so this is stronger
+than an immediate duplicated-sample comparison but weaker than an independent-
+seed ensemble. It is not proof of asymptotic particle convergence, cross-code
+flux agreement, or experimental validation.
 
 ## Bounded execution ladder
 

@@ -1,0 +1,80 @@
+{
+  "all_gates_passed": true,
+  "assessment": {
+    "exceptional_transport_particle_stable": true,
+    "ionizing_tail_particle_stable": true,
+    "ordinary_particle_count_sensitivity_constrained": true
+  },
+  "baseline": {
+    "critical_phase_0p125_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -8.190953724507217,
+      "direct_outward_energy_flux_divergence_W_m-2": 24.403799879981406,
+      "inferred_outward_energy_flux_divergence_W_m-2": 24.85136063772606,
+      "relative_closure_error": 0.018009507176247972
+    },
+    "exceptional_phase_0p375_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 20.271317800003523,
+      "direct_outward_energy_flux_divergence_W_m-2": 113.55256276446673,
+      "inferred_outward_energy_flux_divergence_W_m-2": 112.82531301214036,
+      "relative_closure_error": 0.0064045208194450885
+    },
+    "maximum_surface_overflow_fraction": 0.0,
+    "nodes": 799
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "A passing fixed-grid 2x macro-particle continuation constrains ordinary particle-count sensitivity. Initially split particles were collisionally decorrelated in the prior paired equilibration, but this is not an independent-seed ensemble, asymptotic particle convergence, cross-code flux validation, or experimental validation.",
+  "double_particles": {
+    "critical_phase_0p125_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -7.71444075872947,
+      "direct_outward_energy_flux_divergence_W_m-2": 25.572095950436207,
+      "inferred_outward_energy_flux_divergence_W_m-2": 26.001136847518264,
+      "relative_closure_error": 0.016500851466539162
+    },
+    "exceptional_phase_0p375_to_0p5": {
+      "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 20.928297378352415,
+      "direct_outward_energy_flux_divergence_W_m-2": 119.27616718023734,
+      "inferred_outward_energy_flux_divergence_W_m-2": 119.51372384508815,
+      "relative_closure_error": 0.0019876936071269217
+    },
+    "maximum_surface_overflow_fraction": 0.0,
+    "nodes": 799
+  },
+  "gates": {
+    "critical_phase_closure": true,
+    "critical_phase_direct_flux": true,
+    "exceptional_octant_closure": true,
+    "exceptional_octant_direct_flux": true,
+    "exceptional_octant_tail_flux": true
+  },
+  "interpretation": "Ordinary macro-particle-count sensitivity is not a material explanation of the direct transport result at the declared tolerances.",
+  "metrics": {
+    "baseline_critical_phase_closure_error": 0.018009507176247972,
+    "baseline_exceptional_octant_closure_error": 0.0064045208194450885,
+    "critical_phase_direct_flux_relative_change": 0.045686363476783065,
+    "exceptional_octant_direct_flux_relative_change": 0.04798615306879968,
+    "exceptional_octant_tail_flux_relative_change": 0.031391926752171034,
+    "refined_critical_phase_closure_error": 0.016500851466539162,
+    "refined_exceptional_octant_closure_error": 0.0019876936071269217
+  },
+  "particle_refinement": {
+    "baseline_macro_weight": 700000000.0,
+    "double_particles_macro_weight": 350000000.0,
+    "nodes_each_branch": 799,
+    "ratio": 2.0
+  },
+  "provenance": {
+    "analyzer_sha256": "be04255740afee09aa9fe02490b7f265eff755c0953199fd10449f9cca44f1fd",
+    "baseline_branch_report_sha256": "648318d2862b68603a454bc5a6941ec110c93c046828ceed5f555a734c3360be",
+    "double_particles_branch_report_sha256": "d33d1b3d6a335f872e2617302217742ae8c84a01b6f77f0289edac78e3bedf19",
+    "rule_sha256": "7fd0cf0eeb432b12a9a63d446b12c6e9e24ca0b03bd40f9a8cbc28e08841d2d7"
+  },
+  "schema_version": 1,
+  "scope": "prospective_surface_transport_particle_refinement_result",
+  "thresholds": {
+    "maximum_critical_phase_closure_error_each_branch": 0.1,
+    "maximum_critical_phase_direct_flux_relative_change": 0.2,
+    "maximum_exceptional_octant_closure_error_each_branch": 0.06,
+    "maximum_exceptional_octant_direct_flux_relative_change": 0.15,
+    "maximum_exceptional_octant_tail_flux_relative_change": 0.25
+  }
+}

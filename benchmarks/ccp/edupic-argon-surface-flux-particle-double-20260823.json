@@ -1,0 +1,69 @@
+{
+  "all_gates_passed": true,
+  "branch": "double_particles",
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "A passing fixed-grid 2x macro-particle continuation constrains ordinary particle-count sensitivity. Initially split particles were collisionally decorrelated in the prior paired equilibration, but this is not an independent-seed ensemble, asymptotic particle convergence, cross-code flux validation, or experimental validation.",
+  "final_checkpoint_sha256": "aab970058bf3329518a24ef0b035b5b386024a318e76c8437250fb83f21e5b12",
+  "gates": {
+    "absolute_field": true,
+    "measurement_window": true,
+    "particle_cap": true,
+    "resident_memory": true,
+    "surface_flux_contract": true,
+    "surface_flux_crossing_sufficiency": true,
+    "surface_flux_finite": true,
+    "surface_flux_histogram_closure": true,
+    "surface_flux_shape": true
+  },
+  "inputs": {
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "deck_sha256": "b16c75cdae705e9aceb884b63157c0236c7f8c521c3e04c3f0fc3dd772363c39",
+    "input_checkpoint_sha256": "59fbf3d679f97ccffe6fa7456f11aae9edcc65c8ef58aa052031c0bcba8227d7",
+    "prior_branch_report_sha256": "422fca2dc88c1632eaf1480e845549a47d5f2300e42aaa92f22cd21a30ea0842",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "numerics": {
+    "cells": 798,
+    "end_step": 32000,
+    "nodes": 799,
+    "start_step": 24000
+  },
+  "output_hashes": {
+    "phase_eedf.csv": "fa45258437734cbc92b26d16053a6dbc11d278ecc94b8a1e14dfb306dbf544b1",
+    "phase_eedf_moments.csv": "3811e81ad13cfaf026a5e27d0c3479bf68f2b72535be3e1d74ffb29e4dc4bdf6",
+    "phase_surface_flux.csv": "87aa1f2a80727acc6c0a372dab32f3fe39d534dbd3a10ac9d17778c0ffeb1e4a",
+    "phase_surface_flux_summary.csv": "3720c3ab26ac2c6000bbe44725f44e357b8c36ed46eb3000bdea2bdaa2686a52",
+    "scalars.csv": "449d48426018aed9e671a68ac4713b25c09b4ff379218b4c577f4c9d48f1809a",
+    "spatial_average_metadata.json": "0f092a6064712dd4ae60fb9c69838ecb0c4aeef8b265e1add344cf9771a0c75f",
+    "spatial_phase_collision_power.csv": "cfb991f971ab6cc9ce0b4ddeff68bb110b31fa0ef9f4f26736289cbdbff2af3e",
+    "spatial_phase_fields.csv": "e71082a4cb6dbe00e916123f962ad44418823d0f2fdb442a98c4dba6371765a6",
+    "spatial_phase_moments.csv": "131f843ef6bf19ec9e2aa9613b74e298b94984498af7ce0bfa8c09519436f794"
+  },
+  "physics_claim": "paired_surface_transport_particle_sensitivity_only",
+  "resources": {
+    "available_disk_before_launch_kib": 21141720,
+    "available_memory_before_launch_kib": 5933476,
+    "peak_resident_set_kib": 220704,
+    "wall_seconds": 436.2166552830022
+  },
+  "rule_sha256": "7fd0cf0eeb432b12a9a63d446b12c6e9e24ca0b03bd40f9a8cbc28e08841d2d7",
+  "safety": {
+    "maximum_live_particles": 488227,
+    "maximum_sampled_absolute_field_V_m": 66637.06053567713
+  },
+  "schema_version": 1,
+  "scope": "surface_flux_particle_refinement_branch",
+  "surface_flux": {
+    "contract": true,
+    "crossing_sufficiency": true,
+    "finite": true,
+    "histogram_closure": true,
+    "histogram_rows": 256000,
+    "shape": true,
+    "summary_rows": 800,
+    "total_macro_crossings_per_surface": [
+      117251,
+      1022060
+    ]
+  }
+}
