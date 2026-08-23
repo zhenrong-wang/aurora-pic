@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_checkpoint_continuation_surface_flux_particle_refinement",
+  "axis": "surface_flux_particles_2x_on_799_nodes",
+  "question": "Is the directly measured interior electron-energy transport stable when macro-particle count is doubled at fixed 799-node grid and represented phase space?",
+  "fixed_inputs": {
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 799,
+    "cells": 798,
+    "length_m": 0.025,
+    "timestep_s": 1.8436578171091445e-11,
+    "steps_per_rf_cycle": 4000,
+    "start_step": 24000,
+    "end_step": 32000,
+    "measurement_cycles": 2
+  },
+  "paired_baseline": {
+    "macro_weight": 700000000.0,
+    "surface_branch_report_sha256": "648318d2862b68603a454bc5a6941ec110c93c046828ceed5f555a734c3360be",
+    "surface_output_root": "tmp/edupic-argon-surface-flux-mesh-refined-20260822/output"
+  },
+  "branches": {
+    "double_particles": {
+      "nodes": 799,
+      "cells": 798,
+      "macro_weight": 350000000.0,
+      "electrons": 238898,
+      "ions": 249890,
+      "particle_refinement_ratio": 2,
+      "input_checkpoint_sha256": "59fbf3d679f97ccffe6fa7456f11aae9edcc65c8ef58aa052031c0bcba8227d7",
+      "prior_branch_report_sha256": "422fca2dc88c1632eaf1480e845549a47d5f2300e42aaa92f22cd21a30ea0842",
+      "timeout_seconds": 900
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 2097152,
+    "minimum_available_disk_kib": 10485760,
+    "maximum_peak_resident_set_kib": 524288,
+    "maximum_total_particles": 1000000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "stop_after_refined_branch": true
+  },
+  "diagnostic_contract": {
+    "spatial_sampling_order": "pre_collision",
+    "spatial_average_interval_steps": 1,
+    "phase_bins": 200,
+    "phase_eedf_energy_bins": 320,
+    "phase_eedf_energy_max_eV": 80.0,
+    "phase_eedf_regions": "full_gap:0:0.025",
+    "surface_flux_species": "electrons",
+    "surface_positions_m": [0.005, 0.015],
+    "surface_energy_bins": 320,
+    "surface_energy_max_eV": 80.0,
+    "minimum_total_macro_crossings_per_surface": 50000,
+    "reset_on_restart": true
+  },
+  "prospective_acceptance": {
+    "maximum_critical_phase_direct_flux_relative_change": 0.20,
+    "maximum_exceptional_octant_direct_flux_relative_change": 0.15,
+    "maximum_exceptional_octant_tail_flux_relative_change": 0.25,
+    "maximum_critical_phase_closure_error_each_branch": 0.10,
+    "maximum_exceptional_octant_closure_error_each_branch": 0.06,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "Ordinary macro-particle-count sensitivity is not a material explanation of the direct transport result at the declared tolerances.",
+    "fail": "The direct transport result is particle-count-sensitive or under-sampled at a declared tolerance; further decorrelation, longer sampling, or refinement is required.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Reuse the completed 799-node standard-particle surface branch and run only the doubled-particle checkpoint continuation for two fresh cycles on one inherited CPU at nice +10.",
+  "branch_scope": "surface_flux_particle_refinement_branch",
+  "claim_boundary": "A passing fixed-grid 2x macro-particle continuation constrains ordinary particle-count sensitivity. Initially split particles were collisionally decorrelated in the prior paired equilibration, but this is not an independent-seed ensemble, asymptotic particle convergence, cross-code flux validation, or experimental validation.",
+  "physics_claim": "paired_surface_transport_particle_sensitivity_only"
+}

@@ -15,10 +15,13 @@ from run_aurorapic_edupic_pilot import (
     run_process, set_global, sha256, table,
 )
 from run_aurorapic_ionizing_tail_block import analyze_surface_flux
+from run_aurorapic_initialization_ab import set_species_value
 
 
-RULE_SHA256 = (
-    "4bea77b968db89ca6a2e066a599d3e85b99c480de2f0cb6e56b12bdaeb891f54")
+APPROVED_RULE_SHA256S = {
+    "4bea77b968db89ca6a2e066a599d3e85b99c480de2f0cb6e56b12bdaeb891f54",
+    "7fd0cf0eeb432b12a9a63d446b12c6e9e24ca0b03bd40f9a8cbc28e08841d2d7",
+}
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_SURFACE_FLUX_MESH_RUN"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
 
@@ -50,6 +53,12 @@ def build_deck(base: str, output: Path, checkpoint: Path,
     result = base
     for key, value in values.items():
         result = set_global(result, key, str(value))
+    if "macro_weight" in configured:
+        for species in ("electrons", "ions"):
+            result = set_species_value(
+                result, species, "weight", configured["macro_weight"])
+            result = set_species_value(
+                result, species, "particles", configured[species])
     additions = {
         "spatial_average_reset_on_restart": "true",
         "spatial_average_sampling_order": diagnostic[
@@ -81,7 +90,8 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise MeshRunError("mesh continuation cost was not acknowledged")
     rule_path = args.rule.resolve()
-    if sha256(rule_path) != RULE_SHA256:
+    rule_sha256 = sha256(rule_path)
+    if rule_sha256 not in APPROVED_RULE_SHA256S:
         raise MeshRunError("surface-flux mesh rule differs")
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     if args.branch not in rule["branches"]:
@@ -169,9 +179,10 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     report = {
         "schema_version": 1,
         "case_id": rule["case_id"],
-        "scope": "surface_flux_mesh_refinement_branch",
+        "scope": rule.get(
+            "branch_scope", "surface_flux_mesh_refinement_branch"),
         "branch": args.branch,
-        "rule_sha256": RULE_SHA256,
+        "rule_sha256": rule_sha256,
         "inputs": {
             "solver_sha256": sha256(args.executable.resolve()),
             "base_deck_sha256": sha256(args.base_deck.resolve()),

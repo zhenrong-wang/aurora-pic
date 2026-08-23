@@ -28,6 +28,18 @@ def main() -> None:
     ):
         assert expected in deck, expected
 
+    particle_rule = json.loads(Path(
+        "benchmarks/ccp/"
+        "edupic-argon-surface-flux-particle-rule-20260823.json"
+    ).read_text(encoding="utf-8"))
+    particle_deck = build_deck(
+        base, Path("particle-output"), Path("particle-checkpoint.apc"),
+        particle_rule, "double_particles")
+    assert "nx = 799" in particle_deck
+    assert particle_deck.count("weight = 350000000.0") == 2
+    assert "particles = 238898" in particle_deck
+    assert "particles = 249890" in particle_deck
+
 
 if __name__ == "__main__":
     main()
