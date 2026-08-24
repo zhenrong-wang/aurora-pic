@@ -218,6 +218,7 @@ config_version = 1
 units = si
 dimension = 1
 velocity_dimensions = 3
+collision_velocity_sampling = leapfrog_half_step
 nx = {numerics.getint('nodes')}
 length = {physics.getfloat('length_m'):.17g}
 dt = {dt:.17g}

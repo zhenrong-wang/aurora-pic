@@ -826,10 +826,17 @@ std::uint64_t Simulation::collision_signature() const {
 }
 
 std::string Simulation::collision_identity() const {
+    std::string identity;
     if (!cfg_.collision_models.empty()) {
-        return "named_null_collision";
+        identity = "named_null_collision";
+    } else {
+        identity = to_string(cfg_.collisions.model);
     }
-    return to_string(cfg_.collisions.model);
+    if (cfg_.collision_velocity_sampling ==
+        CollisionVelocitySampling1D::LeapfrogHalfStep) {
+        identity += "@leapfrog_half_step";
+    }
+    return identity;
 }
 
 double Simulation::electrode_potential(
@@ -947,6 +954,35 @@ void Simulation::initialize() {
 }
 
 void Simulation::apply_collisions() {
+    const auto collision_velocity = [&](const Particle& particle) {
+        return Vec3{
+            cfg_.collision_velocity_sampling ==
+                    CollisionVelocitySampling1D::LeapfrogHalfStep
+                ? particle.v_half
+                : particle.v,
+            particle.velocity_y,
+            particle.velocity_z};
+    };
+    const auto store_collision_velocity = [this](
+        Particle& particle, const Vec3& velocity,
+        double charge_to_mass, double timestep) {
+        particle.velocity_y = velocity.y;
+        particle.velocity_z = velocity.z;
+        if (cfg_.collision_velocity_sampling ==
+            CollisionVelocitySampling1D::LeapfrogHalfStep) {
+            particle.v_half = velocity.x;
+            synchronize_leapfrog(
+                particle,
+                interpolate_electric(grid_, particle.x),
+                charge_to_mass, timestep);
+        } else {
+            particle.v = velocity.x;
+            initialize_leapfrog_half_step(
+                particle,
+                interpolate_electric(grid_, particle.x),
+                charge_to_mass, timestep);
+        }
+    };
     if (legacy_bgk_enabled_ &&
         cfg_.collisions.frequency > 0.0) {
         for (std::size_t species_id = 0;
@@ -969,19 +1005,18 @@ void Simulation::apply_collisions() {
                     unit(rng_) >= probability) {
                     continue;
                 }
+                Vec3 velocity = collision_velocity(particle);
                 const double energy_before = 0.5 * species.mass() *
                     species.weight() *
-                    (particle.v * particle.v +
+                    (velocity.x * velocity.x +
                      (cfg_.velocity_dimensions == 3
-                          ? particle.velocity_y * particle.velocity_y +
-                            particle.velocity_z * particle.velocity_z
+                          ? velocity.y * velocity.y +
+                            velocity.z * velocity.z
                           : 0.0));
-                particle.v = neutral_velocity(rng_);
+                velocity.x = neutral_velocity(rng_);
                 if (cfg_.velocity_dimensions == 3) {
-                    particle.velocity_y =
-                        neutral_velocity(rng_);
-                    particle.velocity_z =
-                        neutral_velocity(rng_);
+                    velocity.y = neutral_velocity(rng_);
+                    velocity.z = neutral_velocity(rng_);
                 }
                 ++collision_totals_.candidates;
                 ++collision_totals_.channel_collisions[0];
@@ -991,21 +1026,18 @@ void Simulation::apply_collisions() {
                     particle.x, 0, species.weight());
                 const double energy_after = 0.5 * species.mass() *
                     species.weight() *
-                    (particle.v * particle.v +
+                    (velocity.x * velocity.x +
                      (cfg_.velocity_dimensions == 3
-                          ? particle.velocity_y * particle.velocity_y +
-                            particle.velocity_z * particle.velocity_z
+                          ? velocity.y * velocity.y +
+                            velocity.z * velocity.z
                           : 0.0));
                 const double energy_change = energy_after - energy_before;
                 collision_totals_.channel_energy_change[0] += energy_change;
                 collision_interval_.channel_energy_change[0] += energy_change;
                 deposit_spatial_collision_energy(
                     particle.x, 0, energy_change);
-                initialize_leapfrog_half_step(
-                    particle,
-                    interpolate_electric(
-                        grid_, particle.x),
-                    charge_to_mass, timestep);
+                store_collision_velocity(
+                    particle, velocity, charge_to_mass, timestep);
             }
         }
     }
@@ -1031,18 +1063,19 @@ void Simulation::apply_collisions() {
             auto& statistics =
                 runtime.collision_workspace.statistics;
             if (cfg_.velocity_dimensions == 3) {
-                Vec3 velocity{
-                    part.v, part.velocity_y, part.velocity_z};
+                Vec3 velocity = collision_velocity(part);
                 runtime.model->collide_reusing_storage(
                     velocity, timestep, rng_,
                     runtime.collision_workspace);
-                part.v = velocity.x;
-                part.velocity_y = velocity.y;
-                part.velocity_z = velocity.z;
+                store_collision_velocity(
+                    part, velocity, qm, timestep);
             } else {
+                double velocity = collision_velocity(part).x;
                 runtime.model->collide_reusing_storage(
-                    part.v, timestep, rng_,
+                    velocity, timestep, rng_,
                     runtime.collision_workspace);
+                store_collision_velocity(
+                    part, Vec3{velocity, 0.0, 0.0}, qm, timestep);
             }
             for (auto& energy_change :
                  statistics.channel_projectile_energy_change) {
@@ -1119,9 +1152,6 @@ void Simulation::apply_collisions() {
                         tracked_energy_change[channel]);
                 }
             }
-            initialize_leapfrog_half_step(
-                part, interpolate_electric(grid_, part.x), qm,
-                timestep);
         }
     }
     std::vector<std::size_t> required_products(
@@ -1184,11 +1214,9 @@ void Simulation::apply_collisions() {
         product.v = velocity.x;
         product.velocity_y = velocity.y;
         product.velocity_z = velocity.z;
-        product.v_half = product.v;
         product.alive = true;
-        initialize_leapfrog_half_step(
-            product,
-            interpolate_electric(grid_, position),
+        store_collision_velocity(
+            product, velocity,
             product_species.charge() /
                 product_species.mass(),
             species_timestep(species_id));
@@ -2454,6 +2482,9 @@ void Simulation::write_spatial_average() const {
              << "  \"sampling_order\": "
              << json_string(to_string(
                     cfg_.spatial_average.sampling_order)) << ",\n"
+             << "  \"collision_velocity_sampling\": "
+             << json_string(to_string(
+                    cfg_.collision_velocity_sampling)) << ",\n"
              << "  \"samples\": "
              << spatial_average_samples_ << ",\n"
              << "  \"moment_samples\": "

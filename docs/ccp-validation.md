@@ -2680,6 +2680,41 @@ the empirical cell populations, CIC first moments, and velocity tuples; it is
 not unrestricted distribution-function uncertainty, cross-code internal-flux
 validation, or experimental validation.
 
+### Collision-velocity staggering audit
+
+A direct source audit subsequently found one unrecorded numerical-contract
+difference in the eduPIC argon comparison. eduPIC moves particles with its
+stored leapfrog velocity, applies boundaries, and passes that same drift
+velocity to MCC. AuroraPIC historically synchronized a time-centered velocity
+at the new position, applied MCC to it, and then rebuilt the half step. These
+schemes converge toward the same continuous-time split as the timestep is
+reduced, but they are not identical at finite timestep and the case manifest
+should not have classified them as matched.
+
+AuroraPIC now exposes the checkpoint-protected global
+`collision_velocity_sampling` choice. The default `time_centered` retains all
+legacy deck and checkpoint behavior; `leapfrog_half_step` matches eduPIC's
+move-boundary-collision ordering and is selected by the eduPIC case generator.
+Configuration, pusher-state, product-staggering, and incompatible-restart
+regressions cover the new path.
+
+An exploratory same-state, same-seed one-cycle A/B smoke then ran both choices
+serially at low priority. Both completed in about 81 seconds below 191 MiB RSS.
+Relative to the legacy branch, `leapfrog_half_step` changed total energy by
+`+0.246%`, electron electrical work by `-1.124%`, ionization events by
+`-2.292%`, and the final electric-field profile by `1.329%` L2. The ionization
+counts were only `480` and `469`, so the event change is comparable to
+short-window sampling noise; the smoke does not establish whether agreement
+with eduPIC improves. The checksum-bearing result is
+[`benchmarks/ccp/edupic-argon-collision-velocity-staggering-smoke-20260824.json`](../benchmarks/ccp/edupic-argon-collision-velocity-staggering-smoke-20260824.json).
+
+The next authorized discriminator is a prospectively locked two-cycle discard
+plus four-cycle, 200-phase comparison from the same portable particle state.
+It must compare density, power per electron, ionization, and source/loss
+balance with both the locked eduPIC matrices and the legacy time-centered
+branch before the new convention is credited with improving external
+agreement.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

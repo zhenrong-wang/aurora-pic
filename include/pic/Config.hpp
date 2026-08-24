@@ -60,6 +60,21 @@ enum class CollisionProcessKind {
     ChargeExchange
 };
 
+enum class CollisionVelocitySampling1D {
+    TimeCentered,
+    LeapfrogHalfStep
+};
+
+inline std::string to_string(CollisionVelocitySampling1D sampling) {
+    switch (sampling) {
+        case CollisionVelocitySampling1D::TimeCentered:
+            return "time_centered";
+        case CollisionVelocitySampling1D::LeapfrogHalfStep:
+            return "leapfrog_half_step";
+    }
+    return "unknown";
+}
+
 inline std::string to_string(CollisionModelKind model) {
     switch (model) {
         case CollisionModelKind::BGK: return "bgk";
@@ -274,6 +289,8 @@ struct Config {
     std::size_t steady_window{25};
     std::size_t max_steps{10000};
     std::size_t max_particles_per_species{10000000};
+    CollisionVelocitySampling1D collision_velocity_sampling{
+        CollisionVelocitySampling1D::TimeCentered};
     CollisionConfig collisions{};
     std::vector<NamedCollisionConfig> collision_models{};
     bool checkpoint_output{false};

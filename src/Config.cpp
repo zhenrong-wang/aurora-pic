@@ -134,6 +134,22 @@ SpatialAverageSamplingOrder1D parse_spatial_average_sampling_order(
         "invalid spatial_average_sampling_order value: '" + value + "'");
 }
 
+CollisionVelocitySampling1D parse_collision_velocity_sampling(
+    const KeyValue& values,
+    CollisionVelocitySampling1D default_sampling) {
+    const auto value = lower(trim(as<std::string>(
+        values, "collision_velocity_sampling",
+        to_string(default_sampling))));
+    if (value == "time_centered") {
+        return CollisionVelocitySampling1D::TimeCentered;
+    }
+    if (value == "leapfrog_half_step") {
+        return CollisionVelocitySampling1D::LeapfrogHalfStep;
+    }
+    throw std::runtime_error(
+        "invalid collision_velocity_sampling value: '" + value + "'");
+}
+
 std::vector<PhaseEedfRegion1DConfig> parse_phase_eedf_regions(
     const KeyValue& values) {
     const auto found = values.find("phase_eedf_regions");
@@ -1699,6 +1715,7 @@ Config load_config(const std::string& path) {
         "wall_impact_energy_bins",
         "wall_impact_energy_max",
         "max_particles_per_species",
+        "collision_velocity_sampling",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
         "phi_right_amplitude", "phi_right_frequency", "phi_right_phase",
@@ -1847,6 +1864,9 @@ Config load_config(const std::string& path) {
     cfg.max_particles_per_species = as<std::size_t>(
         global, "max_particles_per_species",
         cfg.max_particles_per_species);
+    cfg.collision_velocity_sampling =
+        parse_collision_velocity_sampling(
+            global, cfg.collision_velocity_sampling);
     cfg.boundary = parse_boundary(global, cfg.boundary);
     cfg.mode = parse_mode(global, cfg.mode);
     cfg.collisions.enabled = parse_bool(collision, "enabled", cfg.collisions.enabled);

@@ -134,6 +134,7 @@ physics_claim = none_contract_preflight_only
         result = json.loads(report.read_text(encoding="utf-8"))
         require(
             "phi_left_phase = 1.5707963267948966" in deck
+            and "collision_velocity_sampling = leapfrog_half_step" in deck
             and "neutral_temperature = 0" in deck
             and "neutral_temperature = 350" in deck
             and "timestep_multiplier = 20" in deck,

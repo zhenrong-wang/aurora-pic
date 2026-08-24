@@ -2,8 +2,38 @@
 
 AuroraPIC provides a bounded 1D BGK compatibility model and tabulated
 null-collision MCC for 1D1V, 1D3V, and imported planar 2D3V runs. Collision
-processing occurs after electrostatic/Boris velocity synchronization at each
-timestep.
+processing occurs after particle motion at each timestep. The 1D operator can
+sample either the synchronized velocity or the active leapfrog drift velocity,
+as described below.
+
+## Collision velocity staggering
+
+The global 1D setting
+
+```ini
+collision_velocity_sampling = time_centered
+```
+
+preserves AuroraPIC's original behavior: synchronize the public velocity at
+the new particle position, apply BGK/MCC to that velocity, then rebuild the
+leapfrog half step. This remains the default so existing decks and checkpoints
+do not silently change their numerical contract.
+
+Reference implementations that collide the drift velocity directly can use
+
+```ini
+collision_velocity_sampling = leapfrog_half_step
+```
+
+This applies BGK/MCC to the velocity that performed the position drift, then
+synchronizes the public diagnostic velocity from the post-collision half-step
+state. Ionization products inherit the same staggering before their public
+velocities are synchronized. The choice is encoded in the checkpoint collision
+identity, so a restart cannot silently switch conventions. The pinned eduPIC
+argon case generator selects `leapfrog_half_step`, matching eduPIC's published
+move-boundary-collision ordering. This is an operator-splitting convention, not
+a general claim that one choice is universally more accurate; convergence and
+external comparison must decide its effect for each benchmark.
 
 ## BGK compatibility model
 

@@ -3073,6 +3073,7 @@ int main() {
                     << "relative_permittivity = 2.5\n"
                     << "nx = 16\n"
                     << "velocity_dimensions = 3\n"
+                    << "collision_velocity_sampling = leapfrog_half_step\n"
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
@@ -3111,6 +3112,10 @@ int main() {
             require(
                 cfg.velocity_dimensions == 3,
                 "1D config did not load velocity_dimensions");
+            require(
+                cfg.collision_velocity_sampling ==
+                    pic::CollisionVelocitySampling1D::LeapfrogHalfStep,
+                "1D config did not load collision velocity sampling");
             require(
                 cfg.spatial_average.sampling_order ==
                     pic::SpatialAverageSamplingOrder1D::PreCollision,
@@ -3502,6 +3507,21 @@ int main() {
                 try { (void)pic::load_config(path.string()); } catch (...) { std::filesystem::remove(path); throw; }
                 std::filesystem::remove(path);
             }, "invalid boolean validation did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path(
+                    "test_invalid_collision_velocity_sampling.ini");
+                {
+                    std::ofstream out(path);
+                    out << "collision_velocity_sampling = unstaggered\n";
+                }
+                try {
+                    (void)pic::load_config(path.string());
+                } catch (...) {
+                    std::filesystem::remove(path);
+                    throw;
+                }
+                std::filesystem::remove(path);
+            }, "invalid collision velocity sampling did not throw");
         {
             const auto config_3d_path = std::filesystem::path("test_config_3d.ini");
             {
@@ -3744,8 +3764,62 @@ int main() {
                 collision_schedule.collision_diagnostics().candidates == 6,
                 "slow-species collisions did not use their configured cadence");
 
+            auto collision_staggering = pic::Config{};
+            collision_staggering.nx = 3;
+            collision_staggering.length = 10.0;
+            collision_staggering.dt = 0.1;
+            collision_staggering.steps = 1;
+            collision_staggering.boundary = pic::Boundary::Dirichlet;
+            collision_staggering.phi_left = 0.0;
+            collision_staggering.phi_right = -10.0;
+            collision_staggering.collisions.enabled = true;
+            collision_staggering.collisions.model =
+                pic::CollisionModelKind::BGK;
+            collision_staggering.collisions.frequency = 1.0e6;
+            collision_staggering.collisions.neutral_temperature_velocity =
+                0.0;
+            collision_staggering.species = {
+                pic::SpeciesConfig{
+                    "charged", 1.0e-12, 1.0e-12, 1.0, 1, 1.0,
+                    0.0, 0.0, 0.0, -1.0}};
+            auto half_step_collision = collision_staggering;
+            half_step_collision.collision_velocity_sampling =
+                pic::CollisionVelocitySampling1D::LeapfrogHalfStep;
+            pic::Simulation centered_collision(collision_staggering);
+            pic::Simulation staggered_collision(half_step_collision);
+            centered_collision.step();
+            staggered_collision.step();
+            const auto& centered_particle =
+                centered_collision.species()[0].particles()[0];
+            const auto& staggered_particle =
+                staggered_collision.species()[0].particles()[0];
+            require_near(
+                centered_particle.v, 0.0, 1e-10,
+                "time-centered BGK did not reset the sampled velocity");
+            require_near(
+                centered_particle.v_half, -0.05, 1e-10,
+                "time-centered BGK did not rebuild the leapfrog state");
+            require_near(
+                staggered_particle.v, 0.05, 1e-10,
+                "half-step BGK did not synchronize the diagnostic velocity");
+            require_near(
+                staggered_particle.v_half, 0.0, 1e-10,
+                "half-step BGK did not collide the drift velocity");
+
+            const auto staggering_checkpoint =
+                std::filesystem::path(
+                    "test_collision_velocity_staggering.apc");
+            staggered_collision.save_checkpoint(staggering_checkpoint);
+            require_throws(
+                [&] {
+                    pic::Simulation incompatible(collision_staggering);
+                    incompatible.load_checkpoint(staggering_checkpoint);
+                },
+                "checkpoint accepted changed collision velocity sampling");
+
             std::filesystem::remove(checkpoint_path);
             std::filesystem::remove(legacy_checkpoint_path);
+            std::filesystem::remove(staggering_checkpoint);
         }
         {
             const auto output_dir =

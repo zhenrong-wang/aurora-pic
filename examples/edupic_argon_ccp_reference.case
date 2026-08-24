@@ -57,6 +57,7 @@ ionization_energy_distribution = matched_opal_style
 electron_neutral_temperature = matched_cold_target
 ion_neutral_temperature = matched_350_k
 ion_timestep = matched_multiplier_20
+collision_velocity_sampling = matched_leapfrog_half_step
 table_interpolation = matched_lower_bin
 inelastic_finite_mass_transform = matched_center_of_mass
 random_stream_and_initial_microstate = intentionally_independent

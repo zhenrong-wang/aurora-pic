@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_collision_velocity_staggering_discriminator",
+  "physics_claim": "none_sensitivity_only",
+  "hypothesis": "Applying MCC to the leapfrog drift velocity, as eduPIC does, may materially change AuroraPIC electron heating, ionization, and population regulation relative to the legacy time-centered collision split.",
+  "locked_inputs": {
+    "binary_sha256": "9f81c87d9ddb89ec46f5fafa104bbc986b9706f66585b293e0b2bf8c0b3caa78",
+    "portable_particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "half_step_deck_sha256": "d1c080e4605996b0cf5cde1ec661d5ffe00681c5e49bbe2e4b1bf84b52f48354",
+    "legacy_matched_heating_audit_sha256": "2a2f06cc40cf61a01924fd18d254abe206f3fc442fa510e11fb743c616c07a22",
+    "phase_space_comparator_sha256": "364066d9d3bb2100c94532437334f3cd1af947158fb0f41abb0823c62b27403d",
+    "energy_analyzer_sha256": "082b5ab5eb955eafd51cb5c65daeaef5fc9557abb06f181dc288fa05099530b5"
+  },
+  "execution_contract": {
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "seed": 13507,
+    "serial": true,
+    "nice_level": 10,
+    "steps_per_rf_cycle": 4000,
+    "discard_cycles": 2,
+    "fresh_measurement_cycles": 4,
+    "measurement_first_step": 8001,
+    "measurement_last_step": 24000,
+    "phase_bins": 200,
+    "sampling_order": "pre_collision",
+    "maximum_wall_seconds": 900,
+    "maximum_peak_rss_kib": 262144,
+    "maximum_absolute_field_V_m": 100000,
+    "maximum_energy_closure_residual_fraction": 0.005
+  },
+  "locked_legacy_observations": {
+    "candidate_volume_phase_average_density_m-3": 3340744111250000.0,
+    "reference_volume_phase_average_density_m-3": 2980972608117795.0,
+    "candidate_to_reference_density_ratio": 1.1206893019253092,
+    "candidate_to_reference_power_per_particle_ratio": 0.8751527995448057,
+    "representative_four_cycle_ionization_source_flux_m-2_s-1": 4.5609059999983437e18,
+    "reference_mean_ionization_source_flux_m-2_s-1": 4.622239407017774e18
+  },
+  "prospective_materiality_rules": {
+    "density_ratio_distance_to_unity_change": 0.02,
+    "power_per_particle_ratio_distance_to_unity_change": 0.03,
+    "ionization_source_ratio_change": 0.03,
+    "classification": "For each observable, a reduction in distance to unity by at least the threshold is improving, an increase by at least the threshold is worsening, and a smaller change is practically unresolved at this horizon. No single favorable observable may be promoted to a verification pass."
+  },
+  "required_outputs": [
+    "spatial_average.csv",
+    "spatial_phase_fields.csv",
+    "spatial_phase_moments.csv",
+    "spatial_collision_rate.csv",
+    "spatial_phase_collision_rate.csv",
+    "phase_eedf.csv",
+    "phase_eedf_moments.csv",
+    "boundary_losses.csv",
+    "power_transfer.csv",
+    "spatial_average_metadata.json",
+    "checkpoint_24000.apc"
+  ],
+  "claim_boundary": "This test isolates one finite-timestep operator-splitting convention against a locked independent-code reference. Passing runtime gates or improving selected observables does not establish general CCP verification, experimental validation, or a published-case acceptance pass."
+}

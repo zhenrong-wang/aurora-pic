@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "exploratory_one_cycle_collision_velocity_staggering_smoke",
+  "physics_claim": "none_exploratory_discriminator_only",
+  "audit_finding": {
+    "reference_behavior": "eduPIC applies MCC to the leapfrog drift velocity after particle motion and before the next field push",
+    "legacy_aurorapic_behavior": "AuroraPIC applied MCC to the reconstructed time-centered velocity and then rebuilt its leapfrog half step",
+    "resolution": "AuroraPIC now exposes a checkpoint-protected collision_velocity_sampling choice; the eduPIC case generator selects leapfrog_half_step"
+  },
+  "inputs": {
+    "binary_sha256": "9f81c87d9ddb89ec46f5fafa104bbc986b9706f66585b293e0b2bf8c0b3caa78",
+    "portable_particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "time_centered_deck_sha256": "4ee135ed5d58144a370c7967fabe725224df1b884b161389b8b19859de522f70",
+    "half_step_deck_sha256": "c689a8841b3e7d850c3d8fcca80a3b6fd69a185da484122d9404df106ab67431",
+    "seed": 13507,
+    "steps": 4000,
+    "rf_cycles": 1,
+    "initial_electrons": 119449,
+    "initial_ions": 124945
+  },
+  "execution": {
+    "serial": true,
+    "nice_level": 10,
+    "time_centered_wall_seconds": 81.23,
+    "half_step_wall_seconds": 81.42,
+    "time_centered_peak_rss_kib": 195280,
+    "half_step_peak_rss_kib": 195256,
+    "both_completed": true
+  },
+  "branches": {
+    "time_centered": {
+      "kinetic_energy_J_m-2": 3.1869551000047376e-05,
+      "field_energy_J_m-2": 5.454586889924734e-05,
+      "total_energy_J_m-2": 8.641541989929472e-05,
+      "live_electrons": 119437,
+      "live_ions": 124913,
+      "electron_elastic_events": 526461,
+      "electron_excitation_events": 1341,
+      "ionization_events": 480,
+      "electron_wall_losses": 492,
+      "ion_wall_losses": 512,
+      "electron_source_loss_imbalance_fraction": -0.025,
+      "ion_source_loss_imbalance_fraction": -0.06666666666666667,
+      "electron_electric_work_J_m-2": 2.763562674771522e-06,
+      "ion_electric_work_J_m-2": 6.254507382705826e-06,
+      "maximum_absolute_field_V_m": 64417.988180515415
+    },
+    "leapfrog_half_step": {
+      "kinetic_energy_J_m-2": 3.19939703466792e-05,
+      "field_energy_J_m-2": 5.463373033991366e-05,
+      "total_energy_J_m-2": 8.662770068659285e-05,
+      "live_electrons": 119409,
+      "live_ions": 124929,
+      "electron_elastic_events": 526899,
+      "electron_excitation_events": 1328,
+      "ionization_events": 469,
+      "electron_wall_losses": 509,
+      "ion_wall_losses": 485,
+      "electron_source_loss_imbalance_fraction": -0.08528784648187633,
+      "ion_source_loss_imbalance_fraction": -0.03411513859275053,
+      "electron_electric_work_J_m-2": 2.7325043559644943e-06,
+      "ion_electric_work_J_m-2": 6.293056410507718e-06,
+      "maximum_absolute_field_V_m": 64641.076119390986
+    }
+  },
+  "paired_half_step_relative_to_time_centered": {
+    "kinetic_energy_change_fraction": 0.0039040194394843195,
+    "field_energy_change_fraction": 0.0016107808426080675,
+    "total_energy_change_fraction": 0.002456515139838677,
+    "electron_elastic_event_change_fraction": 0.0008319704593502653,
+    "electron_excitation_event_change_fraction": -0.009694258016405667,
+    "ionization_event_change_fraction": -0.022916666666666665,
+    "electron_electric_work_change_fraction": -0.011238507123633643,
+    "ion_electric_work_change_fraction": 0.006163399520237767,
+    "final_field_relative_l2": 0.013288185278194453
+  },
+  "output_hashes": {
+    "time_centered_scalars_sha256": "ee18368617234faedd25c3f7321c55688aab6fdd90a0b622aa32f4d24f6df50b",
+    "time_centered_collisions_sha256": "653984feb12bbad9499d97d5ffbad4f35d5b77036913d110c2856d243a36f3b8",
+    "time_centered_boundary_losses_sha256": "df69c1ba7c2e71f9e84e0619288d7b872801ee0b9d3f0dc033e4c23231ab98ea",
+    "time_centered_power_transfer_sha256": "c44717b9b1f5ecc377493087074981323125b96441b8f2fb475dc41421fc1d7d",
+    "half_step_scalars_sha256": "cf274a016b26a9b03bc98ae92028ecf26e8613f556794a4cab4dafd247261182",
+    "half_step_collisions_sha256": "e965e007fbcd0f43df17a31a456422a2543b67bd2b0ea54b589d84426e2787ce",
+    "half_step_boundary_losses_sha256": "38e6827b301c0d4bdbd9b600313b36290561fdc9cae4c6441cb86a897ce4d58e",
+    "half_step_power_transfer_sha256": "c91d1fb95f1754f0ef988cf2b64f8d45e304e36067343ef83d58408093364972"
+  },
+  "assessment": {
+    "algorithm_contract_difference_confirmed": true,
+    "one_cycle_effect_is_nonzero": true,
+    "external_agreement_improved": null,
+    "finding": "At one RF cycle the reference-matched half-step branch changes total energy by +0.246%, electron work by -1.124%, ionization count by -2.292%, and the final field by 1.329% L2. Event-count changes are comparable to short-window sampling noise and cannot establish whether external agreement improves.",
+    "next_test": "Run a prospectively locked two-cycle discard plus four-cycle 200-phase comparison from the same portable state, then compare density, power per electron, ionization, and source-loss balance with the locked eduPIC matrices and the time-centered branch."
+  },
+  "claim_boundary": "This post-audit smoke establishes that collision velocity staggering is a real algorithmic discriminator and that the corrected reference contract executes safely. It is not a published-case pass, a statistically resolved sensitivity result, or experimental validation."
+}
