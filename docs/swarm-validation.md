@@ -446,3 +446,19 @@ therefore isolates a genuine remaining physical-time transient, rather than
 particle-count noise. A final time-focused extension can halve simultaneous
 particles while lengthening burn and measurement, preserving bounded work and
 the same total measurement samples.
+
+The time-focused extension then used a full `8 us` burn and `1.6 us`
+measurement window at 20 Td, reducing simultaneous particles to 3,000 so the
+host envelope stayed bounded. It completed in 112.3 seconds at 109.4 MiB RSS.
+Mean energy is now stationary and precise: its first-to-second-half change is
+`1.15%` and its relative standard error is `0.25%`. Drift remains unresolved,
+with a `15.9%` half-window difference and `5.43%` standard error.
+
+Crucially, the drift direction reverses relative to the `3 us` result: the
+earlier window decreased, whereas the `8 us` window's second half exceeds its
+first. Together with stationary energy, this no longer supports a monotonic
+burn-in explanation for drift. The
+[`long-time result`](../benchmarks/swarm/edupic-argon-20td-long-time-result-20260824.json)
+classifies the remaining 20 Td limitation as low signal-to-noise with long
+correlation time. Further work should increase measurement statistics and
+independent seeds at the qualified burn horizon, not extend burn-in blindly.

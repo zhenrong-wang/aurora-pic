@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm-20td",
+  "scope": "prospective_long_physical_time_stationarity_result",
+  "all_declared_gates_passed": false,
+  "provenance": {
+    "rule_sha256": "79fbef262294e6e77828249f78ed0337781e542cf0e9328e3b4f2a5b4e6871e5",
+    "result_csv_sha256": "a99e80527b3c65028ee767685fb308df58563ee6b230749ccf0b3b0b85c48e25"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "wall_seconds": 112.29,
+    "peak_resident_set_kib": 112000,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "metrics": {
+    "electron_drift_velocity_m_s": 19163.587552679703,
+    "drift_relative_standard_error": 0.05430580031514624,
+    "drift_first_half_m_s": 17642.87628767567,
+    "drift_second_half_m_s": 20684.298817683826,
+    "drift_half_change_fraction": 0.15870841102415945,
+    "mean_energy_ev": 5.5490468023441375,
+    "mean_energy_relative_standard_error": 0.002498714992714213,
+    "energy_first_half_ev": 5.517073680237091,
+    "energy_second_half_ev": 5.5810199244512075,
+    "energy_half_change_fraction": 0.01152382499046551,
+    "maximum_observed_energy_ev": 17.035999840455375
+  },
+  "gates": {
+    "drift_precision": false,
+    "mean_energy_precision": true,
+    "drift_half_window_stationarity": false,
+    "mean_energy_half_window_stationarity": true,
+    "energy_coverage_margin": true
+  },
+  "assessment": "At 20 Td, mean energy is now stationary and precise after the 8 microsecond burn. Drift remains statistically under-resolved. Its half-window direction reverses relative to the 3 microsecond run, so the retained evidence no longer supports a continuing monotonic drift transient; the remaining limitation is low signal-to-noise and long correlation time in the drift estimator.",
+  "next_gate": "Use independent seeds and/or a longer measurement window at the already qualified burn horizon. Do not spend additional work extending burn-in unless energy stationarity regresses.",
+  "claim_boundary": "The 20 Td mean energy is eligible for independent scoring, but 20 Td drift is not. The stationary 50 and 100 Td points remain eligible for future external comparison."
+}
