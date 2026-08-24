@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "case_id": "dutton-1975-argon-high-field-experimental-comparison",
+  "scope": "prospective_external_experimental_transport_comparison_result",
+  "all_declared_gates_passed": false,
+  "numerical_gates_passed": true,
+  "experimental_comparison_passed": false,
+  "provenance": {
+    "rule_sha256": "242af1f16501ef1c2d17f2066aff5a6f70e7a1aff7159dc8ad3d0d14ed88072e",
+    "local_lxcat_export_sha256": "1845bd791cddf7c8a8878ed5c6663d71eb46c4da78bfa4a5218046eda8ee17bb",
+    "local_derived_reference_csv_sha256": "7448eb03e41350557d0d1e6c31231ca0988b40e2d62fa27a973d94925f21e2f7",
+    "local_reference_manifest_sha256": "e5c9fe0e8b957441f802aa69688cf405bf584dc53dc193fa2d85a648c805e5b8",
+    "simulation_csv_sha256": "1dae4e6300318eb69fc9238bcf54906eb12ce66026c52ee4e4dd0c29bdeed5f3",
+    "local_comparison_report_sha256": "7b517405b98117cc0eae307bc976ce1ea93236ccfcd71f5941fdaae48072778b",
+    "run_timing_record_sha256": "0dc15bad1319cce5b1a18c4f1734d5dd3982a6d1165cccc7a6cecf5e6608c684"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "elapsed_wall_seconds": 301.77,
+    "maximum_peak_resident_set_kib": 5656,
+    "exit_status": 0,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "numerical_gate_ranges": {
+    "drift_first_to_second_half_change_fraction": [0.00493810, 0.03000702],
+    "drift_relative_standard_error": [0.01074659, 0.02562027],
+    "mean_energy_first_to_second_half_change_fraction": [0.00218911, 0.01136838],
+    "mean_energy_relative_standard_error": [0.00098478, 0.00215903],
+    "maximum_observed_energy_fraction_of_table_coverage": [0.11386009, 0.16553599]
+  },
+  "experimental_observations": [
+    {
+      "source": "Brambring 1964",
+      "reduced_field_td": 52.8,
+      "simulation_relative_residual": 0.33813742,
+      "simulation_relative_standard_error": 0.02278856,
+      "uncertainty_aware_gate_passed": false
+    },
+    {
+      "source": "Jager et al. 1962",
+      "reduced_field_td": 53.6,
+      "simulation_relative_residual": 0.33414976,
+      "simulation_relative_standard_error": 0.02562027,
+      "uncertainty_aware_gate_passed": false
+    },
+    {
+      "source": "Jager et al. 1962",
+      "reduced_field_td": 90.8,
+      "simulation_relative_residual": 0.38877134,
+      "simulation_relative_standard_error": 0.01074659,
+      "uncertainty_aware_gate_passed": false
+    },
+    {
+      "source": "Brambring 1964",
+      "reduced_field_td": 99.5,
+      "simulation_relative_residual": 0.44045048,
+      "simulation_relative_standard_error": 0.01309043,
+      "uncertainty_aware_gate_passed": false
+    },
+    {
+      "source": "Wagner 1964",
+      "reduced_field_td": 99.7,
+      "simulation_relative_residual": 0.21592468,
+      "simulation_relative_standard_error": 0.01691281,
+      "uncertainty_aware_gate_passed": true
+    }
+  ],
+  "gates": {
+    "all_five_runs_stationary": true,
+    "all_five_runs_precise": true,
+    "energy_coverage_margin": true,
+    "all_five_experimental_points_within_locked_allowance": false
+  },
+  "assessment": "The unchanged Maiorov 2024 analytic argon collision package systematically overpredicts drift derived from the five prospectively selected historical mobility observations by 21.6% to 44.0%. Four of five points fail the locked 20% plus two simulation-standard-error allowance. The numerical estimator is stationary and its 1.07% to 2.56% drift standard errors are much smaller than the observed residuals.",
+  "scientific_significance": "AuroraPIC robustly reproduces the published Maiorov model but that model package does not pass this historical experimental comparison. This is evidence that published-model reproduction and experimental validation are distinct gates. The systematic sign and magnitude point first to collision-package fidelity or coefficient-definition compatibility, rather than timestep error, sampling noise, or collision-table energy truncation.",
+  "claim_boundary": "The result does not isolate one cause because the historical records omit exact temperature, bulk-versus-flux convention, and pointwise uncertainties. It is not evidence that the core PIC field solver is wrong, and it does not validate or invalidate self-consistent device simulations.",
+  "next_gate": "Prospectively compare an independently sourced argon cross-section package intended to reproduce measured swarm transport against a modern reference with explicit temperature and coefficient convention. Keep the current failing result as an untuned baseline and do not alter its thresholds."
+}

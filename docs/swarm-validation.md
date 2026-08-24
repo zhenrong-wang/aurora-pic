@@ -520,3 +520,42 @@ sampling-dominated. Two seeds are a robustness checkpoint, not a precise
 estimate of the full sampling distribution. The next qualitatively different
 gate is experimental or independently evaluated transport data rather than
 more comparison against the same publication.
+
+## Historical experimental argon mobility comparison
+
+The next prospective gate compares the unchanged Maiorov collision package
+with experimental argon mobility compiled by Dutton (1975) and transcribed in
+the LXCat Dutton database. To avoid post-hoc point selection, the locked rule
+chooses the nearest observation to `50` and `100 Td` from each of Brambring,
+Jager, and Wagner only when it is within 10% of the target. This gives five
+exact simulation fields (`52.8`, `53.6`, `90.8`, `99.5`, and `99.7 Td`) and
+requires no interpolation. The committed preparer converts `mu*N` to drift
+velocity with `W = (mu*N)(E/N)`.
+
+The serial run completed in 301.8 seconds at 5.52 MiB peak RSS. All numerical
+quality gates pass: drift changes only `0.49--3.00%` between measurement
+halves, its relative standard error is `1.07--2.56%`, and the largest sampled
+energy reaches only `16.6%` of table coverage. The experimental gate fails.
+AuroraPIC drift is systematically high by `33.8%` and `33.4%` near `53 Td`,
+and by `38.9%`, `44.0%`, and `21.6%` near `91--100 Td`. Only the Wagner point
+passes the predeclared `20%` plus two-standard-error allowance; all five were
+required to pass.
+
+The checksum-bearing
+[`experimental rule`](../benchmarks/swarm/dutton-1975-argon-experimental-rule-20260824.json)
+and
+[`experimental result`](../benchmarks/swarm/dutton-1975-argon-experimental-result-20260824.json)
+retain this negative finding. The raw LXCat export and derived point table
+remain local under `tmp/` and are not redistributed; the public artifacts
+retain their hashes, deterministic selection/conversion code, source labels,
+and derived residuals.
+
+This result materially narrows the credibility claim. AuroraPIC has reproduced
+the published Monte Carlo model, and the experimental run is stationary and
+precise, but the tested analytic collision package is not experimentally
+validated at these fields. The systematic `21.6--44.0%` excess is too large
+to attribute to the measured simulation noise. Collision-package fidelity and
+historical flux-versus-bulk coefficient compatibility are the leading open
+questions; the source groups also specify only ambient rather than exact gas
+temperature and provide no pointwise uncertainties. The result does not by
+itself implicate the self-consistent PIC field solver, boundaries, or geometry.
