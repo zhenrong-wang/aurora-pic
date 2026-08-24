@@ -51,6 +51,16 @@ def main() -> None:
     assert "spatial_average_start_step = 24001" in seed_deck
     assert "phase_surface_flux_reset_on_restart = true" in seed_deck
 
+    long_rule = json.loads(Path(
+        "benchmarks/ccp/edupic-argon-surface-flux-seed-long-rule-20260824.json"
+    ).read_text(encoding="utf-8"))
+    long_deck = build_deck(
+        base, Path("long-output"), Path("long-checkpoint.apc"), long_rule,
+        "seed_13507")
+    assert "steps = 48000" in long_deck
+    assert "spatial_average_start_step = 32001" in long_deck
+    assert "spatial_average_rf_cycles = 4" in long_deck
+
 
 if __name__ == "__main__":
     main()
