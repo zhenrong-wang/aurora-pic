@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "case_id": "maiorov-2024-table8-argon-swarm-robustness",
+  "scope": "prospective_external_reproduction_timestep_and_seed_robustness",
+  "physics_claim": "published_transport_reproduction_robustness",
+  "hypothesis": "The successful Maiorov Table 8 argon reproduction remains stationary, precise, externally consistent, timestep converged, and statistically consistent across an independent random seed.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "baseline_result_csv_sha256": "16e688e766cbc9ea08a83eb42a31643869a752797f9dc7141f45acc0942be655",
+    "independent_seed_config_sha256": "45a54ad95f4143b19a930cad8109ead7306748be4a874aa203adcdb197831d6b",
+    "timestep_refined_config_sha256": "6fe2d315358c739ab9ac54e0dc23eb396d06ba10bb9c42c42a5549c45507f1b9",
+    "gas_manifest_sha256": "df42f310222b1ac24e73e60b35f5bcb07b1d0ac8a4029b3287b45872a0646709",
+    "elastic_table_sha256": "9775ad035bc5e4360082bb2da40653902f9a425a05a49aaea35bdc4197f9014e",
+    "excitation_table_sha256": "b16b928c4cee789b7418d7e29e49ba74ed9cab2a747e35eb2c0d4d3da4202dae",
+    "ionization_table_sha256": "cd793c28babd2303cb50472684ae82f6a0979567ab7941565a4dbde0b6deda89",
+    "reference_manifest_sha256": "a52685ee1c8b7f229b4daab3a94d3df80404b7ef849acf6f8fcb85f8f729d3af",
+    "comparator_sha256": "743ad7b986d38e29337b96a341df44c82d873025c0a09ec981636d57cfe08aee"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [50, 100],
+    "baseline_seed": 271828,
+    "independent_seed": 314159,
+    "baseline_timestep_s": 5e-11,
+    "refined_timestep_s": 2.5e-11,
+    "physical_burn_in_time_s": 1.2e-6,
+    "physical_measurement_time_s": 4e-7,
+    "particles": 6000,
+    "maximum_total_new_particle_steps": 1152000000,
+    "maximum_total_new_wall_seconds": 480,
+    "maximum_peak_rss_kib_per_process": 196608
+  },
+  "per_run_acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_absolute_first_to_second_half_energy_change_fraction_of_full_mean": 0.03,
+    "maximum_drift_relative_standard_error": 0.05,
+    "maximum_mean_energy_relative_standard_error": 0.02,
+    "published_comparison_relative_tolerance": 0.10,
+    "published_comparison_uncertainty_multiplier": 2.0,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "robustness_acceptance": {
+    "formula": "abs(a-b) <= 0.03*abs(b) + 2*hypot(standard_error_a, standard_error_b)",
+    "cross_seed_relative_tolerance": 0.03,
+    "timestep_relative_tolerance": 0.03,
+    "uncertainty_multiplier": 2.0,
+    "maximum_raw_ensemble_mean_relative_residual_from_published_value": 0.10
+  },
+  "classification": "All per-run and robustness gates must pass. The independent-seed branch is compared with the retained baseline; the half-timestep branch uses the baseline seed and is compared with the retained baseline. No cross sections, physical controls, or tolerances may be changed after execution.",
+  "claim_boundary": "A pass strengthens the published homogeneous-swarm reproduction against timestep and sampling concerns. It remains one published model comparison, not experimental or device-level validation."
+}
