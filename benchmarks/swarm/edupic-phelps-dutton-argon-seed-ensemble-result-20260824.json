@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-independent-seed-ensemble",
+  "scope": "prospective_two_replica_independent_seed_validation_result",
+  "all_declared_gates_passed": true,
+  "provenance": {
+    "rule_sha256": "1b0afceb3f6dd9ab026e020f71a0c7c9b84499918666cd7e97c02d4cfdf266bb",
+    "seed314159_csv_sha256": "b2331774833b2dd5bd2a29b4bb33c448ef7986c602dd06eacb3491a2c5ddbb13",
+    "seed314159_comparison_sha256": "afdf1e19cc807cb3280f2c8b1bb993b3abe4ac612cd68f2ba809d6dca3ff0d76",
+    "seed314159_timing_sha256": "44d3a47f44152ba1bbc981891a929b6e063bc8e83ab9af54a6f7a039a2d8cf40",
+    "seed161803_csv_sha256": "ba1b58fb5001fcae364bc957d16bc76fc58c3ce49e1841ec1946778e58bdb5f1",
+    "seed161803_comparison_sha256": "dffdb019262843aec34264758ecef730610966d2d449eb6b0b972a600efe20b0",
+    "seed161803_timing_sha256": "c3d924296748fd138feccbc24e7748af5d8fe3b3843f79451f4c80e6eadf006e"
+  },
+  "execution": {
+    "serial": true,
+    "concurrent_runs": false,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "seed314159_wall_seconds": 357.47,
+    "seed161803_wall_seconds": 345.25,
+    "total_wall_seconds": 702.72,
+    "maximum_peak_resident_set_kib": 115204,
+    "both_exit_status_zero": true,
+    "wall_gates_passed": true,
+    "memory_gates_passed": true
+  },
+  "per_run_gate_ranges_over_ten_points": {
+    "drift_first_to_second_half_change_fraction": [0.00040249, 0.03555781],
+    "drift_relative_standard_error": [0.00472688, 0.01973101],
+    "experimental_relative_residual": [0.00347789, 0.20830072],
+    "experimental_normalized_residual": [0.01605005, 0.98523216],
+    "maximum_observed_energy_fraction_of_coverage": [0.11238692, 0.16411863]
+  },
+  "cross_seed_and_ensemble": [
+    {
+      "reduced_field_td": 52.8,
+      "cross_seed_relative_difference": 0.00380415,
+      "cross_seed_normalized_residual": 0.02659768,
+      "ensemble_drift_velocity_m_s": 44324.07388696,
+      "ensemble_experimental_relative_residual": 0.10809564,
+      "ensemble_experimental_normalized_residual": 0.48291860,
+      "all_field_gates_passed": true
+    },
+    {
+      "reduced_field_td": 53.6,
+      "cross_seed_relative_difference": 0.02002237,
+      "cross_seed_normalized_residual": 0.14070888,
+      "ensemble_drift_velocity_m_s": 44442.99149410,
+      "ensemble_experimental_relative_residual": 0.03355640,
+      "ensemble_experimental_normalized_residual": 0.15125180,
+      "all_field_gates_passed": true
+    },
+    {
+      "reduced_field_td": 90.8,
+      "cross_seed_relative_difference": 0.01474855,
+      "cross_seed_normalized_residual": 0.11389566,
+      "ensemble_drift_velocity_m_s": 69285.13679585,
+      "ensemble_experimental_relative_residual": 0.15475744,
+      "ensemble_experimental_normalized_residual": 0.71307622,
+      "all_field_gates_passed": true
+    },
+    {
+      "reduced_field_td": 99.5,
+      "cross_seed_relative_difference": 0.01721254,
+      "cross_seed_normalized_residual": 0.14758860,
+      "ensemble_drift_velocity_m_s": 75473.89785074,
+      "ensemble_experimental_relative_residual": 0.19799049,
+      "ensemble_experimental_normalized_residual": 0.94299872,
+      "all_field_gates_passed": true
+    },
+    {
+      "reduced_field_td": 99.7,
+      "cross_seed_relative_difference": 0.01727978,
+      "cross_seed_normalized_residual": 0.13853708,
+      "ensemble_drift_velocity_m_s": 74904.86579290,
+      "ensemble_experimental_relative_residual": 0.01222339,
+      "ensemble_experimental_normalized_residual": 0.05751741,
+      "all_field_gates_passed": true
+    }
+  ],
+  "gates": {
+    "both_runs_all_five_stationary": true,
+    "both_runs_all_five_precise": true,
+    "both_runs_all_five_experimental_points_pass": true,
+    "both_runs_energy_coverage_margin": true,
+    "all_five_cross_seed_consistency_gates": true,
+    "all_five_ensemble_experimental_gates": true
+  },
+  "assessment": "Two fully matched independent particle histories reproduce the qualified Phelps-based result. All ten per-run experimental comparisons pass; all drift half-window changes are below 3.56%, all drift relative standard errors are below 1.98%, and cross-seed drift differences are only 0.38% through 2.00%. The two-seed ensemble passes all five experimental comparisons.",
+  "scientific_significance": "The homogeneous electron-argon transport milestone is no longer dependent on one random trajectory. Combined with the collision-package discriminator, the result supports both sampling robustness and physically meaningful collision-data sensitivity in AuroraPIC's common transport kernel.",
+  "claim_boundary": "Two seeds are an independent replication milestone, not a high-confidence estimate of the complete sampling distribution. The 99.5 Td ensemble point is close to the declared experimental boundary with normalized residual 0.943. Historical metadata limitations and all self-consistent PIC/device validation boundaries remain."
+}

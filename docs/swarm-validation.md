@@ -610,5 +610,29 @@ general PIC-platform validation claim. It supports AuroraPIC's common
 collision/transport kernel, shows that the earlier experimental discrepancy
 follows collision physics, and qualifies the tested Phelps-based package for
 the next validation layer. Modern reference metadata, independent-seed
-replication, self-consistent fields, ions, boundaries, geometry, chemistry,
-and device observables remain separate gates.
+replication beyond the two matched runs below, self-consistent fields, ions,
+boundaries, geometry, chemistry, and device observables remain separate gates.
+
+### Independent-seed replication
+
+Two additional five-field runs use independent seeds `314159` and `161803`,
+with the complete `1.6 us` measurement horizon at every field. Both are
+prospectively locked and executed serially. All ten per-run experimental
+comparisons pass; all half-window drift changes are below `3.56%`, all drift
+relative standard errors are below `1.98%`, and energy coverage remains below
+`16.5%`.
+
+The matched replicas agree closely: field-by-field drift differences are only
+`0.38--2.00%`, and every uncertainty-aware cross-seed gate passes. Their
+two-seed ensemble also passes all five historical experimental comparisons,
+with relative residuals of `1.22--19.80%`. The `99.5 Td` point is the tightest,
+at normalized residual `0.943`, and is retained as a priority for comparison
+with a modern reference rather than hidden by the overall pass.
+
+The checksum-bearing
+[`independent-seed result`](../benchmarks/swarm/edupic-phelps-dutton-argon-seed-ensemble-result-20260824.json)
+upgrades this to an independently replicated homogeneous transport milestone.
+It still does not estimate the complete sampling distribution or resolve the
+historical reference's temperature, uncertainty, and flux-versus-bulk
+ambiguities. The next qualitatively different step is modern reference data or
+a self-consistent canonical PIC benchmark, not further same-contract runtime.

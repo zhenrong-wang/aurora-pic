@@ -9,7 +9,8 @@
     "phelps_exact_field_discriminator": "edupic-phelps-dutton-argon-experimental-result-20260824.json",
     "phelps_extended_five_field_result": "edupic-phelps-dutton-argon-extended-result-20260824.json",
     "phelps_terminal_52p8td_result": "edupic-phelps-dutton-argon-52p8td-result-20260824.json",
-    "phelps_terminal_result_sha256": "c52852647fbd35e9dd2c29829b1743bb5f706db3a8ee14eb81158ae384777a5b"
+    "phelps_terminal_result_sha256": "c52852647fbd35e9dd2c29829b1743bb5f706db3a8ee14eb81158ae384777a5b",
+    "phelps_independent_seed_ensemble": "edupic-phelps-dutton-argon-seed-ensemble-result-20260824.json"
   },
   "qualified_points": [
     {
@@ -57,14 +58,15 @@
     "AuroraPIC reproduces the tested Maiorov published homogeneous argon Monte Carlo results within the prospectively declared tolerance",
     "that reproduction is robust to a factor-two timestep refinement and a second random seed under the declared gates",
     "the common AuroraPIC transport kernel distinguishes a collision package that disagrees systematically with historical mobility from one that is consistent at all five selected fields",
-    "the Phelps-based package passes stationarity, precision, energy-coverage, and historical experimental comparison gates at all five selected fields"
+    "the Phelps-based package passes stationarity, precision, energy-coverage, and historical experimental comparison gates at all five selected fields",
+    "two additional fully matched independent particle histories pass every per-run, cross-seed, and ensemble gate"
   ],
   "not_demonstrated": [
     "blind predictive validation because Phelps-based cross sections may use swarm constraints",
     "modern metrology-grade validation with explicit gas temperature, bulk-versus-flux convention, and pointwise experimental uncertainties",
-    "independent-seed replication of every Phelps-based qualified point",
+    "publication-grade estimation of the full sampling distribution beyond the two matched independent replicas",
     "validation of self-consistent PIC fields, ion transport, boundaries, imported geometry, plasma chemistry, collective behavior, or device observables"
   ],
-  "assessment": "AuroraPIC has reached a defensible homogeneous electron-argon transport credibility milestone. The evidence supports the numerical collision/transport kernel and demonstrates physically meaningful sensitivity to collision data. It does not yet justify a general real-case or device-level validation claim.",
-  "next_gate": "Acquire a modern explicitly defined swarm reference and independently replicate the Phelps-based comparison with additional seeds, then connect the qualified collision package to a self-consistent canonical PIC benchmark."
+  "assessment": "AuroraPIC has reached an independently replicated homogeneous electron-argon transport credibility milestone. The evidence supports the numerical collision/transport kernel, demonstrates physically meaningful sensitivity to collision data, and is robust across two new matched particle histories. It does not yet justify a general real-case or device-level validation claim.",
+  "next_gate": "Acquire a modern explicitly defined swarm reference, then connect the qualified collision package to a self-consistent canonical PIC benchmark."
 }
