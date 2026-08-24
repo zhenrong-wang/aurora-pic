@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm",
+  "scope": "prospective_high_statistics_transport_precision_extension_result",
+  "all_declared_gates_passed": false,
+  "provenance": {
+    "rule_sha256": "f8830022e78ff474e9f0710b3fb04aebef64722117388745650aa94919a3f748",
+    "result_csv_sha256": "8f2bcfcee99c05383f63741dce5fc162de73bb3036b63b06f40093f567601100",
+    "previous_combined_refined_csv_sha256": "0503bd47a5c8f44ea25defcc69ddd1a7b88127196da618c9122be88810ee42a6"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "wall_seconds": 52.23,
+    "peak_resident_set_kib": 111892,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "points": [
+    {
+      "reduced_field_td": 20,
+      "electron_drift_velocity_m_s": 58910.57249678592,
+      "drift_relative_standard_error": 0.047506403972076304,
+      "drift_relative_change_from_previous": -0.11113061208322227,
+      "mean_energy_ev": 2.6894850986903824,
+      "mean_energy_relative_standard_error": 0.03358759042404707,
+      "mean_energy_relative_change_from_previous": 0.07652037009780872,
+      "uncertainty_aware_drift_comparison_passed": true,
+      "uncertainty_aware_mean_energy_comparison_passed": true,
+      "maximum_observed_energy_ev": 11.370857932594884
+    },
+    {
+      "reduced_field_td": 50,
+      "electron_drift_velocity_m_s": 52798.05886516697,
+      "drift_relative_standard_error": 0.0620476072512166,
+      "drift_relative_change_from_previous": -0.10876303187219143,
+      "mean_energy_ev": 5.094160372653385,
+      "mean_energy_relative_standard_error": 0.03101634487305262,
+      "mean_energy_relative_change_from_previous": 0.10087190322127905,
+      "uncertainty_aware_drift_comparison_passed": true,
+      "uncertainty_aware_mean_energy_comparison_passed": true,
+      "maximum_observed_energy_ev": 19.02648448492118
+    },
+    {
+      "reduced_field_td": 100,
+      "electron_drift_velocity_m_s": 74640.35839902998,
+      "drift_relative_standard_error": 0.01305644094195998,
+      "drift_relative_change_from_previous": -0.014696490885646363,
+      "mean_energy_ev": 6.788055609478922,
+      "mean_energy_relative_standard_error": 0.004211642154570569,
+      "mean_energy_relative_change_from_previous": 0.006476972720598978,
+      "uncertainty_aware_drift_comparison_passed": true,
+      "uncertainty_aware_mean_energy_comparison_passed": true,
+      "maximum_observed_energy_ev": 28.570037601335557
+    }
+  ],
+  "gates": {
+    "drift_precision_20_td": false,
+    "drift_precision_50_td": false,
+    "drift_precision_100_td": true,
+    "mean_energy_precision_20_td": false,
+    "mean_energy_precision_50_td": false,
+    "mean_energy_precision_100_td": true,
+    "uncertainty_aware_agreement_with_previous_each_observable": true,
+    "energy_coverage_margin": true
+  },
+  "assessment": "Quadrupling measurement samples did not reduce the 20 and 50 Td block uncertainty and shifted both low-field means by 7.7 to 11.1 percent. The 100 Td point became precise and stable. The field-dependent pattern is evidence that the low-field runs require longer physical burn-in and decorrelation time rather than more simultaneous particles.",
+  "next_gate": "Prospectively vary low-field burn-in duration at fixed timestep, particle count, and measurement duration before increasing statistics again.",
+  "claim_boundary": "This result diagnoses a low-field stationarity limitation. It does not compare with an independent argon reference and cannot validate or invalidate physical transport accuracy."
+}

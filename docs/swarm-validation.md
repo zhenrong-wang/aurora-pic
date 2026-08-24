@@ -399,3 +399,20 @@ therefore classifies the campaign as under-resolved for low-field drift and
 does not claim argon transport validation. The next run should increase only
 the combined-refinement statistics before any independent reference is
 scored.
+
+That prospectively locked high-statistics extension used 6,000 particles and
+doubled the measurement duration, providing four times as many particle
+samples. It completed in 52.2 seconds at 109.3 MiB RSS, but failed the
+precision gate again. At `20` and `50 Td`, drift standard errors remained
+`4.75%` and `6.20%`; mean-energy errors were `3.36%` and `3.10%`. Their means
+also moved by `7.7--11.1%` relative to the earlier finest branch. By contrast,
+the `100 Td` drift and energy errors fell to `1.31%` and `0.42%`, with mean
+changes of only `1.47%` and `0.65%`.
+
+The retained
+[`high-statistics result`](../benchmarks/swarm/edupic-argon-high-statistics-result-20260824.json)
+therefore rejects particle count as the immediate low-field remedy. The
+field-dependent response instead indicates inadequate physical burn-in or
+decorrelation duration at `20--50 Td`. The next prospective gate varies
+low-field burn-in at fixed timestep and measurement contract; adding an
+external reference before stationarity is demonstrated would be premature.
