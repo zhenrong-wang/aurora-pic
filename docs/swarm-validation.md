@@ -593,3 +593,22 @@ work is an isolated `52.8 Td` stationarity extension, not another expensive
 five-field scan. Agreement is calibration-consistency evidence rather than a
 blind prediction because Phelps-based cross sections may themselves use swarm
 constraints.
+
+The isolated terminal run extends only `52.8 Td` to a `1.6 us` measurement
+window. It passes: drift half-window change is `3.83%`, relative standard
+error is `1.98%`, and experimental residual is `10.85%`. By inheritance from
+the four unchanged passing points in the extended scan, all five selected
+fields now pass their stationarity, precision, energy-coverage, and historical
+experimental-comparison gates. The
+[`terminal result`](../benchmarks/swarm/edupic-phelps-dutton-argon-52p8td-result-20260824.json)
+and consolidated
+[`credibility milestone`](../benchmarks/swarm/argon-transport-credibility-milestone-20260824.json)
+record the complete evidence chain.
+
+This is a defensible homogeneous electron-argon transport milestone, not a
+general PIC-platform validation claim. It supports AuroraPIC's common
+collision/transport kernel, shows that the earlier experimental discrepancy
+follows collision physics, and qualifies the tested Phelps-based package for
+the next validation layer. Modern reference metadata, independent-seed
+replication, self-consistent fields, ions, boundaries, geometry, chemistry,
+and device observables remain separate gates.

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-52p8td-terminal-stationarity",
+  "scope": "prospective_isolated_low_field_stationarity_resolution_result",
+  "all_declared_gates_passed": true,
+  "provenance": {
+    "rule_sha256": "4f0df99c644de858683755501452d3a1b7360b8d8d3f2d4240070193c7aa0264",
+    "simulation_csv_sha256": "29225629626a3d9a5d40956e8be9b8e81deb32030c8ea58363963ae0c5f184a1",
+    "run_timing_record_sha256": "4b02207e713578b06b1f5f13a1d9f7a9f973a1fcb4f6df89da77ab879e84578c",
+    "local_reference_csv_sha256": "7448eb03e41350557d0d1e6c31231ca0988b40e2d62fa27a973d94925f21e2f7"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "elapsed_wall_seconds": 72.10,
+    "maximum_peak_resident_set_kib": 112212,
+    "exit_status": 0,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "observation": {
+    "reduced_field_td": 52.8,
+    "electron_drift_velocity_m_s": 44340.50332528479,
+    "drift_half_change_fraction": 0.03833052,
+    "drift_relative_standard_error": 0.01977911,
+    "experimental_relative_residual": 0.10850638,
+    "mean_energy_ev": 6.19906308,
+    "mean_energy_half_change_fraction": 0.00072877,
+    "mean_energy_relative_standard_error": 0.00181600,
+    "maximum_observed_energy_fraction_of_coverage": 0.11560447
+  },
+  "gates": {
+    "drift_stationarity": true,
+    "drift_precision": true,
+    "experimental_comparison": true,
+    "energy_coverage_margin": true
+  },
+  "assessment": "The isolated 1.6 microsecond measurement resolves the sole remaining numerical gate. The 52.8 Td drift half-window change is 3.83%, relative standard error is 1.98%, and experimental residual is 10.85%; all are inside their prospectively locked limits.",
+  "scientific_significance": "Combined by inheritance with the unchanged passing 53.6, 90.8, 99.5, and 99.7 Td points from the extended five-field run, this completes the Phelps-based historical argon transport consistency checkpoint.",
+  "claim_boundary": "This is a same-seed terminal extension, not independent-seed replication. It closes the declared numerical gate but does not remove historical reference metadata ambiguity or extend the claim to self-consistent PIC and device physics."
+}

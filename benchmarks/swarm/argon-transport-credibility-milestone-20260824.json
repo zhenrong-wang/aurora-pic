@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "milestone_id": "aurorapic-argon-homogeneous-transport-credibility-20260824",
+  "all_milestone_gates_passed": true,
+  "evidence_chain": {
+    "published_model_reproduction": "maiorov-2024-argon-reproduction-result-20260824.json",
+    "published_model_timestep_and_seed_robustness": "maiorov-2024-argon-robustness-result-20260824.json",
+    "maiorov_historical_experimental_failure": "dutton-1975-argon-experimental-result-20260824.json",
+    "phelps_exact_field_discriminator": "edupic-phelps-dutton-argon-experimental-result-20260824.json",
+    "phelps_extended_five_field_result": "edupic-phelps-dutton-argon-extended-result-20260824.json",
+    "phelps_terminal_52p8td_result": "edupic-phelps-dutton-argon-52p8td-result-20260824.json",
+    "phelps_terminal_result_sha256": "c52852647fbd35e9dd2c29829b1743bb5f706db3a8ee14eb81158ae384777a5b"
+  },
+  "qualified_points": [
+    {
+      "reduced_field_td": 52.8,
+      "source": "Brambring 1964",
+      "experimental_relative_residual": 0.10850638,
+      "drift_half_change_fraction": 0.03833052,
+      "drift_relative_standard_error": 0.01977911,
+      "evidence_window_s": 1.6e-6
+    },
+    {
+      "reduced_field_td": 53.6,
+      "source": "Jager et al. 1962",
+      "experimental_relative_residual": 0.03243727,
+      "drift_half_change_fraction": 0.01348063,
+      "drift_relative_standard_error": 0.01351945,
+      "evidence_window_s": 8e-7
+    },
+    {
+      "reduced_field_td": 90.8,
+      "source": "Jager et al. 1962",
+      "experimental_relative_residual": 0.14206447,
+      "drift_half_change_fraction": 0.00510217,
+      "drift_relative_standard_error": 0.01475442,
+      "evidence_window_s": 8e-7
+    },
+    {
+      "reduced_field_td": 99.5,
+      "source": "Brambring 1964",
+      "experimental_relative_residual": 0.19621638,
+      "drift_half_change_fraction": 0.01252499,
+      "drift_relative_standard_error": 0.01469295,
+      "evidence_window_s": 8e-7
+    },
+    {
+      "reduced_field_td": 99.7,
+      "source": "Wagner 1964",
+      "experimental_relative_residual": 0.03360372,
+      "drift_half_change_fraction": 0.02833283,
+      "drift_relative_standard_error": 0.01161891,
+      "evidence_window_s": 8e-7
+    }
+  ],
+  "demonstrated": [
+    "AuroraPIC reproduces the tested Maiorov published homogeneous argon Monte Carlo results within the prospectively declared tolerance",
+    "that reproduction is robust to a factor-two timestep refinement and a second random seed under the declared gates",
+    "the common AuroraPIC transport kernel distinguishes a collision package that disagrees systematically with historical mobility from one that is consistent at all five selected fields",
+    "the Phelps-based package passes stationarity, precision, energy-coverage, and historical experimental comparison gates at all five selected fields"
+  ],
+  "not_demonstrated": [
+    "blind predictive validation because Phelps-based cross sections may use swarm constraints",
+    "modern metrology-grade validation with explicit gas temperature, bulk-versus-flux convention, and pointwise experimental uncertainties",
+    "independent-seed replication of every Phelps-based qualified point",
+    "validation of self-consistent PIC fields, ion transport, boundaries, imported geometry, plasma chemistry, collective behavior, or device observables"
+  ],
+  "assessment": "AuroraPIC has reached a defensible homogeneous electron-argon transport credibility milestone. The evidence supports the numerical collision/transport kernel and demonstrates physically meaningful sensitivity to collision data. It does not yet justify a general real-case or device-level validation claim.",
+  "next_gate": "Acquire a modern explicitly defined swarm reference and independently replicate the Phelps-based comparison with additional seeds, then connect the qualified collision package to a self-consistent canonical PIC benchmark."
+}
