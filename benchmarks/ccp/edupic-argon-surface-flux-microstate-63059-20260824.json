@@ -1,0 +1,69 @@
+{
+  "all_gates_passed": true,
+  "branch": "microstate_63059",
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This quantifies sensitivity to constrained conditional microstates sharing cell populations, CIC first moments, and cellwise empirical velocity tuples. It is not unrestricted initial-condition uncertainty, asymptotic statistical convergence, cross-code flux validation, or experimental validation.",
+  "final_checkpoint_sha256": "39d7015e4b35e1d22287b78b8098fa56344cf6417d395d17a5e78c5b6490229e",
+  "gates": {
+    "absolute_field": true,
+    "measurement_window": true,
+    "particle_cap": true,
+    "resident_memory": true,
+    "surface_flux_contract": true,
+    "surface_flux_crossing_sufficiency": true,
+    "surface_flux_finite": true,
+    "surface_flux_histogram_closure": true,
+    "surface_flux_shape": true
+  },
+  "inputs": {
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "deck_sha256": "8133fd251deb3004d368b678bec01b75a01f7e0ce53418a074d14f00cef8b122",
+    "input_checkpoint_sha256": "f03463f5cb800256c2c7fc2cef3373d3c4468fe8805c0df6b823beabfd05497f",
+    "prior_branch_report_sha256": "3d58bab5368c4a4c16b5c0ca83d96203cfda46a6df47e15ba814ff61026ce9f2",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "numerics": {
+    "cells": 399,
+    "end_step": 40000,
+    "nodes": 400,
+    "start_step": 24000
+  },
+  "output_hashes": {
+    "phase_eedf.csv": "07263c3bd7d52d40bb752735780f3c74802860db408a22be14037aedf7bbb4a7",
+    "phase_eedf_moments.csv": "6ff54355db86801505e3ac7b0d06236aaae5905ae2e7bbf3fca77b09bf25c68c",
+    "phase_surface_flux.csv": "80e3c1fcab17a215af1a3ab0f0086b647c3758f9c333260d2b81d51d1e31ee1e",
+    "phase_surface_flux_summary.csv": "c742c2d5add23078ce27205395e0966b5322e6f85dbf64150a6af168b5f3901b",
+    "scalars.csv": "08308f08ffc0b400b57e4f50a35f631d4cadb22f858d9eeb7b5ac7baa7cbd5d4",
+    "spatial_average_metadata.json": "5d929ca3e6f419b222bd84e5a8028ea9771e863315c5de049ad7c5719ed7a501",
+    "spatial_phase_collision_power.csv": "b8ec3895d31962e69287d5ed11f0e9fddebf29ee94f85708aa3251aef371280a",
+    "spatial_phase_fields.csv": "4a0fce6c1c2c111fddb73093088d8e88db09e9c67f30d252650da1234e74e3a1",
+    "spatial_phase_moments.csv": "57019f0d12ebc1edd09b146e38f07be7e331a0b00c978d5b84fda35747c0e483"
+  },
+  "physics_claim": "surface_transport_constrained_microstate_uncertainty_only",
+  "resources": {
+    "available_disk_before_launch_kib": 13831032,
+    "available_memory_before_launch_kib": 18851800,
+    "peak_resident_set_kib": 195184,
+    "wall_seconds": 423.2095242559999
+  },
+  "rule_sha256": "95b72b70c95d95980d8270156bdeeb796e2de8cedde389057173d8705787ce63",
+  "safety": {
+    "maximum_live_particles": 244059,
+    "maximum_sampled_absolute_field_V_m": 66621.88831897211
+  },
+  "schema_version": 1,
+  "scope": "surface_flux_constrained_microstate_branch",
+  "surface_flux": {
+    "contract": true,
+    "crossing_sufficiency": true,
+    "finite": true,
+    "histogram_closure": true,
+    "histogram_rows": 256000,
+    "shape": true,
+    "summary_rows": 800,
+    "total_macro_crossings_per_surface": [
+      119905,
+      1025185
+    ]
+  }
+}

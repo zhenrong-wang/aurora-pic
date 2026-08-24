@@ -1,0 +1,131 @@
+{
+  "all_gates_passed": true,
+  "assessment": {
+    "conservation_closure_accepted": true,
+    "critical_transport_microstate_robust": true,
+    "exceptional_transport_microstate_robust": true,
+    "ionizing_tail_microstate_robust": true
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This quantifies sensitivity to constrained conditional microstates sharing cell populations, CIC first moments, and cellwise empirical velocity tuples. It is not unrestricted initial-condition uncertainty, asymptotic statistical convergence, cross-code flux validation, or experimental validation.",
+  "gates": {
+    "critical_phase_closure": true,
+    "critical_phase_direct_flux": true,
+    "exceptional_octant_closure": true,
+    "exceptional_octant_direct_flux": true,
+    "exceptional_octant_tail_flux": true
+  },
+  "interpretation": "Four-cycle surface transport is repeatable across the constrained independent particle microstates at every retained tolerance.",
+  "measurement_cycles_each_member": 4,
+  "members": [
+    {
+      "branch_report_sha256": "6f99b7a0c76eeaee2bf838fd388708bceda7d901be3a17ab96e7aa439590a637",
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -10.314477994340162,
+        "direct_outward_energy_flux_divergence_W_m-2": 23.43851540235947,
+        "inferred_outward_energy_flux_divergence_W_m-2": 24.45392251866683,
+        "relative_closure_error": 0.04152328181837699
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 18.865351086615682,
+        "direct_outward_energy_flux_divergence_W_m-2": 115.02973886598137,
+        "inferred_outward_energy_flux_divergence_W_m-2": 115.4204729066055,
+        "relative_closure_error": 0.00338530964901083
+      },
+      "maximum_surface_overflow_fraction": 0.0,
+      "name": "locked_source_microstate",
+      "nodes": 400,
+      "particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+      "peak_resident_set_kib": 195248,
+      "wall_seconds": 435.78427482000006
+    },
+    {
+      "branch_report_sha256": "20b528d9c75518d91a34a3806df3eea5f5465b179c68c5782ef78d22100efa31",
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -9.352454078590467,
+        "direct_outward_energy_flux_divergence_W_m-2": 24.157115697919593,
+        "inferred_outward_energy_flux_divergence_W_m-2": 25.114383128612577,
+        "relative_closure_error": 0.038116302749334814
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 15.64432620943293,
+        "direct_outward_energy_flux_divergence_W_m-2": 116.3821219310097,
+        "inferred_outward_energy_flux_divergence_W_m-2": 116.56273880113555,
+        "relative_closure_error": 0.0015495249338126065
+      },
+      "maximum_surface_overflow_fraction": 0.0,
+      "name": "microstate_51949",
+      "nodes": 400,
+      "particle_state_sha256": "6821ccb4cfe5da26465776a3d35b37b8e30894f54cb0523e963d01407ce6592c",
+      "peak_resident_set_kib": 195080,
+      "wall_seconds": 426.7729096160001
+    },
+    {
+      "branch_report_sha256": "1ee0e01f7301335433c8dc4ad0e7ac3dd05b340b10485ba5a98e9a93364a0429",
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -9.887770772059934,
+        "direct_outward_energy_flux_divergence_W_m-2": 24.232618040454724,
+        "inferred_outward_energy_flux_divergence_W_m-2": 25.740792736263135,
+        "relative_closure_error": 0.05859084105376921
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 16.414604349325785,
+        "direct_outward_energy_flux_divergence_W_m-2": 116.15354416438896,
+        "inferred_outward_energy_flux_divergence_W_m-2": 117.2015450959086,
+        "relative_closure_error": 0.008941869585951586
+      },
+      "maximum_surface_overflow_fraction": 0.0,
+      "name": "microstate_63059",
+      "nodes": 400,
+      "particle_state_sha256": "c0c6a6c9ec01ada12d50cc15ded16260d221237540fc83b659bbea520c04ab5f",
+      "peak_resident_set_kib": 195184,
+      "wall_seconds": 423.2095242559999
+    }
+  ],
+  "metrics": {
+    "critical_phase_direct_flux_relative_range": 0.03316672677929378,
+    "exceptional_octant_direct_flux_relative_range": 0.011673052430335567,
+    "exceptional_octant_tail_flux_relative_range": 0.18975377402159163,
+    "maximum_critical_phase_closure_error": 0.05859084105376921,
+    "maximum_exceptional_octant_closure_error": 0.008941869585951586,
+    "mean_critical_phase_direct_flux_W_m-2": 23.94274971357793,
+    "mean_exceptional_octant_direct_flux_W_m-2": 115.85513498712669,
+    "mean_exceptional_octant_tail_flux_W_m-2": 16.974760548458132
+  },
+  "microstate_contract": {
+    "equilibration_before_checkpoint_cycles": 6,
+    "members": [
+      "locked_source_microstate",
+      "microstate_51949",
+      "microstate_63059"
+    ],
+    "preserved": [
+      "cell occupancy",
+      "CIC nodal number density to roundoff",
+      "cellwise velocity-tuple multiset"
+    ],
+    "source_rule_sha256": "53f372d3ad10fb6c24c5265c962c559ca92d94cd4a3008c82c320b88912aabb4",
+    "varied": [
+      "constrained subcell position",
+      "position-velocity pairing within each cell"
+    ]
+  },
+  "provenance": {
+    "analyzer_sha256": "c6fe5725b4e20551960e2b2d4e51ced5248788b5ea479b5c07b789361c5bc9c3",
+    "branch_report_sha256s": {
+      "locked_source_microstate": "6f99b7a0c76eeaee2bf838fd388708bceda7d901be3a17ab96e7aa439590a637",
+      "microstate_51949": "20b528d9c75518d91a34a3806df3eea5f5465b179c68c5782ef78d22100efa31",
+      "microstate_63059": "1ee0e01f7301335433c8dc4ad0e7ac3dd05b340b10485ba5a98e9a93364a0429"
+    },
+    "rule_sha256": "95b72b70c95d95980d8270156bdeeb796e2de8cedde389057173d8705787ce63"
+  },
+  "schema_version": 1,
+  "scope": "prospective_surface_transport_microstate_ensemble_result",
+  "thresholds": {
+    "maximum_critical_phase_closure_error_each_member": 0.1,
+    "maximum_critical_phase_direct_flux_relative_range": 0.2,
+    "maximum_exceptional_octant_closure_error_each_member": 0.06,
+    "maximum_exceptional_octant_direct_flux_relative_range": 0.15,
+    "maximum_exceptional_octant_tail_flux_relative_range": 0.3
+  }
+}

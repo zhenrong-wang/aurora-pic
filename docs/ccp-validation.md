@@ -2646,6 +2646,40 @@ continuation-RNG histories at the declared horizon; it still does not provide
 unrestricted initial-condition uncertainty, asymptotic statistical
 convergence, matching eduPIC internal flux data, or experimental validation.
 
+### Direct-transport constrained-microstate uncertainty
+
+The remaining shared-original-state limitation was tested with the locked
+source particle state and two independently randomized conditional
+microstates. The existing randomization preserves cell occupancy, CIC nodal
+density to roundoff, and each cell's empirical velocity-tuple multiset while
+redrawing constrained subcell positions and position--velocity pairing. All
+three states had six RF cycles of evolution before the prospectively locked
+[`microstate rule`](../benchmarks/ccp/edupic-argon-surface-flux-microstate-rule-20260824.json)
+measured four fresh cycles. Runtime and diagnostic gates passed for the
+[`source state`](../benchmarks/ccp/edupic-argon-surface-flux-microstate-locked-20260824.json),
+[`microstate 51949`](../benchmarks/ccp/edupic-argon-surface-flux-microstate-51949-20260824.json),
+and
+[`microstate 63059`](../benchmarks/ccp/edupic-argon-surface-flux-microstate-63059-20260824.json).
+
+The checksum-bound
+[`microstate result`](../benchmarks/ccp/edupic-argon-surface-flux-microstate-result-20260824.json)
+passes all five prospective gates. Broad `0.125--0.5` direct transport spans
+`23.44--24.23 W/m2`, only `3.32%` against a `20%` limit, with an ensemble
+mean of `23.94 W/m2`. Exceptional `0.375--0.5` transport spans
+`115.03--116.38 W/m2`, or `1.17%` against `15%`, with a mean of
+`115.86 W/m2`. Its approximate above-15.8-eV component spans
+`15.64--18.87 W/m2`, or `18.98%` against `30%`, with a mean of
+`16.97 W/m2`. Maximum direct-versus-inferred closure errors are `5.86%` in
+the broad window and `0.89%` in the exceptional octant.
+
+At the declared four-cycle horizon, the direct transport magnitude is much
+less sensitive to constrained particle microstate than the earlier two-cycle
+estimate was to sampling duration. This independently strengthens both the
+broad and exceptional transport findings. The ensemble remains conditional on
+the empirical cell populations, CIC first moments, and velocity tuples; it is
+not unrestricted distribution-function uncertainty, cross-code internal-flux
+validation, or experimental validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
