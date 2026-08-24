@@ -419,3 +419,19 @@ field-dependent response instead indicates inadequate physical burn-in or
 decorrelation duration at `20--50 Td`. The next prospective gate varies
 low-field burn-in at fixed timestep and measurement contract; adding an
 external reference before stationarity is demonstrated would be premature.
+
+The next locked run extended burn-in sixfold to `1.2 us` and added explicit
+first-half/second-half diagnostics. It completed in 118 seconds at 108.3 MiB
+RSS. The `100 Td` control is stationary: drift changes `1.21%` and energy
+`0.40%` between measurement halves. The `50 Td` window is also internally
+stationary, with `3.75%` drift and `0.10%` energy changes, although its full
+means differ from the short-burn branch by `19.8%` and `20.9%`. This confirms
+that the short-burn values were transient rather than converged transport
+coefficients.
+
+At `20 Td`, drift still falls `19.4%` between measurement halves while mean
+energy rises `4.90%`; its drift standard error is `6.34%`. The
+[`long-burn result`](../benchmarks/swarm/edupic-argon-long-burn-result-20260824.json)
+therefore passes stationarity at `50` and `100 Td` but fails the overall rule.
+The field dependence is a clear observation: equilibration becomes much
+slower toward `20 Td`. Only that field now requires a longer isolated run.

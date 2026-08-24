@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm",
+  "scope": "prospective_low_field_long_burn_stationarity_result",
+  "all_declared_gates_passed": false,
+  "provenance": {
+    "rule_sha256": "2affcf6a066cea9cdd063a36ef82533f734f4036b55e9b0730bf3795c3c2a3c3",
+    "result_csv_sha256": "641fcd919bcd4141813ea1c73ae35c255a129d04cdec97a400519e1798e87e97",
+    "short_burn_csv_sha256": "8f2bcfcee99c05383f63741dce5fc162de73bb3036b63b06f40093f567601100"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "wall_seconds": 118.06,
+    "peak_resident_set_kib": 110920,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "points": [
+    {
+      "reduced_field_td": 20,
+      "electron_drift_velocity_m_s": 25679.798514755246,
+      "drift_relative_standard_error": 0.06335601410816916,
+      "drift_first_half_m_s": 28167.65849581923,
+      "drift_second_half_m_s": 23191.938533691275,
+      "drift_half_change_fraction": 0.1937600857447918,
+      "mean_energy_ev": 4.240242468708017,
+      "mean_energy_relative_standard_error": 0.009254165497440773,
+      "energy_first_half_ev": 4.136315051943031,
+      "energy_second_half_ev": 4.344169885472987,
+      "energy_half_change_fraction": 0.0490195631650491,
+      "stationary": false
+    },
+    {
+      "reduced_field_td": 50,
+      "electron_drift_velocity_m_s": 42331.3351366861,
+      "drift_relative_standard_error": 0.03623849132630417,
+      "drift_first_half_m_s": 43124.17861769595,
+      "drift_second_half_m_s": 41538.49165567631,
+      "drift_half_change_fraction": 0.03745894044918548,
+      "mean_energy_ev": 6.160359785338104,
+      "mean_energy_relative_standard_error": 0.0011394845397644008,
+      "energy_first_half_ev": 6.157322980348572,
+      "energy_second_half_ev": 6.163396590327629,
+      "energy_half_change_fraction": 0.0009859180617198184,
+      "stationary": true
+    },
+    {
+      "reduced_field_td": 100,
+      "electron_drift_velocity_m_s": 74143.59125654002,
+      "drift_relative_standard_error": 0.02188252140047911,
+      "drift_first_half_m_s": 74590.51404706454,
+      "drift_second_half_m_s": 73696.66846601522,
+      "drift_half_change_fraction": 0.012055601379714311,
+      "mean_energy_ev": 6.8583508440475125,
+      "mean_energy_relative_standard_error": 0.0015630847005169528,
+      "energy_first_half_ev": 6.844548852400317,
+      "energy_second_half_ev": 6.872152835694734,
+      "energy_half_change_fraction": 0.004024871856530146,
+      "stationary": true
+    }
+  ],
+  "gates": {
+    "stationary_20_td": false,
+    "stationary_50_td": true,
+    "stationary_100_td": true,
+    "agreement_with_short_burn_20_td": false,
+    "agreement_with_short_burn_50_td": false,
+    "agreement_with_short_burn_100_td": true,
+    "energy_coverage_margin": true
+  },
+  "assessment": "The long burn establishes internally stationary 50 and 100 Td windows. Their contrast with the short-burn results confirms a field-dependent equilibration transient rather than a universal collision-kernel instability. The 20 Td window remains nonstationary and must be extended in isolation.",
+  "next_gate": "Run only 20 Td with a longer burn and measurement duration using the same timestep, particles, collision package, and seed.",
+  "claim_boundary": "Stationarity at 50 and 100 Td makes those numerical points eligible for a future independent comparison. No external argon transport validation is claimed, and 20 Td remains ineligible."
+}
