@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "case_id": "edupic-1.0-default-argon-ccp",
   "scope": "prospective_native_edupic_to_aurorapic_internal_surface_transport",
   "case": {
@@ -12,11 +12,12 @@
     "ionizing_tail_threshold_eV": 15.8
   },
   "provenance": {
-    "upstream_edupic_source_sha256": "ff339feebe0b5732e926e8d3f9c144573828b6a2202d43ed9247f1e1f579c907",
-    "instrumenter_sha256": "1a7968f716c05c7f951eb8aa087e8cd57f9da4d2dfea02d144378b0c923be7a6",
-    "instrumentation_audit_sha256": "0deec6329f9e295a1c8a4e65436ac39e641995bb57b9c155d5e6307bd386332e",
-    "instrumented_source_sha256": "02e03e9e8f7bd4ff757765df83e199492e1e927d19d6ec8c36ed1e76c5429941",
-    "instrumented_binary_sha256": "0fd6e4bc510f88bb7c647bfcc132783325c8149a1d9285a5c61a66a0ca77c3e3",
+    "upstream_implementation": "C/eduPIC.cc",
+    "upstream_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "instrumenter_sha256": "7d62bf4a48b971fcbdb8110a3c059cc1787f1a219ffa36ccbbe798e9f1a9943b",
+    "instrumentation_audit_sha256": "a9f666e88a74ccd588e196a961df09293b9c5b070dacd09fe78d4bd25025c67b",
+    "instrumented_source_sha256": "5dacfcece16948bd9a2517f626fb24a9947e12cd25403f4d30e8b98c4720591f",
+    "instrumented_binary_sha256": "20028e26d7336ab1b209e8d1709bde1dfb9da71b171e8682b3acb4d1b263ac77",
     "input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
     "input_checkpoint_cycle": 2620,
     "aurorapic_result_sha256": "8006efd36ed9517a8365eaebb4f58fbba0d5913833324e9acb7f953d7ac7d94a",
@@ -31,7 +32,15 @@
     "omp_num_threads": 1,
     "nice_level": 10,
     "maximum_peak_resident_set_kib_each": 262144,
+    "hard_virtual_memory_limit_kib_each": 262144,
     "maximum_wall_seconds_each": 240.0
+  },
+  "premeasurement_amendment": {
+    "reason": "The first lock mistakenly targeted the separate Cpp/eduPIC.cpp implementation although the production checkpoint and all prior native reference results use C/eduPIC.cc. Its incompatible integer checkpoint reader interpreted the double-scalar electron-count field as 1084520448 and was OOM-killed before particle loading or measurement began.",
+    "observed_scientific_outputs_before_amendment": false,
+    "input_checkpoint_unchanged": true,
+    "corrective_action": "Instrument the exact pinned C/eduPIC.cc source, verify its native double-scalar checkpoint header under a 256 MiB address-space cap, and retain that cap for every run.",
+    "invalidated_lock_commit": "16c135b"
   },
   "comparison": {
     "aurorapic_result": "edupic-argon-surface-flux-microstate-result-20260824.json",
@@ -58,5 +67,5 @@
     "minimum_exceptional_tail_ratio": 1.2,
     "decision": "Supported when either same-sign density-normalized AuroraPIC/eduPIC ratio reaches its corresponding threshold; otherwise not supported. Measurement validity is assessed separately."
   },
-  "claim_boundary": "This is a local, source-instrumented cross-code comparison from one well-equilibrated eduPIC checkpoint and a constrained AuroraPIC microstate ensemble under the same nominal CCP case. The passive crossing diagnostic uses the same drift-crossing convention and histogram grid, but the continuation ensembles are not paired random streams. It is not direct comparison to a published crossing spectrum, experiment, unrestricted uncertainty quantification, or proof of general PIC correctness. The GPL-derived eduPIC source and binary remain local and are not redistributed."
+  "claim_boundary": "This is a local, source-instrumented cross-code comparison from one well-equilibrated checkpoint produced by eduPIC's C implementation and a constrained AuroraPIC microstate ensemble under the same nominal CCP case. The passive crossing diagnostic uses the same drift-crossing convention and histogram grid, but the continuation ensembles are not paired random streams. It is not direct comparison to a published crossing spectrum, experiment, unrestricted uncertainty quantification, or proof of general PIC correctness. The GPL-derived eduPIC source and binary remain local and are not redistributed."
 }
