@@ -59,7 +59,7 @@ class Campaign:
     campaign_version: str
     provenance: str
     retrieved: str
-    reference_manifest: Path
+    reference_manifest: Path | None
     reference_run: str
     field_absolute_tolerance_td: float
     field_relative_tolerance: float
@@ -281,8 +281,10 @@ def load_campaign(path: Path) -> Campaign:
         ),
         provenance=required(section, "provenance", context),
         retrieved=retrieved,
-        reference_manifest=resolved_path(
-            path.parent, required(section, "reference_manifest", context)
+        reference_manifest=(
+            resolved_path(path.parent, section["reference_manifest"].strip())
+            if section.get("reference_manifest", "").strip()
+            else None
         ),
         reference_run=reference_run,
         field_absolute_tolerance_td=nonnegative_number(
@@ -575,18 +577,24 @@ def run_campaign(
     output: Path,
     overwrite: bool,
 ) -> dict[str, object]:
-    for required_file, label in (
-        (executable, "swarm executable"),
-        (comparator, "swarm comparator"),
-        (campaign.reference_manifest, "reference manifest"),
-    ):
+    required_files = [(executable, "swarm executable")]
+    if campaign.reference_manifest is not None:
+        required_files.extend((
+            (comparator, "swarm comparator"),
+            (campaign.reference_manifest, "reference manifest"),
+        ))
+    for required_file, label in required_files:
         if not required_file.is_file():
             raise CampaignInputError(f"missing {label}: {required_file}")
     artifact_dir = output.parent / f"{output.stem}.artifacts"
-    comparison_paths = {
-        run.name: artifact_dir / f"{run.name}.reference.json"
-        for run in campaign.runs
-    }
+    comparison_paths = (
+        {
+            run.name: artifact_dir / f"{run.name}.reference.json"
+            for run in campaign.runs
+        }
+        if campaign.reference_manifest is not None
+        else {}
+    )
     protected_outputs = [
         output,
         *(run.result_file for run in campaign.runs),
@@ -597,19 +605,24 @@ def run_campaign(
             "aggregate report, result files, and per-run reference reports "
             "must all use unique paths"
         )
-    reference_data = reference_data_file(campaign.reference_manifest)
-    if not reference_data.is_file():
-        raise CampaignInputError(
-            f"missing reference data file: {reference_data}"
-        )
+    reference_data = (
+        reference_data_file(campaign.reference_manifest)
+        if campaign.reference_manifest is not None
+        else None
+    )
+    if reference_data is not None and not reference_data.is_file():
+        raise CampaignInputError(f"missing reference data file: {reference_data}")
     protected_inputs = {
         campaign.path,
-        campaign.reference_manifest,
-        reference_data,
-        comparator,
         executable,
         *(run.config_file for run in campaign.runs),
     }
+    if campaign.reference_manifest is not None:
+        protected_inputs.update((
+            campaign.reference_manifest,
+            reference_data,
+            comparator,
+        ))
     collisions = sorted(
         str(path) for path in protected_outputs if path in protected_inputs
     )
@@ -633,13 +646,16 @@ def run_campaign(
                 f"missing config for run {run.name!r}: {run.config_file}"
             )
 
-    artifact_dir.mkdir(parents=True, exist_ok=True)
+    if campaign.reference_manifest is not None:
+        artifact_dir.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
     environment["OMP_NUM_THREADS"] = "1"
     environment["OMP_DYNAMIC"] = "FALSE"
     environment["OMP_MAX_ACTIVE_LEVELS"] = "1"
     run_reports: list[dict[str, object]] = []
-    reference_passed = True
+    reference_passed: bool | None = (
+        True if campaign.reference_manifest is not None else None
+    )
     for run in campaign.runs:
         if overwrite:
             run.result_file.unlink(missing_ok=True)
@@ -665,63 +681,73 @@ def run_campaign(
                 f"swarm run {run.name!r} did not create declared result "
                 f"{run.result_file}"
             )
-        command = [
-            sys.executable,
-            str(comparator),
-            str(run.result_file),
-            str(campaign.reference_manifest),
-            "--output",
-            str(comparison_paths[run.name]),
-        ]
-        if overwrite:
-            command.append("--overwrite")
-        comparison = subprocess.run(
-            command,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        if comparison.returncode not in (0, 1):
-            raise CampaignInputError(
-                f"reference comparison for run {run.name!r} failed with "
-                f"exit {comparison.returncode}: {comparison.stderr.strip()}"
+        run_report: dict[str, object] = {
+            "name": run.name,
+            "config_file": str(run.config_file),
+            "config_sha256": sha256(run.config_file),
+            "result_file": str(run.result_file),
+            "result_sha256": sha256(run.result_file),
+            "reference_report": None,
+            "reference_report_sha256": None,
+            "reference_passed": None,
+            "swarm_stdout": completed.stdout,
+            "swarm_stderr": completed.stderr,
+            "reference_comparator_stdout": None,
+            "reference_comparator_stderr": None,
+        }
+        if campaign.reference_manifest is not None:
+            command = [
+                sys.executable,
+                str(comparator),
+                str(run.result_file),
+                str(campaign.reference_manifest),
+                "--output",
+                str(comparison_paths[run.name]),
+            ]
+            if overwrite:
+                command.append("--overwrite")
+            comparison = subprocess.run(
+                command,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
-        reference_passed = reference_passed and comparison.returncode == 0
-        try:
-            reference_report = json.loads(
-                comparison_paths[run.name].read_text(encoding="utf-8")
+            if comparison.returncode not in (0, 1):
+                raise CampaignInputError(
+                    f"reference comparison for run {run.name!r} failed with "
+                    f"exit {comparison.returncode}: {comparison.stderr.strip()}"
+                )
+            assert reference_passed is not None
+            reference_passed = (
+                reference_passed and comparison.returncode == 0
             )
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
-            raise CampaignInputError(
-                f"cannot read reference report for run {run.name!r}: {error}"
-            ) from error
-        report_passed = reference_report.get("passed")
-        if (
-            not isinstance(report_passed, bool)
-            or report_passed != (comparison.returncode == 0)
-        ):
-            raise CampaignInputError(
-                f"reference report for run {run.name!r} has an "
-                "inconsistent pass status"
-            )
-        run_reports.append(
-            {
-                "name": run.name,
-                "config_file": str(run.config_file),
-                "config_sha256": sha256(run.config_file),
-                "result_file": str(run.result_file),
-                "result_sha256": sha256(run.result_file),
+            try:
+                reference_report = json.loads(
+                    comparison_paths[run.name].read_text(encoding="utf-8")
+                )
+            except (OSError, UnicodeError, json.JSONDecodeError) as error:
+                raise CampaignInputError(
+                    f"cannot read reference report for run {run.name!r}: {error}"
+                ) from error
+            report_passed = reference_report.get("passed")
+            if (
+                not isinstance(report_passed, bool)
+                or report_passed != (comparison.returncode == 0)
+            ):
+                raise CampaignInputError(
+                    f"reference report for run {run.name!r} has an "
+                    "inconsistent pass status"
+                )
+            run_report.update({
                 "reference_report": str(comparison_paths[run.name]),
                 "reference_report_sha256": sha256(
                     comparison_paths[run.name]
                 ),
                 "reference_passed": report_passed,
-                "swarm_stdout": completed.stdout,
-                "swarm_stderr": completed.stderr,
                 "reference_comparator_stdout": comparison.stdout,
                 "reference_comparator_stderr": comparison.stderr,
-            }
-        )
+            })
+        run_reports.append(run_report)
 
     rows_by_run = {
         run.name: load_csv(run.result_file, run.name, campaign.observables)
@@ -752,7 +778,7 @@ def run_campaign(
     convergence_passed = all(item["passed"] for item in convergence)
     report: dict[str, object] = {
         "report_version": 1,
-        "passed": reference_passed and convergence_passed,
+        "passed": convergence_passed and reference_passed is not False,
         "campaign": {
             "manifest": str(campaign.path),
             "manifest_sha256": sha256(campaign.path),
@@ -760,9 +786,15 @@ def run_campaign(
             "campaign_version": campaign.campaign_version,
             "provenance": campaign.provenance,
             "retrieved": campaign.retrieved,
-            "reference_manifest": str(campaign.reference_manifest),
-            "reference_manifest_sha256": sha256(
-                campaign.reference_manifest
+            "reference_manifest": (
+                str(campaign.reference_manifest)
+                if campaign.reference_manifest is not None
+                else None
+            ),
+            "reference_manifest_sha256": (
+                sha256(campaign.reference_manifest)
+                if campaign.reference_manifest is not None
+                else None
             ),
             "reference_run": campaign.reference_run,
             "execution_policy": {
@@ -775,12 +807,23 @@ def run_campaign(
         "tooling": {
             "swarm_executable": str(executable),
             "swarm_executable_sha256": sha256(executable),
-            "reference_comparator": str(comparator),
-            "reference_comparator_sha256": sha256(comparator),
+            "reference_comparator": (
+                str(comparator)
+                if campaign.reference_manifest is not None
+                else None
+            ),
+            "reference_comparator_sha256": (
+                sha256(comparator)
+                if campaign.reference_manifest is not None
+                else None
+            ),
             "python_version": sys.version,
         },
         "physics_identity": reference_identity,
         "reference_validation_passed": reference_passed,
+        "external_reference_available": (
+            campaign.reference_manifest is not None
+        ),
         "convergence_validation_passed": convergence_passed,
         "convergence_acceptance_rule": (
             "abs(run-reference_run) <= absolute_tolerance + "
@@ -789,6 +832,13 @@ def run_campaign(
         ),
         "runs": run_reports,
         "convergence": convergence,
+        "claim_boundary": (
+            "This reference-free campaign tests numerical convergence only; "
+            "it does not validate the gas data or physical transport model."
+            if campaign.reference_manifest is None
+            else "Passing requires both the declared external-reference and "
+                 "numerical-convergence criteria."
+        ),
     }
     write_report(output, report, overwrite)
     return report
@@ -830,7 +880,7 @@ def main(argv: Iterable[str] = sys.argv[1:]) -> int:
         )
         return 0
     print(
-        "swarm campaign did not meet reference or convergence criteria",
+        "swarm campaign did not meet its declared criteria",
         file=sys.stderr,
     )
     return 1

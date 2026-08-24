@@ -192,6 +192,43 @@ def main() -> int:
             "campaign rejected explicit overwrite",
         )
 
+        convergence_only_manifest = work / "convergence-only.swarm-campaign"
+        convergence_only_manifest.write_text(
+            manifest.read_text(encoding="utf-8").replace(
+                f"reference_manifest = {reference_manifest.name}\n", ""
+            ),
+            encoding="utf-8",
+        )
+        convergence_only_report = work / "convergence-only.json"
+        convergence_only = run(
+            convergence_only_manifest,
+            executable,
+            convergence_only_report,
+            overwrite=True,
+        )
+        require(
+            convergence_only.returncode == 0,
+            f"reference-free campaign failed: {convergence_only.stderr}",
+        )
+        convergence_only_result = json.loads(
+            convergence_only_report.read_text(encoding="utf-8")
+        )
+        require(
+            convergence_only_result["passed"]
+            and convergence_only_result["external_reference_available"]
+            is False
+            and convergence_only_result["reference_validation_passed"]
+            is None
+            and convergence_only_result["convergence_validation_passed"]
+            and convergence_only_result["campaign"]["reference_manifest"]
+            is None
+            and convergence_only_result["runs"][0]["reference_report"]
+            is None
+            and "numerical convergence only"
+            in convergence_only_result["claim_boundary"],
+            "reference-free campaign overclaimed its result",
+        )
+
         write_result(coarse_fixture, 90.0)
         failed = run(manifest, executable, report, overwrite=True)
         require(

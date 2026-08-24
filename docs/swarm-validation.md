@@ -246,8 +246,9 @@ an invalid or ambiguous input. Existing reports require `--overwrite`.
 
 A physical cross-section package is not validated by one stochastic run.
 Use `run_swarm_campaign.py` to execute two or more resolution studies
-serially, compare every result with the same independent reference contract,
-and test numerical convergence against a designated finest run:
+serially and test numerical convergence against a designated finest run. If
+`reference_manifest` is present, every result is also compared with that same
+independent reference contract:
 
 ```ini
 [campaign]
@@ -302,18 +303,28 @@ Runs are launched one at a time with `OMP_NUM_THREADS=1`,
 `OMP_DYNAMIC=FALSE`, and `OMP_MAX_ACTIVE_LEVELS=1`; a manifest is limited to
 16 runs. Existing result, comparison, or aggregate report files are rejected
 unless `--overwrite` is explicit. Every run is first evaluated by
-`compare_swarm.py`. The campaign then requires identical gas, dataset
+`compare_swarm.py` when a reference manifest is supplied. The campaign always
+requires identical gas, dataset
 ID/version, population model, collision-model signature, and E/N points
 across resolutions. It applies the same uncertainty-aware residual form to
 each non-reference run relative to `reference_run`.
 
 The aggregate JSON records SHA-256 values for the campaign manifest, every
-configuration, every result, every per-run reference report, and the
-reference manifest, plus the swarm executable and comparator. Captured
+configuration, and every result. When applicable it also hashes every per-run
+reference report and the reference manifest, plus the comparator. Captured
 command output is retained per run. Per-run reference reports are stored in
 `<report-stem>.artifacts/`. Exit status is zero for a full pass, one for a
 well-formed campaign that misses reference or convergence criteria, and two
 for invalid inputs or failed simulations.
+
+For an acquisition-stage numerical study, `reference_manifest` may be
+omitted. The runner then skips external comparisons, records
+`external_reference_available = false` and
+`reference_validation_passed = null`, and evaluates only convergence against
+`reference_run`. The report carries an explicit claim boundary that such a
+pass does not validate the gas data or physical transport model. Adding an
+independent reference later restores the combined external-reference and
+convergence gate without changing the run schema.
 
 The runner deliberately performs no download and assigns no license. Keep
 the original gas package, importer audit, reference data, and their terms
