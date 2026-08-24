@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-experimental-discriminator",
+  "scope": "prospective_exact_field_secondary_collision_model_experimental_comparison",
+  "physics_claim": "collision_package_discriminator_for_historical_argon_mobility",
+  "hypothesis": "At the five previously locked Dutton measurement fields, AuroraPIC using the independently implemented eduPIC 1.0 Phelps-based argon collision package predicts drift within the unchanged 20% plus two simulation-standard-error allowance at every point.",
+  "prior_information": "Earlier reference-free eduPIC-package swarm work observed stationary estimates at 50 and 100 Td near the historical measurement range. Those runs used different fields and were not scored against Dutton. This test is prospective for the exact-field five-point pass/fail result but is not a blind model selection exercise.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "swarm_config_sha256": "e0af79e37095784fcd58d250ce0911e55c5fdbb08239829b31a39fd1e56819ca",
+    "comparator_sha256": "743ad7b986d38e29337b96a341df44c82d873025c0a09ec981636d57cfe08aee",
+    "reference_preparer_sha256": "0e07c7185581262a83821b4c40738af963f9056cfbafdabd21d63fe0e3c7b979",
+    "local_lxcat_dutton_export_sha256": "1845bd791cddf7c8a8878ed5c6663d71eb46c4da78bfa4a5218046eda8ee17bb",
+    "local_derived_reference_csv_sha256": "7448eb03e41350557d0d1e6c31231ca0988b40e2d62fa27a973d94925f21e2f7",
+    "local_reference_manifest_sha256": "e5c9fe0e8b957441f802aa69688cf405bf584dc53dc193fa2d85a648c805e5b8",
+    "edupic_source_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "local_edupic_generated_source_table_sha256": "8bf9b7970e9297c0776f04c60d40c39a27e98538c45a470eaca5decd308f03d4",
+    "local_edupic_package_audit_sha256": "ba747fc8bcedc48f17af002e62d89592b8c946e83bb5ec766b219d0359c4ead9",
+    "local_edupic_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "local_edupic_elastic_table_sha256": "f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47",
+    "local_edupic_excitation_table_sha256": "9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c",
+    "local_edupic_ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [52.8, 53.6, 90.8, 99.5, 99.7],
+    "simulation_neutral_temperature_k": 293,
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 24000,
+    "measurement_steps": 8000,
+    "maximum_total_particle_steps": 960000000,
+    "maximum_wall_seconds": 420,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_drift_relative_standard_error": 0.05,
+    "experimental_comparison_relative_tolerance": 0.20,
+    "experimental_comparison_uncertainty_multiplier": 2.0,
+    "all_five_points_must_pass": true,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "controlled_difference_from_failed_maiorov_run": {
+    "changed": [
+      "elastic, excitation, and ionization cross sections",
+      "cross-section interpolation convention",
+      "ionization secondary-energy model"
+    ],
+    "unchanged": [
+      "AuroraPIC executable",
+      "five exact reduced fields",
+      "neutral density and temperature",
+      "timestep, particles, burn-in and measurement horizons",
+      "random seed, fixed-population model, numerical gates, reference data, and experimental acceptance rule"
+    ]
+  },
+  "classification": "If the numerical gates and all five experimental gates pass, while the otherwise matched Maiorov package failed, the collision package is the demonstrated discriminator for this transport observable. This supports the AuroraPIC collision/transport kernel across two substantially different packages but does not make the Phelps-based result a blind prediction because such cross sections may themselves incorporate swarm constraints.",
+  "claim_boundary": "The Dutton temperature, bulk-versus-flux convention, and pointwise uncertainty limitations remain. This homogeneous fixed-population test does not validate self-consistent PIC fields, ion transport, boundaries, geometry, chemistry, or device observables. Local GPL-derived eduPIC tables are not redistributed."
+}
