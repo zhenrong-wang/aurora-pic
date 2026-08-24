@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "case_id": "maiorov-2024-table8-argon-swarm-robustness",
+  "scope": "prospective_external_reproduction_timestep_and_seed_robustness_result",
+  "all_declared_gates_passed": true,
+  "provenance": {
+    "rule_sha256": "2726cd3dae3012b0ced8c7008456ce3b49ca8ee356aa9357ac6f28f9b653ec19",
+    "baseline_result_csv_sha256": "16e688e766cbc9ea08a83eb42a31643869a752797f9dc7141f45acc0942be655",
+    "independent_seed_result_csv_sha256": "86ed66c0864c6099e535546048afbe71abfa550230edf36c623a8166e44695ce",
+    "timestep_refined_result_csv_sha256": "63607f4b49ec5ddc7ab2f90ab20f508bc9498ad07dd2c644607f52f09decfae7",
+    "independent_seed_comparison_sha256": "ae7d48452e998fd5f70268ca60da8f5eb93af19d0f70e2c69fbe1f6d0ed0e119",
+    "timestep_refined_comparison_sha256": "12a8be2a01a90a4bff0edf010b519e4ebad6a31972fc5e5d0a733aed2c4ab026"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "independent_seed_wall_seconds": 120.99,
+    "timestep_refined_wall_seconds": 228.85,
+    "total_new_wall_seconds": 349.84,
+    "maximum_peak_resident_set_kib": 5696,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "per_run_observations": {
+    "independent_seed": [
+      {
+        "reduced_field_td": 50,
+        "drift_velocity_m_s": 53910.98163206588,
+        "mean_energy_ev": 5.919030219578515,
+        "drift_relative_standard_error": 0.02055310195519499,
+        "mean_energy_relative_standard_error": 0.0012428282424588404,
+        "drift_half_change_fraction": 0.01918361960932714,
+        "energy_half_change_fraction": 0.0011525878497715308,
+        "published_comparison_passed": true
+      },
+      {
+        "reduced_field_td": 100,
+        "drift_velocity_m_s": 91113.22247440027,
+        "mean_energy_ev": 6.773190054790383,
+        "drift_relative_standard_error": 0.013779714774047274,
+        "mean_energy_relative_standard_error": 0.0022598937598999882,
+        "drift_half_change_fraction": 0.03268897251429382,
+        "energy_half_change_fraction": 0.010705310745352036,
+        "published_comparison_passed": true
+      }
+    ],
+    "timestep_refined": [
+      {
+        "reduced_field_td": 50,
+        "drift_velocity_m_s": 49999.91249311251,
+        "mean_energy_ev": 5.897048230245885,
+        "drift_relative_standard_error": 0.03347740467676516,
+        "mean_energy_relative_standard_error": 0.0014746477879456247,
+        "drift_half_change_fraction": 0.03891157725515818,
+        "energy_half_change_fraction": 0.003672670961484144,
+        "published_comparison_passed": true
+      },
+      {
+        "reduced_field_td": 100,
+        "drift_velocity_m_s": 92365.90071304684,
+        "mean_energy_ev": 6.752970509469604,
+        "drift_relative_standard_error": 0.015055133077178985,
+        "mean_energy_relative_standard_error": 0.001287760913626966,
+        "drift_half_change_fraction": 0.00947297611834435,
+        "energy_half_change_fraction": 0.0035457196271666404,
+        "published_comparison_passed": true
+      }
+    ]
+  },
+  "robustness": [
+    {
+      "reduced_field_td": 50,
+      "cross_seed_drift_relative_difference": 0.0834574882630964,
+      "cross_seed_drift_normalized_residual": 0.8765454575992305,
+      "cross_seed_energy_relative_difference": 0.005399300175097251,
+      "cross_seed_energy_normalized_residual": 0.16320906134688176,
+      "timestep_drift_relative_difference": 0.004856115825958196,
+      "timestep_drift_normalized_residual": 0.04319016023998406,
+      "timestep_energy_relative_difference": 0.0016654661057290748,
+      "timestep_energy_normalized_residual": 0.049772741423501375,
+      "three_run_ensemble_drift_relative_residual_from_published": 0.04536853499855203,
+      "three_run_ensemble_energy_relative_residual_from_published": -0.0022643967638363727,
+      "all_robustness_gates_passed": true
+    },
+    {
+      "reduced_field_td": 100,
+      "cross_seed_drift_relative_difference": 0.0035020324469052706,
+      "cross_seed_drift_normalized_residual": 0.04744657450457337,
+      "cross_seed_energy_relative_difference": 0.000815857592477965,
+      "cross_seed_energy_normalized_residual": 0.02265603185530244,
+      "timestep_drift_relative_difference": 0.010198408443109557,
+      "timestep_drift_normalized_residual": 0.13468575343233685,
+      "timestep_energy_relative_difference": 0.0037986543083215548,
+      "timestep_energy_normalized_residual": 0.10939592816728075,
+      "three_run_ensemble_drift_relative_residual_from_published": 0.06555251350374991,
+      "three_run_ensemble_energy_relative_residual_from_published": 0.01420449487566758,
+      "all_robustness_gates_passed": true
+    }
+  ],
+  "gates": {
+    "both_new_runs_stationary": true,
+    "both_new_runs_precise": true,
+    "both_new_runs_match_published_reference": true,
+    "cross_seed_consistency": true,
+    "half_timestep_convergence": true,
+    "ensemble_mean_matches_published_reference": true,
+    "energy_coverage_margin": true
+  },
+  "assessment": "The published argon reproduction is robust to a factor-two timestep refinement and a second random seed under every predeclared gate. Timestep changes are at most 1.02% for drift and 0.38% for mean energy. The largest seed difference is 8.35% for 50 Td drift but remains within its locked uncertainty-aware allowance; all other seed differences are below 0.55%.",
+  "scientific_significance": "The small timestep response makes integration discretization an unlikely explanation for the agreement with Maiorov Table 8. The field-dependent seed response independently confirms that 50 Td drift is substantially noisier and more correlated than mean energy or 100 Td drift.",
+  "claim_boundary": "Two seeds establish a robustness checkpoint but do not precisely estimate the full sampling distribution. This remains one published model comparison rather than experimental or device validation.",
+  "next_gate": "Acquire a traceable experimental or evaluated argon swarm reference and compare without changing the published-fit benchmark; independently extend seed count if a publication-grade 50 Td drift confidence interval is required."
+}

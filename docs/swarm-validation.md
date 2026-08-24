@@ -495,3 +495,28 @@ collective plasma behavior, or a device calculation. The paper also does not
 fully specify the ionization energy partition and fixed-population replacement
 procedure used for Table 8, so the remaining residual cannot be attributed to
 one implementation detail without further evidence.
+
+A second prospective rule then retained the original run as seed 1, added an
+independent seed at the original timestep, and repeated the original seed at
+half the timestep while preserving particle count and physical burn and
+measurement horizons. Both new branches independently pass the unchanged
+published comparison and every stationarity and precision gate.
+
+The timestep result is especially strong: drift changes only `0.49%` and
+`1.02%`, and mean energy changes `0.17%` and `0.38%`, at `50` and `100 Td`.
+The largest seed difference is the `50 Td` drift at `8.35%`; it passes the
+prospectively locked uncertainty-aware residual with normalized residual
+`0.877`. All other seed differences are below `0.55%`. The three-run means
+differ from the published drift by `4.54%` and `6.56%`, and from published
+mean energy by `-0.23%` and `1.42%`.
+
+The checksum-bearing
+[`robustness rule`](../benchmarks/swarm/maiorov-2024-argon-robustness-rule-20260824.json)
+and
+[`robustness result`](../benchmarks/swarm/maiorov-2024-argon-robustness-result-20260824.json)
+therefore remove timestep sensitivity as a plausible explanation for the
+agreement and show that the low-field drift uncertainty is genuinely
+sampling-dominated. Two seeds are a robustness checkpoint, not a precise
+estimate of the full sampling distribution. The next qualitatively different
+gate is experimental or independently evaluated transport data rather than
+more comparison against the same publication.
