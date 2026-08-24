@@ -61,6 +61,16 @@ def main() -> None:
     assert "spatial_average_start_step = 32001" in long_deck
     assert "spatial_average_rf_cycles = 4" in long_deck
 
+    microstate_rule = json.loads(Path(
+        "benchmarks/ccp/edupic-argon-surface-flux-microstate-rule-20260824.json"
+    ).read_text(encoding="utf-8"))
+    microstate_deck = build_deck(
+        base, Path("microstate-output"), Path("microstate-checkpoint.apc"),
+        microstate_rule, "microstate_51949")
+    assert "steps = 40000" in microstate_deck
+    assert "spatial_average_start_step = 24001" in microstate_deck
+    assert "spatial_average_rf_cycles = 4" in microstate_deck
+
 
 if __name__ == "__main__":
     main()
