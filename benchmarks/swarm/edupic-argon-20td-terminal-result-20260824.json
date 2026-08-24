@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm-20td",
+  "scope": "prospective_terminal_low_field_stationarity_result",
+  "all_declared_gates_passed": false,
+  "provenance": {
+    "rule_sha256": "abf55ff6fade7f4df79505dea794789f7178dd2c6a38473289d6832deecc81ed",
+    "result_csv_sha256": "31a1f559dac9e2f38752cf8bf93c022100aa0b8302218ec74ec0d6abdef2da1a"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "wall_seconds": 89.91,
+    "peak_resident_set_kib": 111792,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "metrics": {
+    "electron_drift_velocity_m_s": 21937.786498000896,
+    "drift_relative_standard_error": 0.035553146752883305,
+    "drift_first_half_m_s": 23202.58480522809,
+    "drift_second_half_m_s": 20672.98819077362,
+    "drift_half_change_fraction": 0.1153077414936544,
+    "mean_energy_ev": 5.317656417874791,
+    "mean_energy_relative_standard_error": 0.003928483758100522,
+    "energy_first_half_ev": 5.262394647103591,
+    "energy_second_half_ev": 5.372918188645998,
+    "energy_half_change_fraction": 0.02078425773633904,
+    "maximum_observed_energy_ev": 16.730402318811095
+  },
+  "gates": {
+    "drift_precision": true,
+    "mean_energy_precision": true,
+    "drift_half_window_stationarity": false,
+    "mean_energy_half_window_stationarity": false,
+    "energy_coverage_margin": true
+  },
+  "assessment": "After a 3 microsecond burn, sampling precision is adequate but the 20 Td drift still decreases by 11.5 percent and mean energy rises by 2.08 percent across the measurement window. This cleanly distinguishes residual physical-time equilibration from insufficient simultaneous particle count.",
+  "next_gate": "Extend physical burn and measurement duration while reducing simultaneous particles so total work and measurement samples remain bounded.",
+  "claim_boundary": "The 20 Td point remains ineligible for external transport scoring. The stationary 50 and 100 Td points are unaffected."
+}

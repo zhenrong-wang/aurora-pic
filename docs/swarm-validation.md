@@ -435,3 +435,14 @@ energy rises `4.90%`; its drift standard error is `6.34%`. The
 therefore passes stationarity at `50` and `100 Td` but fails the overall rule.
 The field dependence is a clear observation: equilibration becomes much
 slower toward `20 Td`. Only that field now requires a longer isolated run.
+
+The isolated `20 Td` follow-up used a `3 us` burn and `0.8 us` measurement
+window with 6,000 particles. Runtime was 89.9 seconds at 109.2 MiB RSS.
+Precision passed (`3.56%` drift and `0.39%` energy standard errors), but
+stationarity did not: drift decreased `11.5%` and energy increased `2.08%`
+between measurement halves. The
+[`terminal result`](../benchmarks/swarm/edupic-argon-20td-terminal-result-20260824.json)
+therefore isolates a genuine remaining physical-time transient, rather than
+particle-count noise. A final time-focused extension can halve simultaneous
+particles while lengthening burn and measurement, preserving bounded work and
+the same total measurement samples.
