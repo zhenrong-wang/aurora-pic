@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "predeclared_checkpoint_continuation_surface_flux_seed_ensemble",
+  "axis": "surface_flux_collision_rng_continuation_seed",
+  "question": "Does the directly measured interior electron-energy transport persist across three decorrelated collision-RNG continuation realizations?",
+  "fixed_inputs": {
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83",
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "nodes": 400,
+    "cells": 399,
+    "length_m": 0.025,
+    "timestep_s": 1.8436578171091445e-11,
+    "steps_per_rf_cycle": 4000,
+    "start_step": 24000,
+    "end_step": 32000,
+    "measurement_cycles": 2,
+    "macro_weight": 700000000.0
+  },
+  "branches": {
+    "seed_13507": {
+      "seed": 13507,
+      "nodes": 400,
+      "cells": 399,
+      "input_checkpoint_sha256": "94624b052f3d13ae862d5f75ab33e7ec2b5826dc74b769f0d182be249e5af75b",
+      "prior_branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+      "timeout_seconds": 480
+    },
+    "seed_24601": {
+      "seed": 24601,
+      "nodes": 400,
+      "cells": 399,
+      "input_checkpoint_sha256": "a35aa53d722206bb9d602acb0441ccd36e58227b64541a85b5e2f92de7b739bf",
+      "prior_branch_report_sha256": "9803394cd111e0ec2f15bbea9390f0d098beac510a217310b4c97270b697da8e",
+      "timeout_seconds": 480
+    },
+    "seed_35713": {
+      "seed": 35713,
+      "nodes": 400,
+      "cells": 399,
+      "input_checkpoint_sha256": "5d20b7d2a285c909aca9853f05779847efd3720b02a3a6abfc58d1e27c403468",
+      "prior_branch_report_sha256": "0ff115551bb527f39048254c5dc860c811cbe2c640ffbe23d2186837f948155f",
+      "timeout_seconds": 480
+    }
+  },
+  "execution_contract": {
+    "serial": true,
+    "minimum_available_memory_kib": 2097152,
+    "minimum_available_disk_kib": 10485760,
+    "maximum_peak_resident_set_kib": 307200,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "run_branches_sequentially": true,
+    "stop_after_each_branch": true
+  },
+  "diagnostic_contract": {
+    "spatial_sampling_order": "pre_collision",
+    "spatial_average_interval_steps": 1,
+    "phase_bins": 200,
+    "phase_eedf_energy_bins": 320,
+    "phase_eedf_energy_max_eV": 80.0,
+    "phase_eedf_regions": "full_gap:0:0.025",
+    "surface_flux_species": "electrons",
+    "surface_positions_m": [0.005, 0.015],
+    "surface_energy_bins": 320,
+    "surface_energy_max_eV": 80.0,
+    "minimum_total_macro_crossings_per_surface": 25000,
+    "reset_on_restart": true
+  },
+  "prospective_acceptance": {
+    "relative_range_definition": "(maximum - minimum) / arithmetic_mean",
+    "maximum_critical_phase_direct_flux_relative_range": 0.20,
+    "maximum_exceptional_octant_direct_flux_relative_range": 0.15,
+    "maximum_exceptional_octant_tail_flux_relative_range": 0.30,
+    "maximum_critical_phase_closure_error_each_member": 0.10,
+    "maximum_exceptional_octant_closure_error_each_member": 0.06,
+    "all_gates_required": true
+  },
+  "interpretation": {
+    "pass": "Continuation-seed scatter is not a material explanation of the direct transport result at the declared sampling horizon and tolerances.",
+    "fail": "The direct transport result has material continuation-seed scatter or inadequate closure at a declared tolerance; longer sampling or a larger ensemble is required.",
+    "no_post_hoc_tuning": true
+  },
+  "resource_policy": "Reuse three completed six-cycle, decorrelated continuation-seed checkpoints and measure two fresh cycles sequentially on one inherited CPU at nice +10; do not replay equilibration.",
+  "branch_scope": "surface_flux_seed_ensemble_branch",
+  "claim_boundary": "The three arms share one original particle realization but have independently seeded collision-RNG histories and six cycles of decorrelation before this fresh measurement. A passing ensemble quantifies continuation-seed scatter, not unrestricted initial-condition uncertainty, asymptotic statistical convergence, cross-code flux validation, or experimental validation.",
+  "physics_claim": "surface_transport_continuation_seed_uncertainty_only"
+}

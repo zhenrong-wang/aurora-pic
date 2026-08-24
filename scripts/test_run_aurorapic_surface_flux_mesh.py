@@ -40,6 +40,17 @@ def main() -> None:
     assert "particles = 238898" in particle_deck
     assert "particles = 249890" in particle_deck
 
+    seed_rule = json.loads(Path(
+        "benchmarks/ccp/edupic-argon-surface-flux-seed-rule-20260824.json"
+    ).read_text(encoding="utf-8"))
+    seed_deck = build_deck(
+        base, Path("seed-output"), Path("seed-checkpoint.apc"), seed_rule,
+        "seed_24601")
+    assert "nx = 400" in seed_deck
+    assert "steps = 32000" in seed_deck
+    assert "spatial_average_start_step = 24001" in seed_deck
+    assert "phase_surface_flux_reset_on_restart = true" in seed_deck
+
 
 if __name__ == "__main__":
     main()

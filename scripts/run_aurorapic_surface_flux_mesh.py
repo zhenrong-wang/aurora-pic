@@ -21,6 +21,7 @@ from run_aurorapic_initialization_ab import set_species_value
 APPROVED_RULE_SHA256S = {
     "4bea77b968db89ca6a2e066a599d3e85b99c480de2f0cb6e56b12bdaeb891f54",
     "7fd0cf0eeb432b12a9a63d446b12c6e9e24ca0b03bd40f9a8cbc28e08841d2d7",
+    "f0d94adedf0bb6f74cb23472b6515a58d2c7c39ddbf3a7e363e6a3ce83ac904d",
 }
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_SURFACE_FLUX_MESH_RUN"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
