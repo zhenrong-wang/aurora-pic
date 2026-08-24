@@ -1,0 +1,31 @@
+[reference]
+swarm_reference_version = 2
+data_file = maiorov-2024-argon-reference.csv
+reference_id = maiorov.2024.argon.table8
+reference_version = 2024-table8-50-100td
+gas = argon
+population_model = fixed_population_no_avalanche
+coefficient_convention = flux_fixed_population
+provenance = Table 8 values transcribed from the cited peer-reviewed article; mean energy is 3/2 times the published effective temperature
+citation = Maiorov et al., Plasma Physics Reports 50, 1029-1041 (2024), doi:10.1134/S1063780X24601263
+retrieved = 2026-08-24
+license = Factual numeric excerpts retained with citation for scientific verification
+neutral_temperature_k = 293
+field_absolute_tolerance_td = 1e-12
+field_relative_tolerance = 1e-12
+
+[observable.drift]
+simulation_column = electron_drift_velocity_m_s
+reference_column = drift_velocity_m_s
+simulation_uncertainty_column = mean_velocity_x_standard_error_m_s
+relative_tolerance = 0.10
+absolute_tolerance = 0
+uncertainty_multiplier = 2
+
+[observable.mean_energy]
+simulation_column = mean_energy_ev
+reference_column = mean_energy_ev
+simulation_uncertainty_column = mean_energy_standard_error_ev
+relative_tolerance = 0.10
+absolute_tolerance = 0
+uncertainty_multiplier = 2

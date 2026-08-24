@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "case_id": "maiorov-2024-table8-argon-swarm-reproduction",
+  "scope": "prospective_external_published_simulation_reproduction",
+  "physics_claim": "published_transport_reproduction_diagnostic",
+  "hypothesis": "AuroraPIC using the paper's published analytic argon cross-section fits at 293 K reproduces its Table 8 fixed-swarm drift velocity and mean energy at 50 and 100 Td within 10%, after independently required stationarity and precision gates pass.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "generator_sha256": "bb82f7471a1ccec128aa52827b8afd800392e5dd113a8f05f4c08fd1e763b6a4",
+    "generated_gas_manifest_sha256": "df42f310222b1ac24e73e60b35f5bcb07b1d0ac8a4029b3287b45872a0646709",
+    "generated_elastic_table_sha256": "9775ad035bc5e4360082bb2da40653902f9a425a05a49aaea35bdc4197f9014e",
+    "generated_excitation_table_sha256": "b16b928c4cee789b7418d7e29e49ba74ed9cab2a747e35eb2c0d4d3da4202dae",
+    "generated_ionization_table_sha256": "cd793c28babd2303cb50472684ae82f6a0979567ab7941565a4dbde0b6deda89",
+    "swarm_config_sha256": "bd36dcec21f1fe1cf011a1320e969f995d1ab3ca7ec822090c5afa0f7a2ea58d",
+    "reference_csv_sha256": "954c90bc33d064a33e7b25bebd81ac848eb6f2edbe33b7123f36ec3bd5425fbc",
+    "reference_manifest_sha256": "a52685ee1c8b7f229b4daab3a94d3df80404b7ef849acf6f8fcb85f8f729d3af"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [50, 100],
+    "neutral_temperature_k": 293,
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 24000,
+    "burn_in_time_s": 1.2e-6,
+    "measurement_steps": 8000,
+    "measurement_time_s": 4e-7,
+    "maximum_total_particle_steps": 384000000,
+    "maximum_wall_seconds": 180,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_absolute_first_to_second_half_energy_change_fraction_of_full_mean": 0.03,
+    "maximum_drift_relative_standard_error": 0.05,
+    "maximum_mean_energy_relative_standard_error": 0.02,
+    "published_comparison_relative_tolerance": 0.10,
+    "published_comparison_uncertainty_multiplier": 2.0,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "model_alignment": {
+    "aligned": [
+      "published analytic elastic, aggregate excitation, and ionization cross-section fits",
+      "argon neutral gas at 293 K",
+      "constant uniform reduced electric field",
+      "isotropic elastic scattering and fixed computational population"
+    ],
+    "not_fully_specified_by_source": [
+      "ionization secondary-energy partition for Table 8",
+      "precise Table 8 population replacement procedure",
+      "published Monte Carlo timestep and convergence tolerances"
+    ],
+    "aurorapic_assumption": "equal-energy isotropic ionization with the generated secondary discarded in fixed_population_no_avalanche mode"
+  },
+  "classification": "Passing all gates is an external published-simulation reproduction milestone for homogeneous argon transport. It is stronger than internal convergence but remains one model-level comparison, not experimental validation or validation of self-consistent PIC fields, boundaries, or device observables.",
+  "claim_boundary": "Failure is diagnostic until the source's under-specified ionization and population treatment is resolved. Cross sections must not be tuned to force agreement."
+}

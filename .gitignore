@@ -18,6 +18,7 @@ tmp/
 *.vts
 *.apc
 *.csv
+!benchmarks/swarm/*-reference.csv
 *.dat
 !examples/*.dat
 *.log

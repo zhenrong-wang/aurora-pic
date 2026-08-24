@@ -1,0 +1,20 @@
+# Generate the package first with:
+# python3 scripts/generate_maiorov_2024_argon.py \
+#   tmp/maiorov-2024-argon-reproduction-20260824/package
+swarm_config_version = 1
+gas_data_file = ../../tmp/maiorov-2024-argon-reproduction-20260824/package/maiorov_2024_argon.gas
+neutral_density = 2.0694208669001848e21
+neutral_temperature = 293
+reduced_fields_td = 50, 100
+max_frequency = 1e9
+timestep = 5e-11
+steps = 32000
+burn_in_steps = 24000
+particles = 6000
+population_model = fixed_population_no_avalanche
+uncertainty_blocks = 10
+work_item_limit = 384000000
+initial_mean_energy_ev = 1
+max_energy_ev = 200
+seed = 271828
+output_file = ../../tmp/maiorov-2024-argon-reproduction-20260824/swarm.csv
