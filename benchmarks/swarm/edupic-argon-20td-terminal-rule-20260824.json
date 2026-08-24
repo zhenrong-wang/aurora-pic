@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm-20td",
+  "scope": "prospective_terminal_low_field_stationarity",
+  "physics_claim": "none_stationarity_only",
+  "hypothesis": "A 3 microsecond burn-in followed by a 0.8 microsecond measurement window is sufficient to make the isolated 20 Td swarm stationary and precise.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "config_sha256": "90ac05b1283b3e5478e662c31606619910fc9d2dbaebfe3cdbdbd4397e4c4385",
+    "prior_long_burn_csv_sha256": "641fcd919bcd4141813ea1c73ae35c255a129d04cdec97a400519e1798e87e97"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_field_td": 20,
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 60000,
+    "burn_in_time_s": 3e-6,
+    "measurement_steps": 16000,
+    "measurement_time_s": 8e-7,
+    "maximum_particle_steps": 456000000,
+    "maximum_wall_seconds": 150,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_absolute_first_to_second_half_energy_change_fraction_of_full_mean": 0.02,
+    "maximum_drift_relative_standard_error": 0.04,
+    "maximum_mean_energy_relative_standard_error": 0.015,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "claim_boundary": "A pass completes numerical stationarity qualification for the selected 20, 50, and 100 Td swarm points when combined with the preceding long-burn result. Independent transport data are still required for physical validation."
+}
