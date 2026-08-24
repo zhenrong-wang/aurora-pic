@@ -462,3 +462,36 @@ burn-in explanation for drift. The
 classifies the remaining 20 Td limitation as low signal-to-noise with long
 correlation time. Further work should increase measurement statistics and
 independent seeds at the qualified burn horizon, not extend burn-in blindly.
+
+## Published argon transport reproduction
+
+A prospectively locked external reproduction now evaluates the analytic argon
+elastic, aggregate-excitation, and ionization cross-section fits published by
+Maiorov et al. (2024). The deterministic
+`generate_maiorov_2024_argon.py` utility evaluates the paper's equations and
+parameters into a local SI gas package; no third-party cross-section table is
+redistributed. The run uses the paper's `293 K` neutral temperature and exact
+Table 8 fields of `50` and `100 Td`.
+
+The serial run completed in 119.0 seconds at 5.33 MiB peak RSS. Every locked
+stationarity, precision, energy-coverage, and 10% external-comparison gate
+passed. At `50 Td`, AuroraPIC gives `49.758 km/s` versus the published
+`49.0 km/s` drift velocity (`+1.55%`) and `5.887 eV` versus `5.9145 eV`
+mean energy (`-0.46%`). At `100 Td`, it gives `91.433 km/s` versus
+`86.0 km/s` (`+6.32%`) and `6.779 eV` versus `6.6735 eV` (`+1.58%`). No
+cross section, runtime parameter, or acceptance tolerance was adjusted after
+the result was observed.
+
+The checksum-bearing
+[`prospective rule`](../benchmarks/swarm/maiorov-2024-argon-reproduction-rule-20260824.json)
+and
+[`result`](../benchmarks/swarm/maiorov-2024-argon-reproduction-result-20260824.json)
+make this AuroraPIC's first retained external published-simulation
+reproduction for homogeneous electron transport. It is positive evidence for
+the tested field integration, neutral thermal sampling, collision selection,
+finite-mass kinematics, and transport estimator. It is not yet experimental
+validation, nor does it validate self-consistent PIC fields, boundaries,
+collective plasma behavior, or a device calculation. The paper also does not
+fully specify the ionization energy partition and fixed-population replacement
+procedure used for Table 8, so the remaining residual cannot be attributed to
+one implementation detail without further evidence.

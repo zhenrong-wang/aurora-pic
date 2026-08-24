@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "case_id": "maiorov-2024-table8-argon-swarm-reproduction",
+  "scope": "prospective_external_published_simulation_reproduction_result",
+  "all_declared_gates_passed": true,
+  "provenance": {
+    "rule_sha256": "e643abdd04a370aa6cc74c8076cd0ed9cdf4d9a604d9bccee816c1f97a4fba40",
+    "result_csv_sha256": "16e688e766cbc9ea08a83eb42a31643869a752797f9dc7141f45acc0942be655",
+    "comparison_json_sha256": "8fbc547bbba239d4ee0bc05c76befe0a23d67e600118fbef45ce3b4e7cafab8d",
+    "reference_csv_sha256": "954c90bc33d064a33e7b25bebd81ac848eb6f2edbe33b7123f36ec3bd5425fbc",
+    "reference_manifest_sha256": "a52685ee1c8b7f229b4daab3a94d3df80404b7ef849acf6f8fcb85f8f729d3af"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "wall_seconds": 118.99,
+    "peak_resident_set_kib": 5456,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "points": [
+    {
+      "reduced_field_td": 50,
+      "published_drift_velocity_m_s": 49000.0,
+      "aurorapic_drift_velocity_m_s": 49758.28051960877,
+      "drift_relative_residual": 0.01547511264507698,
+      "drift_relative_standard_error": 0.02381728745247968,
+      "drift_half_change_fraction": 0.02318070731401231,
+      "published_mean_energy_ev": 5.9145,
+      "aurorapic_mean_energy_ev": 5.887243226196472,
+      "mean_energy_relative_residual": -0.00460846627838842,
+      "mean_energy_relative_standard_error": 0.0009019446784163611,
+      "energy_half_change_fraction": 0.00029621999351392664,
+      "maximum_observed_energy_ev": 22.34530345333126,
+      "all_point_gates_passed": true
+    },
+    {
+      "reduced_field_td": 100,
+      "published_drift_velocity_m_s": 86000.0,
+      "aurorapic_drift_velocity_m_s": 91433.42529652038,
+      "drift_relative_residual": 0.06317936391302764,
+      "drift_relative_standard_error": 0.017066823195642927,
+      "drift_half_change_fraction": 0.03472034391035828,
+      "published_mean_energy_ev": 6.6735,
+      "aurorapic_mean_energy_ev": 6.778720525398316,
+      "mean_energy_relative_residual": 0.015766917719085345,
+      "mean_energy_relative_standard_error": 0.0019831986662444913,
+      "energy_half_change_fraction": 0.0019093671994830138,
+      "maximum_observed_energy_ev": 31.35523734858704,
+      "all_point_gates_passed": true
+    }
+  ],
+  "gates": {
+    "published_comparison": true,
+    "stationarity_50_td": true,
+    "stationarity_100_td": true,
+    "precision_50_td": true,
+    "precision_100_td": true,
+    "energy_coverage_margin": true
+  },
+  "assessment": "AuroraPIC prospectively reproduces both independently published argon transport points using the paper's analytic cross-section fits. Raw residuals are 1.55% and 6.32% for drift and -0.46% and 1.58% for mean energy at 50 and 100 Td. Every stationarity, precision, resource, coverage, and predeclared 10% comparison gate passes without parameter tuning.",
+  "scientific_significance": "This is the first retained external published-simulation reproduction for AuroraPIC's homogeneous electron transport kernel. It provides positive evidence for field integration, neutral thermal sampling, finite-mass collision kinematics, stochastic channel selection, and transport estimation under the tested argon conditions.",
+  "claim_boundary": "This result is model-level verification against one published Monte Carlo study, not experimental validation and not validation of self-consistent fields, plasma boundaries, collective PIC behavior, or device-scale observables. The source does not fully specify its Table 8 ionization energy partition and population replacement procedure.",
+  "next_gate": "Repeat the published-fit comparison under timestep refinement and independent seeds, then add an experimental or evaluated argon swarm reference using a separately licensed local dataset."
+}
