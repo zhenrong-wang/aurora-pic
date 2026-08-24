@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm-20td",
+  "scope": "prospective_long_physical_time_stationarity",
+  "physics_claim": "none_stationarity_only",
+  "hypothesis": "An 8 microsecond burn and 1.6 microsecond measurement window remove the residual 20 Td transient while preserving the previous run's total measurement samples and bounded host load.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "config_sha256": "f39d5e59188bf5674b534c450e0e42960c3bde8e4eca208a3e420d9b43b2e4ed",
+    "prior_3us_result_csv_sha256": "31a1f559dac9e2f38752cf8bf93c022100aa0b8302218ec74ec0d6abdef2da1a"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_field_td": 20,
+    "timestep_s": 5e-11,
+    "particles": 3000,
+    "burn_in_steps": 160000,
+    "burn_in_time_s": 8e-6,
+    "measurement_steps": 32000,
+    "measurement_time_s": 1.6e-6,
+    "measurement_particle_samples": 96000000,
+    "maximum_particle_steps": 576000000,
+    "maximum_wall_seconds": 150,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_absolute_first_to_second_half_energy_change_fraction_of_full_mean": 0.02,
+    "maximum_drift_relative_standard_error": 0.04,
+    "maximum_mean_energy_relative_standard_error": 0.015,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "claim_boundary": "A pass completes stationarity qualification for the selected 20, 50, and 100 Td numerical swarm points. Physical accuracy still requires independent measured or evaluated transport coefficients."
+}
