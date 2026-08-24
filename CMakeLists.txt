@@ -152,6 +152,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/analyze_hall_horizon_stage.py
   scripts/run_swarm_campaign.py
   scripts/generate_maiorov_2024_argon.py
+  scripts/prepare_lxcat_dutton_argon_reference.py
   scripts/generate_real_case_mesh.py scripts/import_lxcat.py
   scripts/analyze_aurorapic_surface_flux.py
   scripts/analyze_aurorapic_surface_flux_timestep.py

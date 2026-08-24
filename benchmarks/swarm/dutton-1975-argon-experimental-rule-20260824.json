@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "dutton-1975-argon-high-field-experimental-comparison",
+  "scope": "prospective_external_experimental_transport_comparison",
+  "physics_claim": "historical_experimental_argon_mobility_diagnostic",
+  "hypothesis": "Without retuning, AuroraPIC using the previously locked Maiorov 2024 analytic argon cross-section package predicts drift velocities derived from independent Dutton high-field mobility measurements within 20% plus two simulation standard errors at every exactly matched measured field.",
+  "locked_inputs": {
+    "lxcat_dutton_export_sha256": "1845bd791cddf7c8a8878ed5c6663d71eb46c4da78bfa4a5218046eda8ee17bb",
+    "reference_preparer_sha256": "0e07c7185581262a83821b4c40738af963f9056cfbafdabd21d63fe0e3c7b979",
+    "reference_preparer_test_sha256": "6ebc81a26e043efe506b33eb9a84d662292176e367f770bd4169dd8d368aff49",
+    "local_derived_reference_csv_sha256": "7448eb03e41350557d0d1e6c31231ca0988b40e2d62fa27a973d94925f21e2f7",
+    "local_reference_manifest_sha256": "e5c9fe0e8b957441f802aa69688cf405bf584dc53dc193fa2d85a648c805e5b8",
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "gas_generator_sha256": "bb82f7471a1ccec128aa52827b8afd800392e5dd113a8f05f4c08fd1e763b6a4",
+    "generated_gas_manifest_sha256": "df42f310222b1ac24e73e60b35f5bcb07b1d0ac8a4029b3287b45872a0646709",
+    "generated_elastic_table_sha256": "9775ad035bc5e4360082bb2da40653902f9a425a05a49aaea35bdc4197f9014e",
+    "generated_excitation_table_sha256": "b16b928c4cee789b7418d7e29e49ba74ed9cab2a747e35eb2c0d4d3da4202dae",
+    "generated_ionization_table_sha256": "cd793c28babd2303cb50472684ae82f6a0979567ab7941565a4dbde0b6deda89",
+    "swarm_config_sha256": "899ebfd1ab6adca625333ff01c5e23b5976f7fced9bee47202596c2254e7f0af",
+    "comparator_sha256": "743ad7b986d38e29337b96a341df44c82d873025c0a09ec981636d57cfe08aee"
+  },
+  "selection_contract": {
+    "sources": ["Brambring 1964", "Jager et al. 1962", "Wagner 1964"],
+    "target_reduced_fields_td": [50, 100],
+    "rule": "For each source and target, select its single nearest positive-field observation only if abs(measured-target)/target <= 0.10; ties select the lower field.",
+    "selected_reduced_fields_td": [52.8, 53.6, 90.8, 99.5, 99.7],
+    "conversion": "drift_velocity_m_s = mobility_times_density_m_inverse_V_inverse_s_inverse * reduced_field_td * 1e-21",
+    "interpolation": false,
+    "retuning_after_observation": false
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [52.8, 53.6, 90.8, 99.5, 99.7],
+    "simulation_neutral_temperature_k": 293,
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 24000,
+    "measurement_steps": 8000,
+    "maximum_total_particle_steps": 960000000,
+    "maximum_wall_seconds": 420,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_drift_relative_standard_error": 0.05,
+    "experimental_comparison_relative_tolerance": 0.20,
+    "experimental_comparison_uncertainty_multiplier": 2.0,
+    "all_five_points_must_pass": true,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "model_alignment": {
+    "aligned": [
+      "argon electron mobility/drift under a uniform reduced electric field",
+      "exact measured reduced fields without interpolation",
+      "cross sections and numerical settings fixed before observing the comparison"
+    ],
+    "known_ambiguities": [
+      "Dutton describes these source groups as ambient temperature unless otherwise stated; the three selected source blocks do not state an exact gas temperature",
+      "the historical mobility records do not identify the modern flux-versus-bulk transport convention",
+      "the LXCat transcription does not provide pointwise experimental uncertainties"
+    ]
+  },
+  "data_governance": "The LXCat export and locally derived point table remain under tmp/ and are not redistributed. The committed preparer, cryptographic hashes, selection contract, and aggregate result permit auditing without republishing contributor data.",
+  "classification": "Passing is evidence that this untuned argon collision package is consistent with three historical experimental sources at the declared engineering tolerance. Failure identifies a physical-model discrepancy, not by itself a PIC-kernel defect, because the published-fit collision package and historical coefficient conventions are separate uncertainty sources.",
+  "claim_boundary": "This comparison validates only homogeneous argon electron transport. It does not validate ion transport, self-consistent fields, boundaries, geometry, plasma chemistry, or a complete device calculation. Exact temperature and bulk/flux ambiguity prevent a metrology-grade validation claim."
+}

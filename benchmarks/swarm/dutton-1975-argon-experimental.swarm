@@ -1,0 +1,25 @@
+# Prepare the local reference from an independently downloaded LXCat Dutton
+# argon mobility export with:
+# python3 scripts/prepare_lxcat_dutton_argon_reference.py \
+#   tmp/argon-swarm-reference-review-20260824/lxcat-dutton-all-argon-mobility.txt \
+#   tmp/dutton-1975-argon-experimental-20260824/reference
+# Generate the Maiorov package with:
+# python3 scripts/generate_maiorov_2024_argon.py \
+#   tmp/dutton-1975-argon-experimental-20260824/package
+swarm_config_version = 1
+gas_data_file = ../../tmp/dutton-1975-argon-experimental-20260824/package/maiorov_2024_argon.gas
+neutral_density = 2.0694208669001848e21
+neutral_temperature = 293
+reduced_fields_td = 52.8, 53.6, 90.8, 99.5, 99.7
+max_frequency = 1e9
+timestep = 5e-11
+steps = 32000
+burn_in_steps = 24000
+particles = 6000
+population_model = fixed_population_no_avalanche
+uncertainty_blocks = 10
+work_item_limit = 960000000
+initial_mean_energy_ev = 1
+max_energy_ev = 200
+seed = 271828
+output_file = ../../tmp/dutton-1975-argon-experimental-20260824/swarm.csv
