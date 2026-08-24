@@ -1,0 +1,113 @@
+{
+  "all_measurement_gates_passed": true,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This is a local, source-instrumented cross-code comparison from one well-equilibrated checkpoint produced by eduPIC's C implementation and a constrained AuroraPIC microstate ensemble under the same nominal CCP case. The passive crossing diagnostic uses the same drift-crossing convention and histogram grid, but the continuation ensembles are not paired random streams. It is not direct comparison to a published crossing spectrum, experiment, unrestricted uncertainty quantification, or proof of general PIC correctness. The GPL-derived eduPIC source and binary remain local and are not redistributed.",
+  "gates": {
+    "critical_repeatability": true,
+    "crossing_population": true,
+    "exceptional_repeatability": true,
+    "histogram_overflow": true,
+    "tail_repeatability": true
+  },
+  "hypothesis_supported": false,
+  "members": [
+    {
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -6.509471269736178,
+        "direct_outward_energy_flux_divergence_W_m-2": 28.870459178080992
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 19.710527940012426,
+        "direct_outward_energy_flux_divergence_W_m-2": 115.25893699029297
+      },
+      "macro_crossings_by_surface": [
+        97735,
+        899618
+      ],
+      "maximum_overflow_fraction": 0.0,
+      "output_sha256": {
+        "edupic_phase_surface_flux.csv": "5f7c8cf3fd5543cc2e587ecab0fa6dbe8c5388e7f8cbd5b014a1e14e2b1cb47c",
+        "edupic_phase_surface_flux_summary.csv": "1869f0a3e9260754f835babf88878ebdea0808014a81dffb840f4a2e9cbd3717"
+      },
+      "seed": 13507
+    },
+    {
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -5.077777925483204,
+        "direct_outward_energy_flux_divergence_W_m-2": 31.32079105486669
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 20.994451572005598,
+        "direct_outward_energy_flux_divergence_W_m-2": 118.63861901542109
+      },
+      "macro_crossings_by_surface": [
+        98224,
+        903281
+      ],
+      "maximum_overflow_fraction": 0.0,
+      "output_sha256": {
+        "edupic_phase_surface_flux.csv": "a078d17b3cc43ba5acbd82b4d6af95a64e123061435f0721d390c2f7d7ce3fee",
+        "edupic_phase_surface_flux_summary.csv": "a7cfd9e4a28362395660244e4ad4ca1cdd507159c1df7d7d140f899f5109d191"
+      },
+      "seed": 24601
+    },
+    {
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -6.096451122004883,
+        "direct_outward_energy_flux_divergence_W_m-2": 29.009979603831454
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 19.77744252669611,
+        "direct_outward_energy_flux_divergence_W_m-2": 115.28109054419065
+      },
+      "macro_crossings_by_surface": [
+        97966,
+        899113
+      ],
+      "maximum_overflow_fraction": 0.0,
+      "output_sha256": {
+        "edupic_phase_surface_flux.csv": "cd2eb741105238d93a1fd87597f67f11a5c1b7e50c229ab90036cd00b9e32d3d",
+        "edupic_phase_surface_flux_summary.csv": "df3a969f907291ec8464b48f6f29fc45bfc949e426246d7e19f44b9e497d5a16"
+      },
+      "seed": 35713
+    }
+  ],
+  "metrics": {
+    "absolute_aurorapic_to_edupic_ratio": {
+      "critical_direct": 0.8052383276796237,
+      "exceptional_direct": 0.995379896209392,
+      "exceptional_tail": 0.8419682930815555
+    },
+    "aurorapic_density_normalized": {
+      "critical_direct_W_m-2": 21.364306478561886,
+      "exceptional_direct_W_m-2": 103.37846072777795,
+      "exceptional_tail_W_m-2": 15.146714186791995
+    },
+    "density_normalized_aurorapic_to_edupic_ratio": {
+      "critical_direct_W_m-2": 0.7185205804108666,
+      "exceptional_direct_W_m-2": 0.8881854181166524,
+      "exceptional_tail_W_m-2": 0.751295021407877
+    },
+    "edupic_ensemble_mean": {
+      "critical_direct_W_m-2": 29.73374327892638,
+      "exceptional_direct_W_m-2": 116.39288218330155,
+      "exceptional_tail_W_m-2": 20.160807346238045
+    },
+    "edupic_relative_range": {
+      "critical_direct": 0.08240912870605012,
+      "exceptional_direct": 0.029036844536641168,
+      "exceptional_tail": 0.06368413774028495
+    }
+  },
+  "prospective_hypothesis_outcome": {
+    "exceptional_direct_materially_larger": false,
+    "exceptional_tail_materially_larger": false
+  },
+  "provenance": {
+    "analyzer_sha256": "c7a2e2b40d5006cc2c49bcf6f2988fbcff0b98d2804eef6641835dff1fdaeae6",
+    "aurorapic_result_sha256": "8006efd36ed9517a8365eaebb4f58fbba0d5913833324e9acb7f953d7ac7d94a",
+    "rule_sha256": "9923d2ae37f87c4a6f5866f71d2039b5858d2fa96988a0ec26f7f4a4657f8f7d"
+  },
+  "schema_version": 1,
+  "scope": "native_edupic_to_aurorapic_internal_surface_transport"
+}

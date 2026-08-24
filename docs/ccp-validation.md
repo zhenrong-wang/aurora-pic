@@ -2734,6 +2734,52 @@ target the remaining ionization/heating discrepancy with an independently
 checkable collision-kinematics or swarm observable, rather than tuning the CCP
 case until its global outputs happen to agree.
 
+### Native eduPIC internal-transport cross-code comparison
+
+The missing external discriminator is now measured directly. A deterministic,
+passive transform instruments the exact pinned `C/eduPIC.cc` implementation
+that produced the 2620-cycle reference checkpoint. It records electron
+crossings at `x/L = 0.2` and `0.6` with the same post-kick drift velocity,
+200 phase bins, 0.25 eV energy bins, and represented-particle normalization as
+AuroraPIC. Three four-cycle continuations used prospectively fixed collision
+seeds. Every run was serial, low priority, hard-limited to 256 MiB virtual
+memory, and completed in `96.29--98.92 s` at `47,424--47,824 KiB` peak RSS.
+
+All predeclared measurement gates pass. Native eduPIC's exceptional
+`0.375--0.5` phase-window outward kinetic-energy divergence is
+`116.39 W/m2`; AuroraPIC's constrained-microstate mean is `115.86 W/m2`.
+The absolute ratio is `0.9954`, an unexpectedly close `0.46%` difference.
+For the approximate above-15.8-eV component, eduPIC gives `20.16 W/m2` and
+AuroraPIC `16.97 W/m2`, an absolute ratio of `0.8420`. Native replicate
+relative ranges are `2.90%` for exceptional total transport and `6.37%` for
+its ionizing tail, both well inside the `15%` and `30%` gates.
+
+The prospectively declared excessive-transport hypothesis is rejected. After
+dividing AuroraPIC flux by its independently measured `1.12069`
+AuroraPIC/eduPIC electron-density ratio, the exceptional total and tail ratios
+are `0.8882` and `0.7513`, respectively. AuroraPIC therefore does not lose too
+much electron energy through these interior surfaces per reference-density
+equivalent; its ionizing-tail transport is lower. The remaining retained-tail,
+heating-per-electron, and ionization discrepancy must be sought in energy-space
+formation or redistribution, collision kinematics/rates, sheath interaction,
+or another mechanism—not in excessive outward interior transport.
+
+The first attempted diagnostic targeted the separate `Cpp/eduPIC.cpp`
+implementation and encountered its incompatible checkpoint ABI before any
+measurement began. The kernel OOM-killed that process after it misread the
+double-scalar C checkpoint count as roughly 1.08 billion electrons. The
+amended prospective rule records this failure, pins the correct implementation,
+and adds the hard address-space cap. No scientific output was observed before
+the amendment, and the input checkpoint remained hash-identical.
+
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-native-surface-flux-crosscode-rule-20260824.json),
+[`result`](../benchmarks/ccp/edupic-native-surface-flux-crosscode-result-20260824.json),
+and [`execution record`](../benchmarks/ccp/edupic-native-surface-flux-crosscode-execution-20260824.json)
+preserve the full finding. This is a direct local cross-code diagnostic under
+one nominal CCP case, not a published crossing-spectrum comparison,
+experimental validation, or proof of general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_edupic_surface_flux_execution_record",
+  "rule_sha256": "9923d2ae37f87c4a6f5866f71d2039b5858d2fa96988a0ec26f7f4a4657f8f7d",
+  "scientific_result_sha256": "037ee08fc3b8f52f1862a79d4939a798d8b68c59e3b869411ee786e3cb1885e3",
+  "members": [
+    {
+      "seed": 13507,
+      "wall_seconds": 96.29,
+      "peak_resident_set_kib": 47824,
+      "exit_status": 0,
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "stdout_sha256": "200612027a129767206bebf2d2008f92c9c6f8a3f1f41f65c6beaa73819f5a5a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "time_report_sha256": "85586cc8fee20fd7540add74c6db721ddb59523f2b48e916ccae898e7e16c9e4"
+    },
+    {
+      "seed": 24601,
+      "wall_seconds": 96.51,
+      "peak_resident_set_kib": 47580,
+      "exit_status": 0,
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "stdout_sha256": "047d43b422310d86873dd5a566e87272f267895251e68aad7b7a33fa0aa87ee4",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "time_report_sha256": "f781844631fd66af702fa1d00c814f578088a993d2610e6200d47301f50218d6"
+    },
+    {
+      "seed": 35713,
+      "wall_seconds": 98.92,
+      "peak_resident_set_kib": 47424,
+      "exit_status": 0,
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "stdout_sha256": "e41a0dec62889a1d4888d3216ccf224375b661c6eba64ff2aba957195d15f5f3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "time_report_sha256": "8a0e3487d7fe73fefc638d1f6a6990f27a3056f4afbcc0afcca4a44d0d3bda81"
+    }
+  ],
+  "resource_gates": {
+    "serial_execution": true,
+    "maximum_wall_seconds_each": true,
+    "maximum_peak_resident_set_kib_each": true,
+    "empty_stderr_each": true,
+    "zero_exit_status_each": true,
+    "all_passed": true
+  },
+  "premeasurement_failure": {
+    "scientific_output_produced": false,
+    "cause": "The initial diagnostic mistakenly instrumented Cpp/eduPIC.cpp, whose integer checkpoint header is incompatible with the double-scalar C/eduPIC.cc checkpoint. It interpreted the electron count as 1084520448 and was OOM-killed.",
+    "correction": "The exact C/eduPIC.cc implementation was instrumented and all subsequent smoke and production runs used a 262144 KiB hard virtual-memory limit.",
+    "input_checkpoint_preserved_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4"
+  },
+  "claim_boundary": "This record establishes bounded execution and output provenance only. Scientific interpretation is in the separately checksum-bound result."
+}
