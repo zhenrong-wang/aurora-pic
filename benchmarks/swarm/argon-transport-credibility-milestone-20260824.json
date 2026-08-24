@@ -10,9 +10,39 @@
     "phelps_extended_five_field_result": "edupic-phelps-dutton-argon-extended-result-20260824.json",
     "phelps_terminal_52p8td_result": "edupic-phelps-dutton-argon-52p8td-result-20260824.json",
     "phelps_terminal_result_sha256": "c52852647fbd35e9dd2c29829b1743bb5f706db3a8ee14eb81158ae384777a5b",
-    "phelps_independent_seed_ensemble": "edupic-phelps-dutton-argon-seed-ensemble-result-20260824.json"
+    "phelps_independent_seed_ensemble": "edupic-phelps-dutton-argon-seed-ensemble-result-20260824.json",
+    "modern_ethz_three_field_parent_result": "edupic-phelps-ethz-argon-modern-result-20260824.json",
+    "modern_ethz_terminal_20td_result": "edupic-phelps-ethz-argon-20td-terminal-result-20260824.json",
+    "modern_ethz_terminal_20td_result_sha256": "9800ffda9a853306f5a8f6b0f7547a686e4bfac6e000717e8f6d4fd20ca03da4"
   },
   "qualified_points": [
+    {
+      "reduced_field_td": 10,
+      "source": "Haefliger and Franck 2018 ETHZ five-pressure consensus",
+      "experimental_relative_residual": 0.1527601773390145,
+      "experimental_normalized_residual": 0.6892695357546454,
+      "drift_half_change_fraction": 0.04780361011296003,
+      "drift_relative_standard_error": 0.048207248820942045,
+      "evidence_window_s": 3.2e-6
+    },
+    {
+      "reduced_field_td": 20,
+      "source": "Haefliger and Franck 2018 ETHZ five-pressure consensus",
+      "experimental_relative_residual": 0.029848652645080652,
+      "experimental_normalized_residual": 0.21526938471598406,
+      "drift_half_change_fraction": 0.011105385786219165,
+      "drift_relative_standard_error": 0.015474196697967301,
+      "evidence_window_s": 6.4e-6
+    },
+    {
+      "reduced_field_td": 30,
+      "source": "Haefliger and Franck 2018 ETHZ five-pressure consensus",
+      "experimental_relative_residual": -0.0016092008468808932,
+      "experimental_normalized_residual": 0.011586620490334923,
+      "drift_half_change_fraction": 0.03555581948709045,
+      "drift_relative_standard_error": 0.018353977695300627,
+      "evidence_window_s": 3.2e-6
+    },
     {
       "reduced_field_td": 52.8,
       "source": "Brambring 1964",
@@ -59,14 +89,16 @@
     "that reproduction is robust to a factor-two timestep refinement and a second random seed under the declared gates",
     "the common AuroraPIC transport kernel distinguishes a collision package that disagrees systematically with historical mobility from one that is consistent at all five selected fields",
     "the Phelps-based package passes stationarity, precision, energy-coverage, and historical experimental comparison gates at all five selected fields",
-    "two additional fully matched independent particle histories pass every per-run, cross-seed, and ensemble gate"
+    "two additional fully matched independent particle histories pass every per-run, cross-seed, and ensemble gate",
+    "the unchanged Phelps-based package passes a modern ETHZ pressure-resolved pulsed-Townsend mobility comparison at 10, 20, and 30 Td under uncertainty-aware gates",
+    "the modern comparison uses an explicitly temporal swarm coefficient that is compatible with AuroraPIC flux drift in this non-ionizing range"
   ],
   "not_demonstrated": [
     "blind predictive validation because Phelps-based cross sections may use swarm constraints",
-    "modern metrology-grade validation with explicit gas temperature, bulk-versus-flux convention, and pointwise experimental uncertainties",
+    "metrology-grade validation with pointwise experimental uncertainties and pointwise temperature metadata in the distributed table",
     "publication-grade estimation of the full sampling distribution beyond the two matched independent replicas",
     "validation of self-consistent PIC fields, ion transport, boundaries, imported geometry, plasma chemistry, collective behavior, or device observables"
   ],
-  "assessment": "AuroraPIC has reached an independently replicated homogeneous electron-argon transport credibility milestone. The evidence supports the numerical collision/transport kernel, demonstrates physically meaningful sensitivity to collision data, and is robust across two new matched particle histories. It does not yet justify a general real-case or device-level validation claim.",
-  "next_gate": "Acquire a modern explicitly defined swarm reference, then connect the qualified collision package to a self-consistent canonical PIC benchmark."
+  "assessment": "AuroraPIC has reached an independently replicated homogeneous electron-argon transport credibility milestone and now passes a modern, pressure-resolved experimental comparison from 10 to 30 Td. The evidence supports the numerical collision/transport kernel, demonstrates physically meaningful sensitivity to collision data, and spans both modern low-field and historical higher-field measurements. It does not yet justify a general real-case or device-level validation claim.",
+  "next_gate": "Connect the qualified collision package to a self-consistent canonical PIC benchmark, then qualify boundary/geometry observables before a real-device claim."
 }

@@ -636,3 +636,56 @@ It still does not estimate the complete sampling distribution or resolve the
 historical reference's temperature, uncertainty, and flux-versus-bulk
 ambiguities. The next qualitatively different step is modern reference data or
 a self-consistent canonical PIC benchmark, not further same-contract runtime.
+
+## Modern ETHZ pressure-resolved argon mobility comparison
+
+The next locked gate uses the ETHZ pulsed-Townsend argon mobility measurements
+from Haefliger and Franck (2018), distributed through the ETHZ LXCat database.
+Unlike the historical comparison, the paper explicitly derives temporal swarm
+drift from the measured swarm transit time and reports a controlled measurement
+chain. In the selected `10--30 Td` range the collision package has no
+nonconservative electron source term, so temporal/bulk and particle-flux drift
+are equivalent for this comparison.
+
+To prevent pressure-series selection after seeing AuroraPIC, the committed
+[`preparer`](../scripts/prepare_lxcat_ethz_argon_reference.py) requires all five
+`3`, `4`, `6`, `8`, and `10 kPa` argon mobility series. It linearly interpolates
+within each series at predeclared `10`, `20`, and `30 Td` targets, performs no
+extrapolation, and uses the unweighted five-pressure mean as the reference. The
+sample standard deviation across pressure series—not the smaller standard error
+of that mean—is retained as conservative reference uncertainty. Raw and derived
+LXCat tables remain local and only hashes, method, and aggregate residuals are
+committed.
+
+The first serial scan used an `8 us` burn and `3.2 us` measurement window with
+`6000` particles. All three experimental comparisons passed the locked `10%`
+plus two-combined-standard-uncertainty rule. Raw residuals were `+15.28%`,
+`+3.20%`, and `-0.16%`; normalized residuals were `0.689`, `0.181`, and `0.012`.
+The run remained an overall failure because the `20 Td` half-window drift change
+was `6.22%`, just above the unchanged `5%` stationarity gate. The
+[`parent result`](../benchmarks/swarm/edupic-phelps-ethz-argon-modern-result-20260824.json)
+retains that failure.
+
+A prospectively committed isolated extension then doubled only the `20 Td`
+measurement window to `6.4 us`. It reduced drift relative standard error from
+`3.54%` to `1.55%` and half-window change from `6.22%` to `1.11%`. The estimated
+drift remained stable at `19.309 km/s`, `+2.98%` from the ETHZ consensus, and
+passed with normalized residual `0.215`. The run used one low-priority CPU
+thread, completed in `322.04 s`, and peaked at `112192 KiB` resident memory.
+
+By inheritance from the unchanged passing `10` and `30 Td` points, the
+[`terminal result`](../benchmarks/swarm/edupic-phelps-ethz-argon-20td-terminal-result-20260824.json)
+completes every modern three-field stationarity, precision, coverage, and
+experimental gate. This materially strengthens the homogeneous transport
+claim: the fixed Phelps-based package is consistent with a modern,
+pressure-resolved experiment through the low-field Ramsauer region as well as
+with the earlier historical higher-field measurements.
+
+This is still calibration-consistency rather than blind prediction because the
+Phelps package may incorporate swarm constraints. The LXCat rows do not carry
+pointwise temperature or uncertainty, so cross-pressure scatter is used as a
+conservative empirical uncertainty. Self-consistent fields, ions, boundaries,
+imported geometry, chemistry, collective behavior, and device observables
+remain outside this milestone. The next credibility gate is therefore a
+self-consistent canonical PIC benchmark using the now-qualified collision
+package, not another homogeneous swarm scan.

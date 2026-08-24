@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-ethz-argon-modern-mobility-20td-terminal",
+  "scope": "prospective_isolated_stationarity_extension_result",
+  "all_declared_gates_passed": true,
+  "modern_three_field_milestone_complete_by_inheritance": true,
+  "provenance": {
+    "rule_sha256": "aacb12032f5d97cd9796716f2d9bc27ae867bdb7d434bd0aae4605e0da0ec609",
+    "terminal_simulation_csv_sha256": "15985a8cc5020145aae8a56a5d2dd02299984a6306aff66aabb5e6d0a6070227",
+    "local_consolidated_simulation_csv_sha256": "44f39e60a61f7dbfc21938b4c22e85c4264307e88125faefca5da51f8d579fc3",
+    "local_consolidated_comparison_report_sha256": "406c4ce2c67f2c37582400ca3bf3019827a1de4cbc2a881b62ae254e41a15092",
+    "run_timing_record_sha256": "ddc503ce2458a9f51633b6d432ba9c6a591e8faf766e31f8ca9f9d18a8468f5c"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "elapsed_wall_seconds": 322.04,
+    "maximum_peak_resident_set_kib": 112192,
+    "exit_status": 0,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "terminal_20td_point": {
+    "experimental_reference_drift_velocity_m_s": 18749.029634593677,
+    "reference_standard_uncertainty_m_s": 205.0738814528591,
+    "simulation_drift_velocity_m_s": 19308.662907588987,
+    "simulation_standard_uncertainty_m_s": 298.7860478067772,
+    "experimental_relative_residual": 0.029848652645080652,
+    "experimental_normalized_residual": 0.21526938471598406,
+    "drift_relative_standard_error": 0.015474196697967301,
+    "drift_half_change_fraction": 0.011105385786219165,
+    "maximum_observed_energy_ev": 17.050478325383477,
+    "experimental_gate_passed": true,
+    "precision_gate_passed": true,
+    "stationarity_gate_passed": true,
+    "energy_coverage_gate_passed": true
+  },
+  "inherited_parent_points": [
+    {
+      "reduced_field_td": 10,
+      "experimental_relative_residual": 0.1527601773390145,
+      "experimental_normalized_residual": 0.6892695357546454,
+      "drift_relative_standard_error": 0.048207248820942045,
+      "drift_half_change_fraction": 0.04780361011296003,
+      "all_point_gates_passed": true
+    },
+    {
+      "reduced_field_td": 30,
+      "experimental_relative_residual": -0.0016092008468808932,
+      "experimental_normalized_residual": 0.011586620490334923,
+      "drift_relative_standard_error": 0.018353977695300627,
+      "drift_half_change_fraction": 0.03555581948709045,
+      "all_point_gates_passed": true
+    }
+  ],
+  "gates": {
+    "terminal_20td_experimental_comparison": true,
+    "terminal_20td_drift_precision": true,
+    "terminal_20td_half_window_stationarity": true,
+    "terminal_20td_energy_coverage_margin": true,
+    "consolidated_three_field_experimental_comparison": true,
+    "consolidated_three_field_numerical_quality": true
+  },
+  "assessment": "The isolated 20 Td extension passes every unchanged gate. Relative standard error decreases from 3.54% to 1.55%, half-window change decreases from 6.22% to 1.11%, and the drift remains stable relative to the parent estimate while differing from the ETHZ consensus by only +2.98%. Together with the unchanged passing 10 and 30 Td parent points, all modern three-field gates are complete.",
+  "scientific_significance": "AuroraPIC with the fixed Phelps-based argon package is consistent with the modern ETHZ pressure-resolved pulsed-Townsend mobility benchmark across 10-30 Td under prospectively declared uncertainty-aware criteria. This extends prior historical 52.8-99.7 Td evidence into the Ramsauer-region low-field regime and removes historical coefficient-convention ambiguity for this conservative-collision range.",
+  "claim_boundary": "The extension is not an independent-seed replication and the Phelps package may be swarm-informed. The LXCat rows do not provide pointwise measurement uncertainty or temperature; cross-pressure sample scatter is used conservatively. Homogeneous transport evidence does not validate self-consistent fields, ions, boundaries, imported geometry, chemistry, collective behavior, or device observables."
+}
