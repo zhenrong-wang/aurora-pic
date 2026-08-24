@@ -1,0 +1,259 @@
+{
+  "all_measurement_gates_passed": true,
+  "aurorapic_global_gate_context": {
+    "absolute_field": true,
+    "finite_diagnostics": true,
+    "particle_cap": true,
+    "phase_eedf_observations": false,
+    "phase_eedf_overflow": true,
+    "phase_eedf_shape": true,
+    "resident_memory": true,
+    "sampling_contract": true
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This compares one four-cycle AuroraPIC regional phase-EEDF block with three deterministic four-cycle continuations of one well-equilibrated native eduPIC checkpoint. The codes use the same nominal case, regional boundaries, phase grid, sampling cadence, energy bins, and ionization kernel, but their particle microstates and random streams are not paired and their synchronized samples differ by at most one native timestep in convention. It is not experimental validation, unrestricted uncertainty quantification, or proof of general PIC correctness.",
+  "comparisons": {
+    "critical_phase_0p125_to_0p25": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 44276.76945997266,
+        "fraction_11p5_to_15p8_eV": 0.009327472059611036,
+        "fraction_15p8_to_30_eV": 0.002193923390097863,
+        "fraction_at_or_above_15p8_eV": 0.0022080162115412443,
+        "fraction_at_or_above_30_eV": 1.4092821443381291e-05,
+        "histogram_mean_energy_eV": 1.7673931683620498
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.8595178921549705,
+        "fraction_11p5_to_15p8_eV": 0.9319437456044228,
+        "fraction_15p8_to_30_eV": 0.8810550501226099,
+        "fraction_at_or_above_15p8_eV": 0.8811017565062459,
+        "fraction_at_or_above_30_eV": 0.8884337446133257,
+        "histogram_mean_energy_eV": 1.0351927279086204
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 51513.49362718046,
+        "fraction_11p5_to_15p8_eV": 0.010008621339651351,
+        "fraction_15p8_to_30_eV": 0.0024901093181323355,
+        "fraction_at_or_above_15p8_eV": 0.002505971864471697,
+        "fraction_at_or_above_30_eV": 1.5862546339361445e-05,
+        "histogram_mean_energy_eV": 1.7073083308194017
+      },
+      "total_variation_distance": 0.04721331029668878
+    },
+    "critical_phase_0p25_to_0p375": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 96164.09094794646,
+        "fraction_11p5_to_15p8_eV": 0.01138724919149447,
+        "fraction_15p8_to_30_eV": 0.0038515990928182802,
+        "fraction_at_or_above_15p8_eV": 0.0038937326774515723,
+        "fraction_at_or_above_30_eV": 4.213358463329223e-05,
+        "histogram_mean_energy_eV": 1.8396945073711812
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.8521169089852868,
+        "fraction_11p5_to_15p8_eV": 0.9395290816143391,
+        "fraction_15p8_to_30_eV": 0.8646999397386949,
+        "fraction_at_or_above_15p8_eV": 0.8632280641743723,
+        "fraction_at_or_above_30_eV": 0.7469935314800844,
+        "histogram_mean_energy_eV": 1.0319624723774017
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 112853.1659610652,
+        "fraction_11p5_to_15p8_eV": 0.012120166809449273,
+        "fraction_15p8_to_30_eV": 0.004454260854906734,
+        "fraction_at_or_above_15p8_eV": 0.004510665071084896,
+        "fraction_at_or_above_30_eV": 5.6404216178163184e-05,
+        "histogram_mean_energy_eV": 1.7827145430327063
+      },
+      "total_variation_distance": 0.04838580714448829
+    },
+    "critical_phase_0p375_to_0p5": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 60884.94113332838,
+        "fraction_11p5_to_15p8_eV": 0.011248541407332311,
+        "fraction_15p8_to_30_eV": 0.003209112612051576,
+        "fraction_at_or_above_15p8_eV": 0.003217926211156671,
+        "fraction_at_or_above_30_eV": 8.81359910509498e-06,
+        "histogram_mean_energy_eV": 1.7990087252311773
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.8492181456599903,
+        "fraction_11p5_to_15p8_eV": 0.9430428363607165,
+        "fraction_15p8_to_30_eV": 0.8759237578490228,
+        "fraction_at_or_above_15p8_eV": 0.8756960855507157,
+        "fraction_at_or_above_30_eV": 0.7999853310250917,
+        "histogram_mean_energy_eV": 1.04164427581714
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 71695.28989045587,
+        "fraction_11p5_to_15p8_eV": 0.011927922013321686,
+        "fraction_15p8_to_30_eV": 0.003663689428783264,
+        "fraction_at_or_above_15p8_eV": 0.0036747066296784377,
+        "fraction_at_or_above_30_eV": 1.1017200895173087e-05,
+        "histogram_mean_energy_eV": 1.7270855002970247
+      },
+      "total_variation_distance": 0.04933381299267407
+    },
+    "critical_x020_to_x060_phase_0p125_to_0p5": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 67099.89863357625,
+        "fraction_11p5_to_15p8_eV": 0.01065036832975929,
+        "fraction_15p8_to_30_eV": 0.003083176601239756,
+        "fraction_at_or_above_15p8_eV": 0.00310489378052132,
+        "fraction_at_or_above_30_eV": 2.1717179281564213e-05,
+        "histogram_mean_energy_eV": 1.801995113638493
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.8529582149853947,
+        "fraction_11p5_to_15p8_eV": 0.9385784033373578,
+        "fraction_15p8_to_30_eV": 0.8725395173531412,
+        "fraction_at_or_above_15p8_eV": 0.8718238925361137,
+        "fraction_at_or_above_30_eV": 0.7808976230278406,
+        "histogram_mean_energy_eV": 1.0362077656061444
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 78667.27520142966,
+        "fraction_11p5_to_15p8_eV": 0.01134734007504238,
+        "fraction_15p8_to_30_eV": 0.0035335667209579324,
+        "fraction_at_or_above_15p8_eV": 0.003561377254171439,
+        "fraction_at_or_above_30_eV": 2.7810533213506724e-05,
+        "histogram_mean_energy_eV": 1.7390287676375313
+      },
+      "total_variation_distance": 0.04823080847817373
+    },
+    "upstream_x010_to_x020_phase_0p125_to_0p5": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 452705.56747307605,
+        "fraction_11p5_to_15p8_eV": 0.05137361694981725,
+        "fraction_15p8_to_30_eV": 0.018845474684889063,
+        "fraction_at_or_above_15p8_eV": 0.019053850576566365,
+        "fraction_at_or_above_30_eV": 0.00020837589167730305,
+        "histogram_mean_energy_eV": 4.898748835885298
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.84196765245841,
+        "fraction_11p5_to_15p8_eV": 0.8828236844015771,
+        "fraction_15p8_to_30_eV": 0.8892853658678034,
+        "fraction_at_or_above_15p8_eV": 0.8906908288207329,
+        "fraction_at_or_above_30_eV": 1.0392334102437013,
+        "histogram_mean_energy_eV": 0.9488488271971629
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 537675.7244191611,
+        "fraction_11p5_to_15p8_eV": 0.05819238638193187,
+        "fraction_15p8_to_30_eV": 0.021191706743648963,
+        "fraction_at_or_above_15p8_eV": 0.021392215974417858,
+        "fraction_at_or_above_30_eV": 0.0002005092307688979,
+        "histogram_mean_energy_eV": 5.162833841883834
+      },
+      "total_variation_distance": 0.028945523862225132
+    },
+    "x020_to_x040_phase_0p125_to_0p5": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 114933.07838087744,
+        "fraction_11p5_to_15p8_eV": 0.01575545689998281,
+        "fraction_15p8_to_30_eV": 0.005102887973786926,
+        "fraction_at_or_above_15p8_eV": 0.005141130986730731,
+        "fraction_at_or_above_30_eV": 3.8243012943805756e-05,
+        "histogram_mean_energy_eV": 2.1280661779490635
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.8306751161895507,
+        "fraction_11p5_to_15p8_eV": 0.9106180886489197,
+        "fraction_15p8_to_30_eV": 0.862122746132182,
+        "fraction_at_or_above_15p8_eV": 0.860866904485288,
+        "fraction_at_or_above_30_eV": 0.7207705742109821,
+        "histogram_mean_energy_eV": 1.005730874849231
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 138361.04650407154,
+        "fraction_11p5_to_15p8_eV": 0.017301937108847813,
+        "fraction_15p8_to_30_eV": 0.005918980790937794,
+        "fraction_at_or_above_15p8_eV": 0.005972039301249025,
+        "fraction_at_or_above_30_eV": 5.305851031123165e-05,
+        "histogram_mean_energy_eV": 2.1159399906740277
+      },
+      "total_variation_distance": 0.041434524759491304
+    },
+    "x040_to_x060_phase_0p125_to_0p5": {
+      "aurorapic": {
+        "eedf_folded_ionization_frequency_s-1": 41143.232849369786,
+        "fraction_11p5_to_15p8_eV": 0.007880092999620052,
+        "fraction_15p8_to_30_eV": 0.0019871806136277127,
+        "fraction_at_or_above_15p8_eV": 0.001999930052452917,
+        "fraction_at_or_above_30_eV": 1.2749438825204645e-05,
+        "histogram_mean_energy_eV": 1.6250527133439048
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "eedf_folded_ionization_frequency_s-1": 0.8615054896583721,
+        "fraction_11p5_to_15p8_eV": 0.9535390246634798,
+        "fraction_15p8_to_30_eV": 0.8645989697993223,
+        "fraction_at_or_above_15p8_eV": 0.8646023418993984,
+        "fraction_at_or_above_30_eV": 0.8651282532072784,
+        "histogram_mean_energy_eV": 1.0525884171998705
+      },
+      "native_edupic_ensemble_mean": {
+        "eedf_folded_ionization_frequency_s-1": 47757.36584764542,
+        "fraction_11p5_to_15p8_eV": 0.008264048765493442,
+        "fraction_15p8_to_30_eV": 0.002298384202434277,
+        "fraction_at_or_above_15p8_eV": 0.002313121253013701,
+        "fraction_at_or_above_30_eV": 1.4737050579424288e-05,
+        "histogram_mean_energy_eV": 1.54386338172609
+      },
+      "total_variation_distance": 0.051651615664351065
+    }
+  },
+  "gates": {
+    "critical_folded_ionization_repeatability": true,
+    "critical_observation_population": true,
+    "critical_tail_repeatability": true,
+    "histogram_overflow": true
+  },
+  "members": [
+    {
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034636,
+      "maximum_overflow_fraction": 0.0,
+      "output_sha256": {
+        "edupic_phase_eedf.csv": "c799e63a548bfa26a9581c0abe2d08928a8a6f4f35ce9d2e679b4dcc49cf1298",
+        "edupic_phase_eedf_moments.csv": "5a9bcbec400f3dfc7dfc61f0e1c840854c6ab0322a519841e19191e92651f171"
+      },
+      "seed": 13507
+    },
+    {
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034024,
+      "maximum_overflow_fraction": 0.0,
+      "output_sha256": {
+        "edupic_phase_eedf.csv": "422f640b8a2b9eb4baf00cd852b28858061d7db48d923f84796e00994a2a1093",
+        "edupic_phase_eedf_moments.csv": "e8673068f7b9e12e5dbe89885596b88fa8ef36700890d4893d2f46bf67617d9c"
+      },
+      "seed": 24601
+    },
+    {
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034876,
+      "maximum_overflow_fraction": 0.0,
+      "output_sha256": {
+        "edupic_phase_eedf.csv": "0caa1322d5953b88178421576b9f6847b052f0b05474daef10c46ef02a5cc34d",
+        "edupic_phase_eedf_moments.csv": "5ee30c2226bc9e47ebe90941da68bfbee755969fd713de7987e6d3e68f912deb"
+      },
+      "seed": 35713
+    }
+  ],
+  "prospective_hypothesis_outcome": {
+    "critical_ionization_kernel_deficit": true,
+    "critical_tail_deficit": true,
+    "deficit_develops_beyond_upstream_region": false
+  },
+  "provenance": {
+    "analyzer_sha256": "e3c2188d8ef7f40a4e86fe290becd51500e20de994796fd73b4fbb204df4fe05",
+    "aurorapic_block_report_sha256": "c00bfff25a5fc9aa0b596302dbae8f0417de11d1641a329cc1a2bec03a697d42",
+    "aurorapic_phase_eedf_sha256": "88dc5343099b0571342d224dd48191d8a4b0a8b9fe289e342b1eb5603b0753b3",
+    "ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+    "rule_sha256": "7e4d31734f0d91c1bece68313b40f6c8ddceb14f79ff0db2b199094ae4f2adb0"
+  },
+  "repeatability_metrics": {
+    "critical_folded_ionization_relative_range": 0.05545596854752214,
+    "critical_ionizing_tail_relative_range": 0.03546087431021573
+  },
+  "schema_version": 1,
+  "scope": "native_edupic_to_aurorapic_regional_phase_eedf"
+}

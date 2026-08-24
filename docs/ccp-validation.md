@@ -2780,6 +2780,55 @@ preserve the full finding. This is a direct local cross-code diagnostic under
 one nominal CCP case, not a published crossing-spectrum comparison,
 experimental validation, or proof of general PIC correctness.
 
+### Direct native regional phase-EEDF comparison
+
+The next prospectively locked discriminator directly samples the native
+eduPIC energetic distribution rather than inferring it from the published
+density and ionization matrices. The exact `C/eduPIC.cc` implementation was
+instrumented with the same seven spatial regions, 200 phase bins, every-second-
+step cadence, 0.25 eV bins, 80 eV ceiling, and pre-collision synchronized-
+velocity convention used by the AuroraPIC regional diagnostic. Three
+four-cycle deterministic continuations completed serially in
+`101.25--101.83 s` at `49,036--49,344 KiB` peak RSS. Every critical phase-
+region bin contains at least `1,034,024` native macro observations, overflow is
+zero, and all repeatability and execution gates pass.
+
+The direct comparison confirms the energetic-tail discrepancy. Across
+`x/L=0.2--0.6`, phase `0.125--0.5`, AuroraPIC's histogram-folded ionization
+frequency is `67.10 kHz` versus native eduPIC's `78.67 kHz`, a ratio of
+`0.85296`. The above-15.8-eV population fraction ratio is `0.87182`; the
+above-30-eV ratio falls further to `0.78090`. Native three-seed relative ranges
+are only `5.55%` for the folded ionization frequency and `3.55%` for the
+ionizing-tail fraction. This independently reproduces the earlier EEDF-folded
+deficit without relying on eduPIC's published ionization matrix.
+
+The discrepancy is a shape effect rather than a scalar temperature error.
+AuroraPIC's mean energy in the same critical scope is `3.62%` higher while its
+ionizing population and ionization kernel are lower; the probability-
+distribution total-variation distance is `4.82%`. The three critical phase
+octants independently give folded-ionization ratios of `0.8595`, `0.8521`,
+and `0.8492`, so the result is not caused by one isolated phase bin.
+
+The prospective spatial-development clause is rejected. The deficit is
+already present in `x/L=0.1--0.2`, where the folded-ionization ratio is
+`0.84197`, rather than appearing only deeper in the `0.2--0.6` interior. This
+weakens bulk transport and downstream inelastic cooling as primary causes and
+points more strongly toward sheath energization timing, velocity-space
+anisotropy, or energetic-particle residence. The earlier observation that
+density-normalized energetic crossing flux near `x/L=0.2` is close while the
+local EEDF tail fraction is low is not contradictory: crossing flux weights
+speed, whereas an EEDF population fraction weights residence.
+
+The EEDF and surface-flux transforms add no random draws. For all three shared
+seeds their independently instrumented binaries produce byte-identical final
+particle checkpoints and stdout, providing a direct passivity cross-check.
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-native-phase-eedf-crosscode-rule-20260824.json),
+[`result`](../benchmarks/ccp/edupic-native-phase-eedf-crosscode-result-20260824.json),
+and [`execution record`](../benchmarks/ccp/edupic-native-phase-eedf-crosscode-execution-20260824.json)
+retain the evidence. This narrows the mechanism under one matched CCP case; it
+does not establish experimental or general PIC validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_edupic_regional_phase_eedf_execution_record",
+  "rule_sha256": "7e4d31734f0d91c1bece68313b40f6c8ddceb14f79ff0db2b199094ae4f2adb0",
+  "scientific_result_sha256": "5af94a076023bcb0f6b514d3a5de6327be8e6aa290f802cadf300446bbc33bbe",
+  "members": [
+    {
+      "seed": 13507,
+      "wall_seconds": 101.25,
+      "peak_resident_set_kib": 49344,
+      "exit_status": 0,
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "stdout_sha256": "200612027a129767206bebf2d2008f92c9c6f8a3f1f41f65c6beaa73819f5a5a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "time_report_sha256": "fe9ecce9af7b3712df1db04904441a42536fc08fa1539cc9ad45c73d719676a7"
+    },
+    {
+      "seed": 24601,
+      "wall_seconds": 101.43,
+      "peak_resident_set_kib": 49036,
+      "exit_status": 0,
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "stdout_sha256": "047d43b422310d86873dd5a566e87272f267895251e68aad7b7a33fa0aa87ee4",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "time_report_sha256": "3b0064a71464cff6af091611e189968a85f071a324fb054771b776de43d4eabe"
+    },
+    {
+      "seed": 35713,
+      "wall_seconds": 101.83,
+      "peak_resident_set_kib": 49212,
+      "exit_status": 0,
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "stdout_sha256": "e41a0dec62889a1d4888d3216ccf224375b661c6eba64ff2aba957195d15f5f3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "time_report_sha256": "2592ed9e695f51a3c49c26d501969271504e2957db4b8b443023d4a5a1107cd1"
+    }
+  ],
+  "resource_gates": {
+    "serial_execution": true,
+    "maximum_wall_seconds_each": true,
+    "maximum_peak_resident_set_kib_each": true,
+    "empty_stderr_each": true,
+    "zero_exit_status_each": true,
+    "all_passed": true
+  },
+  "passivity_cross_check": {
+    "reference_execution_record": "edupic-native-surface-flux-crosscode-execution-20260824.json",
+    "same_seed_final_checkpoints_identical": true,
+    "same_seed_stdout_identical": true,
+    "interpretation": "The independently instrumented surface-flux and regional-EEDF binaries add no random draws and produce byte-identical particle checkpoints for every shared seed."
+  },
+  "claim_boundary": "This record establishes bounded execution, passive-diagnostic behavior, and output provenance only. Scientific interpretation is in the separately checksum-bound result."
+}
