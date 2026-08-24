@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm",
+  "scope": "prospective_low_field_long_burn_stationarity",
+  "physics_claim": "none_stationarity_only",
+  "hypothesis": "Extending physical burn-in from 0.2 to 1.2 microseconds removes the low-field transient identified at 20 and 50 Td while the already stable 100 Td point remains a control.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "long_burn_config_sha256": "a1015cfc03c4a68a50e04be08b84f43aba57180eebe98bd6742ff8588670dc46",
+    "short_burn_high_statistics_csv_sha256": "8f2bcfcee99c05383f63741dce5fc162de73bb3036b63b06f40093f567601100"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [20, 50, 100],
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 24000,
+    "burn_in_time_s": 1.2e-6,
+    "measurement_steps": 8000,
+    "measurement_time_s": 4e-7,
+    "maximum_total_particle_steps": 576000000,
+    "maximum_wall_seconds": 180,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_absolute_first_to_second_half_energy_change_fraction_of_full_mean": 0.03,
+    "maximum_drift_relative_standard_error": 0.05,
+    "maximum_mean_energy_relative_standard_error": 0.02,
+    "maximum_uncertainty_aware_normalized_residual_against_short_burn": 1.0,
+    "comparison_relative_tolerance": 0.03,
+    "comparison_uncertainty_multiplier": 2.0,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "classification": "All precision and half-window gates must pass before a field is called stationary. Agreement with the short-burn aggregate is diagnostic only because that branch was already classified under-equilibrated.",
+  "claim_boundary": "A pass establishes stationary, numerically precise homogeneous-swarm observables at the three selected fields. It does not establish agreement with independent argon data or validate a discharge/device calculation."
+}
