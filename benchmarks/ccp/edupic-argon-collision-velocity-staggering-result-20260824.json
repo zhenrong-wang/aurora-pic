@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_collision_velocity_staggering_discriminator_result",
+  "all_execution_gates_passed": true,
+  "provenance": {
+    "rule_sha256": "2c741f53bebdbc7276a8498171819dc85793b1dbc7a3b71a455279b1ccd9f591",
+    "binary_sha256": "9f81c87d9ddb89ec46f5fafa104bbc986b9706f66585b293e0b2bf8c0b3caa78",
+    "portable_particle_state_sha256": "4282908507d3e8c9a3f0d2df5d0c31f4c98ba40e082b0fb4c1e85eed49454b35",
+    "half_step_deck_sha256": "d1c080e4605996b0cf5cde1ec661d5ffe00681c5e49bbe2e4b1bf84b52f48354"
+  },
+  "execution": {
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "seed": 13507,
+    "steps": 24000,
+    "discard_cycles": 2,
+    "measurement_cycles": 4,
+    "measurement_first_step": 8001,
+    "measurement_last_step": 24000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 80,
+    "serial": true,
+    "nice_level": 10,
+    "wall_seconds": 575.87,
+    "peak_resident_set_kib": 209944
+  },
+  "execution_gates": {
+    "wall_seconds_below_900": true,
+    "peak_resident_set_kib_below_262144": true,
+    "maximum_absolute_field_V_m": 66425.43076265372,
+    "maximum_absolute_field_below_100000_V_m": true,
+    "whole_run_relative_energy_closure_residual": 0.0022787759223393887,
+    "relative_energy_closure_below_0p005": true,
+    "phase_eedf_analysis_passed": true
+  },
+  "external_comparison": {
+    "density": {
+      "legacy_candidate_to_reference_ratio": 1.1206893019253092,
+      "half_step_candidate_volume_phase_average_m-3": 3339312137000000.0,
+      "reference_volume_phase_average_m-3": 2980972608117795.0,
+      "half_step_candidate_to_reference_ratio": 1.1202089304364533,
+      "distance_to_unity_reduction": 0.00048037148885593517,
+      "materiality_threshold": 0.02,
+      "classification": "practically_unresolved_improving_direction"
+    },
+    "phase_binned_electron_power_per_particle": {
+      "legacy_candidate_to_reference_ratio": 0.8751527995448057,
+      "half_step_candidate_power_density_W_m-3": 1552.899967045495,
+      "reference_power_density_W_m-3": 1592.8254283811123,
+      "half_step_candidate_to_reference_ratio": 0.8703146014910982,
+      "distance_to_unity_reduction": -0.004838198053707554,
+      "materiality_threshold": 0.03,
+      "classification": "practically_unresolved_worsening_direction"
+    },
+    "ionization_source": {
+      "legacy_candidate_to_reference_ratio": 0.9867308026221424,
+      "half_step_measurement_events": 1836,
+      "half_step_source_flux_m-2_s-1": 4.356827999998418e+18,
+      "reference_mean_source_flux_m-2_s-1": 4.622239407017774e+18,
+      "half_step_candidate_to_reference_ratio": 0.9425794763861881,
+      "distance_to_unity_reduction": -0.0441513262359543,
+      "materiality_threshold": 0.03,
+      "classification": "materially_worsening"
+    },
+    "measurement_window_corollaries": {
+      "duration_s": 2.9498525073757024e-07,
+      "excitation_events": 5459,
+      "exact_electron_electric_power_W_m-3": 1547.119879243137,
+      "exact_electron_power_per_particle_reference_ratio": 0.8670751817480069,
+      "absorbed_left_electrons": 836,
+      "absorbed_right_electrons": 1206,
+      "absorbed_left_ions": 1061,
+      "absorbed_right_ions": 945
+    }
+  },
+  "assessment": {
+    "hypothesis_supported": false,
+    "finite_timestep_contract_mismatch_resolved": true,
+    "external_agreement_improved": false,
+    "interpretation": "The eduPIC-matched leapfrog collision velocity leaves the density and electron-heating discrepancies practically unchanged at this horizon and materially reduces ionization-source agreement. Collision-velocity staggering is therefore eliminated as the explanation or remedy for the remaining cross-code discrepancy. The option remains necessary for explicit algorithm-contract matching."
+  },
+  "output_hashes": {
+    "spatial_average.csv": "c7c648ffae2e91eba836280accdf97daad46a063b0eb9f9c4a1f6c52482ff784",
+    "spatial_phase_fields.csv": "e389b426fb50e9e28ee4b231ecffc3d77ed8431f8028c4cabbd5516d0460592e",
+    "spatial_phase_moments.csv": "ce02461dfc03b7a583237aa80a6daf860e6b1e954d1be60232850950d1808879",
+    "spatial_collision_rate.csv": "c9d46605c1cdc263c83cb7b87839d30918f627bdc54c20e1de5198e2d73b38a2",
+    "spatial_phase_collision_rate.csv": "f35792741445f49cd8549fe7d8a8c934f06770369bb1315d25738fbf6b1eb713",
+    "phase_eedf.csv": "28bb31c13cf9d013018bb0fcb1d06ad8e33a2fe478a971d40f2634bbaea42e2e",
+    "phase_eedf_moments.csv": "d6e83631cce1242600da3e1fe13098b878b4310b5457f5894067ef29e9dd8a86",
+    "boundary_losses.csv": "1fff76ac0c487472d13fee2d6f1476c0ecf83831a710c53f165347effdac822d",
+    "power_transfer.csv": "9bf500fafb795126e6e61c4feddc09b36fbbd6d881e7ca47040ca9bb8e7faba4",
+    "spatial_average_metadata.json": "935380641fcd5585ec9fac3b90eae75830854b876e9c57be92af57524d276072",
+    "checkpoint_24000.apc": "142b429cc2389eb33c4c3692dbf165c25aa8084d61f163b85019e1f6fdd5f4c8",
+    "energy-budget.json": "fbc7f7a8ce38bedf308849d193aefed19ce488a788b68cf32c7a8bcf44e31358",
+    "phase-eedf-analysis.json": "ea3bf4d046ca90c9cf9505dd488f0fc8386e2c0aa6d63ec9ab3037c252f80c0e"
+  },
+  "claim_boundary": "This result rejects one proposed explanation for the residual eduPIC discrepancy. It is not an eduPIC acceptance pass, an experimental validation, or evidence of general PIC correctness."
+}

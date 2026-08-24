@@ -2708,12 +2708,31 @@ short-window sampling noise; the smoke does not establish whether agreement
 with eduPIC improves. The checksum-bearing result is
 [`benchmarks/ccp/edupic-argon-collision-velocity-staggering-smoke-20260824.json`](../benchmarks/ccp/edupic-argon-collision-velocity-staggering-smoke-20260824.json).
 
-The next authorized discriminator is a prospectively locked two-cycle discard
-plus four-cycle, 200-phase comparison from the same portable particle state.
-It must compare density, power per electron, ionization, and source/loss
-balance with both the locked eduPIC matrices and the legacy time-centered
-branch before the new convention is credited with improving external
-agreement.
+The prospectively locked two-cycle discard plus four-cycle, 200-phase
+discriminator has now completed from the same portable particle state. It ran
+serially at low priority in 576 seconds with a 205 MiB peak resident set. The
+maximum instantaneous field was `66.4 kV/m`; the whole-run energy-ledger
+residual was `0.228%`, below the declared `0.5%` gate. All execution and
+diagnostic gates passed.
+
+The external result rejects the proposed remedy. The candidate/reference
+density ratio moved from `1.12069` to `1.12021`, only a `0.00048` reduction in
+distance to unity against the predeclared `0.02` materiality threshold. The
+phase-binned electron-power-per-particle ratio moved from `0.87515` to
+`0.87031`, a small worsening below its `0.03` threshold. The ionization-source
+ratio moved from `0.98673` to `0.94258`; its `0.04415` increase in distance to
+unity is a prospectively material worsening. Thus collision-velocity
+staggering neither explains nor repairs the remaining density/heating gap.
+The new option is still required to state and reproduce the finite-timestep
+algorithm contract honestly.
+
+The checksum-bound
+[`discriminator result`](../benchmarks/ccp/edupic-argon-collision-velocity-staggering-result-20260824.json)
+preserves this negative finding. It is an elimination result, not an eduPIC
+acceptance pass or experimental validation. The next credibility step should
+target the remaining ionization/heating discrepancy with an independently
+checkable collision-kinematics or swarm observable, rather than tuning the CCP
+case until its global outputs happen to agree.
 
 ## Bounded execution ladder
 
