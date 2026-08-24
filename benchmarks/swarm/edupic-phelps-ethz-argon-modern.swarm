@@ -1,0 +1,20 @@
+# Requires the locally generated, checksum-pinned eduPIC 1.0 package described
+# in docs/gas-data-workflow.md. The ETHZ reference is prepared locally by
+# scripts/prepare_lxcat_ethz_argon_reference.py and is not redistributed.
+swarm_config_version = 1
+gas_data_file = ../../tmp/edupic-argon-cross-sections-20260810/aurorapic-package/edupic_argon_electron.gas
+neutral_density = 2.0694208669001848e21
+neutral_temperature = 293
+reduced_fields_td = 10, 20, 30
+max_frequency = 1e9
+timestep = 5e-11
+steps = 224000
+burn_in_steps = 160000
+particles = 6000
+population_model = fixed_population_no_avalanche
+uncertainty_blocks = 10
+work_item_limit = 5000000000
+initial_mean_energy_ev = 1
+max_energy_ev = 200
+seed = 141421
+output_file = ../../tmp/edupic-phelps-ethz-argon-modern-20260824/swarm.csv
