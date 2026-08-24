@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm",
+  "scope": "prospective_reference_free_transport_convergence",
+  "physics_claim": "none_numerical_convergence_only",
+  "hypothesis": "The shared AuroraPIC MCC kernel produces timestep- and particle-count-stable drift velocity and mean electron energy at 20, 50, and 100 Td before an independent transport reference is introduced.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "5b8aaca3c1ad515fc6f7d5422eefe7befdf8de0ca990a1b6491ade9af8253fb1",
+    "campaign_runner_sha256": "152b3480e153ec82d69c8fee1d34025eea671c1e5938881e89ff8eef0c31b6a7",
+    "gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "gas_audit_sha256": "ba747fc8bcedc48f17af002e62d89592b8c946e83bb5ec766b219d0359c4ead9",
+    "campaign_manifest_sha256": "b134e4a6539bc2513de2ee3047a6264c75f326b4c2672cbbcd00efc21544d7ee",
+    "baseline_config_sha256": "ef5363f0286584ae70b04520be66a6d858e43fe260e15ca8657398d476e3707b",
+    "timestep_refined_config_sha256": "0c2e5ca5ed3e586050606ff34d6966d0ac05b6b60f4b60e3d17d183c20202ed6",
+    "particle_refined_config_sha256": "8c2eebc80396370c0feacaf9a3445e6ab50289fa5b9bdcbe24232626137a1461",
+    "combined_refined_config_sha256": "c0c75fbcaeab2c45fab46e52f766a38e0e226f86dd49e9644ceecd8cef3819cb"
+  },
+  "execution_contract": {
+    "run_order": [
+      "baseline",
+      "timestep_refined",
+      "particle_refined",
+      "combined_refined"
+    ],
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [20, 50, 100],
+    "neutral_density_m-3": 2.0694208669001848e+21,
+    "neutral_temperature_k": 350,
+    "maximum_frequency_s-1": 1000000000.0,
+    "maximum_energy_ev": 200,
+    "maximum_branch_particle_steps": 72000000,
+    "maximum_total_particle_steps": 162000000,
+    "maximum_wall_seconds": 180,
+    "maximum_peak_rss_kib": 196608
+  },
+  "refinements": {
+    "baseline": {"timestep_s": 1e-10, "particles": 1500},
+    "timestep_refined": {"timestep_s": 5e-11, "particles": 1500},
+    "particle_refined": {"timestep_s": 1e-10, "particles": 3000},
+    "combined_refined": {"timestep_s": 5e-11, "particles": 3000}
+  },
+  "acceptance": {
+    "reference_run": "combined_refined",
+    "observables": [
+      "electron_drift_velocity_m_s",
+      "mean_energy_ev"
+    ],
+    "relative_tolerance": 0.03,
+    "uncertainty_multiplier": 2,
+    "maximum_combined_refined_relative_standard_error_each_observable": 0.05,
+    "maximum_observed_energy_fraction_of_coverage": 0.8,
+    "require_all_campaign_convergence_gates": true
+  },
+  "claim_boundary": "A pass establishes numerical stability of the selected homogeneous swarm observables for this collision package and finite field range only. With no independent reference manifest, it cannot validate argon transport, the cross sections, the physical collision model, a CCP discharge, or a device simulation."
+}
