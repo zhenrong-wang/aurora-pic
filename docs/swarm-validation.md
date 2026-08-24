@@ -559,3 +559,37 @@ historical flux-versus-bulk coefficient compatibility are the leading open
 questions; the source groups also specify only ambient rather than exact gas
 temperature and provide no pointwise uncertainties. The result does not by
 itself implicate the self-consistent PIC field solver, boundaries, or geometry.
+
+### Collision-package discriminator
+
+A controlled follow-up changes only the collision package to the locally
+generated, checksum-pinned eduPIC 1.0 Phelps-based argon model. The AuroraPIC
+executable, five fields, reference, seed, timestep, population, burn-in,
+measurement window, and all acceptance thresholds remain unchanged. This is
+not a blind model-selection exercise: earlier unscored runs at `50` and
+`100 Td` had already suggested that this package was closer to the historical
+range.
+
+The first exact-field run passes all five experimental comparisons, reducing
+the drift residual range from `21.6--44.0%` with Maiorov to `1.90--18.87%`.
+It does not pass the complete rule because half-window drift changes at
+`52.8` and `99.7 Td` are `9.99%` and `6.52%`, above the locked 5% stationarity
+limit. The failure is retained in the
+[`discriminator result`](../benchmarks/swarm/edupic-phelps-dutton-argon-experimental-result-20260824.json).
+
+A prospectively locked extension then doubles only the measurement window to
+`0.8 us`. All five experimental points pass again, now with residuals of
+`3.24--19.62%`. The `99.7 Td` stationarity metric improves to `2.83%` and
+passes. The `52.8 Td` metric improves from `9.99%` to `6.05%` but remains just
+outside the unchanged 5% limit. The
+[`extended result`](../benchmarks/swarm/edupic-phelps-dutton-argon-extended-result-20260824.json)
+therefore remains an honest failed overall gate.
+
+This paired outcome is meaningful even before formal completion: under the
+same transport kernel, the Phelps-based package has five of five experimental
+passes in both windows, while the Maiorov package had one of five. Collision
+physics is the demonstrated discriminator for this observable. The remaining
+work is an isolated `52.8 Td` stationarity extension, not another expensive
+five-field scan. Agreement is calibration-consistency evidence rather than a
+blind prediction because Phelps-based cross sections may themselves use swarm
+constraints.

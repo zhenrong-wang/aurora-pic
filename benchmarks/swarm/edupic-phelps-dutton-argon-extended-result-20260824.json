@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-extended-measurement",
+  "scope": "prospective_stationarity_resolution_result",
+  "all_declared_gates_passed": false,
+  "experimental_comparison_passed": true,
+  "numerical_gates_passed": false,
+  "provenance": {
+    "rule_sha256": "b576dbba95cc460880f1b100a9aba857ef25dc76d7f489264269dec03dd33f94",
+    "simulation_csv_sha256": "b71f24ef77e62da95209390697ad757987085b78f940becaad467f56459ac44c",
+    "local_comparison_report_sha256": "e76cb361266e6e1ce6b9d72f20a209184d8dc07f7077d4fa3e59b38e1bac33d4",
+    "run_timing_record_sha256": "82ebfc770accdba0094b0fb0b9d04cba2188a8e72c92ebba21d6a1daae870dc9"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "elapsed_wall_seconds": 248.74,
+    "maximum_peak_resident_set_kib": 115208,
+    "exit_status": 0,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "points": [
+    {
+      "reduced_field_td": 52.8,
+      "experimental_relative_residual": 0.12975119,
+      "drift_relative_standard_error": 0.02707929,
+      "drift_half_change_fraction": 0.06050874,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": false
+    },
+    {
+      "reduced_field_td": 53.6,
+      "experimental_relative_residual": 0.03243727,
+      "drift_relative_standard_error": 0.01351945,
+      "drift_half_change_fraction": 0.01348063,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 90.8,
+      "experimental_relative_residual": 0.14206447,
+      "drift_relative_standard_error": 0.01475442,
+      "drift_half_change_fraction": 0.00510217,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 99.5,
+      "experimental_relative_residual": 0.19621638,
+      "drift_relative_standard_error": 0.01469295,
+      "drift_half_change_fraction": 0.01252499,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 99.7,
+      "experimental_relative_residual": 0.03360372,
+      "drift_relative_standard_error": 0.01161891,
+      "drift_half_change_fraction": 0.02833283,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    }
+  ],
+  "gates": {
+    "all_five_experimental_points_within_locked_allowance": true,
+    "all_five_drift_precision_gates": true,
+    "all_five_stationarity_gates": false,
+    "energy_coverage_margin": true
+  },
+  "assessment": "Doubling the measurement window preserves all five experimental passes and resolves the 99.7 Td stationarity failure. The 52.8 Td half-window change improves from 9.99% to 6.05% but remains above the locked 5% threshold, so the overall prospective rule remains failed.",
+  "scientific_significance": "Across two measurement horizons the Phelps-based package has five of five experimental passes, whereas the otherwise matched Maiorov package had one of five. The stable direction of this outcome demonstrates collision-package sensitivity of the physical discrepancy. Formal completion now requires only an isolated low-field stationarity extension rather than another five-field scan.",
+  "claim_boundary": "The result is not a complete validation pass because one numerical gate failed. It remains same-seed trajectory evidence and retains all historical reference limitations."
+}
