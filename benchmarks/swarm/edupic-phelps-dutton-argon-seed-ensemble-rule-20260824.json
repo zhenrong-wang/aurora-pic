@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-independent-seed-ensemble",
+  "scope": "prospective_two_replica_independent_seed_validation",
+  "physics_claim": "independent_particle_history_replication_of_historical_argon_transport_consistency",
+  "hypothesis": "Two independently seeded, otherwise identical five-field runs at the qualified 1.6 microsecond measurement horizon each pass stationarity, precision, energy-coverage, and historical experimental gates; their drift estimates also pass a prospectively defined pairwise uncertainty-aware consistency gate at every field.",
+  "relationship_to_prior_milestone": "The prior seed-271828 milestone motivated this replication but is not included in the matched two-replica pass/fail ensemble because its non-52.8 Td fields used a shorter 0.8 microsecond measurement window.",
+  "locked_inputs": {
+    "prior_milestone_sha256": "b67fa7b3b85d50671322fa2e1d91dcd3ad5a869ce046f08307e880ea6a76359e",
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "seed314159_config_sha256": "f0fbad0c7073edecfff0c36174251e5d9698a6dee9a9d77133f118f18028a1cc",
+    "seed161803_config_sha256": "347febe4bfe18a32f3e391eb673421ed04c168dc60ceb059b14c2196016a6c44",
+    "comparator_sha256": "743ad7b986d38e29337b96a341df44c82d873025c0a09ec981636d57cfe08aee",
+    "local_reference_csv_sha256": "7448eb03e41350557d0d1e6c31231ca0988b40e2d62fa27a973d94925f21e2f7",
+    "local_reference_manifest_sha256": "e5c9fe0e8b957441f802aa69688cf405bf584dc53dc193fa2d85a648c805e5b8",
+    "local_edupic_package_audit_sha256": "ba747fc8bcedc48f17af002e62d89592b8c946e83bb5ec766b219d0359c4ead9",
+    "local_edupic_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "local_edupic_elastic_table_sha256": "f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47",
+    "local_edupic_excitation_table_sha256": "9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c",
+    "local_edupic_ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0"
+  },
+  "execution_contract": {
+    "serial": true,
+    "concurrent_runs": false,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "seeds": [314159, 161803],
+    "reduced_fields_td": [52.8, 53.6, 90.8, 99.5, 99.7],
+    "timestep_s": 5e-11,
+    "particles_per_run": 6000,
+    "burn_in_steps": 24000,
+    "measurement_steps": 32000,
+    "measurement_time_s": 1.6e-6,
+    "maximum_particle_steps_per_run": 1680000000,
+    "maximum_wall_seconds_per_run": 420,
+    "maximum_total_wall_seconds": 840,
+    "maximum_peak_rss_kib_per_run": 196608
+  },
+  "per_run_acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_drift_relative_standard_error": 0.05,
+    "experimental_comparison_relative_tolerance": 0.20,
+    "experimental_comparison_uncertainty_multiplier": 2.0,
+    "all_five_points_must_pass": true,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "cross_seed_acceptance": {
+    "formula": "abs(drift_a-drift_b) <= 0.10*abs((drift_a+drift_b)/2) + 2*sqrt(standard_error_a^2+standard_error_b^2)",
+    "all_five_fields_must_pass": true,
+    "ensemble_experimental_formula": "abs((drift_a+drift_b)/2-reference) <= 0.20*abs(reference) + 2*sqrt(standard_error_a^2+standard_error_b^2)/2",
+    "ensemble_all_five_fields_must_pass": true
+  },
+  "classification": "Passing is an independent-particle-history replication milestone for the qualified homogeneous electron-argon transport result. It materially strengthens numerical and sampling credibility but remains historical calibration-consistency evidence rather than a blind prediction.",
+  "claim_boundary": "Only two matched new seeds are in the formal ensemble. The historical temperature, coefficient convention, and uncertainty limitations remain, and no self-consistent PIC, ion, boundary, geometry, chemistry, or device claim follows."
+}
