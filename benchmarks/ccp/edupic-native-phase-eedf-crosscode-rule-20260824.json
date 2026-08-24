@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_native_edupic_to_aurorapic_regional_phase_eedf",
+  "question": "Does the AuroraPIC ionizing-tail deficit appear in a direct native eduPIC EEDF comparison, and does it develop between the upstream and downstream interior regions rather than as a gross transport-amplitude error?",
+  "basis": {
+    "prior_surface_transport_result_sha256": "037ee08fc3b8f52f1862a79d4939a798d8b68c59e3b869411ee786e3cb1885e3",
+    "observed_before_declaration": "Post-hoc directional decomposition found density-normalized broad-window above-15.8-eV flux agreement within about 1 percent at x/L=0.2 but a 17--18 percent deficit in both directions at x/L=0.6. Density-normalized total directional energy flux at x/L=0.6 remained within about 0--3 percent.",
+    "interpretive_limit": "The directional decomposition selected this diagnostic but is descriptive and did not set or tune the prospective EEDF thresholds."
+  },
+  "provenance": {
+    "upstream_repository_commit": "32050728c961a317d6d6acd6bc86d026da403326",
+    "upstream_implementation": "C/eduPIC.cc",
+    "upstream_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "instrumenter_sha256": "9655d3c491f86c623e0d022bcb052249403c1bc88a9b85a933462a2772a2ed4c",
+    "instrumentation_audit_sha256": "2eab30307b766258b2c7a03e40ed9c8396b7c29030df82b1e51829fa5241b875",
+    "instrumented_source_sha256": "7aeea43bbdf7d4d3ffc70a3267c7ae33659921c0639e12cfd7c824176abc15d3",
+    "instrumented_binary_sha256": "cd2ead5eed8e6b0919913f8a5765894f715e5ea77ab5b3ec2f782c2ac5a6c513",
+    "input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "input_checkpoint_cycle": 2620,
+    "aurorapic_block_report_sha256": "c00bfff25a5fc9aa0b596302dbae8f0417de11d1641a329cc1a2bec03a697d42",
+    "aurorapic_phase_eedf_sha256": "88dc5343099b0571342d224dd48191d8a4b0a8b9fe289e342b1eb5603b0753b3",
+    "ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+    "analyzer_sha256": "e3c2188d8ef7f40a4e86fe290becd51500e20de994796fd73b4fbb204df4fe05"
+  },
+  "diagnostic_contract": {
+    "measurement_cycles": 4,
+    "phase_bins": 200,
+    "sample_every_timesteps": 2,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision_synchronized_velocity_at_old_position",
+    "regions": [
+      "x000_010:0:0.0025",
+      "x010_020:0.0025:0.005",
+      "x020_040:0.005:0.01",
+      "x040_060:0.01:0.015",
+      "x060_080:0.015:0.02",
+      "x080_090:0.02:0.0225",
+      "x090_100:0.0225:0.025"
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "energy_bins": 320,
+    "energy_bin_width_eV": 0.25,
+    "energy_max_eV": 80.0,
+    "reported_energy_bands_eV": [[11.5, 15.8], [15.8, 30.0], [30.0, 80.0]],
+    "fold_through_locked_ionization_kernel": true,
+    "no_fitted_phase_shift_or_spatial_reflection": true
+  },
+  "execution": {
+    "seeds": ["13507", "24601", "35713"],
+    "measurement_cycles": 4,
+    "mode": "m",
+    "serial_execution": true,
+    "maximum_simultaneous_processes": 1,
+    "omp_num_threads": 1,
+    "nice_level": 10,
+    "hard_virtual_memory_limit_kib_each": 262144,
+    "maximum_peak_resident_set_kib_each": 262144,
+    "maximum_wall_seconds_each": 240.0
+  },
+  "prospective_acceptance": {
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "maximum_histogram_overflow_fraction": 0.000001,
+    "maximum_critical_folded_ionization_relative_range": 0.15,
+    "maximum_critical_tail_relative_range": 0.2,
+    "all_measurement_gates_required": true
+  },
+  "prospective_hypothesis": {
+    "maximum_critical_folded_ionization_ratio": 0.9,
+    "maximum_critical_tail_ratio": 0.9,
+    "statement": "AuroraPIC's directly sampled critical-region EEDF has at least a 10 percent ionization-kernel and ionizing-tail deficit relative to native eduPIC, and its folded-ionization ratio is higher in x/L=0.1--0.2 than across x/L=0.2--0.6, consistent with an energy-selective deficit developing across the interior.",
+    "decision": "Evaluate each clause independently. Measurement validity is separate from hypothesis support; a rejected clause is retained as an elimination result."
+  },
+  "claim_boundary": "This compares one four-cycle AuroraPIC regional phase-EEDF block with three deterministic four-cycle continuations of one well-equilibrated native eduPIC checkpoint. The codes use the same nominal case, regional boundaries, phase grid, sampling cadence, energy bins, and ionization kernel, but their particle microstates and random streams are not paired and their synchronized samples differ by at most one native timestep in convention. It is not experimental validation, unrestricted uncertainty quantification, or proof of general PIC correctness."
+}
