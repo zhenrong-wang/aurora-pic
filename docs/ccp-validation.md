@@ -2611,6 +2611,41 @@ realization, so the experiment quantifies continuation-seed scatter rather
 than unrestricted initial-condition uncertainty, cross-code agreement, or
 experimental validation.
 
+### Four-cycle direct-transport seed uncertainty
+
+The failed two-cycle critical-window gate motivated a longer-window test, not
+a relaxed tolerance. The
+[`four-cycle rule`](../benchmarks/ccp/edupic-argon-surface-flux-seed-long-rule-20260824.json)
+retained the same `20%`, `15%`, `30%`, `10%`, and `6%` limits and continued
+all three members from their step-32000 checkpoints. Measurement accumulators
+were reset and four entirely fresh RF cycles were collected. All runtime and
+diagnostic gates passed for
+[`13507`](../benchmarks/ccp/edupic-argon-surface-flux-seed-long-13507-20260824.json),
+[`24601`](../benchmarks/ccp/edupic-argon-surface-flux-seed-long-24601-20260824.json),
+and
+[`35713`](../benchmarks/ccp/edupic-argon-surface-flux-seed-long-35713-20260824.json).
+Each branch used one low-priority CPU, completed in `446--456 s`, and stayed
+below `191 MiB` peak RSS.
+
+The checksum-bound
+[`four-cycle ensemble result`](../benchmarks/ccp/edupic-argon-surface-flux-seed-long-result-20260824.json)
+passes all five prospective gates. The broad `0.125--0.5` direct transport now
+spans `22.56--25.45 W/m2`, an `11.86%` relative range against the retained
+`20%` limit; its ensemble mean is `24.40 W/m2`. The exceptional `0.375--0.5`
+transport spans `114.19--117.68 W/m2`, only `3.01%` against `15%`, with a
+mean of `115.97 W/m2`. Its approximate above-15.8-eV component spans
+`17.43--20.16 W/m2`, or `14.41%` against `30%`, with a mean of `18.92 W/m2`.
+Maximum direct-versus-inferred closure errors are `6.01%` in the broad window
+and `0.85%` in the exceptional octant.
+
+The critical-window failure at two cycles therefore behaves as finite-window
+sampling noise and is resolved at the prospectively tested four-cycle horizon.
+The exceptional transport and energetic-tail findings remain substantially
+more seed stable. This establishes repeatability across three decorrelated
+continuation-RNG histories at the declared horizon; it still does not provide
+unrestricted initial-condition uncertainty, asymptotic statistical
+convergence, matching eduPIC internal flux data, or experimental validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

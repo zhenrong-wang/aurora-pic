@@ -273,6 +273,7 @@ def smoke_install_tree(
         "analyze_aurorapic_surface_flux_mesh.py",
         "analyze_aurorapic_surface_flux_particle.py",
         "analyze_aurorapic_surface_flux_seed.py",
+        "analyze_aurorapic_surface_flux_seed_long.py",
     ):
         require_file(prefix / "share" / "aurorapic" / "scripts" / script)
     require_file(
