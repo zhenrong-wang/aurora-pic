@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm",
+  "scope": "prospective_reference_free_transport_convergence_result",
+  "all_declared_gates_passed": false,
+  "campaign_runner_passed": true,
+  "external_reference_available": false,
+  "provenance": {
+    "rule_sha256": "8f8ad1ddeaf9ba01ffc899e027d3b586c1a93f7c162fdbd151670b6cb9068c05",
+    "campaign_report_sha256": "f112f9ba881650d52f65a3c7d4e12a44518b220d8851fbe12effb098313233e5",
+    "baseline_csv_sha256": "56688f766641732aeae789bf3cfcc8f2a5cda5fa8e93118ef2db77a06930abb7",
+    "timestep_refined_csv_sha256": "c47e35e7a8baddde3a24f3bd0fbd0044cef96da3222c0f571a727aa339ce788e",
+    "particle_refined_csv_sha256": "8f83a5a6cc20ad5d3c6255c56e7c1771a90cf20d56e456f1eaedf98a13e80923",
+    "combined_refined_csv_sha256": "0503bd47a5c8f44ea25defcc69ddd1a7b88127196da618c9122be88810ee42a6"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "wall_seconds": 79.1,
+    "peak_resident_set_kib": 115104,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "campaign_convergence": {
+    "passed": true,
+    "largest_raw_relative_drift_change": 0.10068280144198329,
+    "largest_raw_relative_mean_energy_change": 0.023767877745276784,
+    "largest_uncertainty_normalized_residual": 0.6328604011062492,
+    "interpretation": "Every baseline and single-axis refinement agrees with the combined refinement under the predeclared uncertainty-aware residual rule."
+  },
+  "combined_refined": [
+    {
+      "reduced_field_td": 20,
+      "electron_drift_velocity_m_s": 66275.84805778186,
+      "drift_relative_standard_error": 0.054537324610148,
+      "mean_energy_ev": 2.498313244593807,
+      "mean_energy_relative_standard_error": 0.021552988698326,
+      "maximum_observed_energy_ev": 9.075906908229484,
+      "elastic_rate_per_electron_s": 77261666.66667333,
+      "excitation_rate_per_electron_s": 0.0,
+      "ionization_rate_per_electron_s": 0.0
+    },
+    {
+      "reduced_field_td": 50,
+      "electron_drift_velocity_m_s": 59241.32498237598,
+      "drift_relative_standard_error": 0.060808388222636,
+      "mean_energy_ev": 4.627387035446431,
+      "mean_energy_relative_standard_error": 0.024376976470227,
+      "maximum_observed_energy_ev": 17.596503959856662,
+      "elastic_rate_per_electron_s": 201176666.66668403,
+      "excitation_rate_per_electron_s": 35000.00000000302,
+      "ionization_rate_per_electron_s": 0.0
+    },
+    {
+      "reduced_field_td": 100,
+      "electron_drift_velocity_m_s": 75753.67154240722,
+      "drift_relative_standard_error": 0.044663400641169,
+      "mean_energy_ev": 6.744372492825335,
+      "mean_energy_relative_standard_error": 0.003770576694656,
+      "maximum_observed_energy_ev": 25.105345419867408,
+      "elastic_rate_per_electron_s": 324506666.66669464,
+      "excitation_rate_per_electron_s": 1073333.333333426,
+      "ionization_rate_per_electron_s": 145000.00000001251
+    }
+  ],
+  "gates": {
+    "campaign_convergence": true,
+    "combined_refined_mean_energy_precision_each_field": true,
+    "combined_refined_drift_precision_20_td": false,
+    "combined_refined_drift_precision_50_td": false,
+    "combined_refined_drift_precision_100_td": true,
+    "maximum_energy_coverage_margin": true,
+    "external_transport_agreement": null
+  },
+  "assessment": "The selected mean-energy observables are numerically ready, but the 20 and 50 Td drift estimates are not yet precise enough for a credible external comparison. A higher-statistics combined-refinement extension is required; no argon transport validation is claimed.",
+  "claim_boundary": "This failed prospective precision gate is retained even though the campaign runner's uncertainty-aware convergence comparison passed. It is not evidence for or against agreement with measured argon swarm coefficients."
+}

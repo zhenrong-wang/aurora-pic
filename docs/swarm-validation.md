@@ -378,3 +378,24 @@ independent measured or evaluated validation.
 9. For spatial runs, vary the source-to-fit distance, fit range, plane count,
    history count, and downstream length; require coefficient stability rather
    than accepting one high R² value in isolation.
+
+## Current physical-package campaign
+
+The first prospectively locked numerical campaign using the local,
+checksum-pinned eduPIC 1.0 argon electron collision package scans `20`, `50`,
+and `100 Td`. Four serial branches combine a factor-two timestep refinement
+and factor-two particle refinement. The complete campaign ran in 79.1 seconds
+at 112.4 MiB peak RSS. All uncertainty-aware cross-resolution comparisons
+passed; mean-energy changes were at most `2.38%`, and all sampled electrons
+remained below `25.2 eV` against `200 eV` enforced table coverage.
+
+The full prospective rule nevertheless does not pass. In the finest branch,
+drift-velocity relative standard errors are `5.45%`, `6.08%`, and `4.47%` at
+`20`, `50`, and `100 Td`, respectively. The first two exceed the separately
+locked `5%` precision ceiling. Mean-energy standard errors are already at or
+below `2.44%`. The checksum-bearing
+[`result`](../benchmarks/swarm/edupic-argon-transport-convergence-result-20260824.json)
+therefore classifies the campaign as under-resolved for low-field drift and
+does not claim argon transport validation. The next run should increase only
+the combined-refinement statistics before any independent reference is
+scored.
