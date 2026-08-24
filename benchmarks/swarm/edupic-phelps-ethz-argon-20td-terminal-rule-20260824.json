@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-ethz-argon-modern-mobility-20td-terminal",
+  "scope": "prospective_isolated_stationarity_extension",
+  "physics_claim": "completion_of_the_locked_modern_low_field_transport_comparison",
+  "hypothesis": "Doubling only the 20 Td measurement window to 6.4 microseconds resolves the marginal half-window stationarity failure while preserving the modern ETHZ experimental pass under unchanged acceptance thresholds.",
+  "prior_information": "The locked three-field run passed every experimental and precision gate, but its 20 Td half-window drift change was 6.22% against a 5% limit. The earlier independent 20 Td numerical study also identified low signal-to-noise rather than a monotonic energy transient. This extension was locked after observing that failure.",
+  "locked_inputs": {
+    "parent_rule_sha256": "d7b45d97ac9d6f50b4e76c76835ee2f8e4235884004155736a9a4c583da5856b",
+    "parent_result_sha256": "a7a6318a285c9c50084c4af5bc2e317cae3c6c2409910630d34d46baf364e6e2",
+    "parent_simulation_csv_sha256": "69f0a910812f292ed85536ce512df7988572e9759fd56dabbb34405f6b328b34",
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "swarm_config_sha256": "874d6071545897f6bff6e2922b7442e54990a53a9d17b7aaa3a65688a59bf2e6",
+    "comparator_sha256": "743ad7b986d38e29337b96a341df44c82d873025c0a09ec981636d57cfe08aee",
+    "reference_preparer_sha256": "c3e88c05ff809d54e1dce83f7b0ca18cf175282937fd8ec6e071a6ecdb107fd2",
+    "local_lxcat_ethz_export_sha256": "839831bd4fda860ce3ed7c217009004862791f604477401978074fd5a55c8d63",
+    "local_derived_reference_csv_sha256": "b79b7ad838425cff659dfd90b897f09865fc139698c2e42e8e8309f437f91323",
+    "local_reference_manifest_sha256": "3bdebbe09c37fb2d93d50d4f25ac076863af1de07ffd7c2cb3ae30065660087f",
+    "local_edupic_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_field_td": 20,
+    "seed": 141421,
+    "simulation_neutral_temperature_k": 293,
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 160000,
+    "burn_in_time_s": 8e-6,
+    "measurement_steps": 128000,
+    "measurement_time_s": 6.4e-6,
+    "maximum_total_particle_steps": 1728000000,
+    "maximum_wall_seconds": 600,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_drift_relative_standard_error": 0.05,
+    "experimental_comparison_relative_tolerance": 0.10,
+    "experimental_comparison_uncertainty_multiplier": 2.0,
+    "experimental_point_must_pass": true,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "inheritance": "If the isolated 20 Td run passes all declared gates, combine it with the unchanged passing 10 and 30 Td points from the parent run to classify the three-field modern ETHZ milestone as complete. The parent 20 Td estimate is superseded only for stationarity completion and is not averaged with this run.",
+  "claim_boundary": "This is an explicitly disclosed post-failure measurement-window extension, not an independent replication. No tolerance, collision physics, field, seed, timestep, particle count, or burn horizon changes. All parent-rule scientific limitations remain."
+}

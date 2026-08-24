@@ -1,0 +1,18 @@
+# Prospective isolated stationarity extension of the locked modern ETHZ scan.
+swarm_config_version = 1
+gas_data_file = ../../tmp/edupic-argon-cross-sections-20260810/aurorapic-package/edupic_argon_electron.gas
+neutral_density = 2.0694208669001848e21
+neutral_temperature = 293
+reduced_fields_td = 20
+max_frequency = 1e9
+timestep = 5e-11
+steps = 288000
+burn_in_steps = 160000
+particles = 6000
+population_model = fixed_population_no_avalanche
+uncertainty_blocks = 10
+work_item_limit = 2000000000
+initial_mean_energy_ev = 1
+max_energy_ev = 200
+seed = 141421
+output_file = ../../tmp/edupic-phelps-ethz-argon-20td-terminal-20260824/swarm.csv

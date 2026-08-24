@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-ethz-argon-modern-mobility",
+  "scope": "prospective_modern_five_pressure_experimental_transport_comparison_result",
+  "all_declared_gates_passed": false,
+  "numerical_gates_passed": false,
+  "experimental_comparison_passed": true,
+  "provenance": {
+    "rule_sha256": "d7b45d97ac9d6f50b4e76c76835ee2f8e4235884004155736a9a4c583da5856b",
+    "simulation_csv_sha256": "69f0a910812f292ed85536ce512df7988572e9759fd56dabbb34405f6b328b34",
+    "local_comparison_report_sha256": "20f92f6411ed761d45f8b7d5b9177d67f6721db8892c7bcae1b3abfffbf83991",
+    "run_timing_record_sha256": "383aaf96f264598b3cf5ab13049a61a0c1837052a3d9b3607cd1c54f8ddf5b13"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "elapsed_wall_seconds": 730.54,
+    "maximum_peak_resident_set_kib": 110988,
+    "exit_status": 0,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "points": [
+    {
+      "reduced_field_td": 10,
+      "experimental_reference_drift_velocity_m_s": 9702.963711398335,
+      "simulation_drift_velocity_m_s": 11185.190168665567,
+      "experimental_relative_residual": 0.1527601773390145,
+      "experimental_normalized_residual": 0.6892695357546454,
+      "drift_relative_standard_error": 0.048207248820942045,
+      "drift_half_change_fraction": 0.04780361011296003,
+      "experimental_gate_passed": true,
+      "precision_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 20,
+      "experimental_reference_drift_velocity_m_s": 18749.029634593677,
+      "simulation_drift_velocity_m_s": 19348.394119939745,
+      "experimental_relative_residual": 0.03196776030692201,
+      "experimental_normalized_residual": 0.18145666382074302,
+      "drift_relative_standard_error": 0.03535198410116532,
+      "drift_half_change_fraction": 0.06219095218505516,
+      "experimental_gate_passed": true,
+      "precision_gate_passed": true,
+      "stationarity_gate_passed": false
+    },
+    {
+      "reduced_field_td": 30,
+      "experimental_reference_drift_velocity_m_s": 26968.609936683602,
+      "simulation_drift_velocity_m_s": 26925.21202673429,
+      "experimental_relative_residual": -0.0016092008468808932,
+      "experimental_normalized_residual": 0.011586620490334923,
+      "drift_relative_standard_error": 0.018353977695300627,
+      "drift_half_change_fraction": 0.03555581948709045,
+      "experimental_gate_passed": true,
+      "precision_gate_passed": true,
+      "stationarity_gate_passed": true
+    }
+  ],
+  "gates": {
+    "all_three_experimental_points_within_locked_allowance": true,
+    "all_three_drift_precision_gates": true,
+    "all_three_stationarity_gates": false,
+    "energy_coverage_margin": true
+  },
+  "assessment": "All three modern ETHZ experimental comparisons pass without retuning. Raw drift residuals are +15.28%, +3.20%, and -0.16% at 10, 20, and 30 Td, and the uncertainty-aware normalized residuals are 0.689, 0.181, and 0.012. The overall rule remains failed because the 20 Td half-window drift change is 6.22%, just above the locked 5% stationarity limit.",
+  "next_gate": "Double only the isolated 20 Td measurement window from 3.2 to 6.4 microseconds at the unchanged 8 microsecond burn, model, seed, timestep, particles, and acceptance thresholds.",
+  "claim_boundary": "The modern experimental agreement is encouraging but cannot be promoted to a completed milestone until 20 Td passes stationarity. The homogeneous transport scope and reference/model limitations in the locked rule remain unchanged."
+}
