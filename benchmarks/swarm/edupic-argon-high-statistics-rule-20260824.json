@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-electron-swarm",
+  "scope": "prospective_high_statistics_transport_precision_extension",
+  "physics_claim": "none_numerical_precision_only",
+  "hypothesis": "Four times the measurement samples of the previous combined refinement are sufficient to reduce drift-velocity standard error below 3.5 percent at 20, 50, and 100 Td without materially moving the converged means.",
+  "locked_inputs": {
+    "swarm_executable_sha256": "5b8aaca3c1ad515fc6f7d5422eefe7befdf8de0ca990a1b6491ade9af8253fb1",
+    "gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "high_statistics_config_sha256": "c965c5b72f2bcc78527c523df3b9040326e81a41621980f162ca512e14ef64b9",
+    "previous_combined_refined_csv_sha256": "0503bd47a5c8f44ea25defcc69ddd1a7b88127196da618c9122be88810ee42a6"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [20, 50, 100],
+    "timestep_s": 5e-11,
+    "steps": 12000,
+    "burn_in_steps": 4000,
+    "particles": 6000,
+    "measurement_particle_samples_each_field": 48000000,
+    "maximum_total_particle_steps": 216000000,
+    "maximum_wall_seconds": 180,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_drift_relative_standard_error_each_field": 0.035,
+    "maximum_mean_energy_relative_standard_error_each_field": 0.02,
+    "maximum_uncertainty_aware_normalized_residual_against_previous_combined_refinement": 1.0,
+    "comparison_relative_tolerance": 0.03,
+    "comparison_uncertainty_multiplier": 2.0,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "claim_boundary": "A pass makes these three numerical swarm points precise enough to score against an independently acquired reference. It does not itself validate argon transport, the collision data, the CCP result, or any device simulation."
+}
