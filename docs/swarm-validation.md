@@ -132,6 +132,9 @@ For each E/N it reports:
 
 - signed mean electron velocity along the electric field and the conventional
   electron drift velocity opposite the field;
+- first-half and second-half drift velocity and mean energy, so residual
+  within-window evolution is observable rather than hidden inside a standard
+  error;
 - reduced mobility `N * drift_velocity / electric_field`;
 - mean electron energy;
 - longitudinal and transverse endpoint diffusion estimates in fixed mode;

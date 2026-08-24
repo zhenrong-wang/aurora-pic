@@ -7223,6 +7223,18 @@ int main() {
                         expected_drift,
                         expected_drift * 1e-13,
                         "swarm uniform-field drift is incorrect");
+                    require_near(
+                        swarm_results.front()
+                            .electron_drift_velocity_first_half_m_s,
+                        3.5 * acceleration_step,
+                        expected_drift * 1e-13,
+                        "swarm first-half drift is incorrect");
+                    require_near(
+                        swarm_results.front()
+                            .electron_drift_velocity_second_half_m_s,
+                        5.5 * acceleration_step,
+                        expected_drift * 1e-13,
+                        "swarm second-half drift is incorrect");
                     const double expected_mean_energy =
                         0.5 * electron_mass *
                         acceleration_step * acceleration_step *
@@ -7232,6 +7244,20 @@ int main() {
                         expected_mean_energy,
                         expected_mean_energy * 1e-13,
                         "swarm uniform-field mean energy is incorrect");
+                    require_near(
+                        swarm_results.front().mean_energy_first_half_ev,
+                        0.5 * electron_mass * acceleration_step *
+                            acceleration_step * 12.5 /
+                            elementary_charge,
+                        expected_mean_energy * 1e-13,
+                        "swarm first-half mean energy is incorrect");
+                    require_near(
+                        swarm_results.front().mean_energy_second_half_ev,
+                        0.5 * electron_mass * acceleration_step *
+                            acceleration_step * 30.5 /
+                            elementary_charge,
+                        expected_mean_energy * 1e-13,
+                        "swarm second-half mean energy is incorrect");
                     require_near(
                         swarm_results.front()
                             .longitudinal_diffusion_m2_s,
@@ -7253,6 +7279,9 @@ int main() {
                                 std::string::npos &&
                             csv.find(
                                 "electron_drift_velocity_m_s") !=
+                                std::string::npos &&
+                            csv.find(
+                                "mean_energy_second_half_ev") !=
                                 std::string::npos &&
                             csv_header_end != std::string::npos &&
                             csv_row_end != std::string::npos &&

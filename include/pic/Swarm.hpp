@@ -78,9 +78,13 @@ struct SwarmBenchmarkResult {
     double mean_velocity_x_m_s{0.0};
     double mean_velocity_x_standard_error_m_s{0.0};
     double electron_drift_velocity_m_s{0.0};
+    double electron_drift_velocity_first_half_m_s{0.0};
+    double electron_drift_velocity_second_half_m_s{0.0};
     double reduced_mobility_1_v_m_s{0.0};
     double mean_energy_ev{0.0};
     double mean_energy_standard_error_ev{0.0};
+    double mean_energy_first_half_ev{0.0};
+    double mean_energy_second_half_ev{0.0};
     double longitudinal_diffusion_m2_s{0.0};
     double transverse_diffusion_m2_s{0.0};
     bool diffusion_available{true};

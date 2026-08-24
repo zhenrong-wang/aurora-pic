@@ -133,6 +133,24 @@ std::pair<double, double> block_mean_and_error(
     return {mean, standard_error};
 }
 
+std::pair<double, double> first_and_second_half_means(
+    const std::vector<double>& samples) {
+    if (samples.size() < 2) {
+        throw std::invalid_argument(
+            "swarm half-window statistics require at least two samples");
+    }
+    const std::size_t split = samples.size() / 2;
+    const double first = std::accumulate(
+        samples.begin(),
+        samples.begin() + static_cast<std::ptrdiff_t>(split), 0.0) /
+        static_cast<double>(split);
+    const double second = std::accumulate(
+        samples.begin() + static_cast<std::ptrdiff_t>(split),
+        samples.end(), 0.0) /
+        static_cast<double>(samples.size() - split);
+    return {first, second};
+}
+
 double linear_slope(
     const std::vector<double>& values,
     std::size_t begin,
@@ -1127,6 +1145,12 @@ SwarmBenchmarkResult run_field(
         velocity_statistics.second;
     result.electron_drift_velocity_m_s =
         -result.mean_velocity_x_m_s;
+    const auto velocity_halves =
+        first_and_second_half_means(velocity_samples);
+    result.electron_drift_velocity_first_half_m_s =
+        -velocity_halves.first;
+    result.electron_drift_velocity_second_half_m_s =
+        -velocity_halves.second;
     result.reduced_mobility_1_v_m_s =
         electric_field == 0.0
             ? 0.0
@@ -1134,6 +1158,9 @@ SwarmBenchmarkResult run_field(
                   config.neutral_density / electric_field;
     result.mean_energy_ev = energy_statistics.first;
     result.mean_energy_standard_error_ev = energy_statistics.second;
+    const auto energy_halves = first_and_second_half_means(energy_samples);
+    result.mean_energy_first_half_ev = energy_halves.first;
+    result.mean_energy_second_half_ev = energy_halves.second;
 
     const double sampling_time =
         static_cast<double>(sampling_steps) * config.timestep;
@@ -1559,8 +1586,11 @@ void write_swarm_benchmark_csv(
         << "electric_field_v_m,mean_velocity_x_m_s,"
         << "mean_velocity_x_standard_error_m_s,"
         << "electron_drift_velocity_m_s,"
+        << "electron_drift_velocity_first_half_m_s,"
+        << "electron_drift_velocity_second_half_m_s,"
         << "reduced_mobility_1_v_m_s,mean_energy_ev,"
         << "mean_energy_standard_error_ev,"
+        << "mean_energy_first_half_ev,mean_energy_second_half_ev,"
         << "diffusion_available,"
         << "longitudinal_diffusion_m2_s,"
         << "transverse_diffusion_m2_s,"
@@ -1646,9 +1676,13 @@ void write_swarm_benchmark_csv(
             << result.mean_velocity_x_m_s << ','
             << result.mean_velocity_x_standard_error_m_s << ','
             << result.electron_drift_velocity_m_s << ','
+            << result.electron_drift_velocity_first_half_m_s << ','
+            << result.electron_drift_velocity_second_half_m_s << ','
             << result.reduced_mobility_1_v_m_s << ','
             << result.mean_energy_ev << ','
             << result.mean_energy_standard_error_ev << ','
+            << result.mean_energy_first_half_ev << ','
+            << result.mean_energy_second_half_ev << ','
             << (result.diffusion_available ? "yes" : "no") << ',';
         if (result.diffusion_available) {
             output
