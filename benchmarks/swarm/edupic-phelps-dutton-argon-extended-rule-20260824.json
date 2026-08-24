@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-extended-measurement",
+  "scope": "prospective_stationarity_resolution_after_exact_field_discriminator",
+  "physics_claim": "completed_historical_argon_transport_consistency_checkpoint",
+  "hypothesis": "Doubling only the measurement duration from 0.4 to 0.8 microseconds makes all five drift half-window changes no greater than 5%, preserves no greater than 5% relative standard error, and preserves all five experimental passes under the unchanged comparison rule.",
+  "triggering_result": {
+    "result_sha256": "08f712e75cb2b0e06456d2050cdb6fe36f7aa36cde9a2e433bd609c371ceec96",
+    "experimental_points_passed": 5,
+    "stationarity_failures_td": [52.8, 99.7]
+  },
+  "locked_inputs": {
+    "swarm_executable_sha256": "1dcc7d8db8591ff16324d11a75c70589489eeed647865a4d08c2abe1a74e72fd",
+    "swarm_config_sha256": "a4d86ea9e12e1618d73fbe45d4d73b5045eb54ab7a9a5eafc5a40e1c7572ab32",
+    "comparator_sha256": "743ad7b986d38e29337b96a341df44c82d873025c0a09ec981636d57cfe08aee",
+    "local_reference_csv_sha256": "7448eb03e41350557d0d1e6c31231ca0988b40e2d62fa27a973d94925f21e2f7",
+    "local_reference_manifest_sha256": "e5c9fe0e8b957441f802aa69688cf405bf584dc53dc193fa2d85a648c805e5b8",
+    "local_edupic_package_audit_sha256": "ba747fc8bcedc48f17af002e62d89592b8c946e83bb5ec766b219d0359c4ead9",
+    "local_edupic_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "local_edupic_elastic_table_sha256": "f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47",
+    "local_edupic_excitation_table_sha256": "9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c",
+    "local_edupic_ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0"
+  },
+  "single_controlled_change": {
+    "measurement_steps_before": 8000,
+    "measurement_steps_after": 16000,
+    "measurement_time_before_s": 4e-7,
+    "measurement_time_after_s": 8e-7,
+    "unchanged": "package, executable, reference, fields, seed, timestep, particle count, 1.2 microsecond burn-in, population model, and every acceptance threshold"
+  },
+  "execution_contract": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "reduced_fields_td": [52.8, 53.6, 90.8, 99.5, 99.7],
+    "simulation_neutral_temperature_k": 293,
+    "timestep_s": 5e-11,
+    "particles": 6000,
+    "burn_in_steps": 24000,
+    "measurement_steps": 16000,
+    "maximum_total_particle_steps": 1200000000,
+    "maximum_wall_seconds": 340,
+    "maximum_peak_rss_kib": 196608
+  },
+  "acceptance": {
+    "maximum_absolute_first_to_second_half_drift_change_fraction_of_full_mean": 0.05,
+    "maximum_drift_relative_standard_error": 0.05,
+    "experimental_comparison_relative_tolerance": 0.20,
+    "experimental_comparison_uncertainty_multiplier": 2.0,
+    "all_five_points_must_pass": true,
+    "maximum_observed_energy_fraction_of_coverage": 0.8
+  },
+  "classification": "Passing completes a model-level historical experimental consistency checkpoint and demonstrates that the earlier systematic failure follows the collision package rather than the common AuroraPIC transport kernel. It remains calibration-consistency evidence rather than a blind prediction.",
+  "claim_boundary": "This is an extension of the same seeded trajectory, not an independent-seed replication. Historical temperature, coefficient convention, and uncertainty ambiguity remain. No self-consistent PIC, boundary, geometry, chemistry, ion, or device validation claim follows."
+}

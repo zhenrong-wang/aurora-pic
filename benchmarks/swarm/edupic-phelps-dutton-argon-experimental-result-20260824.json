@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-phelps-dutton-argon-experimental-discriminator",
+  "scope": "prospective_exact_field_secondary_collision_model_experimental_comparison_result",
+  "all_declared_gates_passed": false,
+  "numerical_gates_passed": false,
+  "experimental_comparison_passed": true,
+  "provenance": {
+    "rule_sha256": "4c8769490a8afdd64c3880de527881fac75f1630b5508f39717dd2969450c99d",
+    "simulation_csv_sha256": "40cc3e46e0836cc357f0298d381d89d3100564723cf69016808df0dde66b4898",
+    "local_comparison_report_sha256": "4bc6a36bcd2fd37b19e967bef922e952bef88cb3b2a8c159e61ef74ba4ff7661",
+    "run_timing_record_sha256": "bf8d2ac21045ca661e2ecf45f83ce010ebe4561b786f4bb7b20ec02680b1150b"
+  },
+  "execution": {
+    "serial": true,
+    "omp_threads": 1,
+    "nice_level": 10,
+    "elapsed_wall_seconds": 203.66,
+    "maximum_peak_resident_set_kib": 115144,
+    "exit_status": 0,
+    "wall_gate_passed": true,
+    "memory_gate_passed": true
+  },
+  "points": [
+    {
+      "reduced_field_td": 52.8,
+      "experimental_relative_residual": 0.09557128,
+      "drift_relative_standard_error": 0.03105619,
+      "drift_half_change_fraction": 0.09986294,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": false
+    },
+    {
+      "reduced_field_td": 53.6,
+      "experimental_relative_residual": 0.03939623,
+      "drift_relative_standard_error": 0.02627029,
+      "drift_half_change_fraction": 0.00380043,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 90.8,
+      "experimental_relative_residual": 0.13915096,
+      "drift_relative_standard_error": 0.02155908,
+      "drift_half_change_fraction": 0.00744081,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 99.5,
+      "experimental_relative_residual": 0.18872509,
+      "drift_relative_standard_error": 0.01892794,
+      "drift_half_change_fraction": 0.03740379,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": true
+    },
+    {
+      "reduced_field_td": 99.7,
+      "experimental_relative_residual": 0.01896126,
+      "drift_relative_standard_error": 0.01760668,
+      "drift_half_change_fraction": 0.06521815,
+      "experimental_gate_passed": true,
+      "stationarity_gate_passed": false
+    }
+  ],
+  "gates": {
+    "all_five_experimental_points_within_locked_allowance": true,
+    "all_five_drift_precision_gates": true,
+    "all_five_stationarity_gates": false,
+    "energy_coverage_margin": true
+  },
+  "assessment": "Changing only from the Maiorov package to the eduPIC Phelps-based package reduces all five experimental residuals to 1.90% through 18.87%, and every experimental comparison passes. The overall rule remains failed because drift half-window changes of 9.99% at 52.8 Td and 6.52% at 99.7 Td exceed the locked 5% stationarity limit.",
+  "scientific_significance": "The collision package is already a strong discriminator: under the same AuroraPIC executable and numerical contract, all five experimental residuals improve and change from four failures to five passes. A longer measurement window is still required before this becomes a completed transport-validation checkpoint.",
+  "claim_boundary": "Experimental agreement cannot be promoted to a passing validation result until stationarity passes. Prior non-scored 50 and 100 Td results mean this was not a blind model-selection test, and Phelps-based cross sections may incorporate swarm constraints."
+}
