@@ -1,0 +1,108 @@
+{
+  "all_gates_passed": false,
+  "assessment": {
+    "conservation_closure_accepted": true,
+    "critical_window_requires_more_sampling": true,
+    "exceptional_transport_seed_robust": true,
+    "ionizing_tail_seed_robust": true
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "The three arms share one original particle realization but have independently seeded collision-RNG histories and six cycles of decorrelation before this fresh measurement. A passing ensemble quantifies continuation-seed scatter, not unrestricted initial-condition uncertainty, asymptotic statistical convergence, cross-code flux validation, or experimental validation.",
+  "gates": {
+    "critical_phase_closure": true,
+    "critical_phase_direct_flux": false,
+    "exceptional_octant_closure": true,
+    "exceptional_octant_direct_flux": true,
+    "exceptional_octant_tail_flux": true
+  },
+  "interpretation": "The direct transport result has material continuation-seed scatter or inadequate closure at a declared tolerance; longer sampling or a larger ensemble is required.",
+  "members": [
+    {
+      "branch_report_sha256": "f6c6a6a97258f4e8827df29ff6fd5fbfb9521b84d969cfe8df943b125eccc172",
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -11.492833727266085,
+        "direct_outward_energy_flux_divergence_W_m-2": 20.85354379426343,
+        "inferred_outward_energy_flux_divergence_W_m-2": 21.786746852412353,
+        "relative_closure_error": 0.04283352005100262
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 17.68370031722427,
+        "direct_outward_energy_flux_divergence_W_m-2": 112.11522624648116,
+        "inferred_outward_energy_flux_divergence_W_m-2": 112.16000382558904,
+        "relative_closure_error": 0.00039922947200961956
+      },
+      "maximum_surface_overflow_fraction": 0.0,
+      "nodes": 400,
+      "peak_resident_set_kib": 195264,
+      "seed": 13507,
+      "wall_seconds": 229.46049405820668
+    },
+    {
+      "branch_report_sha256": "d6f510b7ac59725253523fce0577c6ceedbc913d1a62165f516f730bc5386e04",
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -9.628096552145411,
+        "direct_outward_energy_flux_divergence_W_m-2": 26.804376134503713,
+        "inferred_outward_energy_flux_divergence_W_m-2": 28.036706774083243,
+        "relative_closure_error": 0.04395418654228962
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 19.73371992744257,
+        "direct_outward_energy_flux_divergence_W_m-2": 122.0673741004362,
+        "inferred_outward_energy_flux_divergence_W_m-2": 122.36969695077234,
+        "relative_closure_error": 0.002470569576206108
+      },
+      "maximum_surface_overflow_fraction": 0.0,
+      "nodes": 400,
+      "peak_resident_set_kib": 195108,
+      "seed": 24601,
+      "wall_seconds": 231.17264296719804
+    },
+    {
+      "branch_report_sha256": "ecf61ec2f3c4eef8509fb462d4aef70a067f33f0f963846c6c5980a4f795e3ba",
+      "critical_phase_0p125_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": -9.4423071883608,
+        "direct_outward_energy_flux_divergence_W_m-2": 22.695657342470952,
+        "inferred_outward_energy_flux_divergence_W_m-2": 24.384624123167974,
+        "relative_closure_error": 0.06926359709979393
+      },
+      "exceptional_phase_0p375_to_0p5": {
+        "approximate_above_15p8_eV_outward_energy_flux_divergence_W_m-2": 18.21293386644977,
+        "direct_outward_energy_flux_divergence_W_m-2": 117.29040299429862,
+        "inferred_outward_energy_flux_divergence_W_m-2": 118.38856562808202,
+        "relative_closure_error": 0.009275918058111149
+      },
+      "maximum_surface_overflow_fraction": 0.0,
+      "nodes": 400,
+      "peak_resident_set_kib": 194948,
+      "seed": 35713,
+      "wall_seconds": 218.82182973390445
+    }
+  ],
+  "metrics": {
+    "critical_phase_direct_flux_relative_range": 0.25375393424406995,
+    "exceptional_octant_direct_flux_relative_range": 0.0849466197347737,
+    "exceptional_octant_tail_flux_relative_range": 0.11055221432476793,
+    "maximum_critical_phase_closure_error": 0.06926359709979393,
+    "maximum_exceptional_octant_closure_error": 0.009275918058111149,
+    "mean_exceptional_octant_direct_flux_W_m-2": 117.15766778040533,
+    "mean_exceptional_octant_tail_flux_W_m-2": 18.543451370372207
+  },
+  "provenance": {
+    "analyzer_sha256": "3c1377313daefd95c9c2e6e8c0b465b48a441821a0578b179e1ef849a454749d",
+    "branch_report_sha256s": {
+      "13507": "f6c6a6a97258f4e8827df29ff6fd5fbfb9521b84d969cfe8df943b125eccc172",
+      "24601": "d6f510b7ac59725253523fce0577c6ceedbc913d1a62165f516f730bc5386e04",
+      "35713": "ecf61ec2f3c4eef8509fb462d4aef70a067f33f0f963846c6c5980a4f795e3ba"
+    },
+    "rule_sha256": "f0d94adedf0bb6f74cb23472b6515a58d2c7c39ddbf3a7e363e6a3ce83ac904d"
+  },
+  "schema_version": 1,
+  "scope": "prospective_surface_transport_seed_ensemble_result",
+  "thresholds": {
+    "maximum_critical_phase_closure_error_each_member": 0.1,
+    "maximum_critical_phase_direct_flux_relative_range": 0.2,
+    "maximum_exceptional_octant_closure_error_each_member": 0.06,
+    "maximum_exceptional_octant_direct_flux_relative_range": 0.15,
+    "maximum_exceptional_octant_tail_flux_relative_range": 0.3
+  }
+}

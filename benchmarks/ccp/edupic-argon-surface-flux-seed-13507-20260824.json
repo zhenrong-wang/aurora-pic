@@ -1,0 +1,69 @@
+{
+  "all_gates_passed": true,
+  "branch": "seed_13507",
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "The three arms share one original particle realization but have independently seeded collision-RNG histories and six cycles of decorrelation before this fresh measurement. A passing ensemble quantifies continuation-seed scatter, not unrestricted initial-condition uncertainty, asymptotic statistical convergence, cross-code flux validation, or experimental validation.",
+  "final_checkpoint_sha256": "c1580ebb50671bdf31307d3dfa56ed7c30eb8056a1337065f149550e6019dc6d",
+  "gates": {
+    "absolute_field": true,
+    "measurement_window": true,
+    "particle_cap": true,
+    "resident_memory": true,
+    "surface_flux_contract": true,
+    "surface_flux_crossing_sufficiency": true,
+    "surface_flux_finite": true,
+    "surface_flux_histogram_closure": true,
+    "surface_flux_shape": true
+  },
+  "inputs": {
+    "base_deck_sha256": "d46e4413b264fda9442a52e94804c1fccab95091bded62b8a94939a81be76d4e",
+    "deck_sha256": "5ee93cc5cecbc13ca127f968e324b1e5bac0cca8d1384935fdc9e09cc202ff04",
+    "input_checkpoint_sha256": "94624b052f3d13ae862d5f75ab33e7ec2b5826dc74b769f0d182be249e5af75b",
+    "prior_branch_report_sha256": "4171678276ffb9fee0eecb843f9d9c0b44ecb5bbf13c65207618a9cd76820fc5",
+    "solver_sha256": "8248a12a2685c9e10916fb59b5b2422658c6453b4e1195561a855f7c8149cc83"
+  },
+  "numerics": {
+    "cells": 399,
+    "end_step": 32000,
+    "nodes": 400,
+    "start_step": 24000
+  },
+  "output_hashes": {
+    "phase_eedf.csv": "5116841ede51ec9566837a2d1b4ef1bdd7c12fd95b14ead3d9ec770355753032",
+    "phase_eedf_moments.csv": "80bac2bfa1869cbfbe5041ffd750e364ec4e3eee1f926f694711def4f1151662",
+    "phase_surface_flux.csv": "464b42b7f7275a9abc1a4e534222caabb33c4a251246054a15b76694aa33e950",
+    "phase_surface_flux_summary.csv": "53309420fb36571943efb8dd379ac4d6470a2deb4e6ada7f2d25c10ed693c057",
+    "scalars.csv": "8d89843ce59c0f7e822431f8dc8c5bd193edf2a9d214746c5b20b9ca54689134",
+    "spatial_average_metadata.json": "0f092a6064712dd4ae60fb9c69838ecb0c4aeef8b265e1add344cf9771a0c75f",
+    "spatial_phase_collision_power.csv": "e7ebe236b0f6a88afe0bb571f7927b6cbc2c2f3af293d6a58d2dbdd5845a949c",
+    "spatial_phase_fields.csv": "02e69db246e79b374fb14b899bb1edb205144158023e3ed8b4cfe11be408880a",
+    "spatial_phase_moments.csv": "3297338b779aff4a0bbbd8a2ef1b075133a8e131cb0cfdf3177747d63b02e174"
+  },
+  "physics_claim": "surface_transport_continuation_seed_uncertainty_only",
+  "resources": {
+    "available_disk_before_launch_kib": 20864060,
+    "available_memory_before_launch_kib": 5298128,
+    "peak_resident_set_kib": 195264,
+    "wall_seconds": 229.46049405820668
+  },
+  "rule_sha256": "f0d94adedf0bb6f74cb23472b6515a58d2c7c39ddbf3a7e363e6a3ce83ac904d",
+  "safety": {
+    "maximum_live_particles": 244110,
+    "maximum_sampled_absolute_field_V_m": 66940.10583390499
+  },
+  "schema_version": 1,
+  "scope": "surface_flux_seed_ensemble_branch",
+  "surface_flux": {
+    "contract": true,
+    "crossing_sufficiency": true,
+    "finite": true,
+    "histogram_closure": true,
+    "histogram_rows": 256000,
+    "shape": true,
+    "summary_rows": 800,
+    "total_macro_crossings_per_surface": [
+      58746,
+      515713
+    ]
+  }
+}

@@ -2573,6 +2573,44 @@ than an immediate duplicated-sample comparison but weaker than an independent-
 seed ensemble. It is not proof of asymptotic particle convergence, cross-code
 flux agreement, or experimental validation.
 
+### Direct-transport continuation-seed uncertainty
+
+The next prospective test reused three completed 400-node states whose
+collision-RNG continuations used seeds `13507`, `24601`, and `35713`. Each
+state already had six RF cycles of independently seeded evolution before two
+fresh surface-flux cycles were measured. The immutable
+[`seed rule`](../benchmarks/ccp/edupic-argon-surface-flux-seed-rule-20260824.json)
+locked all checkpoint and prior-report hashes, execution limits, diagnostics,
+and acceptance thresholds before any branch was launched. All three serial
+branches passed their surface, histogram, crossing-count, field, particle,
+and resource gates; their reports are retained for
+[`13507`](../benchmarks/ccp/edupic-argon-surface-flux-seed-13507-20260824.json),
+[`24601`](../benchmarks/ccp/edupic-argon-surface-flux-seed-24601-20260824.json),
+and
+[`35713`](../benchmarks/ccp/edupic-argon-surface-flux-seed-35713-20260824.json).
+
+The checksum-bound
+[`ensemble result`](../benchmarks/ccp/edupic-argon-surface-flux-seed-result-20260824.json)
+is deliberately a mixed outcome: four of five prospective gates pass. The
+exceptional `0.375--0.5` direct transport spans `112.12--122.07 W/m2`, an
+`8.49%` relative range against a `15%` limit. Its approximate above-15.8-eV
+component spans `17.68--19.73 W/m2`, an `11.06%` range against a `30%` limit.
+The ensemble means are `117.16 W/m2` and `18.54 W/m2`, respectively. The
+maximum direct-versus-inferred closure error is `0.93%` in this exceptional
+octant, well inside the `6%` ceiling. This strengthens the conclusion that the
+exceptional energetic-electron transport mechanism is not an artifact of one
+continuation RNG history.
+
+The broader `0.125--0.5` direct transport spans `20.85--26.80 W/m2`, a
+`25.38%` range that fails the prospectively locked `20%` limit, even though
+all member closure errors remain below `6.93%` and pass the `10%` conservation
+ceiling. This signal must therefore be described as statistically under-
+resolved at a two-cycle horizon; it needs longer blockwise sampling before a
+seed-robust magnitude is claimed. The arms share one original particle
+realization, so the experiment quantifies continuation-seed scatter rather
+than unrestricted initial-condition uncertainty, cross-code agreement, or
+experimental validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
