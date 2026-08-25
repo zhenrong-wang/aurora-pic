@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_electrode_half_cell_gauss_control",
+  "question": "Does adding eduPIC's charged half-cell Gauss correction to AuroraPIC's electrode-node fields remove the matched-half-step energetic-promotion deficit?",
+  "basis": {
+    "prior_mover_audit_sha256": "8a0a40c49eafe4d10494aa35f14821d1d64b271f7f79f14beaaf1b3588ead5b6",
+    "prior_phase_control_result_sha256": "0a077dee1d02b60436f049be7c81a15c5c1455d30838c561cc6131ab74668f13",
+    "observed_before_declaration": "Bulk mover algebra, MCC velocity staggering, and the one-timestep RF field convention have been excluded. The remaining audited field-contract difference is the electrode half-cell charge correction.",
+    "controlled_change": "At the left electrode set E0=-(phi1-phi0)/dx-rho0*dx/(2*epsilon), and at the right electrode set EN=-(phiN-phiN-1)/dx+rhoN*dx/(2*epsilon). No interior potential, interior field, interpolation, mover, collision, mesh, timestep, RF phase, threshold, or diagnostic contract changes.",
+    "transition": "Load each locked step-36000 checkpoint with the corrected solver, recompute the self-consistent field at the checkpoint time, relax one complete RF cycle, then measure four complete non-overlapping RF cycles.",
+    "implementation_commit": "a83e8e9"
+  },
+  "locked_inputs": {
+    "native_field_push_rates_per_million": {"promotions": 10.00359003986454, "demotions": 5.911428229154379},
+    "baseline_pooled_candidate_rates_per_million": {
+      "microstate_51949": {"promotions": 7.916505815585605, "demotions": 4.7695777588411765},
+      "microstate_63059": {"promotions": 8.360498451752667, "demotions": 5.089829440073297}
+    },
+    "baseline_phase_rad": 1.5707963267948966,
+    "corrected_field_solver_sha256": "d6b21508f7585822608318b3c35ac42a9066dcae0b7578cf79df4b5cfee15409"
+  },
+  "locked_continuation_states": [
+    {
+      "id": "microstate_51949",
+      "solver_sha256": "20fcbd2fadf2bd981d9d20d937b5247fb8a8b06aaa1f40103200bdb5cb0eaeb1",
+      "base_config_sha256": "2d62ce0a6b3763979472d2ad8bf0a9f8e711828cf5da54d90e47b2f83101bb5c",
+      "checkpoint_sha256": "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+      "prior_report_sha256": "9d6e68c0c82d64caccd283d018d83ef0ec8304c3edc4c9f874f11eb971ba8718",
+      "electrons": 119131,
+      "ions": 124645,
+      "seed": 13507
+    },
+    {
+      "id": "microstate_63059",
+      "solver_sha256": "20fcbd2fadf2bd981d9d20d937b5247fb8a8b06aaa1f40103200bdb5cb0eaeb1",
+      "base_config_sha256": "628cd4caf421c0cc70327079ae7963265b447d0ec7b091a05a8456258fa5d969",
+      "checkpoint_sha256": "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233",
+      "prior_report_sha256": "355e33c7a42155fd1b40f87e76a9d7a3b316a699773868afc672e1eb8850de78",
+      "electrons": 119210,
+      "ions": 124766,
+      "seed": 13507
+    }
+  ],
+  "execution_contract": {
+    "steps_per_cycle": 4000,
+    "initial_step": 36000,
+    "relaxation_cycles": 1,
+    "relaxation_end_step": 40000,
+    "measurement_cycles": 4,
+    "start_step": 40000,
+    "end_step": 56000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 4194304,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "maximum_overflow_fraction": 0.000001,
+    "minimum_field_push_observations_critical_aggregate": 100000000,
+    "minimum_field_push_promotions_critical_aggregate": 1000,
+    "minimum_field_push_demotions_critical_aggregate": 1000
+  },
+  "prospective_decision_rule": {
+    "deficit_persists_if": "both corrected AuroraPIC/native promotion-rate ratios are at most 0.90",
+    "endpoint_correction_explains_deficit_if": "both corrected AuroraPIC/native promotion-rate ratios lie in [0.95, 1.05]",
+    "partial_endpoint_effect_if": "all gates pass but neither persistence nor parity criterion is met",
+    "candidate_repeatability_gate": "relative range across the two corrected microstate rates no greater than 0.08 for both promotions and demotions",
+    "interpretation_requires_all_runner_population_provenance_and_repeatability_gates": true
+  },
+  "claim_boundary": "This prospectively tests one electrode-node field convention in one argon CCP using two serially continued AuroraPIC microstates against a locked native ensemble. It does not reproduce experimental observables, add independent microstates, validate other dimensions, or prove general PIC correctness.",
+  "physics_claim": "none_until_both_endpoint_corrected_branches_and_all_gates_are_complete"
+}
