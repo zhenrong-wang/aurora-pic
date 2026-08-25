@@ -4678,6 +4678,8 @@ int main() {
                             expected.interstep_promotions &&
                         actual.interstep_demotions ==
                             expected.interstep_demotions &&
+                        actual.field_push_macro_observations ==
+                            expected.field_push_macro_observations &&
                         actual.field_push_promotions ==
                             expected.field_push_promotions &&
                         actual.field_push_demotions ==
@@ -4770,7 +4772,7 @@ int main() {
                     "interstep_promotions_per_million_electron_steps") !=
                         std::string::npos &&
                 threshold_crossing_csv.find(
-                    "field_push_promotions_per_million_electron_steps") !=
+                    "field_push_promotions_per_million_pushes") !=
                         std::string::npos &&
                 threshold_crossing_csv.find(
                     "ionization_collision_demotions") !=

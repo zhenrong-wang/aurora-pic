@@ -298,9 +298,10 @@ def analyze_output(output: Path, rule: dict[str, object],
             "interstep_promotions", "interstep_demotions",
             "interstep_promotions_per_million_electron_steps",
             "interstep_demotions_per_million_electron_steps",
+            "field_push_macro_observations",
             "field_push_promotions", "field_push_demotions",
-            "field_push_promotions_per_million_electron_steps",
-            "field_push_demotions_per_million_electron_steps",
+            "field_push_promotions_per_million_pushes",
+            "field_push_demotions_per_million_pushes",
             "elastic_collision_promotions", "elastic_collision_demotions",
             "excitation_collision_promotions",
             "excitation_collision_demotions",
@@ -332,10 +333,13 @@ def analyze_output(output: Path, rule: dict[str, object],
                 row, "field_push_promotions", "threshold crossing")
             field_demotions = integer(
                 row, "field_push_demotions", "threshold crossing")
+            field_observations = integer(
+                row, "field_push_macro_observations", "threshold crossing")
             if (energetic > observations or promotions > observations or
                     demotions > observations or
-                    field_promotions > observations or
-                    field_demotions > observations):
+                    field_observations > observations or
+                    field_promotions > field_observations or
+                    field_demotions > field_observations):
                 crossing_closure = False
             expected_fraction = energetic / observations if observations else 0.0
             expected_promotions = (
@@ -343,11 +347,11 @@ def analyze_output(output: Path, rule: dict[str, object],
             expected_demotions = (
                 1.0e6 * demotions / observations if observations else 0.0)
             expected_field_promotions = (
-                1.0e6 * field_promotions / observations
-                if observations else 0.0)
+                1.0e6 * field_promotions / field_observations
+                if field_observations else 0.0)
             expected_field_demotions = (
-                1.0e6 * field_demotions / observations
-                if observations else 0.0)
+                1.0e6 * field_demotions / field_observations
+                if field_observations else 0.0)
             crossing_closure = crossing_closure and all(
                 math.isclose(float(row[column]), expected,
                              rel_tol=1e-12, abs_tol=1e-15)
@@ -357,9 +361,9 @@ def analyze_output(output: Path, rule: dict[str, object],
                      expected_promotions),
                     ("interstep_demotions_per_million_electron_steps",
                      expected_demotions),
-                    ("field_push_promotions_per_million_electron_steps",
+                    ("field_push_promotions_per_million_pushes",
                      expected_field_promotions),
-                    ("field_push_demotions_per_million_electron_steps",
+                    ("field_push_demotions_per_million_pushes",
                      expected_field_demotions)))
         threshold_crossing_result = {
             "shape": crossing_shape,

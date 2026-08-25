@@ -1944,6 +1944,7 @@ void Simulation::update_phase_eedf_histories() {
                        history.energetic_previous_step && !energetic) {
                 ++crossing.interstep_demotions;
             }
+            ++crossing.field_push_macro_observations;
             if (!field_push_origin_energetic && field_push_energetic) {
                 ++crossing.field_push_promotions;
             } else if (field_push_origin_energetic &&
@@ -2874,9 +2875,10 @@ void Simulation::write_spatial_average() const {
                    "interstep_promotions,interstep_demotions,"
                    "interstep_promotions_per_million_electron_steps,"
                    "interstep_demotions_per_million_electron_steps,"
+                   "field_push_macro_observations,"
                    "field_push_promotions,field_push_demotions,"
-                   "field_push_promotions_per_million_electron_steps,"
-                   "field_push_demotions_per_million_electron_steps,"
+                   "field_push_promotions_per_million_pushes,"
+                   "field_push_demotions_per_million_pushes,"
                    "elastic_collision_promotions,elastic_collision_demotions,"
                    "excitation_collision_promotions,"
                    "excitation_collision_demotions,"
@@ -2924,17 +2926,20 @@ void Simulation::write_spatial_average() const {
                                       value.interstep_demotions) /
                                       observations
                                 : 0.0) << ','
+                        << value.field_push_macro_observations << ','
                         << value.field_push_promotions << ','
                         << value.field_push_demotions << ','
-                        << (observations > 0.0
+                        << (value.field_push_macro_observations > 0
                                 ? 1.0e6 * static_cast<double>(
                                       value.field_push_promotions) /
-                                      observations
+                                      static_cast<double>(
+                                          value.field_push_macro_observations)
                                 : 0.0) << ','
-                        << (observations > 0.0
+                        << (value.field_push_macro_observations > 0
                                 ? 1.0e6 * static_cast<double>(
                                       value.field_push_demotions) /
-                                      observations
+                                      static_cast<double>(
+                                          value.field_push_macro_observations)
                                 : 0.0);
                     for (std::size_t process = 0; process < 6; ++process) {
                         crossings << ',' << value.collision_promotions[process]
@@ -3445,6 +3450,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
                 << value.energetic_time_macro_observations << ' '
                 << value.interstep_promotions << ' '
                 << value.interstep_demotions << ' '
+                << value.field_push_macro_observations << ' '
                 << value.field_push_promotions << ' '
                 << value.field_push_demotions;
             for (const auto count : value.collision_promotions) {
@@ -4731,7 +4737,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                             value.interstep_promotions >>
                             value.interstep_demotions;
                         if (checkpoint_v21) {
-                            in >> value.field_push_promotions >>
+                            in >> value.field_push_macro_observations >>
+                                value.field_push_promotions >>
                                 value.field_push_demotions;
                         }
                         for (auto& count : value.collision_promotions) {
@@ -4749,10 +4756,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                                 value.electron_time_macro_observations &&
                             value.interstep_demotions <=
                                 value.electron_time_macro_observations &&
-                            value.field_push_promotions <=
+                            value.field_push_macro_observations <=
                                 value.electron_time_macro_observations &&
+                            value.field_push_promotions <=
+                                value.field_push_macro_observations &&
                             value.field_push_demotions <=
-                                value.electron_time_macro_observations;
+                                value.field_push_macro_observations;
                         if (key !=
                                 "phase_eedf_threshold_crossing_accumulator" ||
                             stored_phase != phase || stored_region != region ||

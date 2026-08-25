@@ -109,6 +109,7 @@ struct PhaseEedfThresholdCrossingAccumulator1D {
     std::uint64_t energetic_time_macro_observations{0};
     std::uint64_t interstep_promotions{0};
     std::uint64_t interstep_demotions{0};
+    std::uint64_t field_push_macro_observations{0};
     std::uint64_t field_push_promotions{0};
     std::uint64_t field_push_demotions{0};
     std::array<std::uint64_t, 6> collision_promotions{};
