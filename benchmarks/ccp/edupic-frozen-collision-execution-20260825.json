@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "frozen_collision_kernel_and_actual_state_fold_execution_record",
+  "implementation_commit": "85b3ae154bd5d8094d3e6c175f33873f868a71e0",
+  "kernel_audit_sha256": "d16601021441d6fa8a57bc3b9cf2e337f1d08f6e5461db17012d3f425f674bca",
+  "state_fold_sha256": "2b36add5e8a56d35bd9ab30c33c72b1d581cdb589bdd61f0c95be5249587fd2c",
+  "kernel_analyzer_sha256": "05747a66cf89b0e61224c2a659df84b378ec20bbd6190d29f4f6f43859e798e1",
+  "state_fold_analyzer_sha256": "9719a6e2c570cece2a845d3caf225d3470f53f3d112ca20f98e086db1fb65c9b",
+  "formal_outcome": "frozen_collision_lookup_and_opportunity_differences_are_below_one_percent_in_both_actual_states",
+  "inputs": {
+    "pinned_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "aurorapic_collision_cpp_sha256": "6a41a2ecf468847e384c4dc8915a58c76a0993c21f5f9b4adc6ccf356922e750",
+    "microstate_51949_checkpoint_sha256": "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+    "microstate_63059_checkpoint_sha256": "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233",
+    "raw_gas_tables_committed": false,
+    "raw_gas_table_identity": "checksum-bound local GPL-derived eduPIC package"
+  },
+  "method": {
+    "lookup_worst_case": "upper-quarter query in every 0.001 eV bin from 0 to 80 eV",
+    "electron_fold": "exact cold-neutral rate fold over every live half-step checkpoint velocity",
+    "ion_fold": "27-node tensor-product normal quadrature at 350 K over every live half-step checkpoint velocity",
+    "random_sampling": false,
+    "plasma_evolution": false
+  },
+  "verification": {
+    "focused_python_tests": "2/2 passed",
+    "ctest_serial": "3/3 passed",
+    "large_run": false,
+    "maximum_simultaneous_processes": 1
+  }
+}

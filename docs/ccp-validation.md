@@ -3213,6 +3213,45 @@ retain the numerical errors, exact threshold counts, source and binary hashes,
 and the pre-result tolerance correction. This is an operator verification,
 not a dynamic discharge or experimental validation result.
 
+### Frozen collision-rate localization
+
+The collision investigation next compares the checksum-pinned native source,
+AuroraPIC collision implementation, and all five local generated argon tables
+without evolving either plasma. The source contracts agree on electron and
+ion energy frames, threshold losses, isotropic/ backward angular models,
+finite-mass center-of-mass transforms, and the Opal-Beaty-Peterson ionization
+partition with a `10 eV` scale. Three known algorithm differences remain:
+eduPIC uses nearest `0.001 eV` bins, AuroraPIC uses lower bins; eduPIC permits
+one Bernoulli event per species step, while AuroraPIC's null-collision clock
+permits repeated Poisson opportunities; and the random engines differ.
+
+An upper-half-bin worst-case scan over `0--80 eV` finds a maximum electron
+event-probability difference of `3.07e-6` per electron step. The ion maximum is
+larger, `1.96e-4` per ion step at `0.00175 eV`, where the argon-ion cross
+section is steep. The isolated worst point is not representative of the
+particle population, so both kernels were then folded over every live
+half-step velocity in the two locked step-36000 checkpoints. Ion-neutral
+thermal motion at `350 K` is integrated deterministically with a 27-node
+three-dimensional normal quadrature.
+
+The actual-state result is tightly replicated. AuroraPIC lower-bin/native
+nearest-bin total first-event ratios are `0.999869` and `0.999871` for
+electrons, and `1.006676` and `1.006678` for ions. Ionization-channel ratios
+are `0.999755` and `0.999775`. Including AuroraPIC's repeated-opportunity
+Poisson mean gives total/native ratios of `1.00273--1.00278` for electrons
+and `1.00719` for ions. Thus lookup and opportunity-clock differences alter
+direct frozen traffic by less than one percent in both species and cannot
+directly supply a `16--20%` collision-acceptance deficit.
+
+The checksum-bound frozen collision
+[`kernel audit`](../benchmarks/ccp/edupic-frozen-collision-kernel-audit-20260825.json),
+[`actual-state fold`](../benchmarks/ccp/edupic-frozen-collision-state-fold-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-frozen-collision-execution-20260825.json)
+retain the result without redistributing the locally generated gas tables.
+Collision-product velocity distributions remain the next statistical
+operator comparison; these frozen rate results do not prove that the evolved
+EEDFs must agree.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
