@@ -5,6 +5,7 @@
 #include "pic/FieldSolver.hpp"
 #include "pic/ParticleState.hpp"
 #include "pic/Species.hpp"
+#include <array>
 #include <filesystem>
 #include <memory>
 #include <random>
@@ -103,6 +104,17 @@ struct ParticleHistory1D {
     bool energetic_previous_step{false};
 };
 
+struct PhaseEedfThresholdCrossingAccumulator1D {
+    std::uint64_t electron_time_macro_observations{0};
+    std::uint64_t energetic_time_macro_observations{0};
+    std::uint64_t interstep_promotions{0};
+    std::uint64_t interstep_demotions{0};
+    std::array<std::uint64_t, 6> collision_promotions{};
+    std::array<std::uint64_t, 6> collision_demotions{};
+    std::uint64_t energetic_births{0};
+    std::uint64_t subthreshold_births{0};
+};
+
 struct PhaseSurfaceFluxAccumulator1D {
     std::uint64_t macro_crossings{0};
     std::uint64_t overflow_macro_crossings{0};
@@ -180,6 +192,9 @@ public:
     phase_eedf_particle_histories() const {
         return phase_eedf_particle_histories_;
     }
+    const auto& phase_eedf_threshold_crossings() const {
+        return phase_eedf_threshold_crossings_;
+    }
     const auto& phase_surface_flux_accumulators() const {
         return phase_surface_flux_accumulators_;
     }
@@ -212,11 +227,18 @@ private:
     void accumulate_spatial_average(std::size_t sample_step);
     void accumulate_phase_eedf(std::size_t phase);
     bool phase_eedf_history_active() const;
+    std::size_t phase_eedf_history_phase() const;
     void update_phase_eedf_histories();
     void add_phase_eedf_collision_history(
         std::size_t particle_id,
         CollisionProcessKind process,
         std::uint64_t count);
+    void add_phase_eedf_collision_transition(
+        double position, CollisionProcessKind process,
+        bool energetic_before, bool energetic_after);
+    void add_phase_eedf_bgk_transition(
+        double position, bool energetic_before, bool energetic_after);
+    void add_phase_eedf_birth(double position, bool energetic);
     std::size_t phase_surface_flux_phase(std::size_t sample_step) const;
     void accumulate_phase_surface_crossing(
         std::size_t chunk, std::size_t surface, std::size_t direction,
@@ -291,6 +313,8 @@ private:
     std::vector<std::vector<PhaseEedfAccumulator1D>>
         phase_eedf_accumulators_{};
     std::vector<ParticleHistory1D> phase_eedf_particle_histories_{};
+    std::vector<std::vector<PhaseEedfThresholdCrossingAccumulator1D>>
+        phase_eedf_threshold_crossings_{};
     std::size_t phase_surface_flux_species_id_{0};
     std::vector<std::vector<std::vector<PhaseSurfaceFluxAccumulator1D>>>
         phase_surface_flux_accumulators_{};

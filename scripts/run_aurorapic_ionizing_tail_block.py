@@ -216,6 +216,8 @@ def analyze_output(output: Path, rule: dict[str, object],
             diagnostic.get("tail_threshold_eV", 0.0)) and
         metadata.get("phase_eedf_history_enabled") is bool(
             diagnostic.get("particle_history", False)) and
+        metadata.get("phase_eedf_threshold_crossing_enabled") is bool(
+            diagnostic.get("particle_history", False)) and
         set(metadata.get("phase_bin_samples", [])) == {expected_per_phase} and
         metadata.get("complete") is True)
 
@@ -273,6 +275,66 @@ def analyze_output(output: Path, rule: dict[str, object],
     region_names = sorted({row["region"] for row in moments})
     expected_names = sorted(str(region["name"]) for region in regions)
     shape_ok = region_names == expected_names
+    threshold_crossing_result = None
+    if diagnostic.get("particle_history", False):
+        crossing_rows = table(
+            output / "phase_eedf_threshold_crossings.csv")
+        crossing_columns = (
+            "electron_time_macro_observations",
+            "energetic_time_macro_observations", "energetic_fraction",
+            "interstep_promotions", "interstep_demotions",
+            "interstep_promotions_per_million_electron_steps",
+            "interstep_demotions_per_million_electron_steps",
+            "elastic_collision_promotions", "elastic_collision_demotions",
+            "excitation_collision_promotions",
+            "excitation_collision_demotions",
+            "ionization_collision_promotions",
+            "ionization_collision_demotions",
+            "charge_exchange_collision_promotions",
+            "charge_exchange_collision_demotions",
+            "attachment_collision_promotions",
+            "attachment_collision_demotions",
+            "bgk_collision_promotions", "bgk_collision_demotions",
+            "energetic_births", "subthreshold_births")
+        crossing_shape = (
+            len(crossing_rows) == phase_bins * len(regions) and
+            sorted({row["region"] for row in crossing_rows}) == expected_names)
+        crossing_finite = all(
+            math.isfinite(float(row[column])) and float(row[column]) >= 0.0
+            for row in crossing_rows for column in crossing_columns)
+        crossing_closure = True
+        for row in crossing_rows:
+            observations = integer(
+                row, "electron_time_macro_observations", "threshold crossing")
+            energetic = integer(
+                row, "energetic_time_macro_observations", "threshold crossing")
+            promotions = integer(
+                row, "interstep_promotions", "threshold crossing")
+            demotions = integer(
+                row, "interstep_demotions", "threshold crossing")
+            if (energetic > observations or promotions > observations or
+                    demotions > observations):
+                crossing_closure = False
+            expected_fraction = energetic / observations if observations else 0.0
+            expected_promotions = (
+                1.0e6 * promotions / observations if observations else 0.0)
+            expected_demotions = (
+                1.0e6 * demotions / observations if observations else 0.0)
+            crossing_closure = crossing_closure and all(
+                math.isclose(float(row[column]), expected,
+                             rel_tol=1e-12, abs_tol=1e-15)
+                for column, expected in (
+                    ("energetic_fraction", expected_fraction),
+                    ("interstep_promotions_per_million_electron_steps",
+                     expected_promotions),
+                    ("interstep_demotions_per_million_electron_steps",
+                     expected_demotions)))
+        threshold_crossing_result = {
+            "shape": crossing_shape,
+            "finite_nonnegative": crossing_finite,
+            "derived_rate_closure": crossing_closure,
+            "rows": len(crossing_rows),
+        }
 
     checkpoint = output / f"checkpoint_{end}.apc"
     required = [
@@ -281,6 +343,8 @@ def analyze_output(output: Path, rule: dict[str, object],
         "spatial_phase_collision_rate.csv", "spatial_phase_moments.csv",
         "spatial_phase_fields.csv", "scalars.csv", "collisions.csv",
         "boundary_losses.csv", "spatial_average_metadata.json"]
+    if diagnostic.get("particle_history", False):
+        required.append("phase_eedf_threshold_crossings.csv")
     surface_result = None
     if "surface_flux" in diagnostic:
         required.extend((
@@ -312,6 +376,10 @@ def analyze_output(output: Path, rule: dict[str, object],
         surface_result = analyze_surface_flux(output, diagnostic, metadata)
         gates.update({f"surface_flux_{key}": value for key, value in
                       surface_result.items() if isinstance(value, bool)})
+    if threshold_crossing_result is not None:
+        gates.update({f"threshold_crossing_{key}": value for key, value in
+                      threshold_crossing_result.items()
+                      if isinstance(value, bool)})
     return {
         "sampling": {
             "samples": metadata.get("samples"),
@@ -327,6 +395,7 @@ def analyze_output(output: Path, rule: dict[str, object],
             "field_snapshot_files": len(field_files),
         },
         "surface_flux": surface_result,
+        "threshold_crossings": threshold_crossing_result,
         "gates": gates,
         "all_gates_passed": all(gates.values()),
         "final_checkpoint_sha256": sha256(checkpoint),

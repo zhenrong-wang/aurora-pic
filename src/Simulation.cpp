@@ -40,6 +40,7 @@ constexpr const char* kCheckpointMagicV16 = "AuroraPIC-checkpoint-v16";
 constexpr const char* kCheckpointMagicV17 = "AuroraPIC-checkpoint-v17";
 constexpr const char* kCheckpointMagicV18 = "AuroraPIC-checkpoint-v18";
 constexpr const char* kCheckpointMagicV19 = "AuroraPIC-checkpoint-v19";
+constexpr const char* kCheckpointMagicV20 = "AuroraPIC-checkpoint-v20";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -727,6 +728,12 @@ Simulation::Simulation(Config cfg)
                     cfg_.phase_eedf.energy_bins, 0.0);
             }
         }
+        if (cfg_.phase_eedf.history_enabled) {
+            phase_eedf_threshold_crossings_.assign(
+                cfg_.spatial_average.phase_bins,
+                std::vector<PhaseEedfThresholdCrossingAccumulator1D>(
+                    cfg_.phase_eedf.regions.size()));
+        }
     }
     if (cfg_.phase_surface_flux.enabled) {
         phase_surface_flux_species_id_ =
@@ -1050,6 +1057,20 @@ void Simulation::apply_collisions() {
                           ? velocity.y * velocity.y +
                             velocity.z * velocity.z
                           : 0.0));
+                if (species_id == phase_eedf_species_id_ &&
+                    phase_eedf_history_active()) {
+                    const double energy_scale =
+                        cfg_.units.system == UnitSystem::SI
+                            ? ELEMENTARY_CHARGE_SI : 1.0;
+                    const double represented_scale =
+                        species.weight() * energy_scale;
+                    add_phase_eedf_bgk_transition(
+                        particle.x,
+                        energy_before / represented_scale >=
+                            cfg_.phase_eedf.tail_threshold,
+                        energy_after / represented_scale >=
+                            cfg_.phase_eedf.tail_threshold);
+                }
                 const double energy_change = energy_after - energy_before;
                 collision_totals_.channel_energy_change[0] += energy_change;
                 collision_interval_.channel_energy_change[0] += energy_change;
@@ -1081,20 +1102,22 @@ void Simulation::apply_collisions() {
             if (!part.alive) continue;
             auto& statistics =
                 runtime.collision_workspace.statistics;
+            Vec3 collision_velocity_before = collision_velocity(part);
+            Vec3 collision_velocity_after = collision_velocity_before;
             if (cfg_.velocity_dimensions == 3) {
-                Vec3 velocity = collision_velocity(part);
                 runtime.model->collide_reusing_storage(
-                    velocity, timestep, rng_,
+                    collision_velocity_after, timestep, rng_,
                     runtime.collision_workspace);
                 store_collision_velocity(
-                    part, velocity, qm, timestep);
+                    part, collision_velocity_after, qm, timestep);
             } else {
-                double velocity = collision_velocity(part).x;
+                double velocity = collision_velocity_before.x;
                 runtime.model->collide_reusing_storage(
                     velocity, timestep, rng_,
                     runtime.collision_workspace);
+                collision_velocity_after = Vec3{velocity, 0.0, 0.0};
                 store_collision_velocity(
-                    part, Vec3{velocity, 0.0, 0.0}, qm, timestep);
+                    part, collision_velocity_after, qm, timestep);
             }
             for (auto& energy_change :
                  statistics.channel_projectile_energy_change) {
@@ -1110,6 +1133,9 @@ void Simulation::apply_collisions() {
             add_collision_statistics(
                 collision_interval_, statistics,
                 runtime.diagnostic_offset);
+            bool transition_process_present = false;
+            CollisionProcessKind transition_process =
+                CollisionProcessKind::Elastic;
             for (std::size_t channel = 0;
                  channel < statistics.channel_collisions.size(); ++channel) {
                 if (statistics.channel_collisions[channel] != 0) {
@@ -1119,12 +1145,38 @@ void Simulation::apply_collisions() {
                             particle_id,
                             runtime.channel_processes[channel],
                             statistics.channel_collisions[channel]);
+                        if (!transition_process_present) {
+                            transition_process =
+                                runtime.channel_processes[channel];
+                            transition_process_present = true;
+                        }
                     }
                     deposit_spatial_collision_events(
                         part.x, runtime.diagnostic_offset + channel,
                         sp.weight() * static_cast<double>(
                             statistics.channel_collisions[channel]));
                 }
+            }
+            if (transition_process_present &&
+                runtime.species_id == phase_eedf_species_id_ &&
+                phase_eedf_history_active()) {
+                const auto energy_eV = [&](const Vec3& velocity) {
+                    const double squared = velocity.x * velocity.x +
+                        (cfg_.velocity_dimensions == 3
+                            ? velocity.y * velocity.y +
+                              velocity.z * velocity.z
+                            : 0.0);
+                    const double energy_scale =
+                        cfg_.units.system == UnitSystem::SI
+                            ? ELEMENTARY_CHARGE_SI : 1.0;
+                    return 0.5 * sp.mass() * squared / energy_scale;
+                };
+                add_phase_eedf_collision_transition(
+                    part.x, transition_process,
+                    energy_eV(collision_velocity_before) >=
+                        cfg_.phase_eedf.tail_threshold,
+                    energy_eV(collision_velocity_after) >=
+                        cfg_.phase_eedf.tail_threshold);
             }
             for (const auto& secondary :
                  statistics.secondaries) {
@@ -1256,6 +1308,19 @@ void Simulation::apply_collisions() {
             history = {};
             history.born_during_window =
                 phase_eedf_history_active();
+            if (phase_eedf_history_active()) {
+                const double squared = velocity.x * velocity.x +
+                    (cfg_.velocity_dimensions == 3
+                        ? velocity.y * velocity.y + velocity.z * velocity.z
+                        : 0.0);
+                const double energy_scale =
+                    cfg_.units.system == UnitSystem::SI
+                        ? ELEMENTARY_CHARGE_SI : 1.0;
+                add_phase_eedf_birth(
+                    position,
+                    0.5 * product_species.mass() * squared / energy_scale >=
+                        cfg_.phase_eedf.tail_threshold);
+            }
         }
         store_collision_velocity(
             product, velocity,
@@ -1777,6 +1842,23 @@ bool Simulation::phase_eedf_history_active() const {
         sample_step <= cfg_.spatial_average.end_step;
 }
 
+std::size_t Simulation::phase_eedf_history_phase() const {
+    if (!phase_eedf_history_active() ||
+        phase_eedf_threshold_crossings_.empty()) {
+        return phase_eedf_threshold_crossings_.size();
+    }
+    const auto& average = cfg_.spatial_average;
+    const auto steps_per_cycle = static_cast<std::size_t>(std::llround(
+        1.0 / (average.rf_frequency * cfg_.dt)));
+    const std::size_t sample_step = step_ + 1;
+    const std::size_t step_in_cycle =
+        (sample_step - average.start_step) % steps_per_cycle;
+    return std::min(
+        phase_eedf_threshold_crossings_.size() - 1,
+        step_in_cycle * phase_eedf_threshold_crossings_.size() /
+            steps_per_cycle);
+}
+
 void Simulation::update_phase_eedf_histories() {
     if (!phase_eedf_history_active() ||
         !species_due(phase_eedf_species_id_)) return;
@@ -1788,6 +1870,8 @@ void Simulation::update_phase_eedf_histories() {
     }
     const double energy_scale =
         cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
+    const std::size_t phase = phase_eedf_history_phase();
+    if (phase >= phase_eedf_threshold_crossings_.size()) return;
     for (std::size_t particle_id = 0;
          particle_id < particles.size(); ++particle_id) {
         const auto& particle = particles[particle_id];
@@ -1804,6 +1888,26 @@ void Simulation::update_phase_eedf_histories() {
             0.5 * species.mass() * velocity_squared / energy_scale;
         const bool energetic =
             energy >= cfg_.phase_eedf.tail_threshold;
+        const bool has_previous = history.age_steps > 0;
+        for (std::size_t region_id = 0;
+             region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+            const auto& configured = cfg_.phase_eedf.regions[region_id];
+            if (particle.x < configured.x_min ||
+                particle.x > configured.x_max) continue;
+            auto& crossing =
+                phase_eedf_threshold_crossings_[phase][region_id];
+            ++crossing.electron_time_macro_observations;
+            if (energetic) {
+                ++crossing.energetic_time_macro_observations;
+            }
+            if (has_previous &&
+                !history.energetic_previous_step && energetic) {
+                ++crossing.interstep_promotions;
+            } else if (has_previous &&
+                       history.energetic_previous_step && !energetic) {
+                ++crossing.interstep_demotions;
+            }
+        }
         if (energetic) {
             ++history.energetic_steps;
             ++history.consecutive_energetic_steps;
@@ -1814,6 +1918,67 @@ void Simulation::update_phase_eedf_histories() {
             history.consecutive_energetic_steps = 0;
         }
         history.energetic_previous_step = energetic;
+    }
+}
+
+void Simulation::add_phase_eedf_collision_transition(
+    double position, CollisionProcessKind process,
+    bool energetic_before, bool energetic_after) {
+    if (energetic_before == energetic_after) return;
+    const std::size_t phase = phase_eedf_history_phase();
+    if (phase >= phase_eedf_threshold_crossings_.size()) return;
+    std::size_t process_id = 0;
+    switch (process) {
+        case CollisionProcessKind::Elastic: process_id = 0; break;
+        case CollisionProcessKind::Excitation: process_id = 1; break;
+        case CollisionProcessKind::Ionization: process_id = 2; break;
+        case CollisionProcessKind::ChargeExchange: process_id = 3; break;
+        case CollisionProcessKind::Attachment: process_id = 4; break;
+    }
+    for (std::size_t region_id = 0;
+         region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+        const auto& configured = cfg_.phase_eedf.regions[region_id];
+        if (position < configured.x_min || position > configured.x_max) {
+            continue;
+        }
+        auto& crossing =
+            phase_eedf_threshold_crossings_[phase][region_id];
+        if (energetic_after) ++crossing.collision_promotions[process_id];
+        else ++crossing.collision_demotions[process_id];
+    }
+}
+
+void Simulation::add_phase_eedf_bgk_transition(
+    double position, bool energetic_before, bool energetic_after) {
+    if (energetic_before == energetic_after) return;
+    const std::size_t phase = phase_eedf_history_phase();
+    if (phase >= phase_eedf_threshold_crossings_.size()) return;
+    for (std::size_t region_id = 0;
+         region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+        const auto& configured = cfg_.phase_eedf.regions[region_id];
+        if (position < configured.x_min || position > configured.x_max) {
+            continue;
+        }
+        auto& crossing =
+            phase_eedf_threshold_crossings_[phase][region_id];
+        if (energetic_after) ++crossing.collision_promotions[5];
+        else ++crossing.collision_demotions[5];
+    }
+}
+
+void Simulation::add_phase_eedf_birth(double position, bool energetic) {
+    const std::size_t phase = phase_eedf_history_phase();
+    if (phase >= phase_eedf_threshold_crossings_.size()) return;
+    for (std::size_t region_id = 0;
+         region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+        const auto& configured = cfg_.phase_eedf.regions[region_id];
+        if (position < configured.x_min || position > configured.x_max) {
+            continue;
+        }
+        auto& crossing =
+            phase_eedf_threshold_crossings_[phase][region_id];
+        if (energetic) ++crossing.energetic_births;
+        else ++crossing.subthreshold_births;
     }
 }
 
@@ -2651,6 +2816,79 @@ void Simulation::write_spatial_average() const {
         }
         require_stream(histogram, "failed while writing phase EEDF histogram");
         require_stream(moments, "failed while writing phase EEDF moments");
+        if (cfg_.phase_eedf.history_enabled) {
+            std::ofstream crossings(
+                output_dir / "phase_eedf_threshold_crossings.csv");
+            if (!crossings) {
+                throw std::runtime_error(
+                    "cannot open phase EEDF threshold-crossing output");
+            }
+            crossings
+                << "phase_bin,phase_fraction,region_id,region,x_min,x_max,"
+                   "electron_time_macro_observations,"
+                   "energetic_time_macro_observations,energetic_fraction,"
+                   "interstep_promotions,interstep_demotions,"
+                   "interstep_promotions_per_million_electron_steps,"
+                   "interstep_demotions_per_million_electron_steps,"
+                   "elastic_collision_promotions,elastic_collision_demotions,"
+                   "excitation_collision_promotions,"
+                   "excitation_collision_demotions,"
+                   "ionization_collision_promotions,"
+                   "ionization_collision_demotions,"
+                   "charge_exchange_collision_promotions,"
+                   "charge_exchange_collision_demotions,"
+                   "attachment_collision_promotions,"
+                   "attachment_collision_demotions,"
+                   "bgk_collision_promotions,bgk_collision_demotions,"
+                   "energetic_births,subthreshold_births\n"
+                << std::setprecision(17);
+            for (std::size_t phase = 0;
+                 phase < phase_eedf_threshold_crossings_.size(); ++phase) {
+                const double phase_fraction =
+                    (static_cast<double>(phase) + 0.5) /
+                    static_cast<double>(
+                        phase_eedf_threshold_crossings_.size());
+                for (std::size_t region_id = 0;
+                     region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
+                    const auto& region = cfg_.phase_eedf.regions[region_id];
+                    const auto& value =
+                        phase_eedf_threshold_crossings_[phase][region_id];
+                    const double observations = static_cast<double>(
+                        value.electron_time_macro_observations);
+                    crossings << phase << ',' << phase_fraction << ','
+                        << region_id << ',' << csv_cell(region.name) << ','
+                        << region.x_min << ',' << region.x_max << ','
+                        << value.electron_time_macro_observations << ','
+                        << value.energetic_time_macro_observations << ','
+                        << (observations > 0.0
+                                ? static_cast<double>(
+                                      value.energetic_time_macro_observations) /
+                                      observations
+                                : 0.0) << ','
+                        << value.interstep_promotions << ','
+                        << value.interstep_demotions << ','
+                        << (observations > 0.0
+                                ? 1.0e6 * static_cast<double>(
+                                      value.interstep_promotions) /
+                                      observations
+                                : 0.0) << ','
+                        << (observations > 0.0
+                                ? 1.0e6 * static_cast<double>(
+                                      value.interstep_demotions) /
+                                      observations
+                                : 0.0);
+                    for (std::size_t process = 0; process < 6; ++process) {
+                        crossings << ',' << value.collision_promotions[process]
+                                  << ',' << value.collision_demotions[process];
+                    }
+                    crossings << ',' << value.energetic_births << ','
+                              << value.subthreshold_births << '\n';
+                }
+            }
+            require_stream(
+                crossings,
+                "failed while writing phase EEDF threshold crossings");
+        }
     }
 
     if (cfg_.phase_surface_flux.enabled) {
@@ -2801,6 +3039,9 @@ void Simulation::write_spatial_average() const {
              << "  \"phase_eedf_history_enabled\": "
              << (cfg_.phase_eedf.history_enabled ? "true" : "false")
              << ",\n"
+             << "  \"phase_eedf_threshold_crossing_enabled\": "
+             << (cfg_.phase_eedf.history_enabled ? "true" : "false")
+             << ",\n"
              << "  \"phase_eedf_species\": "
              << json_string(cfg_.phase_eedf.species) << ",\n"
              << "  \"phase_eedf_energy_bins\": "
@@ -2855,7 +3096,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV19 << '\n';
+    out << kCheckpointMagicV20 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -3126,6 +3367,35 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             out << "\n";
         }
     }
+    out << "phase_eedf_threshold_crossings "
+        << (cfg_.phase_eedf.history_enabled ? 1 : 0) << ' '
+        << phase_eedf_threshold_crossings_.size() << ' '
+        << (phase_eedf_threshold_crossings_.empty()
+                ? 0 : phase_eedf_threshold_crossings_.front().size())
+        << " 6\n";
+    for (std::size_t phase = 0;
+         phase < phase_eedf_threshold_crossings_.size(); ++phase) {
+        for (std::size_t region = 0;
+             region < phase_eedf_threshold_crossings_[phase].size();
+             ++region) {
+            const auto& value =
+                phase_eedf_threshold_crossings_[phase][region];
+            out << "phase_eedf_threshold_crossing_accumulator "
+                << phase << ' ' << region << ' '
+                << value.electron_time_macro_observations << ' '
+                << value.energetic_time_macro_observations << ' '
+                << value.interstep_promotions << ' '
+                << value.interstep_demotions;
+            for (const auto count : value.collision_promotions) {
+                out << ' ' << count;
+            }
+            for (const auto count : value.collision_demotions) {
+                out << ' ' << count;
+            }
+            out << ' ' << value.energetic_births << ' '
+                << value.subthreshold_births << '\n';
+        }
+    }
     out << "phase_surface_flux "
         << (cfg_.phase_surface_flux.enabled ? 1 : 0) << ' '
         << (cfg_.phase_surface_flux.species.empty()
@@ -3213,7 +3483,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v19 = magic == kCheckpointMagicV19;
+    const bool checkpoint_v20 = magic == kCheckpointMagicV20;
+    const bool checkpoint_v19 =
+        magic == kCheckpointMagicV19 || checkpoint_v20;
     const bool checkpoint_v18 =
         magic == kCheckpointMagicV18 || checkpoint_v19;
     const bool checkpoint_v17 =
@@ -4350,6 +4622,86 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                 }
             }
             in >> key;
+            if (checkpoint_v20) {
+                int stored_crossings_enabled = 0;
+                std::size_t stored_crossing_phases = 0;
+                std::size_t stored_crossing_regions = 0;
+                std::size_t stored_crossing_processes = 0;
+                in >> stored_crossings_enabled >> stored_crossing_phases >>
+                    stored_crossing_regions >> stored_crossing_processes;
+                const bool crossings_enabled =
+                    stored_crossings_enabled == 1;
+                const bool crossing_shape_valid =
+                    (stored_crossings_enabled == 0 ||
+                     stored_crossings_enabled == 1) &&
+                    stored_crossing_processes == 6 &&
+                    stored_crossing_phases ==
+                        (crossings_enabled ? stored_phase_count : 0) &&
+                    stored_crossing_regions ==
+                        (crossings_enabled ? stored_eedf_regions : 0);
+                const bool crossing_contract_matches =
+                    stored_crossings_enabled ==
+                        (cfg_.phase_eedf.history_enabled ? 1 : 0) &&
+                    stored_crossing_phases ==
+                        phase_eedf_threshold_crossings_.size() &&
+                    stored_crossing_regions ==
+                        (phase_eedf_threshold_crossings_.empty()
+                            ? 0
+                            : phase_eedf_threshold_crossings_.front().size());
+                if (key != "phase_eedf_threshold_crossings" ||
+                    !crossing_shape_valid ||
+                    (!reset && !crossing_contract_matches)) {
+                    throw std::runtime_error(
+                        "checkpoint phase EEDF threshold-crossing contract "
+                        "is invalid");
+                }
+                for (std::size_t phase = 0;
+                     phase < stored_crossing_phases; ++phase) {
+                    for (std::size_t region = 0;
+                         region < stored_crossing_regions; ++region) {
+                        std::size_t stored_phase = 0;
+                        std::size_t stored_region = 0;
+                        PhaseEedfThresholdCrossingAccumulator1D value;
+                        in >> key >> stored_phase >> stored_region >>
+                            value.electron_time_macro_observations >>
+                            value.energetic_time_macro_observations >>
+                            value.interstep_promotions >>
+                            value.interstep_demotions;
+                        for (auto& count : value.collision_promotions) {
+                            in >> count;
+                        }
+                        for (auto& count : value.collision_demotions) {
+                            in >> count;
+                        }
+                        in >> value.energetic_births >>
+                            value.subthreshold_births;
+                        const bool counts_valid =
+                            value.energetic_time_macro_observations <=
+                                value.electron_time_macro_observations &&
+                            value.interstep_promotions <=
+                                value.electron_time_macro_observations &&
+                            value.interstep_demotions <=
+                                value.electron_time_macro_observations;
+                        if (key !=
+                                "phase_eedf_threshold_crossing_accumulator" ||
+                            stored_phase != phase || stored_region != region ||
+                            !counts_valid) {
+                            throw std::runtime_error(
+                                "checkpoint phase EEDF threshold-crossing "
+                                "accumulator is invalid");
+                        }
+                        if (!reset) {
+                            phase_eedf_threshold_crossings_[phase][region] =
+                                value;
+                        }
+                    }
+                }
+                in >> key;
+            } else if (!reset && cfg_.phase_eedf.history_enabled) {
+                throw std::runtime_error(
+                    "legacy checkpoint cannot restore phase EEDF "
+                    "threshold crossings");
+            }
         } else if (!reset && cfg_.phase_eedf.enabled && stored_samples != 0) {
             throw std::runtime_error(
                 "legacy checkpoint cannot restore phase EEDF state");

@@ -84,8 +84,23 @@ at the start are left-censored; the born-during-window fraction makes that
 limitation explicit.
 
 History counters are aligned with reusable particle slots, reset when a slot
-is reused by an ionization product, and preserved by checkpoint version 19.
+is reused by an ionization product, and preserved by checkpoint version 20.
 Restarting an older checkpoint with history enabled requires
 `spatial_average_reset_on_restart = true`. The diagnostic changes neither
 particle state nor the random stream, but it does add memory proportional to
 the selected species' particle-storage size.
+
+The same option writes `phase_eedf_threshold_crossings.csv`. Unlike the tail
+history means, this ledger is unconditional: its denominator is every live
+selected-species particle timestep in each phase/region. It records energetic
+occupancy, below-to-above and above-to-below transitions between consecutive
+synchronized pre-collision states, accepted collision transitions by process,
+and energetic versus subthreshold births. Rates per million electron steps are
+included for the interstep transitions.
+
+An interstep transition is deliberately not labelled as field-only. It spans
+the previous collision stage and the following push/drift/synchronization, so
+it is the exact net change visible to the pre-collision sampler. The separate
+collision before/after columns localize accepted collision crossings without
+claiming that the two event sets form an additive decomposition. Threshold-
+crossing accumulators share the phase-EEDF restart/reset contract.

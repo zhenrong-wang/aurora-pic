@@ -3970,8 +3970,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v19\n") == 0,
-                "1D wall-impact checkpoint did not use v19");
+                    "AuroraPIC-checkpoint-v20\n") == 0,
+                "1D wall-impact checkpoint did not use v20");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4597,9 +4597,45 @@ int main() {
             }
             require(observed_age && observed_collision,
                     "1D phase EEDF particle history was not populated");
+            const auto& crossings =
+                continuous.phase_eedf_threshold_crossings();
+            const auto& restarted_crossings =
+                restarted.phase_eedf_threshold_crossings();
+            require(crossings.size() == restarted_crossings.size() &&
+                    crossings.size() == 2 && crossings[0].size() == 2,
+                    "1D threshold-crossing ledger has the wrong shape");
+            bool observed_electron_time = false;
+            for (std::size_t phase = 0; phase < crossings.size(); ++phase) {
+                for (std::size_t region = 0;
+                     region < crossings[phase].size(); ++region) {
+                    const auto& expected = crossings[phase][region];
+                    const auto& actual = restarted_crossings[phase][region];
+                    require(
+                        actual.electron_time_macro_observations ==
+                            expected.electron_time_macro_observations &&
+                        actual.energetic_time_macro_observations ==
+                            expected.energetic_time_macro_observations &&
+                        actual.interstep_promotions ==
+                            expected.interstep_promotions &&
+                        actual.interstep_demotions ==
+                            expected.interstep_demotions &&
+                        actual.collision_promotions ==
+                            expected.collision_promotions &&
+                        actual.collision_demotions ==
+                            expected.collision_demotions &&
+                        actual.energetic_births == expected.energetic_births &&
+                        actual.subthreshold_births ==
+                            expected.subthreshold_births,
+                        "1D restart lost threshold-crossing state");
+                    observed_electron_time = observed_electron_time ||
+                        expected.electron_time_macro_observations > 0;
+                }
+            }
+            require(observed_electron_time,
+                    "1D threshold-crossing ledger was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v19\n") == 0,
+                    "AuroraPIC-checkpoint-v20\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4616,6 +4652,8 @@ int main() {
                 output_dir / "phase_eedf.csv");
             const auto eedf_moments_csv = read_file_text(
                 output_dir / "phase_eedf_moments.csv");
+            const auto threshold_crossing_csv = read_file_text(
+                output_dir / "phase_eedf_threshold_crossings.csv");
             const auto spatial_metadata = read_file_text(
                 output_dir / "spatial_average_metadata.json");
             require(
@@ -4644,7 +4682,8 @@ int main() {
                 "1D phase collision-rate CSV contract is wrong");
             require(
                 count_lines(eedf_csv) == 2 * 2 * 10 + 1 &&
-                    count_lines(eedf_moments_csv) == 2 * 2 + 1,
+                    count_lines(eedf_moments_csv) == 2 * 2 + 1 &&
+                    count_lines(threshold_crossing_csv) == 2 * 2 + 1,
                 "1D phase EEDF CSV contract is wrong");
             require(
                 eedf_moments_csv.find(
@@ -4661,11 +4700,25 @@ int main() {
                         std::string::npos,
                 "1D phase EEDF CSV lost velocity-space history moments");
             require(
+                threshold_crossing_csv.find(
+                    "electron_time_macro_observations") !=
+                        std::string::npos &&
+                threshold_crossing_csv.find(
+                    "interstep_promotions_per_million_electron_steps") !=
+                        std::string::npos &&
+                threshold_crossing_csv.find(
+                    "ionization_collision_demotions") !=
+                        std::string::npos,
+                "1D threshold-crossing CSV contract is wrong");
+            require(
                 spatial_metadata.find(
                     "\"sampling_order\": \"pre_collision\"") !=
                     std::string::npos &&
                     spatial_metadata.find(
                     "\"phase_eedf_history_enabled\": true") !=
+                        std::string::npos &&
+                    spatial_metadata.find(
+                    "\"phase_eedf_threshold_crossing_enabled\": true") !=
                         std::string::npos,
                 "1D spatial metadata lost its sampling or history contract");
             auto delayed_history = cfg;
