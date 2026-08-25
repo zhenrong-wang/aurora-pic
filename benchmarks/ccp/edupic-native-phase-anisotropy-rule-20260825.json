@@ -40,7 +40,7 @@
     "native_seeds": [13507, 24601, 35713],
     "maximum_simultaneous_processes": 1,
     "minimum_available_memory_kib": 1048576,
-    "minimum_available_disk_kib": 5242880,
+    "minimum_available_disk_kib": 1048576,
     "maximum_peak_resident_set_kib": 358400,
     "maximum_total_particles": 500000,
     "maximum_absolute_field_V_m": 10000000.0,
