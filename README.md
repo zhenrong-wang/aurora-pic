@@ -111,6 +111,12 @@ The native counterpart passes a byte-exact one-cycle passivity smoke, and the
 production comparison is preregistered in
 `benchmarks/ccp/edupic-promotion-band-work-rule-20260825.json` before any
 four-cycle work output is observed.
+The completed prospective comparison is recorded in
+`benchmarks/ccp/edupic-promotion-band-work-result-20260825.json`: all gates
+pass, both microstates support reduced positive mover work and reduced
+conditional promotion conversion, while the stricter band-supply-deficit rule
+is not met. This localizes one matched CCP discrepancy; it is not an
+experimental validation or a claim of general solver correctness.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

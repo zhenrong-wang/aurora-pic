@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "promotion_band_work_execution_record",
+  "rule_sha256": "14742db5d59e61d950f625a711a6e59ff6af33d59b7554f430a5b6067ca9b019",
+  "native_result_sha256": "1313cb53692e64b4015302e36b6763a58e671a6281091e9e2ecbe5df573d284b",
+  "result_sha256": "c825ed803c2c17575b3c6b963591f8dc7e3076d49a5913537bd8d9583fdbf714",
+  "formal_outcome": "positive_work_and_promotion_conversion_deficits_supported_band_supply_deficit_not_supported",
+  "aurorapic_members": [
+    {
+      "id": "microstate_51949_cycle36000",
+      "wall_seconds": 436.8198787519941,
+      "peak_resident_set_kib": 215268,
+      "maximum_total_live_particles": 242922,
+      "all_runner_gates_passed": true,
+      "runner_report_sha256": "dcf830894600166fc27d8b06b4c95f1af181686e6ad357ebe6ab79c6b0f1f19e",
+      "input_deck_sha256": "60395801df48097ef845483c9e975e5b2f078444efe73999ad05bd730beb4890",
+      "threshold_crossings_sha256": "60b083efeadf67a57bd4090ff95fd90f5812c353c4f66f40c9acb1114bb655e4",
+      "final_checkpoint_sha256": "f2f1e37595623dde43161d5c3511d3ddc86413f51f884f3ff5e1067a9fd2405e"
+    },
+    {
+      "id": "microstate_63059_cycle36000",
+      "wall_seconds": 420.66563346100156,
+      "peak_resident_set_kib": 215288,
+      "maximum_total_live_particles": 242975,
+      "all_runner_gates_passed": true,
+      "runner_report_sha256": "b7bc181df223182dc27fdb135f62362a44ecc36b27ea5c1ec2ddc81f7cd12434",
+      "input_deck_sha256": "57fee3219fff041b1174b21109c38c81939ea3864005fb8eca490fc3adfa8c7d",
+      "threshold_crossings_sha256": "68997fe20100391407960be8a89d3040c3b10bd30dc7224a1abb8c450bdc3871",
+      "final_checkpoint_sha256": "250fd10d13c938b57ee1c290708206c6c0958316ccab4f32b0a53ed72c734d23"
+    }
+  ],
+  "resource_contract": {
+    "maximum_simultaneous_processes": 1,
+    "serial_execution": true,
+    "low_priority": true,
+    "all_resource_gates_passed": true
+  },
+  "provenance_note": "The two AuroraPIC members were run only after the rule and native ensemble were sealed. Both completed before the cross-code analyzer was run; no scientific threshold, scope, or outcome rule changed after observing either AuroraPIC member."
+}

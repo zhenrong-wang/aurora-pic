@@ -3465,6 +3465,28 @@ work, passing the locked native limits. The
 records the exact hashes and quantities. This completes only the native half;
 cross-code interpretation remains forbidden until both AuroraPIC members run.
 
+Both locked AuroraPIC members have now completed, serially and without a guard
+failure. Each contributes more than `1.08 million` critical band observations
+and `1,619` promotions; peak RSS is below `216 MiB`. All integrity,
+population, work-closure, and repeatability gates pass. The
+[`prospective cross-code result`](../benchmarks/ccp/edupic-promotion-band-work-result-20260825.json)
+therefore permits the declared interpretation. Relative to the three-seed
+native mean, the two AuroraPIC mean-positive-work ratios are `0.8795` and
+`0.8870`, while the conditional band-promotion-probability ratios are `0.8294`
+and `0.8615`. Both mechanisms satisfy the locked `<=0.90` rule. The band-supply
+ratios are `0.9217` and `0.8971`; because both do not satisfy the rule, a band
+supply deficit is not supported. The ensemble-mean ratios are `0.8832`,
+`0.8454`, and `0.9094`, respectively.
+
+This is a meaningful localization result: in the strongest previously
+identified region/phase window, AuroraPIC supplies nearly as many electrons to
+the `11.5--15.8 eV` band but delivers less positive mover work per band
+observation and converts fewer of those observations across `15.8 eV`. The
+conditional promotion probability also depends on the within-band energy
+distribution, so these two supported deficits are not claimed as independent
+causes. This one-case solver-to-solver comparison neither compares experiment
+nor establishes a published benchmark pass or general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

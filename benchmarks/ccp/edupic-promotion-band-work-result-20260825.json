@@ -1,0 +1,135 @@
+{
+  "all_integrity_population_repeatability_and_work_closure_gates_passed": true,
+  "aurorapic_ensemble_mean_to_native_mean_ratios": {
+    "band_promotion_probability": 0.8454310347262705,
+    "band_supply_fraction": 0.909398574675833,
+    "mean_negative_work_eV": 0.8990370417251096,
+    "mean_positive_work_eV": 0.883242828528303,
+    "mean_signed_work_eV": 0.8612827497593365
+  },
+  "aurorapic_ensemble_means": {
+    "band_promotion_probability": 0.0014837725822289872,
+    "band_supply_fraction": 0.01780898100193659,
+    "mean_negative_work_eV": 0.006161250386402507,
+    "mean_positive_work_eV": 0.010406479404292332,
+    "mean_signed_work_eV": 0.004245229017889833
+  },
+  "aurorapic_member_to_native_mean_ratios": [
+    {
+      "band_promotion_probability": 0.8294101308260104,
+      "band_supply_fraction": 0.9217221666460084,
+      "mean_negative_work_eV": 0.8985704064149101,
+      "mean_positive_work_eV": 0.879504335833553,
+      "mean_signed_work_eV": 0.852995107006254
+    },
+    {
+      "band_promotion_probability": 0.8614519386265305,
+      "band_supply_fraction": 0.8970749827056573,
+      "mean_negative_work_eV": 0.8995036770353089,
+      "mean_positive_work_eV": 0.8869813212230532,
+      "mean_signed_work_eV": 0.869570392512419
+    }
+  ],
+  "aurorapic_members": [
+    {
+      "band_promotion_probability": 0.0014556551167311327,
+      "band_supply_fraction": 0.01805031700287623,
+      "field_push_observations": 61617422,
+      "mean_negative_work_eV": 0.006158052457004895,
+      "mean_positive_work_eV": 0.010362432007614527,
+      "mean_signed_work_eV": 0.004204379550609639,
+      "negative_macro_work_sum_eV": 6849.072155415242,
+      "positive_macro_work_sum_eV": 11525.241952916984,
+      "promotion_band_observations": 1112214,
+      "promotion_band_promotions": 1619,
+      "signed_macro_work_sum_eV": 4676.169797501749,
+      "work_closure_residual_eV": 7.275957614183426e-12
+    },
+    {
+      "band_promotion_probability": 0.0015118900477268415,
+      "band_supply_fraction": 0.01756764500099695,
+      "field_push_observations": 61482629,
+      "mean_negative_work_eV": 0.006164448315800119,
+      "mean_positive_work_eV": 0.010450526800970139,
+      "mean_signed_work_eV": 0.004286078485170028,
+      "negative_macro_work_sum_eV": 6658.251448137287,
+      "positive_macro_work_sum_eV": 11287.666250361852,
+      "promotion_band_observations": 1080105,
+      "promotion_band_promotions": 1633,
+      "signed_macro_work_sum_eV": 4629.414802224573,
+      "work_closure_residual_eV": 8.185452315956354e-12
+    }
+  ],
+  "aurorapic_relative_ranges": {
+    "band_promotion_probability": 0.03789996638920919,
+    "band_supply_fraction": 0.027102729899413924,
+    "mean_negative_work_eV": 0.001038078051387039,
+    "mean_positive_work_eV": 0.00846537910979541,
+    "mean_signed_work_eV": 0.0192448827180115
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective comparison isolates near-threshold mover work in one matched argon CCP across independently evolved microstates. It does not identify the first self-consistent field divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "critical_scope": {
+    "phase_fraction": [
+      0.25,
+      0.375
+    ],
+    "promotion_band_eV": [
+      11.5,
+      15.8
+    ],
+    "region": "x020_040"
+  },
+  "ensemble_mean_ratio_classification": {
+    "band_promotion_probability": "aurorapic_lower",
+    "band_supply_fraction": "aurorapic_lower",
+    "mean_negative_work_eV": "aurorapic_lower",
+    "mean_positive_work_eV": "aurorapic_lower",
+    "mean_signed_work_eV": "aurorapic_lower"
+  },
+  "gates": {
+    "aurorapic_member_count": true,
+    "aurorapic_repeatability": true,
+    "aurorapic_runner_reports_linked_and_passing": true,
+    "band_observation_population": true,
+    "band_promotion_population": true,
+    "finite_metrics": true,
+    "native_member_count": true,
+    "native_repeatability": true,
+    "native_result_linked_and_passing": true,
+    "work_closure": true
+  },
+  "interpretation_note": "Promotion probability is a conditional outcome of the within-band energy distribution and field work; the two supported deficits are not asserted to be statistically or causally independent.",
+  "native_edipic_ensemble_means": {
+    "band_promotion_probability": 0.0017550486335167431,
+    "band_supply_fraction": 0.019583251500349928,
+    "mean_negative_work_eV": 0.006853166332924441,
+    "mean_positive_work_eV": 0.011782127256704765,
+    "mean_signed_work_eV": 0.00492896092378032
+  },
+  "native_edipic_relative_ranges": {
+    "band_promotion_probability": 0.01843788010725604,
+    "band_supply_fraction": 0.004467603399394639,
+    "mean_negative_work_eV": 0.04689360195320842,
+    "mean_positive_work_eV": 0.035469870837678885,
+    "mean_signed_work_eV": 0.024770687896049658
+  },
+  "prospective_decision_outcome": {
+    "band_supply_deficit_supported": false,
+    "interpretation_allowed": true,
+    "positive_work_deficit_supported": true,
+    "promotion_conversion_deficit_supported": true,
+    "result": "positive_work_and_promotion_conversion_deficits_supported_band_supply_deficit_not_supported"
+  },
+  "provenance": {
+    "analyzer_sha256": "33fdffe40d5b66b5571533c0b762cff06a8e7e144250b4cefe20f645a76d7d84",
+    "aurorapic_runner_report_sha256": [
+      "dcf830894600166fc27d8b06b4c95f1af181686e6ad357ebe6ab79c6b0f1f19e",
+      "b7bc181df223182dc27fdb135f62362a44ecc36b27ea5c1ec2ddc81f7cd12434"
+    ],
+    "native_result_sha256": "1313cb53692e64b4015302e36b6763a58e671a6281091e9e2ecbe5df573d284b"
+  },
+  "rule_sha256": "14742db5d59e61d950f625a711a6e59ff6af33d59b7554f430a5b6067ca9b019",
+  "schema_version": 1,
+  "scope": "aurorapic_edipic_promotion_band_work_result"
+}
