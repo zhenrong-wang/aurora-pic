@@ -2914,6 +2914,42 @@ and [`execution record`](../benchmarks/ccp/edupic-native-phase-history-execution
 retain the evidence. This remains a one-case code-to-code mechanism diagnostic,
 not experimental validation or a proof of general PIC correctness.
 
+### Unconditional energetic-threshold traffic
+
+The next diagnostic removes the tail-conditioned survivor bias by counting
+every live electron timestep in the critical phase/space window. It records
+energetic occupancy, net transitions between consecutive synchronized
+pre-collision states, accepted-collision transitions by process, and energetic
+versus subthreshold ionization births. The native transform remains exactly
+passive for all three seeds. Native runs completed in `116.18--116.76 s` at
+`80,644--80,784 KiB`; AuroraPIC completed in `393.26 s` at `206,220 KiB`, and
+all solver/output gates passed.
+
+The raw observation is strong but the prospectively locked campaign is
+formally inconclusive. AuroraPIC/native ratios are `0.8713` for energetic
+occupancy, `0.8266` for interstep promotion rate, `0.8603` for interstep
+demotion rate, `0.8966` for excitation-collision demotion, `0.8396` for
+ionization-collision demotion, and `0.8456` for subthreshold birth rate. Thus
+the data point toward reduced energetic-population traffic, with promotion
+falling more than demotion; they do not support enhanced loss.
+
+However, the global native repeatability gate also included elastic threshold
+demotions. Only `4`, `4`, and `0` such events occurred, producing a `150%`
+relative range against the predeclared `30%` limit. The high-population primary,
+excitation, ionization, birth, and occupancy repeatability gates all pass, but
+the locked analyzer correctly sets `interpretation_allowed` to false. The
+promotion-limited reading is therefore a strong exploratory observation, not a
+confirmed prospective mechanism result.
+
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-native-threshold-crossing-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-native-threshold-crossing-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-native-threshold-crossing-execution-20260825.json)
+preserve both the signal and the failed gate. A clean confirmation must use
+independent AuroraPIC microstates and a population-qualified repeatability rule
+declared before those outputs are observed; the original gate will not be
+silently weakened.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
