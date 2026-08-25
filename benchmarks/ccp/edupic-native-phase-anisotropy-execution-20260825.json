@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "phase_anisotropy_execution_record",
+  "rule_sha256": "d44eb2156b4e8012c2f7a7388fc525d8eafeeebe70ba03b6635aa2f91d928bf9",
+  "aurorapic": {
+    "wall_seconds_from_file_timestamps": 370.1,
+    "exit_status": 0,
+    "peak_resident_set_kib": null,
+    "resource_gate_status": "not_recovered_after_postprocessor_key_error",
+    "reference_identical_run_peak_resident_set_kib": 196124,
+    "input_deck_sha256": "ccb801c82d1ff162847421f7ded51221632650c7af2112d48cbc7605bbc947e8",
+    "final_checkpoint_sha256": "8d106afb47be1203d4e6d0ee26e1815a9f8b9b516b528141e218d557f2c82eac",
+    "energy_histogram_identical_to_prior_run": true,
+    "scalar_history_identical_to_prior_run": true,
+    "note": "The solver completed and wrote all outputs. The legacy runner then raised on a renamed observation-gate key before persisting its in-memory resource record. The schema adapter was fixed without rerunning physics; no unmeasured RSS value is imputed."
+  },
+  "native_edupic_members": [
+    {"seed": 13507, "wall_seconds": 103.37, "peak_resident_set_kib": 49344, "exit_status": 0, "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd", "passive_checkpoint_match": true},
+    {"seed": 24601, "wall_seconds": 116.71, "peak_resident_set_kib": 49036, "exit_status": 0, "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd", "passive_checkpoint_match": true},
+    {"seed": 35713, "wall_seconds": 202.64, "peak_resident_set_kib": 49420, "exit_status": 0, "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267", "passive_checkpoint_match": true}
+  ],
+  "native_resource_gates": {
+    "serial_execution": true,
+    "maximum_wall_seconds_each_240": true,
+    "maximum_peak_resident_set_kib_each_262144": true,
+    "zero_exit_status_each": true,
+    "all_passed": true
+  }
+}

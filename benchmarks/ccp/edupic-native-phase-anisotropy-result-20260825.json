@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_edupic_to_aurorapic_velocity_anisotropy_result",
+  "rule_sha256": "d44eb2156b4e8012c2f7a7388fc525d8eafeeebe70ba03b6635aa2f91d928bf9",
+  "all_measurement_gates_passed": true,
+  "gates": {
+    "critical_observation_population": true,
+    "critical_tail_population": true,
+    "finite_metrics": true,
+    "native_diagnostic_passivity": true
+  },
+  "critical_x020_to_x060_phase_0p125_to_0p5": {
+    "aurorapic": {
+      "minimum_macro_observations_per_region_phase_bin": 1181153,
+      "tail_macro_observations": 795489,
+      "tail_fraction": 0.0030479494053479595,
+      "tail_longitudinal_energy_fraction": 0.380225202819308,
+      "tail_directional_population_imbalance": 0.3008049137071663,
+      "tail_mean_velocity_x_m_s-1": 556446.6859125491,
+      "temperature_component_fractions": [0.33596646331000474, 0.3319944805987964, 0.3320390560911988]
+    },
+    "native_edupic_ensemble_mean": {
+      "tail_fraction": 0.0034979942992935773,
+      "tail_longitudinal_energy_fraction": 0.3824564147096033,
+      "tail_directional_population_imbalance": 0.3025664614597477,
+      "tail_mean_velocity_x_m_s-1": 564565.6039437888,
+      "temperature_component_fractions": [0.3363432995883669, 0.33221862022497745, 0.3314380801866556]
+    },
+    "aurorapic_to_native_ratio": {
+      "tail_fraction": 0.8713420161843876,
+      "tail_longitudinal_energy_fraction": 0.994166101536068,
+      "tail_directional_population_imbalance": 0.9941779807845101,
+      "tail_mean_velocity_x": 0.9856191769839949
+    },
+    "aurorapic_minus_native": {
+      "tail_longitudinal_energy_fraction": -0.0022312118902952927,
+      "tail_directional_population_imbalance": -0.001761547752581416,
+      "temperature_component_fractions": [-0.00037683627836215816, -0.00022413962618106353, 0.0006009759045432217]
+    },
+    "native_relative_ranges": {
+      "tail_fraction": 0.03762397014307873,
+      "tail_longitudinal_energy_fraction": 0.006520638106420634,
+      "tail_directional_population_imbalance": 0.005559398953933551,
+      "tail_mean_velocity_x": 0.01323626635335052,
+      "temperature_x_fraction": 0.004164433151562058,
+      "temperature_y_fraction": 0.0034480214842507895,
+      "temperature_z_fraction": 0.0007875275689811141
+    }
+  },
+  "critical_phase_octant_differences": [
+    {"phase_fraction": [0.125, 0.25], "tail_longitudinal_energy_fraction": -0.0033426876296849817, "tail_directional_population_imbalance": -0.005421568449140768},
+    {"phase_fraction": [0.25, 0.375], "tail_longitudinal_energy_fraction": 0.000829094953132159, "tail_directional_population_imbalance": -0.007949432798141809},
+    {"phase_fraction": [0.375, 0.5], "tail_longitudinal_energy_fraction": -0.005155297404596082, "tail_directional_population_imbalance": 0.00906450842246681}
+  ],
+  "prospective_decision_outcome": {
+    "longitudinal_mechanism_supported": false,
+    "component_redistribution_supported": false,
+    "phase_directionality_supported": false,
+    "null_interpretation_selected": true
+  },
+  "interpretation": "AuroraPIC has 12.87 percent fewer above-15.8-eV electrons in the locked critical window, while longitudinal energy share, signed directionality, tail mean longitudinal velocity, and component-temperature shares closely match native eduPIC. Gross velocity anisotropy or directional sheath timing is therefore not the leading explanation for the energetic-tail population deficit. Collision history or energetic-particle residence is the next discriminator.",
+  "aggregation_note": "Tail longitudinal energy fraction is tail-count-weighted across phase/region rows because diagnostic version 1 emits row ratios without their kinetic-energy denominators.",
+  "provenance": {
+    "analyzer_sha256": "ec9686e2b7cbfb4e68a90f7a1dd413d0df17559e455c95337453af64a4cc9030",
+    "aurorapic_moments_sha256": "26ffbc41869e735820c0e862b39e8448a5c27739aa6bdda17508b50e2022f074",
+    "native_moments_sha256": ["506052b7471b67cc117fe69ad2c52e61eafa3569d4dbafda3e7df7a06763c18d", "457f154f9d3d2c6a6cd11f848d6bcee5d91fbba06617e67d3219a604321a92d0", "5e48bbbf6b8689697fee28cde82830e5a38fe13a2aba674993db5e66458924c8"],
+    "aurorapic_energy_histogram_unchanged_sha256": "88dc5343099b0571342d224dd48191d8a4b0a8b9fe289e342b1eb5603b0753b3",
+    "aurorapic_scalar_history_unchanged_sha256": "1c2553d1dd3f04e7343ef49526958f5a4a2601f73076da840099d8265ee20648"
+  },
+  "claim_boundary": "This compares one deterministic four-cycle AuroraPIC continuation with three deterministic four-cycle native eduPIC continuations of independently equilibrated states. It diagnoses velocity-space structure for one argon CCP case; it is not experimental validation, a code-wide correctness proof, or unrestricted uncertainty quantification."
+}

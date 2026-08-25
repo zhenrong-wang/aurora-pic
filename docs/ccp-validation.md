@@ -2829,6 +2829,45 @@ and [`execution record`](../benchmarks/ccp/edupic-native-phase-eedf-crosscode-ex
 retain the evidence. This narrows the mechanism under one matched CCP case; it
 does not establish experimental or general PIC validation.
 
+### Direct native velocity-anisotropy comparison
+
+The next prospective test decomposes that tail by component temperature,
+longitudinal kinetic-energy share, signed longitudinal population, and mean
+longitudinal speed. The AuroraPIC block and three native four-cycle
+continuations use the same critical `x/L=0.2--0.6`, phase `0.125--0.5`
+window and a locked 15.8 eV threshold. All scientific measurement gates pass:
+the candidate has `795,489` critical tail macro observations, each native
+member has at least `811,852`, and all three native diagnostic checkpoints are
+byte-identical to prior independently instrumented runs.
+
+This comparison produces a useful elimination result. AuroraPIC retains only
+`87.13%` of native eduPIC's above-threshold population, yet its tail
+longitudinal-energy fraction is `0.38023` versus `0.38246` (ratio `0.99417`),
+and its signed directional imbalance is `0.30080` versus `0.30257` (ratio
+`0.99418`). The longitudinal, first-transverse, and second-transverse
+temperature shares differ by only `-0.00038`, `-0.00022`, and `+0.00060`.
+Across the three predeclared phase octants, the largest absolute directional-
+imbalance difference is `0.00906`, far below the prospective `0.05` threshold.
+Native relative ranges are `0.65%` for longitudinal tail share and `0.56%`
+for directional imbalance.
+
+Gross velocity anisotropy and directional sheath timing are therefore not the
+leading explanation for the energetic-tail population deficit. The next
+discriminator should measure energetic-particle residence/collision history,
+for example age since the last wall encounter and cumulative elastic versus
+inelastic events for electrons crossing 15.8 eV. This conclusion is local to
+one argon CCP case and does not validate the code against experiment.
+
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-native-phase-anisotropy-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-native-phase-anisotropy-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-native-phase-anisotropy-execution-20260825.json)
+retain the evidence. The AuroraPIC solver completed normally, but a legacy
+postprocessor key mismatch occurred before its in-memory peak-RSS record was
+written. The record leaves that value null rather than imputing it; the
+identical prior physics run measured `196,124 KiB`. The schema adapter is now
+covered by the runner test.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

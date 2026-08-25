@@ -274,11 +274,16 @@ def analyze_output(output: Path, rule: dict[str, object],
     if not checkpoint.is_file() or any(not (output / name).is_file()
                                        for name in required):
         raise TailBlockError("required output is missing")
+    observation_gate_key = (
+        "minimum_macro_observations_per_critical_region_phase_bin"
+        if "minimum_macro_observations_per_critical_region_phase_bin"
+        in diagnostic
+        else "minimum_macro_observations_per_region_phase_bin")
     gates = {
         "sampling_contract": metadata_ok,
         "phase_eedf_shape": shape_ok,
         "phase_eedf_observations": minimum_observations >= int(
-            diagnostic["minimum_macro_observations_per_region_phase_bin"]),
+            diagnostic[observation_gate_key]),
         "phase_eedf_overflow": maximum_overflow <= float(
             diagnostic["maximum_overflow_fraction"]),
         "finite_diagnostics": finite_scalars and finite_moments,
