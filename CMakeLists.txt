@@ -216,4 +216,13 @@ if(AURORA_BUILD_TESTS)
     -Wall -Wextra -Wpedantic -O2)
   add_test(NAME aurorapic_edupic_operator
     COMMAND aurorapic_edupic_operator_tests)
+
+  add_executable(aurorapic_edupic_collision_moment_tests
+    tests/test_edupic_collision_moments.cpp)
+  target_link_libraries(aurorapic_edupic_collision_moment_tests
+    PRIVATE aurorapic)
+  target_compile_options(aurorapic_edupic_collision_moment_tests PRIVATE
+    -Wall -Wextra -Wpedantic -O2)
+  add_test(NAME aurorapic_edupic_collision_moments
+    COMMAND aurorapic_edupic_collision_moment_tests)
 endif()
