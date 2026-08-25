@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_cycle_history_passivity_smoke",
+  "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+  "instrumenter_sha256": "1c35cb3769f4336c936fec6e1ed385c514647426a9c8b6d68d6aa1089e283441",
+  "instrumented_source_sha256": "4dd19f226969ed933d48dbed43b2808fd5d89f8a4be89f418c110275f8cc5612",
+  "instrumented_binary_o3_sha256": "4332fbb72b19cf28eb3dca779aad11eb2351b8ce0a23707361ae905d0ec5071e",
+  "execution": {
+    "cycles": 1,
+    "seed": 13507,
+    "maximum_simultaneous_processes": 1,
+    "control_checkpoint_sha256": "cb4891368efeca35dfe27d4fb0b7c8b2bc56de76b6ce3a13b440cc81221cc2ce",
+    "instrumented_checkpoint_sha256": "cb4891368efeca35dfe27d4fb0b7c8b2bc56de76b6ce3a13b440cc81221cc2ce",
+    "checkpoints_byte_identical": true,
+    "cycle_history_sha256": "e5750c050850cadcf9bafb462696ee6a692139f62910e4ec4d52dbf29ca51fa6"
+  },
+  "cycle_1": {
+    "initial_electrons": 1000,
+    "initial_ions": 1000,
+    "final_electrons": 804,
+    "final_ions": 3248,
+    "electron_ionizations": 2262,
+    "electron_wall_losses": 2458,
+    "ion_wall_losses": 14,
+    "electron_balance_residual": 0,
+    "ion_balance_residual": 0,
+    "energetic_electrons": 154,
+    "energetic_fraction": 0.19154228855721392
+  },
+  "assessment": {
+    "random_draws_added": 0,
+    "particle_state_mutation_added": false,
+    "trajectory_passivity_proved_for_smoke": true,
+    "species_accounting_closes": true,
+    "finding": "The native cycle-history diagnostic preserves the final particle checkpoint byte-for-byte and closes species creation/loss accounting exactly in a one-cycle smoke run."
+  },
+  "claim_boundary": "This proves diagnostic passivity for one fresh-cycle seed and validates output accounting. It is not a plasma benchmark or production-state comparison."
+}

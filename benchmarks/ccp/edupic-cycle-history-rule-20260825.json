@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_native_cycle_resolved_coupled_state_comparison",
+  "question": "Which RF-cycle-resolved state variables differ when native eduPIC sustains more above-15.8-eV field-push traffic than AuroraPIC?",
+  "basis": {
+    "coupled_audit_sha256": "5d7ae0337c56ae20cf02352ff001cd284db7797772cf88adf86fa5eae5e99224",
+    "observed_before_declaration": "Frozen mover, collision-rate, and collision-product audits found no large direct operator discrepancy. Two AuroraPIC branches close species balance exactly and show 0.44--2.64 percent gross creation/loss dispersion, while their pooled promotion deficit remains 16--20 percent relative to native.",
+    "new_measurement_outputs_observed": false,
+    "smoke_only_observed": true
+  },
+  "locked_native_input": {
+    "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "checkpoint_cycle": 2620,
+    "checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "checkpoint_electrons": 108591,
+    "checkpoint_ions": 114007,
+    "convergence_sha256": "67a73b5913a0916ac6b351cf1b891f26433d0bdc5d9d18e4b1cec2b74932b3ec",
+    "instrumenter_sha256": "1c35cb3769f4336c936fec6e1ed385c514647426a9c8b6d68d6aa1089e283441",
+    "instrumented_source_sha256": "4dd19f226969ed933d48dbed43b2808fd5d89f8a4be89f418c110275f8cc5612",
+    "instrumented_binary_sha256": "4332fbb72b19cf28eb3dca779aad11eb2351b8ce0a23707361ae905d0ec5071e",
+    "seeds": [13507, 24601, 35713],
+    "expected_final_checkpoint_sha256": [
+      "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    ]
+  },
+  "locked_aurorapic_reference": {
+    "pooled_threshold_result_sha256": "6971a9495a40add90c63f1c348d91e1dcb7765826eac25d891e638a5bc2e1c7a",
+    "coupled_evolution_result_sha256": "5d7ae0337c56ae20cf02352ff001cd284db7797772cf88adf86fa5eae5e99224",
+    "microstate_final_checkpoint_sha256": [
+      "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+      "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233"
+    ]
+  },
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "low_priority": true,
+    "native_virtual_memory_limit_kib": 262144,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "timeout_seconds_per_seed": 600,
+    "maximum_peak_resident_set_kib": 131072
+  },
+  "diagnostic_contract": {
+    "sample_phase": "after_boundary_and_collision_at_each_rf_cycle_end",
+    "cycle_rows_per_seed": 4,
+    "energetic_threshold_eV": 15.8,
+    "fields": [
+      "species_populations",
+      "energetic_population",
+      "species_kinetic_energy",
+      "field_energy",
+      "charge_l1",
+      "maximum_absolute_field",
+      "electron_collision_channels",
+      "ion_collision_total",
+      "species_wall_losses"
+    ],
+    "random_draws_added": 0,
+    "particle_state_mutation_added": false
+  },
+  "gates": {
+    "passivity": "every final checkpoint must equal its previously locked passive native checkpoint hash",
+    "balance": "electron and ion population changes must equal ionization minus corresponding wall losses at every cycle",
+    "channel_closure": "electron elastic plus excitation plus ionization counts must equal total electron collisions",
+    "native_repeatability": "three-seed relative range no greater than 8 percent for four-cycle normalized ionization, loss, energetic-fraction, kinetic-energy, and field-energy metrics",
+    "finite_and_physical": "all numeric values finite and nonnegative except signed population increments"
+  },
+  "interpretation": {
+    "gross_traffic_difference": "supported if native/Aurora normalized ionization or wall-loss traffic differs from unity by at least 10 percent with all gates passing",
+    "energetic_occupancy_difference": "supported if native/Aurora final energetic fraction differs from unity by at least 10 percent with all gates passing",
+    "bulk_energy_or_field_difference": "supported if native/Aurora same-phase kinetic or field energy differs from unity by at least 10 percent with all gates passing",
+    "unresolved_if": "all compared ratios remain within 10 percent; the next test must match a portable particle state across implementations rather than compare independently evolved states"
+  },
+  "claim_boundary": "This prospectively adds cycle-resolved native state diagnostics to an existing one-case code comparison. Native and AuroraPIC states are independently evolved, so the result can identify differing observables but cannot assign causal onset to one algorithm or validate experiment.",
+  "physics_claim": "none_until_all_native_members_and_analysis_gates_pass"
+}

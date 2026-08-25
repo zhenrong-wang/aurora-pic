@@ -3307,6 +3307,32 @@ explanation. The next comparison needs time-resolved native state variables
 or a deliberately matched state-transition experiment; extending the same
 two AuroraPIC branches alone has diminishing diagnostic value.
 
+### Native cycle-history contract
+
+A new passive native transform now records one checksum-ready state row after
+boundary handling and collisions at the end of every RF cycle. It composes
+the existing threshold ledger and adds species populations, energetic
+population above `15.8 eV`, electron collision channels, ion collision total,
+wall losses, kinetic and field energies, charge L1, and maximum field. The
+transform adds no random draws and does not mutate particle state.
+
+The one-cycle seed-13507 smoke test is trajectory-exact: deterministic control
+and instrumented checkpoints have the identical SHA-256
+`cb489136...21cc2ce`. Its first state row also closes population accounting:
+`1000 + 2262 - 2458 = 804` electrons and
+`1000 + 2262 - 14 = 3248` ions. The
+[`smoke record`](../benchmarks/ccp/edupic-cycle-history-smoke-20260825.json)
+retains the source, instrumenter, binary, checkpoint, and output hashes.
+
+Before observing any production-state cycle-history output, a
+[`prospective rule`](../benchmarks/ccp/edupic-cycle-history-rule-20260825.json)
+locks the common cycle-2620 native checkpoint, three seeds, their previously
+observed passive final-checkpoint hashes, four-cycle horizon, serial resource
+limits, accounting gates, repeatability thresholds, and interpretation
+boundaries. This comparison can identify differing time-resolved observables;
+because the native and AuroraPIC states evolved independently, it cannot by
+itself assign causal onset to one algorithm.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
