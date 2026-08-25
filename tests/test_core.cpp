@@ -3988,8 +3988,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v21\n") == 0,
-                "1D wall-impact checkpoint did not use v21");
+                    "AuroraPIC-checkpoint-v22\n") == 0,
+                "1D wall-impact checkpoint did not use v22");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4412,6 +4412,16 @@ int main() {
                 },
                 "1D phase EEDF accepted a tail threshold at its energy "
                 "maximum");
+            auto invalid_promotion_band = cfg;
+            invalid_promotion_band.phase_eedf.promotion_band_min =
+                cfg.phase_eedf.tail_threshold + 0.1;
+            require_throws(
+                [&] {
+                    pic::validate_spatial_average_1d(
+                        invalid_promotion_band);
+                },
+                "1D phase EEDF accepted a promotion band above its tail "
+                "threshold");
 
             auto first_observation = cfg;
             first_observation.steps = 1;
@@ -4458,18 +4468,31 @@ int main() {
             field_promotion_simulation.step();
             std::uint64_t field_promotions = 0;
             std::uint64_t field_interstep_promotions = 0;
+            std::uint64_t field_band_observations = 0;
+            std::uint64_t field_band_promotions = 0;
+            double field_band_signed_work = 0.0;
             for (const auto& phase : field_promotion_simulation
                      .phase_eedf_threshold_crossings()) {
                 for (const auto& region : phase) {
                     field_promotions += region.field_push_promotions;
                     field_interstep_promotions +=
                         region.interstep_promotions;
+                    field_band_observations +=
+                        region.field_push_promotion_band_observations;
+                    field_band_promotions +=
+                        region.field_push_promotion_band_promotions;
+                    field_band_signed_work +=
+                        region.field_push_promotion_band_signed_work;
                 }
             }
             require(field_promotions > 0,
                     "field push did not record an energetic promotion");
             require(field_interstep_promotions == 0,
                     "first field-push sample leaked into interstep counts");
+            require(field_band_observations > 0 &&
+                        field_band_promotions == field_promotions &&
+                        std::isfinite(field_band_signed_work),
+                    "field-push promotion-band work was not recorded");
             std::filesystem::remove_all(field_promotion.output_dir);
 
             pic::Simulation continuous(cfg);
@@ -4702,6 +4725,10 @@ int main() {
                             expected.field_push_promotions &&
                         actual.field_push_demotions ==
                             expected.field_push_demotions &&
+                        actual.field_push_promotion_band_observations ==
+                            expected.field_push_promotion_band_observations &&
+                        actual.field_push_promotion_band_promotions ==
+                            expected.field_push_promotion_band_promotions &&
                         actual.collision_promotions ==
                             expected.collision_promotions &&
                         actual.collision_demotions ==
@@ -4710,6 +4737,21 @@ int main() {
                         actual.subthreshold_births ==
                             expected.subthreshold_births,
                         "1D restart lost threshold-crossing state");
+                    require_near(
+                        actual.field_push_promotion_band_signed_work,
+                        expected.field_push_promotion_band_signed_work,
+                        1e-12,
+                        "1D restart lost promotion-band signed work");
+                    require_near(
+                        actual.field_push_promotion_band_positive_work,
+                        expected.field_push_promotion_band_positive_work,
+                        1e-12,
+                        "1D restart lost promotion-band positive work");
+                    require_near(
+                        actual.field_push_promotion_band_negative_work,
+                        expected.field_push_promotion_band_negative_work,
+                        1e-12,
+                        "1D restart lost promotion-band negative work");
                     observed_electron_time = observed_electron_time ||
                         expected.electron_time_macro_observations > 0;
                 }
@@ -4718,7 +4760,7 @@ int main() {
                     "1D threshold-crossing ledger was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v21\n") == 0,
+                    "AuroraPIC-checkpoint-v22\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4793,6 +4835,9 @@ int main() {
                     "field_push_promotions_per_million_pushes") !=
                         std::string::npos &&
                 threshold_crossing_csv.find(
+                    "field_push_promotion_band_mean_signed_work_normalized") !=
+                        std::string::npos &&
+                threshold_crossing_csv.find(
                     "ionization_collision_demotions") !=
                         std::string::npos,
                 "1D threshold-crossing CSV contract is wrong");
@@ -4803,8 +4848,11 @@ int main() {
                     spatial_metadata.find(
                     "\"phase_eedf_history_enabled\": true") !=
                         std::string::npos &&
-                    spatial_metadata.find(
+                spatial_metadata.find(
                     "\"phase_eedf_threshold_crossing_enabled\": true") !=
+                        std::string::npos &&
+                spatial_metadata.find(
+                    "\"phase_eedf_promotion_band_min\": 0") !=
                         std::string::npos,
                 "1D spatial metadata lost its sampling or history contract");
             auto delayed_history = cfg;

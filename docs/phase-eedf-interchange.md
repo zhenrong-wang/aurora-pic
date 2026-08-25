@@ -104,3 +104,22 @@ it is the exact net change visible to the pre-collision sampler. The separate
 collision before/after columns localize accepted collision crossings without
 claiming that the two event sets form an additive decomposition. Threshold-
 crossing accumulators share the phase-EEDF restart/reset contract.
+
+For direct mover-work attribution, set
+`phase_eedf_promotion_band_min` to the lower energy edge of interest. The
+upper edge is the existing `phase_eedf_tail_threshold`; equality selects an
+empty band, while the default zero lower edge covers every subthreshold
+particle. On every surviving selected-species push, AuroraPIC records the
+number of particles entering the mover in that band, how many cross the tail
+threshold, and the signed, positive, and negative sums of their kinetic-energy
+change across the configured collision-velocity representation of the mover.
+The CSV labels these as macro-particle work sums: they are not multiplied by
+statistical weight. It also reports mean signed work per observed band
+particle.
+
+The diagnostic attributes a survivor at its post-drift position, consistent
+with the field-push threshold ledger. It does not include wall-absorbed
+particles, collision energy change, or particles outside the configured
+energy band. Checkpoint version 22 preserves the counts and work sums and
+validates `signed = positive - negative`; continuing these accumulators from
+an older checkpoint requires `spatial_average_reset_on_restart = true`.

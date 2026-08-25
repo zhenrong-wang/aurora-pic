@@ -248,6 +248,7 @@ struct PhaseEedf1DConfig {
     std::size_t energy_bins{0};
     double energy_max{0.0};
     double tail_threshold{0.0};
+    double promotion_band_min{0.0};
     std::vector<PhaseEedfRegion1DConfig> regions{};
 };
 

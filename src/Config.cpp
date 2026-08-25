@@ -1510,10 +1510,11 @@ void validate_spatial_average_1d(const Config& cfg) {
         if (eedf.history_enabled || !eedf.species.empty() ||
             eedf.energy_bins != 0 ||
             eedf.energy_max != 0.0 || eedf.tail_threshold != 0.0 ||
+            eedf.promotion_band_min != 0.0 ||
             !eedf.regions.empty()) {
             throw std::runtime_error(
                 "disabled phase_eedf cannot configure history, species, "
-                "bins, energy maximum, tail threshold, or regions");
+                "bins, energy maximum, thresholds, or regions");
         }
     } else {
         if (!average.enabled || average.phase_bins == 0) {
@@ -1534,6 +1535,13 @@ void validate_spatial_average_1d(const Config& cfg) {
             throw std::runtime_error(
                 "phase_eedf tail threshold must be finite, non-negative, "
                 "and below its energy maximum");
+        }
+        if (!std::isfinite(eedf.promotion_band_min) ||
+            eedf.promotion_band_min < 0.0 ||
+            eedf.promotion_band_min > eedf.tail_threshold) {
+            throw std::runtime_error(
+                "phase_eedf promotion band minimum must be finite, "
+                "non-negative, and no greater than its tail threshold");
         }
         if (std::none_of(cfg.species.begin(), cfg.species.end(),
                          [&](const auto& species) {
@@ -1718,6 +1726,7 @@ Config load_config(const std::string& path) {
         "phase_eedf", "phase_eedf_history", "phase_eedf_species",
         "phase_eedf_energy_bins",
         "phase_eedf_energy_max", "phase_eedf_tail_threshold",
+        "phase_eedf_promotion_band_min",
         "phase_eedf_regions",
         "phase_surface_flux", "phase_surface_flux_reset_on_restart",
         "phase_surface_flux_species", "phase_surface_flux_positions",
@@ -1826,6 +1835,9 @@ Config load_config(const std::string& path) {
     cfg.phase_eedf.tail_threshold = as<double>(
         global, "phase_eedf_tail_threshold",
         cfg.phase_eedf.tail_threshold);
+    cfg.phase_eedf.promotion_band_min = as<double>(
+        global, "phase_eedf_promotion_band_min",
+        cfg.phase_eedf.promotion_band_min);
     cfg.phase_eedf.regions = parse_phase_eedf_regions(global);
     cfg.phase_surface_flux.enabled = parse_bool(
         global, "phase_surface_flux", cfg.phase_surface_flux.enabled);

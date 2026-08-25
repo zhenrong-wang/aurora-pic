@@ -103,6 +103,10 @@ The matched-half-step field-push ledgers further localize reduced energetic
 promotion to all three critical RF-phase octants, strongest at phase
 `0.25--0.375` and in `x/L=0.2--0.4`; the reproducible post hoc result is
 `benchmarks/ccp/edupic-field-push-promotion-localization-20260825.json`.
+The phase-EEDF history diagnostic now also supports a configurable
+subthreshold promotion band with restart-safe signed/positive/negative mover
+work, enabling the next near-threshold causal comparison without changing the
+particle trajectory.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision
