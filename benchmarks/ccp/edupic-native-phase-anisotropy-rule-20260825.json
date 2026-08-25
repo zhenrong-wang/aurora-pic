@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_native_edupic_to_aurorapic_velocity_anisotropy",
+  "question": "Is AuroraPIC's energetic-tail deficit associated with longitudinal sheath energization and phase directionality, or with a more isotropic energetic-particle population difference?",
+  "basis": {
+    "prior_result_sha256": "5af94a076023bcb0f6b514d3a5de6327be8e6aa290f802cadf300446bbc33bbe",
+    "observed_before_declaration": "A direct three-seed native eduPIC comparison found an AuroraPIC/native folded-ionization ratio of 0.85296 and an above-15.8-eV population ratio of 0.87182 in x/L=0.2--0.6 and phase 0.125--0.5, while AuroraPIC mean energy was 3.62 percent higher.",
+    "interpretive_limit": "The prior result selected velocity-space decomposition but contains no component-temperature or energetic-tail directional observations."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "d44270dd1b9c03308442780644b550897ad6af3a3e13865b8cae21cc77be68c2",
+    "aurorapic_base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "aurorapic_checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "aurorapic_checkpoint_step": 56000,
+    "aurorapic_prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "native_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_input_checkpoint_cycle": 2620,
+    "native_instrumenter_sha256": "fdc7a66b903bf11a702facffc1a8bd369412dc35a0dc82a4bf77a3a9ffc84a3d",
+    "native_instrumented_source_sha256": "1f422c72e3b4d88f775c99400681a731c9395db03063b7777ecf54863f9b5b99",
+    "native_instrumented_binary_sha256": "9eb38907396a328d7c75606ec61b946a1e1f4f820f9992572e685c0987f57b41",
+    "native_instrumentation_audit_sha256": "40546a895f356ffc694bf851ce796d3c380656e934354cda1e5683c5eaddcd6d"
+  },
+  "locked_initial_state": {
+    "step": 56000,
+    "checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "solver_sha256": "d44270dd1b9c03308442780644b550897ad6af3a3e13865b8cae21cc77be68c2"
+  },
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "start_step": 56000,
+    "end_step": 72000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "native_seeds": [13507, 24601, 35713],
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 5242880,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "minimum_tail_macro_observations_critical_aggregate": 100000,
+    "maximum_histogram_overflow_fraction": 0.000001
+  },
+  "prospective_decision_rule": {
+    "longitudinal_mechanism_supported_if": "absolute AuroraPIC-minus-native tail_longitudinal_energy_fraction is at least 0.05 in the critical aggregate",
+    "component_redistribution_supported_if": "any critical aggregate component-temperature fraction differs by at least 0.05 absolute",
+    "phase_directionality_supported_if": "absolute tail directional-population imbalance differs by at least 0.05 in any predeclared critical phase octant",
+    "null_interpretation": "If none of these thresholds is crossed, this velocity-space decomposition does not localize the deficit and collision-history or energetic-particle residence becomes the next discriminator.",
+    "measurement_validity_is_separate": true
+  },
+  "claim_boundary": "This compares one deterministic four-cycle AuroraPIC continuation with three deterministic four-cycle native eduPIC continuations of independently equilibrated states. It diagnoses velocity-space structure for one argon CCP case; it is not experimental validation, a code-wide correctness proof, or unrestricted uncertainty quantification.",
+  "physics_claim": "none_until_prospective_outputs_are_complete"
+}

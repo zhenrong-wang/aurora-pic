@@ -19,6 +19,7 @@ from run_aurorapic_edupic_pilot import (
 RULE_SHA256S = {
     "a8cded31a57af98b6c32dda816d122cda8ebf9f7daf31d906b516d1a5b12b9f2",
     "e0216347692759a4c775f3cc5b932ce5c36c62a6a0a45bee364ac0bae5380704",
+    "3ef905d4e89f9503e3c5f6fa616bbe180d47fdf39f7301043540d6203c6a2e26",
 }
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_ONE_BOUNDED_TAIL_BLOCK"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
@@ -64,6 +65,9 @@ def build_deck(base: str, output: Path, checkpoint: Path,
     result = base
     for key, value in values.items():
         result = set_global(result, key, value)
+    result = insert_global(
+        result, "phase_eedf_tail_threshold",
+        str(diagnostic.get("tail_threshold_eV", 0.0)))
     surface = diagnostic.get("surface_flux")
     if surface is not None:
         additions = {
@@ -204,6 +208,8 @@ def analyze_output(output: Path, rule: dict[str, object],
         metadata.get("samples") == expected_samples and
         metadata.get("moment_samples") == expected_samples and
         metadata.get("phase_bins") == int(diagnostic["phase_bins"]) and
+        metadata.get("phase_eedf_tail_threshold") == float(
+            diagnostic.get("tail_threshold_eV", 0.0)) and
         set(metadata.get("phase_bin_samples", [])) == {expected_per_phase} and
         metadata.get("complete") is True)
 
@@ -232,15 +238,24 @@ def analyze_output(output: Path, rule: dict[str, object],
     regions = diagnostic["regions"]
     if len(moments) != phase_bins * len(regions):
         raise TailBlockError("phase EEDF moment shape differs")
+    critical_regions = set(diagnostic.get("critical_regions", []))
+    observation_rows = ([row for row in moments
+                         if row["region"] in critical_regions]
+                        if critical_regions else moments)
     minimum_observations = min(int(row["macro_observations"])
-                               for row in moments)
+                               for row in observation_rows)
     maximum_overflow = max(float(row["overflow_fraction"])
                            for row in moments)
     finite_moments = all(
         math.isfinite(float(row[key])) for row in moments for key in (
             "represented_observations", "overflow_fraction", "mean_energy",
             "energy_standard_deviation", "mean_velocity_x", "mean_velocity_y",
-            "mean_velocity_z", "drift_separated_temperature"))
+            "mean_velocity_z", "drift_separated_temperature", "temperature_x",
+            "temperature_y", "temperature_z", "tail_threshold",
+            "tail_represented_observations", "tail_positive_x_fraction",
+            "tail_negative_x_fraction",
+            "tail_directional_population_imbalance", "tail_mean_velocity_x",
+            "tail_longitudinal_energy_fraction"))
     region_names = sorted({row["region"] for row in moments})
     expected_names = sorted(str(region["name"]) for region in regions)
     shape_ok = region_names == expected_names
