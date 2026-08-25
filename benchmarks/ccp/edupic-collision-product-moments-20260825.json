@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "collision_product_distribution_moment_verification",
+  "implementation_commit": "e218b48d7ac0c72fe840bcefa8b252a2236ea0d2",
+  "formal_outcome": "aurorapic_collision_products_match_pinned_edupic_law_moments_within_statistical_tolerances",
+  "provenance": {
+    "pinned_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "aurorapic_collision_cpp_sha256": "6a41a2ecf468847e384c4dc8915a58c76a0993c21f5f9b4adc6ccf356922e750",
+    "test_source_sha256": "f3a4d40cf9088aeee3651e1f1b2405da57744750e01de3dca9b22355f9d089c4",
+    "raw_test_output_sha256": "700a9c9d630442365357e33c15cb446434d1757fe9fc4ba838a11e4673798cf4"
+  },
+  "method": {
+    "samples_per_stochastic_channel": 12000,
+    "random_engine": "std::mt19937_64",
+    "processes": [
+      "electron_elastic_isotropic_finite_mass",
+      "electron_excitation_isotropic_finite_mass",
+      "electron_ionization_opal_beaty_peterson_finite_mass",
+      "argon_ion_isotropic_equal_mass",
+      "argon_ion_backward_equal_mass"
+    ],
+    "reference_moments": {
+      "isotropic_mean_cosine": 0.0,
+      "isotropic_mean_squared_cosine": 0.3333333333333333,
+      "opal_mean_formula": "scale*(-log(cos(alpha)))/alpha; alpha=atan(available_energy/(2*scale))",
+      "backward_equal_mass_product_speed": 0.0
+    },
+    "full_discharge_evolution": false,
+    "maximum_simultaneous_processes": 1
+  },
+  "observations": {
+    "electron_elastic": {
+      "mean_cosine": 0.0021692362368817266,
+      "mean_squared_cosine": 0.33629291043911302
+    },
+    "electron_excitation": {
+      "mean_cosine": -0.0093828523996799668,
+      "mean_squared_cosine": 0.33586705177230475
+    },
+    "electron_ionization_opal": {
+      "sampled_mean_ejected_energy": 1.0333331360601818,
+      "expected_mean_ejected_energy": 1.0350407442362453,
+      "mean_relative_error": 0.0016497980254134292,
+      "maximum_pair_energy_error": 6.2172489379008766e-15,
+      "maximum_pair_momentum_error": 1.3911054626160788e-15
+    },
+    "argon_ion_isotropic": {
+      "mean_cosine": 0.0046405768722097051,
+      "mean_squared_cosine": 0.33281168489563701
+    },
+    "argon_ion_backward": {
+      "equal_mass_velocity_exchange_observed": true
+    }
+  },
+  "verification": {
+    "ctest_serial": "4/4 passed",
+    "total_ctest_time_seconds": 0.66,
+    "collision_moment_test_time_seconds": 0.48
+  },
+  "assessment": {
+    "isotropic_first_moments_within_0p01_of_reference": true,
+    "isotropic_second_moments_within_0p003_of_reference": true,
+    "opal_mean_within_0p2_percent_of_reference": true,
+    "opal_pair_invariants_close_below_1e_14": true,
+    "finding": "The implemented collision-product laws reproduce the pinned eduPIC angular and energy-partition moments. Together with the frozen rate fold, no direct collision acceptance or product-kinematics discrepancy large enough to explain the dynamic 16--20 percent deficit was found."
+  },
+  "claim_boundary": "This verifies isolated stochastic collision-product laws and moments. It does not prove equality of random trajectories, accumulated discharge evolution, EEDFs, or experimental observables."
+}

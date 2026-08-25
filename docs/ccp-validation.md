@@ -3252,6 +3252,32 @@ Collision-product velocity distributions remain the next statistical
 operator comparison; these frozen rate results do not prove that the evolved
 EEDFs must agree.
 
+### Frozen collision-product moments
+
+The next bounded test drives AuroraPIC's compiled collision implementation
+and compares isolated product distributions with the closed-form moments of
+the checksum-pinned eduPIC laws. Each stochastic channel uses `12,000`
+accepted single-collision samples. The test covers finite-mass isotropic
+electron elastic and excitation events, finite-mass Opal-Beaty-Peterson
+ionization, and equal-mass argon-ion isotropic and backward scattering.
+
+The ideal isotropic moments are `E[cos(chi)] = 0` and
+`E[cos(chi)^2] = 1/3`. AuroraPIC gives `(0.00217, 0.33629)` for elastic,
+`(-0.00938, 0.33587)` for excitation, and `(0.00464, 0.33281)` for ion
+isotropic scattering. Equal-mass backward scattering performs the expected
+velocity exchange. The sampled Opal mean ejected energy is `1.03333` against
+the analytic `1.03504`, a `0.165%` difference; electron-pair energy and
+paired-angle momentum invariants close below `6.3e-15` and `1.4e-15`.
+
+The checksum-bound
+[`collision-product result`](../benchmarks/ccp/edupic-collision-product-moments-20260825.json)
+therefore excludes a large direct product-kinematics error in the tested
+laws. Combined with the actual-state rate fold, the remaining dynamic deficit
+is localized to accumulated stochastic evolution and its self-consistent
+particle creation, loss, and field feedback, rather than the frozen mover,
+collision traffic, or isolated product distributions. This is not yet a
+whole-discharge or experimental validation result.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

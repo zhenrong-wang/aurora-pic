@@ -1,0 +1,14 @@
+{
+  "samples_per_stochastic_channel": 12000,
+  "elastic_mean_cosine": 0.0021692362368817266,
+  "elastic_mean_squared_cosine": 0.33629291043911302,
+  "excitation_mean_cosine": -0.0093828523996799668,
+  "excitation_mean_squared_cosine": 0.33586705177230475,
+  "opal_mean_ejected_energy": 1.0333331360601818,
+  "opal_expected_mean_ejected_energy": 1.0350407442362453,
+  "opal_mean_relative_error": 0.0016497980254134292,
+  "opal_maximum_pair_energy_error": 6.2172489379008766e-15,
+  "opal_maximum_pair_momentum_error": 1.3911054626160788e-15,
+  "ion_isotropic_mean_cosine": 0.0046405768722097051,
+  "ion_isotropic_mean_squared_cosine": 0.33281168489563701
+}
