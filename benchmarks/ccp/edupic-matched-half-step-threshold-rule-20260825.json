@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_matched_half_step_field_push_threshold_traffic",
+  "question": "Does AuroraPIC's mover-stage energetic-promotion deficit persist when its MCC and field-push ledger use the same leapfrog half-step velocity staggering as native eduPIC?",
+  "basis": {
+    "prior_field_push_rule_sha256": "60bcd878f77513e9e0126a61d03f9dadac063fbd47a4fc22323533f30185dede",
+    "prior_field_push_result_sha256": "dab0572dba9b6cfe659ecfa83600bf52b71bbeb0eabfbba57193eb43f4382ebc",
+    "observed_before_declaration": "The time-centered AuroraPIC branches had native-ensemble field-push promotion-rate ratios 0.80585 and 0.79340. No matched-half-step branch output existed when this rule was declared.",
+    "state_transition": "Each locked step-24000 checkpoint is exported to a portable state containing live time-centered positions and velocities. AuroraPIC rebuilds the adjacent half-step velocity from the self-consistent field, runs one complete RF cycle with leapfrog-half-step MCC sampling, and only then starts the four-cycle diagnostic window.",
+    "phase_continuity": "The source checkpoint is at exactly six RF cycles and the portable-state run starts at the same configured RF phase, so resetting simulation time preserves the drive phase modulo one RF cycle.",
+    "export_limit": "The portable state intentionally does not preserve the checkpoint RNG, fields, half-step velocities, counters, or diagnostics; these are rebuilt or restarted under the declared branch contract."
+  },
+  "locked_inputs": {
+    "exporter_sha256": "dc57c040965e23d0acd13d3b8762a6f2ed71a7b54d880809f7bdfb47ce3596c6",
+    "native_field_push_result_sha256": "dab0572dba9b6cfe659ecfa83600bf52b71bbeb0eabfbba57193eb43f4382ebc",
+    "native_field_push_rates_per_million": {
+      "promotions": 10.00359003986454,
+      "demotions": 5.911428229154379
+    }
+  },
+  "locked_initial_states": [
+    {
+      "id": "microstate_51949",
+      "solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274",
+      "base_config_sha256": "2d62ce0a6b3763979472d2ad8bf0a9f8e711828cf5da54d90e47b2f83101bb5c",
+      "source_checkpoint_sha256": "55c1cbc6f608f127a684f9c77ccdbc4bbc2fa83c0af3aa20b3bc833c12f5b6f3",
+      "source_checkpoint_step": 24000,
+      "particle_state_sha256": "2f14cef36a6bd24eb47e0b4b3c3bc0c274abacbd4dc7a25ef7e98486f604dc71",
+      "particle_state_signature": 17798724502959033174,
+      "export_manifest_sha256": "b8d9c937492e0a575310129ecd84e64c3925736bdb95db9adc31c0568d67cb9e",
+      "electrons": 119131,
+      "ions": 124645,
+      "seed": 13507
+    },
+    {
+      "id": "microstate_63059",
+      "solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274",
+      "base_config_sha256": "628cd4caf421c0cc70327079ae7963265b447d0ec7b091a05a8456258fa5d969",
+      "source_checkpoint_sha256": "f03463f5cb800256c2c7fc2cef3373d3c4468fe8805c0df6b823beabfd05497f",
+      "source_checkpoint_step": 24000,
+      "particle_state_sha256": "b953b08f6b4b89e41206b0fd0519a275e4230742b39a4a786ad34dae8306b371",
+      "particle_state_signature": 1521077425138363739,
+      "export_manifest_sha256": "7dde8e6cea1b0f28fdbb76b877fdbcd03600686695a08cd02b0edcbba287bbe7",
+      "electrons": 119210,
+      "ions": 124766,
+      "seed": 13507
+    }
+  ],
+  "execution_contract": {
+    "steps_per_cycle": 4000,
+    "equilibration_cycles": 1,
+    "equilibration_steps": 4000,
+    "equilibration_sampling_interval_steps": 10,
+    "equilibration_phase_bins": 16,
+    "measurement_cycles": 4,
+    "start_step": 4000,
+    "end_step": 20000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 4194304,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "history_update_interval_steps": 1,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "maximum_overflow_fraction": 0.000001,
+    "minimum_field_push_observations_critical_aggregate": 100000000,
+    "minimum_field_push_promotions_critical_aggregate": 1000,
+    "minimum_field_push_demotions_critical_aggregate": 1000
+  },
+  "prospective_decision_rule": {
+    "deficit_persists_if": "both matched-half-step AuroraPIC/native promotion-rate ratios are at most 0.90",
+    "staggering_explains_deficit_if": "both matched-half-step AuroraPIC/native promotion-rate ratios lie in [0.95, 1.05]",
+    "partial_staggering_effect_if": "all gates pass but neither persistence nor parity criterion is met",
+    "candidate_repeatability_gate": "relative range across the two matched-half-step AuroraPIC microstates no greater than 0.08 for field-push promotion and demotion rates",
+    "interpretation_requires_all_measurement_repeatability_and_provenance_gates": true
+  },
+  "claim_boundary": "This prospective campaign tests one velocity-staggering mechanism in one argon CCP using two constrained AuroraPIC microstates and the already-locked three-seed native ensemble. The portable-state transition resets the random stream and permits one RF cycle of relaxation. It is not experimental validation, a published-observable acceptance result, an unrestricted uncertainty analysis, or proof of general PIC correctness.",
+  "physics_claim": "none_until_both_prospective_branches_and_all_gates_are_complete"
+}

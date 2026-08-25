@@ -138,7 +138,7 @@ require the planned chunked HDF5/openPMD backend.
 ## Checkpoint export boundary
 
 `export_checkpoint_particle_state.py` converts the live particles in a locked
-1D3V checkpoint v14 into APS v2. The command requires the expected checkpoint
+1D3V checkpoint v14--v16 into APS v2. The command requires the expected checkpoint
 SHA-256, step, and live count for every species, refuses overwrite, filters
 inactive storage records, and emits a JSON manifest containing both hashes and
 the canonical APS signature. This supports controlled initialization studies;

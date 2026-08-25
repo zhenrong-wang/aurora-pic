@@ -80,6 +80,30 @@ def main() -> int:
             stderr=subprocess.PIPE, check=False)
         if rejected.returncode == 0 or "SHA-256" not in rejected.stderr:
             raise RuntimeError("checkpoint exporter accepted the wrong source hash")
+
+        v16_checkpoint = work / "input-v16.apc"
+        v16_state = work / "output-v16.aps"
+        v16_manifest = work / "manifest-v16.json"
+        v16_checkpoint.write_text(
+            checkpoint.read_text(encoding="utf-8").replace(
+                "AuroraPIC-checkpoint-v15", "AuroraPIC-checkpoint-v16", 1),
+            encoding="utf-8")
+        v16_command = [
+            "python3", str(EXPORTER), str(v16_checkpoint), str(v16_state),
+            "--manifest", str(v16_manifest),
+            "--expected-checkpoint-sha256", sha256(v16_checkpoint),
+            "--expected-step", "40",
+            "--expected-species", "electrons=2",
+            "--expected-species", "ions=1",
+        ]
+        supported = subprocess.run(
+            v16_command, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, check=False)
+        if supported.returncode != 0:
+            raise RuntimeError(supported.stderr or supported.stdout)
+        v16_report = json.loads(v16_manifest.read_text(encoding="utf-8"))
+        if v16_report["source_checkpoint_format"] != "AuroraPIC-checkpoint-v16":
+            raise RuntimeError("checkpoint exporter lost the v16 format provenance")
     print("checkpoint particle-state export regression passed")
     return 0
 
