@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_native_edupic_to_aurorapic_field_push_threshold_traffic",
+  "question": "Does reduced mover-stage promotion account for AuroraPIC's confirmed lower energetic-threshold traffic in the critical phase/space window?",
+  "basis": {
+    "prior_replication_result_sha256": "76cf52f1717872e021e8a59fa8f7187e339d1a14a4368685808350e65386a36c",
+    "observed_before_declaration": "Two constrained AuroraPIC microstates had native-ensemble interstep-promotion ratios 0.81265 and 0.80066 and demotion ratios 0.84982 and 0.84261. Field-push outputs did not exist in either code when this rule was designed.",
+    "new_diagnostic": "Counts threshold transitions between the post-collision velocity entering the mover and the pre-collision velocity leaving it, at the surviving post-drift position.",
+    "candidate_independence": "The two AuroraPIC checkpoints predate the field-push diagnostic and preserve a common macrostate with independently constrained particle positions and position-velocity pairings.",
+    "native_independence": "All three native field-push outputs are unseen. They restart from the same locked 2620-cycle checkpoint and differ only by predeclared collision RNG seed."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274",
+    "native_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_input_checkpoint_cycle": 2620,
+    "native_instrumenter_sha256": "c2401b509d6d750faeb712bf20fb1e9b571ac06ab27cc384f420a2ca9e4cec0a",
+    "native_instrumented_source_sha256": "c7a31787f9343aea62bae014ca741eb55c76d28f426af4c9b620a85130d094f0",
+    "native_instrumented_binary_sha256": "281d3724848969d43f7fc6d4abc070f82a28a0527f04157b775b88ff24ca4528",
+    "native_instrumentation_audit_sha256": "a508157050e3b780932ef00bec489ad965366de47d29365fbb1ed3d7d43ba0c1",
+    "expected_passive_native_checkpoint_sha256": {
+      "13507": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "24601": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "35713": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    }
+  },
+  "locked_initial_states": [
+    {
+      "id": "microstate_51949",
+      "step": 24000,
+      "checkpoint_sha256": "55c1cbc6f608f127a684f9c77ccdbc4bbc2fa83c0af3aa20b3bc833c12f5b6f3",
+      "prior_report_sha256": "b0c25c681fa06ef95ed44ae133ccc3a1218d21555204e4c89e7f135ef5745d55",
+      "base_config_sha256": "0954fe561819c0c52e444f8190cb46f6d92d9f24bbb56fe078f33bb578e18814",
+      "solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274"
+    },
+    {
+      "id": "microstate_63059",
+      "step": 24000,
+      "checkpoint_sha256": "f03463f5cb800256c2c7fc2cef3373d3c4468fe8805c0df6b823beabfd05497f",
+      "prior_report_sha256": "3d58bab5368c4a4c16b5c0ca83d96203cfda46a6df47e15ba814ff61026ce9f2",
+      "base_config_sha256": "c5392c4040e4fb2044c794b61505e88922f91a39b41fb4dc1a1be5f8cd36b84d",
+      "solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274"
+    }
+  ],
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "start_step": 24000,
+    "end_step": 40000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "native_seeds": [13507, 24601, 35713],
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "history_update_interval_steps": 1,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_field_push_observations_critical_aggregate": 100000000,
+    "minimum_field_push_promotions_critical_aggregate": 1000,
+    "minimum_field_push_demotions_critical_aggregate": 1000
+  },
+  "prospective_decision_rule": {
+    "field_push_promotion_deficit_supported_if": "both AuroraPIC/native field-push promotion-rate ratios are at most 0.90",
+    "field_push_promotion_parity_supported_if": "both AuroraPIC/native field-push promotion-rate ratios lie in [0.95, 1.05]",
+    "field_push_demotion_enhancement_supported_if": "both AuroraPIC/native field-push demotion-rate ratios are at least 1.10",
+    "candidate_repeatability_gate": "relative range across the two AuroraPIC microstates no greater than 0.08 for field-push promotion and demotion rates",
+    "native_repeatability_gate": "relative range across the three native seeds no greater than 0.15 for field-push promotion and demotion rates",
+    "interpretation_requires_all_measurement_repeatability_and_passivity_gates": true,
+    "otherwise": "mixed_or_intermediate_field_push_result"
+  },
+  "algorithm_contract_limit": "The locked AuroraPIC microstates use time-centered MCC velocity while native eduPIC uses its leapfrog half-step MCC velocity. Each ledger isolates its configured mover stage, but the before/after velocity staggering is not identical. A supported field-push deficit would require a subsequent matched-half-step AuroraPIC test before attribution to the electric-field interpolation or mover itself.",
+  "claim_boundary": "This prospective campaign localizes one energetic-threshold discrepancy in one argon CCP across constrained candidate microstates and native collision-seed replicates. It is not experimental validation, a published-observable acceptance result, proof of general PIC correctness, or a matched-staggering comparison.",
+  "physics_claim": "none_until_all_prospective_outputs_are_complete"
+}
