@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_native_edupic_to_aurorapic_unconditional_threshold_crossings",
+  "question": "Is AuroraPIC's lower above-15.8-eV population caused by a lower unconditional promotion rate, a higher demotion rate, or different collision-resolved losses?",
+  "basis": {
+    "prior_result_sha256": "558b99fce20ea0b0cb6304c0f9bfdf3cfeef7daaf1d76789fbc7646ba3f81b26",
+    "prior_result": "Tail-conditioned persistence, turnover, and collision histories were nearly identical even though AuroraPIC's energetic population fraction was about 13 percent lower.",
+    "native_pilot_observed_before_declaration": "Seed 13507 was run only for diagnostic passivity and population qualification. It contained 474588776 critical electron-timesteps, 4610 interstep promotions, and 4503 interstep demotions. No AuroraPIC crossing output or other native seed was observed before this rule was declared.",
+    "interpretive_limit": "Interstep crossings compare consecutive synchronized pre-collision states and therefore include the net effect of the prior collision stage plus the following field push. Separately reported collision crossings are before/after accepted-collision events and are not an additive partition of interstep crossings."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "63f3a2309bb551f8ee4b1f1e88c47eeb79c045335116914daa55f43ea2fe2c88",
+    "aurorapic_base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "aurorapic_checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "aurorapic_checkpoint_step": 56000,
+    "aurorapic_prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "native_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_input_checkpoint_cycle": 2620,
+    "native_instrumenter_sha256": "26c0ed4a07496833b7c69058d835b609e7a7d8535c96d2d6c2e45f95e86edbed",
+    "native_instrumented_source_sha256": "006e840b502d4e03aae80dab1a4e59e36d1ab63df9a55777dddddc93f0c41e59",
+    "native_instrumented_binary_sha256": "3e8656fc5ca4f07c5d41c55902359814377c8dccf5a8673c7bcae4f180c04482",
+    "native_instrumentation_audit_sha256": "efaa01dde6eb15524a9c2238c4cac68c3696f4d4cb4d970a17491302fb965a9c"
+  },
+  "locked_initial_state": {
+    "step": 56000,
+    "checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "solver_sha256": "63f3a2309bb551f8ee4b1f1e88c47eeb79c045335116914daa55f43ea2fe2c88"
+  },
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "start_step": 56000,
+    "end_step": 72000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "native_seeds": [13507, 24601, 35713],
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "history_update_interval_steps": 1,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "minimum_tail_macro_observations_critical_aggregate": 100000,
+    "minimum_electron_time_macro_observations_critical_aggregate": 100000000,
+    "minimum_interstep_promotions_critical_aggregate": 1000,
+    "minimum_interstep_demotions_critical_aggregate": 1000,
+    "maximum_overflow_fraction": 0.000001
+  },
+  "prospective_decision_rule": {
+    "promotion_limited_supported_if": "AuroraPIC/native interstep-promotion rate per million electron-steps is at most 0.90",
+    "demotion_enhanced_supported_if": "AuroraPIC/native interstep-demotion rate per million electron-steps is at least 1.10",
+    "collision_loss_difference_supported_if": "AuroraPIC/native excitation- or ionization-collision demotion rate per million electron-steps differs from unity by at least 0.15",
+    "birth_supply_difference_supported_if": "AuroraPIC/native subthreshold-birth rate per million electron-steps differs from unity by at least 0.15, or energetic-birth rates differ with at least 100 energetic births in every member",
+    "native_repeatability_gate": "relative three-seed range no greater than 0.15 for occupancy, interstep promotion, interstep demotion, and subthreshold birth rates; no greater than 0.30 for elastic, excitation, and ionization collision-demotion rates",
+    "null_interpretation": "If all gates pass and no threshold is crossed, unconditional threshold traffic does not localize the tail deficit; the next test must resolve field-work increments and collision-stage energy changes more finely.",
+    "measurement_validity_is_separate": true
+  },
+  "implementation_difference_to_record": "Native eduPIC permits ionization secondaries appended during the collision loop to be considered later in the same timestep; AuroraPIC freezes the initial particle count. The energetic-birth and collision-transition columns expose possible consequences without changing either algorithm.",
+  "claim_boundary": "This compares one deterministic four-cycle AuroraPIC continuation with three deterministic four-cycle native eduPIC continuations of independently equilibrated states. It is a one-case code-to-code mechanism diagnostic, not experimental validation, a proof of code-wide correctness, or unrestricted uncertainty quantification.",
+  "physics_claim": "none_until_prospective_outputs_are_complete"
+}
