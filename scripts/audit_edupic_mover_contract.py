@@ -70,12 +70,16 @@ def audit(native: Path, field_solver: Path, simulation: Path,
     require(field_text,
             "E[i] = -(phi[i+1] - phi[i-1]) / (2.0 * grid.dx())",
             "AuroraPIC centered interior field")
-    require(field_text,
-            "E[0] = -(phi[1] - phi[0]) / grid.dx();",
-            "AuroraPIC left boundary field")
-    require(field_text,
-            "E[n-1] = -(phi[n-1] - phi[n-2]) / grid.dx();",
-            "AuroraPIC right boundary field")
+    endpoint_half_cell_corrected = (
+        "rho[0] * grid.dx() / (2.0 * permittivity_)" in field_text and
+        "rho[n-1] * grid.dx() / (2.0 * permittivity_)" in field_text)
+    if not endpoint_half_cell_corrected:
+        require(field_text,
+                "E[0] = -(phi[1] - phi[0]) / grid.dx();",
+                "AuroraPIC left boundary field")
+        require(field_text,
+                "E[n-1] = -(phi[n-1] - phi[n-2]) / grid.dx();",
+                "AuroraPIC right boundary field")
     require(simulation_text,
             "p, interpolate_electric(grid_, p.x),\n"
             "                        qm, timestep);\n"
@@ -114,9 +118,13 @@ def audit(native: Path, field_solver: Path, simulation: Path,
             "electrode_node_field": {
                 "edupic":
                     "one-sided potential gradient plus charged half-cell Gauss correction",
-                "aurorapic": "one-sided potential gradient only",
+                "aurorapic": (
+                    "one-sided potential gradient plus charged half-cell Gauss correction"
+                    if endpoint_half_cell_corrected else
+                    "one-sided potential gradient only"),
                 "left_missing_term": "-rho[0] dx/(2 epsilon)",
                 "right_missing_term": "+rho[n-1] dx/(2 epsilon)",
+                "difference_present": not endpoint_half_cell_corrected,
                 "direct_scope":
                     "the two wall-adjacent interpolation cells; indirect distribution effects can propagate inward",
             },
@@ -125,7 +133,10 @@ def audit(native: Path, field_solver: Path, simulation: Path,
             "bulk_mover_mismatch_found": False,
             "rf_phase_offset_is_small": True,
             "phase_alignment_is_cleanly_testable_by_configuration": True,
-            "boundary_field_difference_requires_a_prospective_solver_branch": True,
+            "boundary_field_difference_requires_a_prospective_solver_branch":
+                not endpoint_half_cell_corrected,
+            "boundary_half_cell_correction_present":
+                endpoint_half_cell_corrected,
         },
         "claim_boundary":
             "This is a source-contract and scale audit, not a dynamic equivalence proof or validation result.",

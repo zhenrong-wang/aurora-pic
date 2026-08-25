@@ -298,6 +298,24 @@ int main() {
                 "field solver accepted zero permittivity");
         }
         {
+            pic::Grid grid(5, 4.0, pic::Boundary::Dirichlet);
+            grid.rho()[0] = 6.0;
+            grid.rho()[grid.nx() - 1] = 10.0;
+            pic::FieldSolver solver(2.0);
+            solver.solve(grid, 0.0, 0.0);
+            require_near(
+                grid.electric()[0], -1.5, 1e-14,
+                "Dirichlet left electrode field omitted the charged half-cell correction");
+            require_near(
+                grid.electric()[grid.nx() - 1], 2.5, 1e-14,
+                "Dirichlet right electrode field omitted the charged half-cell correction");
+            for (std::size_t i = 1; i + 1 < grid.nx(); ++i) {
+                require_near(
+                    grid.electric()[i], 0.0, 1e-14,
+                    "endpoint charge incorrectly changed the Dirichlet interior potential field");
+            }
+        }
+        {
             const auto table_path =
                 std::filesystem::path("test_cross_section_table.dat");
             {

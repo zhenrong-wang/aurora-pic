@@ -754,8 +754,15 @@ void FieldSolver::solve_dirichlet_tridiagonal(Grid& grid, double phi_left, doubl
     phi[n-2] = dp[m-1];
     for (std::size_t ii = m - 1; ii-- > 0;) phi[ii+1] = dp[ii] - cp[ii] * phi[ii+2];
     for (std::size_t i = 1; i + 1 < n; ++i) E[i] = -(phi[i+1] - phi[i-1]) / (2.0 * grid.dx());
-    E[0] = -(phi[1] - phi[0]) / grid.dx();
-    E[n-1] = -(phi[n-1] - phi[n-2]) / grid.dx();
+    // The Dirichlet endpoints represent half control volumes.  The potential
+    // difference gives the field at the adjacent half-cell face; integrate
+    // Gauss's law over the boundary half-cell to recover the field at the
+    // electrode node itself.  This is also the endpoint convention used by
+    // the pinned eduPIC reference.
+    E[0] = -(phi[1] - phi[0]) / grid.dx() -
+        rho[0] * grid.dx() / (2.0 * permittivity_);
+    E[n-1] = -(phi[n-1] - phi[n-2]) / grid.dx() +
+        rho[n-1] * grid.dx() / (2.0 * permittivity_);
 }
 
 void FieldSolver::solve_dirichlet_iterative(Mesh2D& mesh) const {
