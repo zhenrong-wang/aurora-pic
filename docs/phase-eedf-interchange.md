@@ -50,3 +50,25 @@ and scattering conventions, electrode and particle boundary models, initial
 state, averaging horizon, region bounds, and phase sampling. Independent code
 agreement is verification evidence; agreement with measurements is still
 required for physical validation.
+
+## Native velocity-space diagnostics
+
+AuroraPIC's `phase_eedf_moments.csv` also exposes component temperatures and
+energetic-tail directionality. Set `phase_eedf_tail_threshold` to an energy in
+eV that is non-negative and below `phase_eedf_energy_max`. A value of zero
+includes the complete sampled distribution in the tail columns.
+
+The component temperatures remove the mean drift independently in each
+velocity component. The tail columns report represented population, positive
+and negative longitudinal fractions, their signed population imbalance, mean
+longitudinal velocity, and the fraction of tail kinetic energy carried by the
+longitudinal component. These observables distinguish an energy-distribution
+difference caused by longitudinal sheath acceleration from one caused by
+transverse scattering or energetic-particle residence. They are accumulated
+with the EEDF and preserved by checkpoints; changing the threshold on restart
+therefore requires resetting spatial-average diagnostics.
+
+These extra native columns are diagnostic evidence, not part of interchange
+version 1. A cross-code claim using them must lock the velocity sampling time,
+velocity-coordinate convention, and energetic-tail threshold in its
+prospective rule.

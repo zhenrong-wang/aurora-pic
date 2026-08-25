@@ -66,6 +66,15 @@ struct PhaseEedfAccumulator1D {
     double weighted_velocity_x_sum{0.0};
     double weighted_velocity_y_sum{0.0};
     double weighted_velocity_z_sum{0.0};
+    double weighted_velocity_x_squared_sum{0.0};
+    double weighted_velocity_y_squared_sum{0.0};
+    double weighted_velocity_z_squared_sum{0.0};
+    double tail_represented_observations{0.0};
+    double tail_positive_x_represented_observations{0.0};
+    double tail_negative_x_represented_observations{0.0};
+    double tail_weighted_velocity_x_sum{0.0};
+    double tail_weighted_velocity_x_squared_sum{0.0};
+    double tail_weighted_transverse_velocity_squared_sum{0.0};
     std::vector<double> histogram{};
 };
 

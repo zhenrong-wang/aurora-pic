@@ -1508,10 +1508,11 @@ void validate_spatial_average_1d(const Config& cfg) {
     const auto& flux = cfg.phase_surface_flux;
     if (!eedf.enabled) {
         if (!eedf.species.empty() || eedf.energy_bins != 0 ||
-            eedf.energy_max != 0.0 || !eedf.regions.empty()) {
+            eedf.energy_max != 0.0 || eedf.tail_threshold != 0.0 ||
+            !eedf.regions.empty()) {
             throw std::runtime_error(
                 "disabled phase_eedf cannot configure species, bins, "
-                "energy maximum, or regions");
+                "energy maximum, tail threshold, or regions");
         }
     } else {
         if (!average.enabled || average.phase_bins == 0) {
@@ -1525,6 +1526,13 @@ void validate_spatial_average_1d(const Config& cfg) {
             throw std::runtime_error(
                 "phase_eedf requires a species, 1..1000000 bins, a "
                 "positive energy maximum, and at least one region");
+        }
+        if (!std::isfinite(eedf.tail_threshold) ||
+            eedf.tail_threshold < 0.0 ||
+            eedf.tail_threshold >= eedf.energy_max) {
+            throw std::runtime_error(
+                "phase_eedf tail threshold must be finite, non-negative, "
+                "and below its energy maximum");
         }
         if (std::none_of(cfg.species.begin(), cfg.species.end(),
                          [&](const auto& species) {
@@ -1707,7 +1715,8 @@ Config load_config(const std::string& path) {
         "spatial_average_rf_frequency", "spatial_average_rf_cycles",
         "spatial_average_phase_bins", "spatial_average_sampling_order",
         "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
-        "phase_eedf_energy_max", "phase_eedf_regions",
+        "phase_eedf_energy_max", "phase_eedf_tail_threshold",
+        "phase_eedf_regions",
         "phase_surface_flux", "phase_surface_flux_reset_on_restart",
         "phase_surface_flux_species", "phase_surface_flux_positions",
         "phase_surface_flux_energy_bins", "phase_surface_flux_energy_max",
@@ -1809,6 +1818,9 @@ Config load_config(const std::string& path) {
         global, "phase_eedf_energy_bins", cfg.phase_eedf.energy_bins);
     cfg.phase_eedf.energy_max = as<double>(
         global, "phase_eedf_energy_max", cfg.phase_eedf.energy_max);
+    cfg.phase_eedf.tail_threshold = as<double>(
+        global, "phase_eedf_tail_threshold",
+        cfg.phase_eedf.tail_threshold);
     cfg.phase_eedf.regions = parse_phase_eedf_regions(global);
     cfg.phase_surface_flux.enabled = parse_bool(
         global, "phase_surface_flux", cfg.phase_surface_flux.enabled);

@@ -38,6 +38,7 @@ constexpr const char* kCheckpointMagicV14 = "AuroraPIC-checkpoint-v14";
 constexpr const char* kCheckpointMagicV15 = "AuroraPIC-checkpoint-v15";
 constexpr const char* kCheckpointMagicV16 = "AuroraPIC-checkpoint-v16";
 constexpr const char* kCheckpointMagicV17 = "AuroraPIC-checkpoint-v17";
+constexpr const char* kCheckpointMagicV18 = "AuroraPIC-checkpoint-v18";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -1642,6 +1643,29 @@ void Simulation::accumulate_phase_eedf(std::size_t phase) {
                 weight * particle.velocity_y;
             accumulator.weighted_velocity_z_sum +=
                 weight * particle.velocity_z;
+            accumulator.weighted_velocity_x_squared_sum +=
+                weight * particle.v * particle.v;
+            accumulator.weighted_velocity_y_squared_sum +=
+                weight * particle.velocity_y * particle.velocity_y;
+            accumulator.weighted_velocity_z_squared_sum +=
+                weight * particle.velocity_z * particle.velocity_z;
+            if (energy >= cfg_.phase_eedf.tail_threshold) {
+                accumulator.tail_represented_observations += weight;
+                if (particle.v >= 0.0) {
+                    accumulator.tail_positive_x_represented_observations +=
+                        weight;
+                } else {
+                    accumulator.tail_negative_x_represented_observations +=
+                        weight;
+                }
+                accumulator.tail_weighted_velocity_x_sum +=
+                    weight * particle.v;
+                accumulator.tail_weighted_velocity_x_squared_sum +=
+                    weight * particle.v * particle.v;
+                accumulator.tail_weighted_transverse_velocity_squared_sum +=
+                    weight * (particle.velocity_y * particle.velocity_y +
+                              particle.velocity_z * particle.velocity_z);
+            }
             if (energy >= cfg_.phase_eedf.energy_max) {
                 ++accumulator.overflow_macro_observations;
                 accumulator.overflow_represented_observations += weight;
@@ -2306,7 +2330,11 @@ void Simulation::write_spatial_average() const {
                    "macro_observations,represented_observations,"
                    "overflow_fraction,mean_energy,energy_standard_deviation,"
                    "mean_velocity_x,mean_velocity_y,mean_velocity_z,"
-                   "drift_separated_temperature\n"
+                   "drift_separated_temperature,temperature_x,temperature_y,"
+                   "temperature_z,tail_threshold,tail_represented_observations,"
+                   "tail_positive_x_fraction,tail_negative_x_fraction,"
+                   "tail_directional_population_imbalance,tail_mean_velocity_x,"
+                   "tail_longitudinal_energy_fraction\n"
                 << std::setprecision(17);
         const double bin_width = cfg_.phase_eedf.energy_max /
             static_cast<double>(cfg_.phase_eedf.energy_bins);
@@ -2352,8 +2380,19 @@ void Simulation::write_spatial_average() const {
                     ? accumulator.weighted_velocity_y_sum / count : 0.0;
                 const double uz = count > 0.0
                     ? accumulator.weighted_velocity_z_sum / count : 0.0;
+                const double vx2 = count > 0.0
+                    ? accumulator.weighted_velocity_x_squared_sum / count : 0.0;
+                const double vy2 = count > 0.0
+                    ? accumulator.weighted_velocity_y_squared_sum / count : 0.0;
+                const double vz2 = count > 0.0
+                    ? accumulator.weighted_velocity_z_squared_sum / count : 0.0;
                 const double drift_energy = 0.5 * target.mass() *
                     (ux * ux + uy * uy + uz * uz) / energy_scale;
+                const double tail_count =
+                    accumulator.tail_represented_observations;
+                const double tail_velocity_squared =
+                    accumulator.tail_weighted_velocity_x_squared_sum +
+                    accumulator.tail_weighted_transverse_velocity_squared_sum;
                 moments << phase << ',' << phase_fraction << ',' << region_id
                     << ',' << csv_cell(region.name) << ',' << region.x_min
                     << ',' << region.x_max << ','
@@ -2365,7 +2404,30 @@ void Simulation::write_spatial_average() const {
                     << ',' << mean_energy << ',' << std::sqrt(energy_variance)
                     << ',' << ux << ',' << uy << ',' << uz << ','
                     << 2.0 / dimensions *
-                           std::max(0.0, mean_energy - drift_energy)
+                           std::max(0.0, mean_energy - drift_energy) << ','
+                    << target.mass() / energy_scale *
+                           std::max(0.0, vx2 - ux * ux) << ','
+                    << target.mass() / energy_scale *
+                           std::max(0.0, vy2 - uy * uy) << ','
+                    << target.mass() / energy_scale *
+                           std::max(0.0, vz2 - uz * uz) << ','
+                    << cfg_.phase_eedf.tail_threshold << ',' << tail_count << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_positive_x_represented_observations /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_negative_x_represented_observations /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? (accumulator.tail_positive_x_represented_observations -
+                               accumulator.tail_negative_x_represented_observations) /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_weighted_velocity_x_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_velocity_squared > 0.0
+                            ? accumulator.tail_weighted_velocity_x_squared_sum /
+                                  tail_velocity_squared : 0.0)
                     << '\n';
             }
         }
@@ -2524,6 +2586,8 @@ void Simulation::write_spatial_average() const {
              << cfg_.phase_eedf.energy_bins << ",\n"
              << "  \"phase_eedf_energy_max\": "
              << cfg_.phase_eedf.energy_max << ",\n"
+             << "  \"phase_eedf_tail_threshold\": "
+             << cfg_.phase_eedf.tail_threshold << ",\n"
              << "  \"phase_surface_flux_enabled\": "
              << (cfg_.phase_surface_flux.enabled ? "true" : "false") << ",\n"
              << "  \"phase_surface_flux_reset_on_restart\": "
@@ -2570,7 +2634,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV17 << '\n';
+    out << kCheckpointMagicV18 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -2792,6 +2856,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         << (cfg_.phase_eedf.species.empty() ? "-" : cfg_.phase_eedf.species)
         << ' ' << cfg_.phase_eedf.energy_bins << ' '
         << cfg_.phase_eedf.energy_max << ' '
+        << cfg_.phase_eedf.tail_threshold << ' '
         << phase_eedf_accumulators_.size() << ' '
         << cfg_.phase_eedf.regions.size() << "\n";
     for (std::size_t region = 0;
@@ -2814,7 +2879,16 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
                 << value.weighted_energy_squared_sum << ' '
                 << value.weighted_velocity_x_sum << ' '
                 << value.weighted_velocity_y_sum << ' '
-                << value.weighted_velocity_z_sum;
+                << value.weighted_velocity_z_sum << ' '
+                << value.weighted_velocity_x_squared_sum << ' '
+                << value.weighted_velocity_y_squared_sum << ' '
+                << value.weighted_velocity_z_squared_sum << ' '
+                << value.tail_represented_observations << ' '
+                << value.tail_positive_x_represented_observations << ' '
+                << value.tail_negative_x_represented_observations << ' '
+                << value.tail_weighted_velocity_x_sum << ' '
+                << value.tail_weighted_velocity_x_squared_sum << ' '
+                << value.tail_weighted_transverse_velocity_squared_sum;
             for (const double count : value.histogram) out << ' ' << count;
             out << "\n";
         }
@@ -2888,7 +2962,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v17 = magic == kCheckpointMagicV17;
+    const bool checkpoint_v18 = magic == kCheckpointMagicV18;
+    const bool checkpoint_v17 =
+        magic == kCheckpointMagicV17 || checkpoint_v18;
     const bool checkpoint_v16 =
         magic == kCheckpointMagicV16 || checkpoint_v17;
     const bool checkpoint_v15 =
@@ -3803,15 +3879,25 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             std::string stored_eedf_species;
             std::size_t stored_eedf_bins = 0;
             double stored_eedf_max = 0.0;
+            double stored_eedf_tail_threshold = 0.0;
             std::size_t stored_eedf_phases = 0;
             std::size_t stored_eedf_regions = 0;
             in >> stored_eedf_enabled >> stored_eedf_species >>
-                stored_eedf_bins >> stored_eedf_max >> stored_eedf_phases >>
-                stored_eedf_regions;
+                stored_eedf_bins >> stored_eedf_max;
+            if (checkpoint_v18) in >> stored_eedf_tail_threshold;
+            in >> stored_eedf_phases >> stored_eedf_regions;
             const bool enabled_shape = stored_eedf_enabled == 1;
+            const bool tail_contract_valid =
+                !checkpoint_v18 ||
+                (std::isfinite(stored_eedf_tail_threshold) &&
+                 stored_eedf_tail_threshold >= 0.0 &&
+                 (enabled_shape
+                      ? stored_eedf_tail_threshold < stored_eedf_max
+                      : stored_eedf_tail_threshold == 0.0));
             const bool shape_valid =
                 (stored_eedf_enabled == 0 || stored_eedf_enabled == 1) &&
                 std::isfinite(stored_eedf_max) && stored_eedf_max >= 0.0 &&
+                tail_contract_valid &&
                 stored_eedf_phases ==
                     (enabled_shape ? stored_phase_count : 0) &&
                 (!enabled_shape ||
@@ -3824,10 +3910,13 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                          ? "-" : cfg_.phase_eedf.species) &&
                 stored_eedf_bins == cfg_.phase_eedf.energy_bins &&
                 stored_eedf_max == cfg_.phase_eedf.energy_max &&
+                stored_eedf_tail_threshold ==
+                    cfg_.phase_eedf.tail_threshold &&
                 stored_eedf_phases == phase_eedf_accumulators_.size() &&
                 stored_eedf_regions == cfg_.phase_eedf.regions.size();
             if (key != "phase_eedf" || !shape_valid ||
-                (!reset && !contract_matches)) {
+                (!reset && (!contract_matches ||
+                            (stored_eedf_enabled == 1 && !checkpoint_v18)))) {
                 throw std::runtime_error(
                     "checkpoint phase EEDF contract is invalid");
             }
@@ -3872,6 +3961,17 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                         value.weighted_velocity_x_sum >>
                         value.weighted_velocity_y_sum >>
                         value.weighted_velocity_z_sum;
+                    if (checkpoint_v18) {
+                        in >> value.weighted_velocity_x_squared_sum >>
+                            value.weighted_velocity_y_squared_sum >>
+                            value.weighted_velocity_z_squared_sum >>
+                            value.tail_represented_observations >>
+                            value.tail_positive_x_represented_observations >>
+                            value.tail_negative_x_represented_observations >>
+                            value.tail_weighted_velocity_x_sum >>
+                            value.tail_weighted_velocity_x_squared_sum >>
+                            value.tail_weighted_transverse_velocity_squared_sum;
+                    }
                     value.histogram.resize(stored_eedf_bins);
                     for (auto& count : value.histogram) in >> count;
                     const bool finite = std::isfinite(
@@ -3882,6 +3982,19 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                         std::isfinite(value.weighted_velocity_x_sum) &&
                         std::isfinite(value.weighted_velocity_y_sum) &&
                         std::isfinite(value.weighted_velocity_z_sum) &&
+                        std::isfinite(value.weighted_velocity_x_squared_sum) &&
+                        std::isfinite(value.weighted_velocity_y_squared_sum) &&
+                        std::isfinite(value.weighted_velocity_z_squared_sum) &&
+                        std::isfinite(value.tail_represented_observations) &&
+                        std::isfinite(
+                            value.tail_positive_x_represented_observations) &&
+                        std::isfinite(
+                            value.tail_negative_x_represented_observations) &&
+                        std::isfinite(value.tail_weighted_velocity_x_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_velocity_x_squared_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_transverse_velocity_squared_sum) &&
                         std::all_of(value.histogram.begin(),
                             value.histogram.end(), [](double count) {
                                 return std::isfinite(count) && count >= 0.0;
@@ -3895,7 +4008,20 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                         value.overflow_represented_observations >
                             value.represented_observations ||
                         value.weighted_energy_sum < 0.0 ||
-                        value.weighted_energy_squared_sum < 0.0) {
+                        value.weighted_energy_squared_sum < 0.0 ||
+                        value.weighted_velocity_x_squared_sum < 0.0 ||
+                        value.weighted_velocity_y_squared_sum < 0.0 ||
+                        value.weighted_velocity_z_squared_sum < 0.0 ||
+                        value.tail_represented_observations < 0.0 ||
+                        value.tail_positive_x_represented_observations < 0.0 ||
+                        value.tail_negative_x_represented_observations < 0.0 ||
+                        value.tail_positive_x_represented_observations +
+                                value.tail_negative_x_represented_observations >
+                            value.tail_represented_observations *
+                                (1.0 + 1e-12) ||
+                        value.tail_weighted_velocity_x_squared_sum < 0.0 ||
+                        value.tail_weighted_transverse_velocity_squared_sum <
+                            0.0) {
                         throw std::runtime_error(
                             "checkpoint phase EEDF accumulator is invalid");
                     }

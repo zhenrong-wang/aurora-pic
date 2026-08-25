@@ -3970,8 +3970,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v17\n") == 0,
-                "1D wall-impact checkpoint did not use v17");
+                    "AuroraPIC-checkpoint-v18\n") == 0,
+                "1D wall-impact checkpoint did not use v18");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4357,6 +4357,7 @@ int main() {
             cfg.phase_eedf.species = "electrons";
             cfg.phase_eedf.energy_bins = 10;
             cfg.phase_eedf.energy_max = 10.0;
+            cfg.phase_eedf.tail_threshold = 0.5;
             cfg.phase_eedf.regions = {
                 {"left", 0.0, 0.5}, {"right", 0.5, 1.0}};
             cfg.collisions.enabled = true;
@@ -4374,6 +4375,24 @@ int main() {
                 pic::SpeciesConfig{
                     "electrons", 0.0, 1.0, 1.0, 128, 1.0,
                     1.0, 0.0, 0.0, -1.0}};
+            pic::validate_spatial_average_1d(cfg);
+            auto invalid_tail_threshold = cfg;
+            invalid_tail_threshold.phase_eedf.tail_threshold = -0.1;
+            require_throws(
+                [&] {
+                    pic::validate_spatial_average_1d(
+                        invalid_tail_threshold);
+                },
+                "1D phase EEDF accepted a negative tail threshold");
+            invalid_tail_threshold.phase_eedf.tail_threshold =
+                cfg.phase_eedf.energy_max;
+            require_throws(
+                [&] {
+                    pic::validate_spatial_average_1d(
+                        invalid_tail_threshold);
+                },
+                "1D phase EEDF accepted a tail threshold at its energy "
+                "maximum");
 
             pic::Simulation continuous(cfg);
             continuous.initialize();
@@ -4513,6 +4532,19 @@ int main() {
                         actual_eedf.weighted_energy_sum,
                         expected_eedf.weighted_energy_sum, 1e-12,
                         "1D restart lost phase EEDF energy moment");
+                    require_near(
+                        actual_eedf.weighted_velocity_x_squared_sum,
+                        expected_eedf.weighted_velocity_x_squared_sum, 1e-12,
+                        "1D restart lost phase EEDF longitudinal moment");
+                    require_near(
+                        actual_eedf.tail_represented_observations,
+                        expected_eedf.tail_represented_observations, 1e-12,
+                        "1D restart lost phase EEDF tail population");
+                    require_near(
+                        actual_eedf.tail_weighted_velocity_x_squared_sum,
+                        expected_eedf.tail_weighted_velocity_x_squared_sum,
+                        1e-12,
+                        "1D restart lost phase EEDF tail anisotropy");
                     const double histogram_total = std::accumulate(
                         expected_eedf.histogram.begin(),
                         expected_eedf.histogram.end(), 0.0);
@@ -4525,7 +4557,7 @@ int main() {
             }
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v17\n") == 0,
+                    "AuroraPIC-checkpoint-v18\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4572,6 +4604,14 @@ int main() {
                 count_lines(eedf_csv) == 2 * 2 * 10 + 1 &&
                     count_lines(eedf_moments_csv) == 2 * 2 + 1,
                 "1D phase EEDF CSV contract is wrong");
+            require(
+                eedf_moments_csv.find(
+                    "tail_directional_population_imbalance") !=
+                        std::string::npos &&
+                    eedf_moments_csv.find(
+                    "tail_longitudinal_energy_fraction") !=
+                        std::string::npos,
+                "1D phase EEDF CSV lost velocity-space tail moments");
             require(
                 spatial_metadata.find(
                     "\"sampling_order\": \"pre_collision\"") !=
