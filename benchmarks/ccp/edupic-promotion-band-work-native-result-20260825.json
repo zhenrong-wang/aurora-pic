@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_promotion_band_work_ensemble_result",
+  "rule_sha256": "14742db5d59e61d950f625a711a6e59ff6af33d59b7554f430a5b6067ca9b019",
+  "all_native_integrity_population_repeatability_and_work_closure_gates_passed": true,
+  "critical_scope": {
+    "region": "x020_040",
+    "x_over_L": [0.2, 0.4],
+    "phase_fraction": [0.25, 0.375],
+    "promotion_band_eV": [11.5, 15.8]
+  },
+  "members": [
+    {
+      "seed": 13507,
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "work_ledger_sha256": "cd5aa65de1405da43176178da007c6b1e3abf3bc758abff6ce7833959591abe3",
+      "field_push_ledger_sha256": "6576575c2315664f49e2834671e4d69e7197da2a0d9a2ff68cf82a5bb6a9ab00",
+      "stdout_sha256": "200612027a129767206bebf2d2008f92c9c6f8a3f1f41f65c6beaa73819f5a5a",
+      "field_push_observations": 54371459,
+      "promotion_band_observations": 1062211,
+      "promotion_band_promotions": 1883,
+      "band_supply_fraction": 0.01953618717496619,
+      "band_promotion_probability": 0.0017727174732703767,
+      "mean_signed_work_eV": 0.0049526235914508195,
+      "mean_positive_work_eV": 0.011925608533368397,
+      "mean_negative_work_eV": 0.006972984941917583,
+      "work_closure_residual_eV": 6.366462912410498e-12,
+      "wall_seconds": 113.28,
+      "peak_resident_set_kib": 80428
+    },
+    {
+      "seed": 24601,
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "work_ledger_sha256": "bd2310093d4756b56295ca68f56ff3a4feff546b991b8ebc7fd61d36fcdb1178",
+      "field_push_ledger_sha256": "1763e851fba7156c9106aa3901ffe953d4f2cc612e26f63a0456dc95fedf8e3e",
+      "stdout_sha256": "047d43b422310d86873dd5a566e87272f267895251e68aad7b7a33fa0aa87ee4",
+      "field_push_observations": 54359740,
+      "promotion_band_observations": 1066738,
+      "promotion_band_promotions": 1869,
+      "band_supply_fraction": 0.019623677375940354,
+      "band_promotion_probability": 0.0017520703302966614,
+      "mean_signed_work_eV": 0.004978176466292464,
+      "mean_positive_work_eV": 0.011913075235365915,
+      "mean_negative_work_eV": 0.006934898769073444,
+      "work_closure_residual_eV": -7.275957614183426e-12,
+      "wall_seconds": 115.5,
+      "peak_resident_set_kib": 80628
+    },
+    {
+      "seed": 35713,
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "work_ledger_sha256": "66653b25284ef8ed721731f9260ad59c8a97a7fe42993626ca7f9766369582a5",
+      "field_push_ledger_sha256": "21e770ed671c486cca963cc41603f1c442670a7bca422d9527efabf2d9e1235c",
+      "stdout_sha256": "e41a0dec62889a1d4888d3216ccf224375b661c6eba64ff2aba957195d15f5f3",
+      "field_push_observations": 54379989,
+      "promotion_band_observations": 1065298,
+      "promotion_band_promotions": 1854,
+      "band_supply_fraction": 0.01958988995014324,
+      "band_promotion_probability": 0.0017403580969831915,
+      "mean_signed_work_eV": 0.004856082713597677,
+      "mean_positive_work_eV": 0.011507698001379983,
+      "mean_negative_work_eV": 0.006651615287782295,
+      "work_closure_residual_eV": -1.2732925824820995e-11,
+      "wall_seconds": 113.96,
+      "peak_resident_set_kib": 80300
+    }
+  ],
+  "ensemble_means": {
+    "band_supply_fraction": 0.019583251500349928,
+    "band_promotion_probability": 0.0017550486335167431,
+    "mean_signed_work_eV": 0.00492896092378032,
+    "mean_positive_work_eV": 0.011782127256704765,
+    "mean_negative_work_eV": 0.006853166332924441
+  },
+  "relative_ranges": {
+    "band_supply_fraction": 0.004467603399394639,
+    "band_promotion_probability": 0.01843788010725604,
+    "mean_signed_work_eV": 0.024770687896049658,
+    "mean_positive_work_eV": 0.035469870837678885,
+    "mean_negative_work_eV": 0.04689360195320842
+  },
+  "verification": {
+    "all_final_checkpoints_match_preregistered_passive_hashes": true,
+    "all_members_exceed_population_floors": true,
+    "maximum_absolute_work_closure_residual_eV": 1.2732925824820995e-11,
+    "maximum_peak_resident_set_kib": 80628,
+    "maximum_simultaneous_processes": 1
+  },
+  "claim_boundary": "The native half of the prospective comparison is complete and repeatable. No cross-code mechanism outcome is permitted until both locked AuroraPIC members complete and all joint gates are evaluated."
+}

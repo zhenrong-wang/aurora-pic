@@ -3455,6 +3455,16 @@ mechanisms: reduced supply into the band, reduced positive work per band
 electron, or reduced conversion across `15.8 eV`. No physics outcome exists
 until every locked member and gate is complete.
 
+The three native production members have now completed serially. Every final
+checkpoint matches its preregistered passive hash, each critical member has
+more than `1.06 million` band observations and `1,850` promotions, and peak
+RSS is at most `80,628 KiB`. Native relative ranges are `0.45%` for band
+supply, `1.84%` for promotion probability, and `3.55%` for mean positive
+work, passing the locked native limits. The
+[`native result`](../benchmarks/ccp/edupic-promotion-band-work-native-result-20260825.json)
+records the exact hashes and quantities. This completes only the native half;
+cross-code interpretation remains forbidden until both AuroraPIC members run.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
