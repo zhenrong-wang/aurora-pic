@@ -208,4 +208,12 @@ if(AURORA_BUILD_TESTS)
   target_compile_options(aurorapic_initialization_tests PRIVATE -Wall -Wextra -Wpedantic -O2)
   target_compile_definitions(aurorapic_initialization_tests PRIVATE AURORA_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME aurorapic_initialization COMMAND aurorapic_initialization_tests)
+
+  add_executable(aurorapic_edupic_operator_tests
+    tests/test_edupic_frozen_operator.cpp)
+  target_link_libraries(aurorapic_edupic_operator_tests PRIVATE aurorapic)
+  target_compile_options(aurorapic_edupic_operator_tests PRIVATE
+    -Wall -Wextra -Wpedantic -O2)
+  add_test(NAME aurorapic_edupic_operator
+    COMMAND aurorapic_edupic_operator_tests)
 endif()
