@@ -1507,12 +1507,13 @@ void validate_spatial_average_1d(const Config& cfg) {
     const auto& eedf = cfg.phase_eedf;
     const auto& flux = cfg.phase_surface_flux;
     if (!eedf.enabled) {
-        if (!eedf.species.empty() || eedf.energy_bins != 0 ||
+        if (eedf.history_enabled || !eedf.species.empty() ||
+            eedf.energy_bins != 0 ||
             eedf.energy_max != 0.0 || eedf.tail_threshold != 0.0 ||
             !eedf.regions.empty()) {
             throw std::runtime_error(
-                "disabled phase_eedf cannot configure species, bins, "
-                "energy maximum, tail threshold, or regions");
+                "disabled phase_eedf cannot configure history, species, "
+                "bins, energy maximum, tail threshold, or regions");
         }
     } else {
         if (!average.enabled || average.phase_bins == 0) {
@@ -1714,7 +1715,8 @@ Config load_config(const std::string& path) {
         "spatial_average_start_step", "spatial_average_end_step",
         "spatial_average_rf_frequency", "spatial_average_rf_cycles",
         "spatial_average_phase_bins", "spatial_average_sampling_order",
-        "phase_eedf", "phase_eedf_species", "phase_eedf_energy_bins",
+        "phase_eedf", "phase_eedf_history", "phase_eedf_species",
+        "phase_eedf_energy_bins",
         "phase_eedf_energy_max", "phase_eedf_tail_threshold",
         "phase_eedf_regions",
         "phase_surface_flux", "phase_surface_flux_reset_on_restart",
@@ -1812,6 +1814,9 @@ Config load_config(const std::string& path) {
             global, cfg.spatial_average.sampling_order);
     cfg.phase_eedf.enabled = parse_bool(
         global, "phase_eedf", cfg.phase_eedf.enabled);
+    cfg.phase_eedf.history_enabled = parse_bool(
+        global, "phase_eedf_history",
+        cfg.phase_eedf.history_enabled);
     cfg.phase_eedf.species = as<std::string>(
         global, "phase_eedf_species", cfg.phase_eedf.species);
     cfg.phase_eedf.energy_bins = as<std::size_t>(

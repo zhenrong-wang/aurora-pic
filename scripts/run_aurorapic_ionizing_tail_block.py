@@ -68,6 +68,9 @@ def build_deck(base: str, output: Path, checkpoint: Path,
     result = insert_global(
         result, "phase_eedf_tail_threshold",
         str(diagnostic.get("tail_threshold_eV", 0.0)))
+    result = insert_global(
+        result, "phase_eedf_history",
+        str(bool(diagnostic.get("particle_history", False))).lower())
     surface = diagnostic.get("surface_flux")
     if surface is not None:
         additions = {
@@ -210,6 +213,8 @@ def analyze_output(output: Path, rule: dict[str, object],
         metadata.get("phase_bins") == int(diagnostic["phase_bins"]) and
         metadata.get("phase_eedf_tail_threshold") == float(
             diagnostic.get("tail_threshold_eV", 0.0)) and
+        metadata.get("phase_eedf_history_enabled") is bool(
+            diagnostic.get("particle_history", False)) and
         set(metadata.get("phase_bin_samples", [])) == {expected_per_phase} and
         metadata.get("complete") is True)
 
@@ -255,7 +260,15 @@ def analyze_output(output: Path, rule: dict[str, object],
             "tail_represented_observations", "tail_positive_x_fraction",
             "tail_negative_x_fraction",
             "tail_directional_population_imbalance", "tail_mean_velocity_x",
-            "tail_longitudinal_energy_fraction"))
+            "tail_longitudinal_energy_fraction", "tail_mean_energy",
+            "tail_mean_age_steps", "tail_mean_energetic_steps",
+            "tail_mean_energetic_duty_fraction",
+            "tail_mean_consecutive_energetic_steps", "tail_mean_entries",
+            "tail_mean_elastic_collisions",
+            "tail_mean_excitation_collisions",
+            "tail_mean_ionization_collisions",
+            "tail_mean_charge_exchange_collisions", "tail_mean_bgk_collisions",
+            "tail_born_during_window_fraction"))
     region_names = sorted({row["region"] for row in moments})
     expected_names = sorted(str(region["name"]) for region in regions)
     shape_ok = region_names == expected_names

@@ -23,6 +23,7 @@ def main() -> None:
         "spatial_average_phase_bins = 200",
         "phase_eedf_energy_bins = 320", "phase_eedf_energy_max = 80.0",
         "phase_eedf_tail_threshold = 0.0",
+        "phase_eedf_history = false",
         "phase_eedf_regions = x000_010:0.0:0.0025",
         "runtime_backend = serial", "runtime_threads = 1",
         "restart_path = checkpoint.apc",
@@ -31,6 +32,7 @@ def main() -> None:
         assert text in deck, text
     assert deck.count("phase_eedf_regions =") == 1
     assert deck.count("phase_eedf_tail_threshold =") == 1
+    assert deck.count("phase_eedf_history =") == 1
 
     surface_rule = json.loads(Path(
         "benchmarks/ccp/edupic-argon-surface-flux-rule-20260822.json"

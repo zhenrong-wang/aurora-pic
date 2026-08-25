@@ -75,7 +75,32 @@ struct PhaseEedfAccumulator1D {
     double tail_weighted_velocity_x_sum{0.0};
     double tail_weighted_velocity_x_squared_sum{0.0};
     double tail_weighted_transverse_velocity_squared_sum{0.0};
+    double tail_weighted_age_steps_sum{0.0};
+    double tail_weighted_energetic_steps_sum{0.0};
+    double tail_weighted_energetic_duty_fraction_sum{0.0};
+    double tail_weighted_consecutive_energetic_steps_sum{0.0};
+    double tail_weighted_entries_sum{0.0};
+    double tail_weighted_elastic_collisions_sum{0.0};
+    double tail_weighted_excitation_collisions_sum{0.0};
+    double tail_weighted_ionization_collisions_sum{0.0};
+    double tail_weighted_charge_exchange_collisions_sum{0.0};
+    double tail_weighted_bgk_collisions_sum{0.0};
+    double tail_born_during_window_represented_observations{0.0};
     std::vector<double> histogram{};
+};
+
+struct ParticleHistory1D {
+    std::uint64_t age_steps{0};
+    std::uint64_t energetic_steps{0};
+    std::uint64_t consecutive_energetic_steps{0};
+    std::uint64_t tail_entries{0};
+    std::uint64_t elastic_collisions{0};
+    std::uint64_t excitation_collisions{0};
+    std::uint64_t ionization_collisions{0};
+    std::uint64_t charge_exchange_collisions{0};
+    std::uint64_t bgk_collisions{0};
+    bool born_during_window{false};
+    bool energetic_previous_step{false};
 };
 
 struct PhaseSurfaceFluxAccumulator1D {
@@ -151,6 +176,10 @@ public:
     phase_eedf_accumulators() const {
         return phase_eedf_accumulators_;
     }
+    const std::vector<ParticleHistory1D>&
+    phase_eedf_particle_histories() const {
+        return phase_eedf_particle_histories_;
+    }
     const auto& phase_surface_flux_accumulators() const {
         return phase_surface_flux_accumulators_;
     }
@@ -166,6 +195,7 @@ private:
         std::unique_ptr<NullCollisionModel> model{};
         std::vector<std::optional<IonizationChannelRuntime>>
             ionization_channels{};
+        std::vector<CollisionProcessKind> channel_processes{};
         CollisionWorkspace collision_workspace{};
         std::vector<double> tracked_energy_scratch{};
     };
@@ -181,6 +211,12 @@ private:
         double field_time) const;
     void accumulate_spatial_average(std::size_t sample_step);
     void accumulate_phase_eedf(std::size_t phase);
+    bool phase_eedf_history_active() const;
+    void update_phase_eedf_histories();
+    void add_phase_eedf_collision_history(
+        std::size_t particle_id,
+        CollisionProcessKind process,
+        std::uint64_t count);
     std::size_t phase_surface_flux_phase(std::size_t sample_step) const;
     void accumulate_phase_surface_crossing(
         std::size_t chunk, std::size_t surface, std::size_t direction,
@@ -254,6 +290,7 @@ private:
     std::size_t phase_eedf_species_id_{0};
     std::vector<std::vector<PhaseEedfAccumulator1D>>
         phase_eedf_accumulators_{};
+    std::vector<ParticleHistory1D> phase_eedf_particle_histories_{};
     std::size_t phase_surface_flux_species_id_{0};
     std::vector<std::vector<std::vector<PhaseSurfaceFluxAccumulator1D>>>
         phase_surface_flux_accumulators_{};

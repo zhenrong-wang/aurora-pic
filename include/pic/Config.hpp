@@ -243,6 +243,7 @@ struct PhaseEedfRegion1DConfig {
 
 struct PhaseEedf1DConfig {
     bool enabled{false};
+    bool history_enabled{false};
     std::string species{};
     std::size_t energy_bins{0};
     double energy_max{0.0};

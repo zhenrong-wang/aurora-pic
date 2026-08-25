@@ -39,6 +39,7 @@ constexpr const char* kCheckpointMagicV15 = "AuroraPIC-checkpoint-v15";
 constexpr const char* kCheckpointMagicV16 = "AuroraPIC-checkpoint-v16";
 constexpr const char* kCheckpointMagicV17 = "AuroraPIC-checkpoint-v17";
 constexpr const char* kCheckpointMagicV18 = "AuroraPIC-checkpoint-v18";
+constexpr const char* kCheckpointMagicV19 = "AuroraPIC-checkpoint-v19";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -524,12 +525,16 @@ Simulation::Simulation(Config cfg)
                 species_[runtime.species_id].mass());
         runtime.ionization_channels.resize(
             collision.channels.size());
+        runtime.channel_processes.reserve(
+            collision.channels.size());
         const auto& target =
             species_[runtime.species_id].config();
         for (std::size_t channel = 0;
              channel < collision.channels.size(); ++channel) {
             const auto& channel_config =
                 collision.channels[channel];
+            runtime.channel_processes.push_back(
+                channel_config.process);
             if (channel_config.process ==
                 CollisionProcessKind::Attachment) {
                 throw std::invalid_argument(
@@ -939,6 +944,10 @@ void Simulation::initialize() {
                 },
                 cfg_.initial_state_signature);
     }
+    if (cfg_.phase_eedf.history_enabled) {
+        phase_eedf_particle_histories_.assign(
+            species_[phase_eedf_species_id_].particles().size(), {});
+    }
     deposit_and_solve(time_);
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
@@ -1001,7 +1010,10 @@ void Simulation::apply_collisions() {
                 cfg_.collisions.neutral_temperature_velocity);
             const double charge_to_mass =
                 species.charge() / species.mass();
-            for (auto& particle : species.particles()) {
+            auto& particles = species.particles();
+            for (std::size_t particle_id = 0;
+                 particle_id < particles.size(); ++particle_id) {
+                auto& particle = particles[particle_id];
                 if (!particle.alive ||
                     unit(rng_) >= probability) {
                     continue;
@@ -1023,6 +1035,12 @@ void Simulation::apply_collisions() {
                 ++collision_totals_.channel_collisions[0];
                 ++collision_interval_.candidates;
                 ++collision_interval_.channel_collisions[0];
+                if (phase_eedf_history_active() &&
+                    species_id == phase_eedf_species_id_) {
+                    auto& history =
+                        phase_eedf_particle_histories_[particle_id];
+                    ++history.bgk_collisions;
+                }
                 deposit_spatial_collision_events(
                     particle.x, 0, species.weight());
                 const double energy_after = 0.5 * species.mass() *
@@ -1095,6 +1113,13 @@ void Simulation::apply_collisions() {
             for (std::size_t channel = 0;
                  channel < statistics.channel_collisions.size(); ++channel) {
                 if (statistics.channel_collisions[channel] != 0) {
+                    if (runtime.species_id == phase_eedf_species_id_ &&
+                        channel < runtime.channel_processes.size()) {
+                        add_phase_eedf_collision_history(
+                            particle_id,
+                            runtime.channel_processes[channel],
+                            statistics.channel_collisions[channel]);
+                    }
                     deposit_spatial_collision_events(
                         part.x, runtime.diagnostic_offset + channel,
                         sp.weight() * static_cast<double>(
@@ -1208,6 +1233,10 @@ void Simulation::apply_collisions() {
         }
         if (slot == particles.size()) {
             particles.emplace_back();
+            if (cfg_.phase_eedf.history_enabled &&
+                species_id == phase_eedf_species_id_) {
+                phase_eedf_particle_histories_.emplace_back();
+            }
         }
         auto& product = particles[slot++];
         product = {};
@@ -1216,6 +1245,18 @@ void Simulation::apply_collisions() {
         product.velocity_y = velocity.y;
         product.velocity_z = velocity.z;
         product.alive = true;
+        if (cfg_.phase_eedf.history_enabled &&
+            species_id == phase_eedf_species_id_) {
+            if (slot - 1 >= phase_eedf_particle_histories_.size()) {
+                throw std::logic_error(
+                    "phase EEDF product history is misaligned");
+            }
+            auto& history =
+                phase_eedf_particle_histories_[slot - 1];
+            history = {};
+            history.born_during_window =
+                phase_eedf_history_active();
+        }
         store_collision_velocity(
             product, velocity,
             product_species.charge() /
@@ -1421,6 +1462,7 @@ void Simulation::step() {
                 "became non-finite");
         }
     }
+    update_phase_eedf_histories();
     begin_spatial_collision_step();
     if (cfg_.spatial_average.sampling_order ==
         SpatialAverageSamplingOrder1D::PreCollision) {
@@ -1616,7 +1658,10 @@ void Simulation::accumulate_phase_eedf(std::size_t phase) {
     const double energy_scale =
         cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
     const double weight = species.weight();
-    for (const auto& particle : species.particles()) {
+    const auto& particles = species.particles();
+    for (std::size_t particle_id = 0;
+         particle_id < particles.size(); ++particle_id) {
+        const auto& particle = particles[particle_id];
         if (!particle.alive) continue;
         const double velocity_squared =
             particle.v * particle.v +
@@ -1665,6 +1710,50 @@ void Simulation::accumulate_phase_eedf(std::size_t phase) {
                 accumulator.tail_weighted_transverse_velocity_squared_sum +=
                     weight * (particle.velocity_y * particle.velocity_y +
                               particle.velocity_z * particle.velocity_z);
+                if (cfg_.phase_eedf.history_enabled) {
+                    if (particle_id >=
+                        phase_eedf_particle_histories_.size()) {
+                        throw std::logic_error(
+                            "phase EEDF particle history is misaligned");
+                    }
+                    const auto& history =
+                        phase_eedf_particle_histories_[particle_id];
+                    accumulator.tail_weighted_age_steps_sum +=
+                        weight * static_cast<double>(history.age_steps);
+                    accumulator.tail_weighted_energetic_steps_sum +=
+                        weight * static_cast<double>(history.energetic_steps);
+                    accumulator.tail_weighted_energetic_duty_fraction_sum +=
+                        weight * (history.age_steps > 0
+                            ? static_cast<double>(history.energetic_steps) /
+                                  static_cast<double>(history.age_steps)
+                            : 0.0);
+                    accumulator
+                        .tail_weighted_consecutive_energetic_steps_sum +=
+                        weight * static_cast<double>(
+                            history.consecutive_energetic_steps);
+                    accumulator.tail_weighted_entries_sum +=
+                        weight * static_cast<double>(history.tail_entries);
+                    accumulator.tail_weighted_elastic_collisions_sum +=
+                        weight * static_cast<double>(
+                            history.elastic_collisions);
+                    accumulator.tail_weighted_excitation_collisions_sum +=
+                        weight * static_cast<double>(
+                            history.excitation_collisions);
+                    accumulator.tail_weighted_ionization_collisions_sum +=
+                        weight * static_cast<double>(
+                            history.ionization_collisions);
+                    accumulator
+                        .tail_weighted_charge_exchange_collisions_sum +=
+                        weight * static_cast<double>(
+                            history.charge_exchange_collisions);
+                    accumulator.tail_weighted_bgk_collisions_sum +=
+                        weight * static_cast<double>(history.bgk_collisions);
+                    if (history.born_during_window) {
+                        accumulator
+                            .tail_born_during_window_represented_observations +=
+                            weight;
+                    }
+                }
             }
             if (energy >= cfg_.phase_eedf.energy_max) {
                 ++accumulator.overflow_macro_observations;
@@ -1678,6 +1767,81 @@ void Simulation::accumulate_phase_eedf(std::size_t phase) {
                 accumulator.histogram[bin] += weight;
             }
         }
+    }
+}
+
+bool Simulation::phase_eedf_history_active() const {
+    const std::size_t sample_step = step_ + 1;
+    return cfg_.phase_eedf.history_enabled &&
+        sample_step >= cfg_.spatial_average.start_step &&
+        sample_step <= cfg_.spatial_average.end_step;
+}
+
+void Simulation::update_phase_eedf_histories() {
+    if (!phase_eedf_history_active() ||
+        !species_due(phase_eedf_species_id_)) return;
+    const auto& species = species_[phase_eedf_species_id_];
+    const auto& particles = species.particles();
+    if (phase_eedf_particle_histories_.size() != particles.size()) {
+        throw std::logic_error(
+            "phase EEDF particle history is misaligned");
+    }
+    const double energy_scale =
+        cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
+    for (std::size_t particle_id = 0;
+         particle_id < particles.size(); ++particle_id) {
+        const auto& particle = particles[particle_id];
+        if (!particle.alive) continue;
+        auto& history = phase_eedf_particle_histories_[particle_id];
+        ++history.age_steps;
+        const double velocity_squared =
+            particle.v * particle.v +
+            (cfg_.velocity_dimensions == 3
+                 ? particle.velocity_y * particle.velocity_y +
+                       particle.velocity_z * particle.velocity_z
+                 : 0.0);
+        const double energy =
+            0.5 * species.mass() * velocity_squared / energy_scale;
+        const bool energetic =
+            energy >= cfg_.phase_eedf.tail_threshold;
+        if (energetic) {
+            ++history.energetic_steps;
+            ++history.consecutive_energetic_steps;
+            if (!history.energetic_previous_step) {
+                ++history.tail_entries;
+            }
+        } else {
+            history.consecutive_energetic_steps = 0;
+        }
+        history.energetic_previous_step = energetic;
+    }
+}
+
+void Simulation::add_phase_eedf_collision_history(
+    std::size_t particle_id,
+    CollisionProcessKind process,
+    std::uint64_t count) {
+    if (!phase_eedf_history_active() || count == 0) return;
+    if (particle_id >= phase_eedf_particle_histories_.size()) {
+        throw std::logic_error(
+            "phase EEDF collision history is misaligned");
+    }
+    auto& history = phase_eedf_particle_histories_[particle_id];
+    switch (process) {
+        case CollisionProcessKind::Elastic:
+            history.elastic_collisions += count;
+            break;
+        case CollisionProcessKind::Excitation:
+            history.excitation_collisions += count;
+            break;
+        case CollisionProcessKind::Ionization:
+            history.ionization_collisions += count;
+            break;
+        case CollisionProcessKind::ChargeExchange:
+            history.charge_exchange_collisions += count;
+            break;
+        case CollisionProcessKind::Attachment:
+            break;
     }
 }
 
@@ -2334,7 +2498,17 @@ void Simulation::write_spatial_average() const {
                    "temperature_z,tail_threshold,tail_represented_observations,"
                    "tail_positive_x_fraction,tail_negative_x_fraction,"
                    "tail_directional_population_imbalance,tail_mean_velocity_x,"
-                   "tail_longitudinal_energy_fraction\n"
+                   "tail_longitudinal_energy_fraction,tail_mean_energy,"
+                   "history_enabled,tail_mean_age_steps,"
+                   "tail_mean_energetic_steps,"
+                   "tail_mean_energetic_duty_fraction,"
+                   "tail_mean_consecutive_energetic_steps,tail_mean_entries,"
+                   "tail_mean_elastic_collisions,"
+                   "tail_mean_excitation_collisions,"
+                   "tail_mean_ionization_collisions,"
+                   "tail_mean_charge_exchange_collisions,"
+                   "tail_mean_bgk_collisions,"
+                   "tail_born_during_window_fraction\n"
                 << std::setprecision(17);
         const double bin_width = cfg_.phase_eedf.energy_max /
             static_cast<double>(cfg_.phase_eedf.energy_bins);
@@ -2427,7 +2601,51 @@ void Simulation::write_spatial_average() const {
                                   tail_count : 0.0) << ','
                     << (tail_velocity_squared > 0.0
                             ? accumulator.tail_weighted_velocity_x_squared_sum /
-                                  tail_velocity_squared : 0.0)
+                                  tail_velocity_squared : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? 0.5 * target.mass() * tail_velocity_squared /
+                                  tail_count / energy_scale : 0.0) << ','
+                    << (cfg_.phase_eedf.history_enabled ? 1 : 0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_weighted_age_steps_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_weighted_energetic_steps_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_weighted_energetic_duty_fraction_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_weighted_consecutive_energetic_steps_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_weighted_entries_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_weighted_elastic_collisions_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_weighted_excitation_collisions_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_weighted_ionization_collisions_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_weighted_charge_exchange_collisions_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator.tail_weighted_bgk_collisions_sum /
+                                  tail_count : 0.0) << ','
+                    << (tail_count > 0.0
+                            ? accumulator
+                                  .tail_born_during_window_represented_observations /
+                                  tail_count : 0.0)
                     << '\n';
             }
         }
@@ -2580,6 +2798,9 @@ void Simulation::write_spatial_average() const {
     metadata << "],\n"
              << "  \"phase_eedf_enabled\": "
              << (cfg_.phase_eedf.enabled ? "true" : "false") << ",\n"
+             << "  \"phase_eedf_history_enabled\": "
+             << (cfg_.phase_eedf.history_enabled ? "true" : "false")
+             << ",\n"
              << "  \"phase_eedf_species\": "
              << json_string(cfg_.phase_eedf.species) << ",\n"
              << "  \"phase_eedf_energy_bins\": "
@@ -2634,7 +2855,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV18 << '\n';
+    out << kCheckpointMagicV19 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -2853,6 +3074,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         }
     }
     out << "phase_eedf " << (cfg_.phase_eedf.enabled ? 1 : 0) << ' '
+        << (cfg_.phase_eedf.history_enabled ? 1 : 0) << ' '
         << (cfg_.phase_eedf.species.empty() ? "-" : cfg_.phase_eedf.species)
         << ' ' << cfg_.phase_eedf.energy_bins << ' '
         << cfg_.phase_eedf.energy_max << ' '
@@ -2888,7 +3110,18 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
                 << value.tail_negative_x_represented_observations << ' '
                 << value.tail_weighted_velocity_x_sum << ' '
                 << value.tail_weighted_velocity_x_squared_sum << ' '
-                << value.tail_weighted_transverse_velocity_squared_sum;
+                << value.tail_weighted_transverse_velocity_squared_sum << ' '
+                << value.tail_weighted_age_steps_sum << ' '
+                << value.tail_weighted_energetic_steps_sum << ' '
+                << value.tail_weighted_energetic_duty_fraction_sum << ' '
+                << value.tail_weighted_consecutive_energetic_steps_sum << ' '
+                << value.tail_weighted_entries_sum << ' '
+                << value.tail_weighted_elastic_collisions_sum << ' '
+                << value.tail_weighted_excitation_collisions_sum << ' '
+                << value.tail_weighted_ionization_collisions_sum << ' '
+                << value.tail_weighted_charge_exchange_collisions_sum << ' '
+                << value.tail_weighted_bgk_collisions_sum << ' '
+                << value.tail_born_during_window_represented_observations;
             for (const double count : value.histogram) out << ' ' << count;
             out << "\n";
         }
@@ -2942,6 +3175,24 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
                 << (p.alive ? 1 : 0) << "\n";
         }
     }
+    out << "phase_eedf_particle_history "
+        << (cfg_.phase_eedf.history_enabled ? 1 : 0) << ' '
+        << phase_eedf_species_id_ << ' '
+        << phase_eedf_particle_histories_.size() << "\n";
+    for (std::size_t particle_id = 0;
+         particle_id < phase_eedf_particle_histories_.size(); ++particle_id) {
+        const auto& history = phase_eedf_particle_histories_[particle_id];
+        out << "phase_eedf_particle_history_entry " << particle_id << ' '
+            << history.age_steps << ' ' << history.energetic_steps << ' '
+            << history.consecutive_energetic_steps << ' '
+            << history.tail_entries << ' ' << history.elastic_collisions << ' '
+            << history.excitation_collisions << ' '
+            << history.ionization_collisions << ' '
+            << history.charge_exchange_collisions << ' '
+            << history.bgk_collisions << ' '
+            << (history.born_during_window ? 1 : 0) << ' '
+            << (history.energetic_previous_step ? 1 : 0) << "\n";
+    }
     require_stream(out, "failed while writing checkpoint: " + path.string());
 }
 
@@ -2962,7 +3213,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v18 = magic == kCheckpointMagicV18;
+    const bool checkpoint_v19 = magic == kCheckpointMagicV19;
+    const bool checkpoint_v18 =
+        magic == kCheckpointMagicV18 || checkpoint_v19;
     const bool checkpoint_v17 =
         magic == kCheckpointMagicV17 || checkpoint_v18;
     const bool checkpoint_v16 =
@@ -3876,14 +4129,16 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         if (checkpoint_v12 || checkpoint_v13) {
             int stored_eedf_enabled = 0;
+            int stored_eedf_history_enabled = 0;
             std::string stored_eedf_species;
             std::size_t stored_eedf_bins = 0;
             double stored_eedf_max = 0.0;
             double stored_eedf_tail_threshold = 0.0;
             std::size_t stored_eedf_phases = 0;
             std::size_t stored_eedf_regions = 0;
-            in >> stored_eedf_enabled >> stored_eedf_species >>
-                stored_eedf_bins >> stored_eedf_max;
+            in >> stored_eedf_enabled;
+            if (checkpoint_v19) in >> stored_eedf_history_enabled;
+            in >> stored_eedf_species >> stored_eedf_bins >> stored_eedf_max;
             if (checkpoint_v18) in >> stored_eedf_tail_threshold;
             in >> stored_eedf_phases >> stored_eedf_regions;
             const bool enabled_shape = stored_eedf_enabled == 1;
@@ -3896,6 +4151,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                       : stored_eedf_tail_threshold == 0.0));
             const bool shape_valid =
                 (stored_eedf_enabled == 0 || stored_eedf_enabled == 1) &&
+                (stored_eedf_history_enabled == 0 ||
+                 stored_eedf_history_enabled == 1) &&
+                (stored_eedf_history_enabled == 0 || enabled_shape) &&
                 std::isfinite(stored_eedf_max) && stored_eedf_max >= 0.0 &&
                 tail_contract_valid &&
                 stored_eedf_phases ==
@@ -3905,6 +4163,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                   stored_eedf_regions > 0));
             const bool contract_matches =
                 stored_eedf_enabled == (cfg_.phase_eedf.enabled ? 1 : 0) &&
+                stored_eedf_history_enabled ==
+                    (cfg_.phase_eedf.history_enabled ? 1 : 0) &&
                 stored_eedf_species ==
                     (cfg_.phase_eedf.species.empty()
                          ? "-" : cfg_.phase_eedf.species) &&
@@ -3916,7 +4176,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                 stored_eedf_regions == cfg_.phase_eedf.regions.size();
             if (key != "phase_eedf" || !shape_valid ||
                 (!reset && (!contract_matches ||
-                            (stored_eedf_enabled == 1 && !checkpoint_v18)))) {
+                            (stored_eedf_enabled == 1 && !checkpoint_v18) ||
+                            (stored_eedf_history_enabled == 1 &&
+                             !checkpoint_v19)))) {
                 throw std::runtime_error(
                     "checkpoint phase EEDF contract is invalid");
             }
@@ -3972,6 +4234,22 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                             value.tail_weighted_velocity_x_squared_sum >>
                             value.tail_weighted_transverse_velocity_squared_sum;
                     }
+                    if (checkpoint_v19) {
+                        in >> value.tail_weighted_age_steps_sum >>
+                            value.tail_weighted_energetic_steps_sum >>
+                            value.tail_weighted_energetic_duty_fraction_sum >>
+                            value
+                                .tail_weighted_consecutive_energetic_steps_sum >>
+                            value.tail_weighted_entries_sum >>
+                            value.tail_weighted_elastic_collisions_sum >>
+                            value.tail_weighted_excitation_collisions_sum >>
+                            value.tail_weighted_ionization_collisions_sum >>
+                            value
+                                .tail_weighted_charge_exchange_collisions_sum >>
+                            value.tail_weighted_bgk_collisions_sum >>
+                            value
+                                .tail_born_during_window_represented_observations;
+                    }
                     value.histogram.resize(stored_eedf_bins);
                     for (auto& count : value.histogram) in >> count;
                     const bool finite = std::isfinite(
@@ -3995,6 +4273,25 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                             value.tail_weighted_velocity_x_squared_sum) &&
                         std::isfinite(
                             value.tail_weighted_transverse_velocity_squared_sum) &&
+                        std::isfinite(value.tail_weighted_age_steps_sum) &&
+                        std::isfinite(value.tail_weighted_energetic_steps_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_energetic_duty_fraction_sum) &&
+                        std::isfinite(value
+                            .tail_weighted_consecutive_energetic_steps_sum) &&
+                        std::isfinite(value.tail_weighted_entries_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_elastic_collisions_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_excitation_collisions_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_ionization_collisions_sum) &&
+                        std::isfinite(value
+                            .tail_weighted_charge_exchange_collisions_sum) &&
+                        std::isfinite(
+                            value.tail_weighted_bgk_collisions_sum) &&
+                        std::isfinite(value
+                            .tail_born_during_window_represented_observations) &&
                         std::all_of(value.histogram.begin(),
                             value.histogram.end(), [](double count) {
                                 return std::isfinite(count) && count >= 0.0;
@@ -4021,7 +4318,28 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                                 (1.0 + 1e-12) ||
                         value.tail_weighted_velocity_x_squared_sum < 0.0 ||
                         value.tail_weighted_transverse_velocity_squared_sum <
-                            0.0) {
+                            0.0 ||
+                        value.tail_weighted_age_steps_sum < 0.0 ||
+                        value.tail_weighted_energetic_steps_sum < 0.0 ||
+                        value.tail_weighted_energetic_duty_fraction_sum < 0.0 ||
+                        value.tail_weighted_energetic_duty_fraction_sum >
+                            value.tail_represented_observations *
+                                (1.0 + 1e-12) ||
+                        value.tail_weighted_consecutive_energetic_steps_sum <
+                            0.0 ||
+                        value.tail_weighted_entries_sum < 0.0 ||
+                        value.tail_weighted_elastic_collisions_sum < 0.0 ||
+                        value.tail_weighted_excitation_collisions_sum < 0.0 ||
+                        value.tail_weighted_ionization_collisions_sum < 0.0 ||
+                        value.tail_weighted_charge_exchange_collisions_sum <
+                            0.0 ||
+                        value.tail_weighted_bgk_collisions_sum < 0.0 ||
+                        value
+                                .tail_born_during_window_represented_observations <
+                            0.0 ||
+                        value
+                                .tail_born_during_window_represented_observations >
+                            value.tail_represented_observations) {
                         throw std::runtime_error(
                             "checkpoint phase EEDF accumulator is invalid");
                     }
@@ -4303,6 +4621,80 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             }
             p.alive = alive != 0;
         }
+    }
+    if (checkpoint_v19) {
+        int stored_history_enabled = 0;
+        std::size_t stored_history_species = 0;
+        std::size_t stored_history_count = 0;
+        in >> key >> stored_history_enabled >> stored_history_species >>
+            stored_history_count;
+        const bool enabled = stored_history_enabled == 1;
+        const bool header_valid =
+            key == "phase_eedf_particle_history" &&
+            (stored_history_enabled == 0 || stored_history_enabled == 1) &&
+            (!enabled ||
+             (stored_history_species < species_.size() &&
+              stored_history_count == species_[stored_history_species]
+                  .particles().size() &&
+              (cfg_.spatial_average.reset_on_restart ||
+               stored_history_species == phase_eedf_species_id_))) &&
+            (enabled || stored_history_count == 0) &&
+            (cfg_.spatial_average.reset_on_restart ||
+             enabled == cfg_.phase_eedf.history_enabled);
+        if (!header_valid) {
+            throw std::runtime_error(
+                "checkpoint phase EEDF particle-history header is invalid");
+        }
+        std::vector<ParticleHistory1D> stored_histories(
+            stored_history_count);
+        for (std::size_t particle_id = 0;
+             particle_id < stored_history_count; ++particle_id) {
+            std::size_t stored_particle_id = 0;
+            int born = 0;
+            int energetic_previous = 0;
+            auto& history = stored_histories[particle_id];
+            in >> key >> stored_particle_id >> history.age_steps >>
+                history.energetic_steps >>
+                history.consecutive_energetic_steps >>
+                history.tail_entries >> history.elastic_collisions >>
+                history.excitation_collisions >>
+                history.ionization_collisions >>
+                history.charge_exchange_collisions >>
+                history.bgk_collisions >> born >> energetic_previous;
+            const bool valid =
+                key == "phase_eedf_particle_history_entry" &&
+                stored_particle_id == particle_id &&
+                (born == 0 || born == 1) &&
+                (energetic_previous == 0 || energetic_previous == 1) &&
+                history.energetic_steps <= history.age_steps &&
+                history.consecutive_energetic_steps <= history.age_steps &&
+                history.tail_entries <= history.energetic_steps;
+            const bool state_consistent =
+                (energetic_previous == 1) ==
+                    (history.consecutive_energetic_steps > 0);
+            if (!valid || !state_consistent) {
+                throw std::runtime_error(
+                    "checkpoint phase EEDF particle history is invalid");
+            }
+            history.born_during_window = born == 1;
+            history.energetic_previous_step = energetic_previous == 1;
+        }
+        if (cfg_.phase_eedf.history_enabled) {
+            if (cfg_.spatial_average.reset_on_restart) {
+                phase_eedf_particle_histories_.assign(
+                    species_[phase_eedf_species_id_].particles().size(), {});
+            } else {
+                phase_eedf_particle_histories_ =
+                    std::move(stored_histories);
+            }
+        }
+    } else if (cfg_.phase_eedf.history_enabled) {
+        if (!cfg_.spatial_average.reset_on_restart) {
+            throw std::runtime_error(
+                "legacy checkpoint cannot restore phase EEDF particle history");
+        }
+        phase_eedf_particle_histories_.assign(
+            species_[phase_eedf_species_id_].particles().size(), {});
     }
     require_stream(in, "failed while reading checkpoint: " + path.string());
     deposit_and_solve(time_);

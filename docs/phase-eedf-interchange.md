@@ -72,3 +72,20 @@ These extra native columns are diagnostic evidence, not part of interchange
 version 1. A cross-code claim using them must lock the velocity sampling time,
 velocity-coordinate convention, and energetic-tail threshold in its
 prospective rule.
+
+Set `phase_eedf_history = true` to add passive, per-particle history for the
+selected EEDF species. History begins at `spatial_average_start_step` and is
+updated every species timestep through `spatial_average_end_step`, independent
+of the histogram sampling interval. Tail samples then report particle age,
+total and consecutive steps above the configured tail threshold, energetic
+duty fraction, threshold-entry count, collision exposure by process class,
+and the fraction born during the measurement window. Particles already present
+at the start are left-censored; the born-during-window fraction makes that
+limitation explicit.
+
+History counters are aligned with reusable particle slots, reset when a slot
+is reused by an ionization product, and preserved by checkpoint version 19.
+Restarting an older checkpoint with history enabled requires
+`spatial_average_reset_on_restart = true`. The diagnostic changes neither
+particle state nor the random stream, but it does add memory proportional to
+the selected species' particle-storage size.

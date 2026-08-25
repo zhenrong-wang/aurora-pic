@@ -3970,8 +3970,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v18\n") == 0,
-                "1D wall-impact checkpoint did not use v18");
+                    "AuroraPIC-checkpoint-v19\n") == 0,
+                "1D wall-impact checkpoint did not use v19");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4354,6 +4354,7 @@ int main() {
             cfg.spatial_average.sampling_order =
                 pic::SpatialAverageSamplingOrder1D::PreCollision;
             cfg.phase_eedf.enabled = true;
+            cfg.phase_eedf.history_enabled = true;
             cfg.phase_eedf.species = "electrons";
             cfg.phase_eedf.energy_bins = 10;
             cfg.phase_eedf.energy_max = 10.0;
@@ -4545,6 +4546,15 @@ int main() {
                         expected_eedf.tail_weighted_velocity_x_squared_sum,
                         1e-12,
                         "1D restart lost phase EEDF tail anisotropy");
+                    require_near(
+                        actual_eedf.tail_weighted_age_steps_sum,
+                        expected_eedf.tail_weighted_age_steps_sum, 1e-12,
+                        "1D restart lost phase EEDF tail age history");
+                    require_near(
+                        actual_eedf.tail_weighted_elastic_collisions_sum,
+                        expected_eedf.tail_weighted_elastic_collisions_sum,
+                        1e-12,
+                        "1D restart lost phase EEDF collision history");
                     const double histogram_total = std::accumulate(
                         expected_eedf.histogram.begin(),
                         expected_eedf.histogram.end(), 0.0);
@@ -4555,9 +4565,41 @@ int main() {
                         "1D phase EEDF histogram does not close");
                 }
             }
+            const auto& histories =
+                continuous.phase_eedf_particle_histories();
+            const auto& restarted_histories =
+                restarted.phase_eedf_particle_histories();
+            require(histories.size() == restarted_histories.size() &&
+                    !histories.empty(),
+                    "1D phase EEDF particle history has the wrong shape");
+            bool observed_age = false;
+            bool observed_collision = false;
+            for (std::size_t particle = 0;
+                 particle < histories.size(); ++particle) {
+                const auto& expected = histories[particle];
+                const auto& actual = restarted_histories[particle];
+                require(
+                    actual.age_steps == expected.age_steps &&
+                    actual.energetic_steps == expected.energetic_steps &&
+                    actual.consecutive_energetic_steps ==
+                        expected.consecutive_energetic_steps &&
+                    actual.tail_entries == expected.tail_entries &&
+                    actual.elastic_collisions ==
+                        expected.elastic_collisions &&
+                    actual.born_during_window ==
+                        expected.born_during_window &&
+                    actual.energetic_previous_step ==
+                        expected.energetic_previous_step,
+                    "1D restart lost per-particle EEDF history");
+                observed_age = observed_age || expected.age_steps > 0;
+                observed_collision = observed_collision ||
+                    expected.elastic_collisions > 0;
+            }
+            require(observed_age && observed_collision,
+                    "1D phase EEDF particle history was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v18\n") == 0,
+                    "AuroraPIC-checkpoint-v19\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4610,13 +4652,49 @@ int main() {
                         std::string::npos &&
                     eedf_moments_csv.find(
                     "tail_longitudinal_energy_fraction") !=
+                        std::string::npos &&
+                    eedf_moments_csv.find(
+                    "tail_mean_consecutive_energetic_steps") !=
+                        std::string::npos &&
+                    eedf_moments_csv.find(
+                    "tail_mean_elastic_collisions") !=
                         std::string::npos,
-                "1D phase EEDF CSV lost velocity-space tail moments");
+                "1D phase EEDF CSV lost velocity-space history moments");
             require(
                 spatial_metadata.find(
                     "\"sampling_order\": \"pre_collision\"") !=
-                    std::string::npos,
-                "1D spatial metadata lost its sampling order");
+                    std::string::npos &&
+                    spatial_metadata.find(
+                    "\"phase_eedf_history_enabled\": true") !=
+                        std::string::npos,
+                "1D spatial metadata lost its sampling or history contract");
+            auto delayed_history = cfg;
+            delayed_history.steps = 4;
+            delayed_history.output_interval = 4;
+            delayed_history.output_dir =
+                "test_output_phase_eedf_delayed_history";
+            delayed_history.boundary = pic::Boundary::Periodic;
+            delayed_history.collisions = {};
+            delayed_history.spatial_average.start_step = 3;
+            delayed_history.spatial_average.end_step = 4;
+            delayed_history.spatial_average.rf_frequency = 5.0;
+            delayed_history.spatial_average.rf_cycles = 1;
+            std::filesystem::remove_all(delayed_history.output_dir);
+            pic::Simulation delayed_history_simulation(delayed_history);
+            (void)delayed_history_simulation.run();
+            bool observed_complete_delayed_history = false;
+            for (const auto& history :
+                 delayed_history_simulation
+                     .phase_eedf_particle_histories()) {
+                require(history.age_steps <= 2,
+                        "phase EEDF history started before its window");
+                observed_complete_delayed_history =
+                    observed_complete_delayed_history ||
+                    history.age_steps == 2;
+            }
+            require(observed_complete_delayed_history,
+                    "phase EEDF history did not span its delayed window");
+            std::filesystem::remove_all(delayed_history.output_dir);
             std::filesystem::remove_all(output_dir);
             std::filesystem::remove(table_path);
         }
