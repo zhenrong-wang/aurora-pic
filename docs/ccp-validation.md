@@ -3278,6 +3278,35 @@ particle creation, loss, and field feedback, rather than the frozen mover,
 collision traffic, or isolated product distributions. This is not yet a
 whole-discharge or experimental validation result.
 
+### Coupled population-balance audit
+
+A checksum-verified post hoc audit reuses the two completed, consecutive
+matched-half-step blocks to test whether ordinary AuroraPIC microstate
+variation can explain the persistent cross-code deficit. Only files already
+bound by each runner report are admitted: scalar states, collision counts,
+and boundary losses. The unbound historical power-transfer files are
+deliberately excluded.
+
+Species accounting closes exactly. In microstate 51949, `1,853`
+ionizations minus `2,058` electron wall losses gives the observed `-205`
+electron change. In microstate 63059, `1,826 - 2,067 = -241`. Ion balances
+also close exactly, including the unequal electron and ion wall losses in the
+second branch.
+
+Gross coupled evolution is substantially more repeatable than the cross-code
+energetic-tail deficit. Cross-branch relative ranges are `1.47%` for
+ionization, `0.44%` for electron wall loss, and `2.64%` for ion wall loss.
+At five common RF-phase endpoints, mean kinetic and field energies differ by
+only `0.25%` and `0.28%`; their final differences are `0.98%` and `0.50%`.
+The prospectively pooled promotion-rate range remains `5.46%`, below its
+locked `8%` gate and well below the `16--20%` code-to-code deficit.
+
+The [`coupled-evolution result`](../benchmarks/ccp/edupic-coupled-evolution-audit-20260825.json)
+therefore does not support within-Aurora microstate variability as the
+explanation. The next comparison needs time-resolved native state variables
+or a deliberately matched state-transition experiment; extending the same
+two AuroraPIC branches alone has diminishing diagnostic value.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

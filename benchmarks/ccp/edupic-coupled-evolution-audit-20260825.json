@@ -1,0 +1,113 @@
+{
+  "all_accounting_and_repeatability_gates_passed": true,
+  "assessment": {
+    "finding": "Species changes close exactly as ionization minus wall loss in both branches. Gross ionization and wall-loss traffic is repeatable within three percent, and the already-gated promotion-rate dispersion is smaller than the cross-code deficit. The deficit is not explained by within-Aurora microstate variability in these two consecutive blocks."
+  },
+  "branches": [
+    {
+      "collision_increments": {
+        "electron_mcc.elastic": 2093783,
+        "electron_mcc.excitation": 5430,
+        "electron_mcc.ionization": 1853,
+        "ion_mcc.backward": 33152,
+        "ion_mcc.isotropic": 34726
+      },
+      "id": "microstate_51949",
+      "output_sha256": {
+        "boundary_losses.csv": "f098950cc022e8a026152e6236e6c9d1266605abc12fa264563c3fcfa8599710",
+        "collisions.csv": "ff3f21ec5f0a4943d1b6bdaca0db5e5a21215f0040b047ae6cefd78c190e3f76",
+        "scalars.csv": "172c9663c955e5db1390c755354d478cefea0175e79026b6e4255ec8ed2934a3"
+      },
+      "population": {
+        "electron_balance_residual": 0,
+        "electron_change": -205,
+        "electron_final": 118669,
+        "electron_start": 118874,
+        "electron_wall_losses": 2058,
+        "ion_balance_residual": 0,
+        "ion_change": -205,
+        "ion_final": 124215,
+        "ion_start": 124420,
+        "ion_wall_losses": 2058,
+        "ionizations": 1853
+      },
+      "report_sha256": "9d6e68c0c82d64caccd283d018d83ef0ec8304c3edc4c9f874f11eb971ba8718",
+      "rf_phase_endpoints": 5,
+      "same_phase_endpoint_means": {
+        "charge_l1": 9.982670597913643e-07,
+        "field_energy": 5.505802938014948e-05,
+        "kinetic_energy": 3.1947968466497276e-05
+      },
+      "same_phase_final": {
+        "charge_l1": 1.0137268248767812e-06,
+        "field_energy": 5.5171747423151715e-05,
+        "kinetic_energy": 3.201892249536237e-05
+      },
+      "steps": [20000, 36000]
+    },
+    {
+      "collision_increments": {
+        "electron_mcc.elastic": 2092165,
+        "electron_mcc.excitation": 5527,
+        "electron_mcc.ionization": 1826,
+        "ion_mcc.backward": 32969,
+        "ion_mcc.isotropic": 35041
+      },
+      "id": "microstate_63059",
+      "output_sha256": {
+        "boundary_losses.csv": "2a91181552b3990f86f93f442547660a77cdf2f38f72afc46c77e85c1361956f",
+        "collisions.csv": "926a8fa99caecf006d8c4e72fa9ccd77fe9ae810e28e006f2fd5fc8fde92cb4f",
+        "scalars.csv": "d2651248f53a1d2cb80f140a1350fc8848021562ea4464066aa8273bfb414e38"
+      },
+      "population": {
+        "electron_balance_residual": 0,
+        "electron_change": -241,
+        "electron_final": 118671,
+        "electron_start": 118912,
+        "electron_wall_losses": 2067,
+        "ion_balance_residual": 0,
+        "ion_change": -287,
+        "ion_final": 124173,
+        "ion_start": 124460,
+        "ion_wall_losses": 2113,
+        "ionizations": 1826
+      },
+      "report_sha256": "355e33c7a42155fd1b40f87e76a9d7a3b316a699773868afc672e1eb8850de78",
+      "rf_phase_endpoints": 5,
+      "same_phase_endpoint_means": {
+        "charge_l1": 9.886759597246605e-07,
+        "field_energy": 5.4905913859181346e-05,
+        "kinetic_energy": 3.186873711208522e-05
+      },
+      "same_phase_final": {
+        "charge_l1": 1.0052311098370435e-06,
+        "field_energy": 5.489481477717666e-05,
+        "kinetic_energy": 3.170658487847718e-05
+      },
+      "steps": [20000, 36000]
+    }
+  ],
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This is a post hoc coupled-accounting audit of two existing AuroraPIC microstates. It does not add independent seeds, compare time-resolved native state variables, or validate experiment.",
+  "cross_branch_relative_ranges": {
+    "electron_wall_loss_relative_range": 0.004363636363636364,
+    "final_field_energy_relative_range": 0.005032094042712384,
+    "final_kinetic_energy_relative_range": 0.009802593333714695,
+    "ion_wall_loss_relative_range": 0.026372572524574443,
+    "ionization_increment_relative_range": 0.014677901603696657,
+    "mean_field_energy_relative_range": 0.0027666436194828,
+    "mean_kinetic_energy_relative_range": 0.0024830913377217488,
+    "pooled_promotion_rate_relative_range": 0.05455458865461939
+  },
+  "gates": {
+    "exact_species_balance": true,
+    "gross_creation_and_loss_repeatable_below_3_percent": true,
+    "pooled_promotion_repeatability_below_8_percent": true
+  },
+  "provenance": {
+    "analyzer_sha256": "9291fa4f8c0e1aca932ed25622981b03b95535fca3aab4a3bae74f7be6a93bbd",
+    "pooled_result_sha256": "6971a9495a40add90c63f1c348d91e1dcb7765826eac25d891e638a5bc2e1c7a"
+  },
+  "schema_version": 1,
+  "scope": "existing_matched_half_step_coupled_evolution_audit"
+}
