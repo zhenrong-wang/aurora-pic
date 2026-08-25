@@ -1,0 +1,133 @@
+{
+  "assessment": {
+    "finding": "In both actual frozen states, nearest-versus-lower lookup and the additional Poisson opportunity mean each change total electron and ion traffic by less than one percent. Collision-product kinematics remains a separate statistical question.",
+    "lookup_plus_poisson_mean_changes_all_expected_species_events_below_1_percent": true,
+    "nearest_vs_lower_changes_all_expected_species_events_below_1_percent": true,
+    "nearest_vs_lower_changes_expected_electron_events_below_0p1_percent": true,
+    "nearest_vs_lower_changes_expected_ion_events_below_0p1_percent": false
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This deterministic fold uses frozen AuroraPIC states and first-event kernels. It does not evolve either code or pair random trajectories.",
+  "ensemble_bounds": {
+    "electron_first_event_ratio_maximum": 0.9998713091588801,
+    "electron_first_event_ratio_minimum": 0.9998688660968719,
+    "ion_first_event_ratio_maximum": 1.0066782384250932,
+    "ion_first_event_ratio_minimum": 1.006676405487846
+  },
+  "provenance": {
+    "analyzer_sha256": "9719a6e2c570cece2a845d3caf225d3470f53f3d112ca20f98e086db1fb65c9b",
+    "gas_artifact_sha256": {
+      "edupic_argon_electron.gas": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+      "edupic_argon_ion.gas": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+      "electron_elastic.dat": "f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47",
+      "electron_excitation.dat": "9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c",
+      "electron_ionization.dat": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+      "ion_backward.dat": "c7cc0ce959cd73b343f7ec62ed38243f302c9db77e7eccd2bda8d3adf945f44b",
+      "ion_isotropic.dat": "44da100ce415eac603bc0625d278eb0088cd5b4d707c56ff5d215d4e4327fb17"
+    }
+  },
+  "schema_version": 1,
+  "scope": "actual_frozen_state_collision_kernel_fold",
+  "states": {
+    "microstate_51949": {
+      "checkpoint_sha256": "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+      "electrons": {
+        "aurorapic_lower_expected_first_events_per_species_step": 128.4828558784945,
+        "aurorapic_poisson_expected_events_per_species_step": 128.85007910228032,
+        "aurorapic_to_native_expected_first_event_ratio": 0.9998688660968719,
+        "channel_expected_first_events": {
+          "elastic": {
+            "aurorapic_lower": 128.09140977009372,
+            "aurorapic_to_native_ratio": 0.9998690865584043,
+            "native_nearest": 128.10818085294574
+          },
+          "excitation": {
+            "aurorapic_lower": 0.3113313140012211,
+            "aurorapic_to_native_ratio": 0.9998073790765162,
+            "native_nearest": 0.31139129447992864
+          },
+          "ionization": {
+            "aurorapic_lower": 0.08011479439998921,
+            "aurorapic_to_native_ratio": 0.9997553517632989,
+            "native_nearest": 0.08013439913943778
+          }
+        },
+        "live_particles": 118669,
+        "native_nearest_expected_first_events_per_species_step": 128.49970654656477,
+        "neutral_velocity_quadrature_nodes_per_particle": 1,
+        "poisson_mean_to_native_single_event_ratio": 1.0027266409016162
+      },
+      "ions": {
+        "aurorapic_lower_expected_first_events_per_species_step": 84.79779593112812,
+        "aurorapic_poisson_expected_events_per_species_step": 84.84146455570573,
+        "aurorapic_to_native_expected_first_event_ratio": 1.006676405487846,
+        "channel_expected_first_events": {
+          "backward": {
+            "aurorapic_lower": 41.37892190652234,
+            "aurorapic_to_native_ratio": 1.0018230318726364,
+            "native_nearest": 41.30362408336298
+          },
+          "isotropic": {
+            "aurorapic_lower": 43.4188740246128,
+            "aurorapic_to_native_ratio": 1.0113457182776198,
+            "native_nearest": 42.93178211952847
+          }
+        },
+        "live_particles": 124215,
+        "native_nearest_expected_first_events_per_species_step": 84.23540620288425,
+        "neutral_velocity_quadrature_nodes_per_particle": 27,
+        "poisson_mean_to_native_single_event_ratio": 1.0071948172406477
+      }
+    },
+    "microstate_63059": {
+      "checkpoint_sha256": "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233",
+      "electrons": {
+        "aurorapic_lower_expected_first_events_per_species_step": 128.6236685679296,
+        "aurorapic_poisson_expected_events_per_species_step": 128.99775227906625,
+        "aurorapic_to_native_expected_first_event_ratio": 0.9998713091588801,
+        "channel_expected_first_events": {
+          "elastic": {
+            "aurorapic_lower": 128.20853709601482,
+            "aurorapic_to_native_ratio": 0.9998715198047315,
+            "native_nearest": 128.22501147052685
+          },
+          "excitation": {
+            "aurorapic_lower": 0.3281188058999756,
+            "aurorapic_to_native_ratio": 0.9998145874550551,
+            "native_nearest": 0.3281796545249202
+          },
+          "ionization": {
+            "aurorapic_lower": 0.08701266601490572,
+            "aurorapic_to_native_ratio": 0.9997748488626649,
+            "native_nearest": 0.08703226142755098
+          }
+        },
+        "live_particles": 118671,
+        "native_nearest_expected_first_events_per_species_step": 128.64022338647905,
+        "neutral_velocity_quadrature_nodes_per_particle": 1,
+        "poisson_mean_to_native_single_event_ratio": 1.0027792931571105
+      },
+      "ions": {
+        "aurorapic_lower_expected_first_events_per_species_step": 84.64604595681708,
+        "aurorapic_poisson_expected_events_per_species_step": 84.68918782463517,
+        "aurorapic_to_native_expected_first_event_ratio": 1.0066782384250932,
+        "channel_expected_first_events": {
+          "backward": {
+            "aurorapic_lower": 41.22418976212694,
+            "aurorapic_to_native_ratio": 1.0018262689054145,
+            "native_nearest": 41.14904054888487
+          },
+          "isotropic": {
+            "aurorapic_lower": 43.42185619469463,
+            "aurorapic_to_native_ratio": 1.0113283306480139,
+            "native_nearest": 42.935469005275316
+          }
+        },
+        "live_particles": 124173,
+        "native_nearest_expected_first_events_per_species_step": 84.08450955415738,
+        "neutral_velocity_quadrature_nodes_per_particle": 27,
+        "poisson_mean_to_native_single_event_ratio": 1.0071913158997297
+      }
+    }
+  }
+}

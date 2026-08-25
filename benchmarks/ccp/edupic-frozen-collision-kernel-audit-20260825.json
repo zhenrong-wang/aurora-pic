@@ -1,0 +1,85 @@
+{
+  "assessment": {
+    "finding": "The frozen collision contracts match in energy frames, losses, angular models, finite-mass transforms, and Opal partitioning. Remaining lookup and opportunity differences are quantified; a statistical product-kinematics ensemble is still required.",
+    "lookup_probability_difference_below_1e_4_per_step": false,
+    "opportunity_mean_difference_below_2_percent": true,
+    "source_kinematics_contracts_match": true
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This source and frozen-rate audit does not compare paired random trajectories or prove equivalence of evolved EEDFs.",
+  "contract_equivalence": {
+    "elastic_scattering": "isotropic_finite_mass_center_of_mass",
+    "electron_energy_frame": "laboratory",
+    "excitation_loss_eV": 11.5,
+    "ion_energy_frame": "center_of_mass",
+    "ion_isotropic_and_backward_channels": true,
+    "ionization_energy_partition": "opal_beaty_peterson_scale_10_eV",
+    "ionization_loss_eV": 15.8,
+    "ionization_pair_azimuth": "opposed_by_pi"
+  },
+  "known_algorithm_differences": {
+    "collision_opportunities": {
+      "aurorapic": "Poisson null-collision clock permits repeats",
+      "edupic": "at most one Bernoulli collision per species step",
+      "electron_maximum_relative_mean_excess": 0.009161898003643717,
+      "ion_maximum_relative_mean_excess": 0.018212046827093126
+    },
+    "cross_section_lookup": {
+      "aurorapic": "lower 0.001 eV bin",
+      "edupic": "nearest 0.001 eV bin"
+    },
+    "random_stream": {
+      "aurorapic": "std::mt19937_64",
+      "consequence": "trajectory-level random draws cannot be paired by seed",
+      "edupic": "std::mt19937"
+    }
+  },
+  "provenance": {
+    "analyzer_sha256": "05747a66cf89b0e61224c2a659df84b378ec20bbd6190d29f4f6f43859e798e1",
+    "aurorapic_collision_cpp_sha256": "6a41a2ecf468847e384c4dc8915a58c76a0993c21f5f9b4adc6ccf356922e750",
+    "gas_artifact_sha256": {
+      "edupic_argon_electron.gas": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+      "edupic_argon_ion.gas": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+      "electron_elastic.dat": "f660d0a7665e8edcf591162734c9173abc4c1f93c7f3c623b1ddd5ed27545f47",
+      "electron_excitation.dat": "9d4ef324bc094a4ce77959dfc2e1d65dbfa8b88f9e8d06eb4a598d7073e2c96c",
+      "electron_ionization.dat": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+      "ion_backward.dat": "c7cc0ce959cd73b343f7ec62ed38243f302c9db77e7eccd2bda8d3adf945f44b",
+      "ion_isotropic.dat": "44da100ce415eac603bc0625d278eb0088cd5b4d707c56ff5d215d4e4327fb17"
+    },
+    "pinned_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41"
+  },
+  "schema_version": 1,
+  "scope": "frozen_collision_kernel_contract_audit",
+  "upper_half_bin_worst_lookup_audit_0_to_80_eV": {
+    "electron": {
+      "collision_energy_mass_kg": 9.10938356e-31,
+      "energy_at_maximum_channel_probability_total_variation_eV": 20.15575,
+      "energy_at_maximum_probability_difference_eV": 0.01375,
+      "energy_at_maximum_relative_total_rate_difference_eV": 0.21075,
+      "energy_limit_eV": 80.0,
+      "maximum_absolute_event_probability_difference_per_step": 3.0722566271013108e-06,
+      "maximum_channel_probability_total_variation": 2.9449426754733082e-05,
+      "maximum_relative_total_rate_difference": 0.04604008407191995,
+      "mean_absolute_event_probability_difference_per_step_uniform_energy": 2.437863001134161e-07,
+      "projectile_mass_kg": 9.10938356e-31,
+      "source_rows_visited": 80002,
+      "timestep_s": 1.8436578171091445e-11,
+      "upper_half_bin_queries": 80000
+    },
+    "ion": {
+      "collision_energy_mass_kg": 3.31676045e-26,
+      "energy_at_maximum_channel_probability_total_variation_eV": 0.00175,
+      "energy_at_maximum_probability_difference_eV": 0.00175,
+      "energy_at_maximum_relative_total_rate_difference_eV": 0.00175,
+      "energy_limit_eV": 80.0,
+      "maximum_absolute_event_probability_difference_per_step": 0.0001961827867102972,
+      "maximum_channel_probability_total_variation": 0.03285033045368409,
+      "maximum_relative_total_rate_difference": 0.4802594022235971,
+      "mean_absolute_event_probability_difference_per_step_uniform_energy": 4.557864980225812e-08,
+      "projectile_mass_kg": 6.6335209e-26,
+      "source_rows_visited": 80002,
+      "timestep_s": 3.687315634218289e-10,
+      "upper_half_bin_queries": 80000
+    }
+  }
+}
