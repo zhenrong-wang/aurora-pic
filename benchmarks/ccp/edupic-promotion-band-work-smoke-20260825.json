@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_promotion_band_work_passivity_smoke",
+  "inputs": {
+    "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "seed": 13507,
+    "cycles": 1,
+    "promotion_band_eV": [11.5, 15.8],
+    "control_binary_sha256": "281d3724848969d43f7fc6d4abc070f82a28a0527f04157b775b88ff24ca4528",
+    "instrumenter_sha256": "955d5e88cf37fd9275d449a757c5df8edda3627ee2bb25ae3d5fe8591e97b3f0",
+    "instrumented_source_sha256": "c5a4b8d1f68c237363c772f5b68dc557e88cca7d116e845c6292dbf323423543",
+    "instrumented_binary_sha256": "ebbd45219a52ca4a61693ce1c6aee8cfe62d7b8681fdbfb46e94759da2551fe8",
+    "instrumentation_audit_sha256": "a79cc8ae23374121a46936b7d51e64b6a9165931597ebaac69c49f1eb6026a73"
+  },
+  "passivity": {
+    "control_final_checkpoint_sha256": "93ed640d2f9dbf0f117539969a9d9541c97ad4f694b92decd2211111b9c5663f",
+    "instrumented_final_checkpoint_sha256": "93ed640d2f9dbf0f117539969a9d9541c97ad4f694b92decd2211111b9c5663f",
+    "control_stdout_sha256": "a327c0e5dd0f710b51008791228b05de0fc39dad893cdba0e955c8de8d843016",
+    "instrumented_stdout_sha256": "a327c0e5dd0f710b51008791228b05de0fc39dad893cdba0e955c8de8d843016",
+    "control_field_push_ledger_sha256": "236c3c9b4be2f218729e9205a0ac51e5cb87a8650770b8a25c83076c14333f16",
+    "instrumented_field_push_ledger_sha256": "236c3c9b4be2f218729e9205a0ac51e5cb87a8650770b8a25c83076c14333f16",
+    "control_phase_eedf_sha256": "9e9091c338f5b2a49798f525fe222cb9d48f134cf91ea29a9630b9352937bc7b",
+    "instrumented_phase_eedf_sha256": "9e9091c338f5b2a49798f525fe222cb9d48f134cf91ea29a9630b9352937bc7b",
+    "control_threshold_ledger_sha256": "7d9d95112f6be4f54db8af62fce9beac603c549daafd89116f7308ca36a4ad21",
+    "instrumented_threshold_ledger_sha256": "7d9d95112f6be4f54db8af62fce9beac603c549daafd89116f7308ca36a4ad21",
+    "trajectory_and_existing_diagnostics_exact": true
+  },
+  "new_ledger": {
+    "sha256": "4fd92bbd0e223855e370397d0ed5124e2b07bd5f7895df1261d832d05f0a9a2f",
+    "rows": 1400,
+    "promotion_band_observations": 4749306,
+    "promotion_band_promotions": 3902,
+    "signed_macro_work_sum_eV": 6284.902720420395,
+    "positive_macro_work_sum_eV": 30469.37797455309,
+    "negative_macro_work_sum_eV": 24184.4752541327,
+    "signed_work_closure_residual_eV": 6.366462912410498e-12
+  },
+  "resources": {
+    "maximum_simultaneous_processes": 1,
+    "control_peak_resident_set_kib": 80444,
+    "instrumented_peak_resident_set_kib": 80428,
+    "address_space_limit_kib": 262144
+  },
+  "claim_boundary": "This one-cycle smoke proves diagnostic passivity and ledger arithmetic on one locked native continuation. It is not a cross-code physics result."
+}

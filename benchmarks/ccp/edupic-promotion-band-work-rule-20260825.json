@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_near_threshold_field_work_comparison",
+  "question": "Is AuroraPIC's matched-half-step promotion deficit caused by reduced supply into the 11.5--15.8 eV band, reduced mover work per band electron, or reduced conversion from the band across 15.8 eV?",
+  "basis": {
+    "promotion_localization_result_sha256": "4e447fcab26c92333d6caac88d20534872b6b18f42c34269587cb455d0ab895e",
+    "observed_before_declaration": "The accepted matched-half-step promotion deficit is strongest over x/L=0.2--0.4 and RF phase 0.25--0.375, where two AuroraPIC/native promotion-rate ratios are 0.7549 and 0.7916. No native or AuroraPIC production-state promotion-band work output exists.",
+    "smoke_record": "The native one-cycle passivity smoke and AuroraPIC unit tests were observed before this rule; they establish only diagnostic correctness and resource behavior."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "2e257d126856a8a30ec46acc933ac7401b852e5db390a77f7be08c55947d4fd3",
+    "aurorapic_continuation_states": [
+      {
+        "id": "microstate_51949_cycle36000",
+        "checkpoint_sha256": "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+        "prior_report_sha256": "9d6e68c0c82d64caccd283d018d83ef0ec8304c3edc4c9f874f11eb971ba8718",
+        "prior_deck_sha256": "162c3698e531268fe63406cf9ab29d525f4320904409b59139053a0b5e9bee04"
+      },
+      {
+        "id": "microstate_63059_cycle36000",
+        "checkpoint_sha256": "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233",
+        "prior_report_sha256": "355e33c7a42155fd1b40f87e76a9d7a3b316a699773868afc672e1eb8850de78",
+        "prior_deck_sha256": "e422bfd823704a26a181ff4ad9d3e6857f553aeda88724bbad7f6df7fd92f878"
+      }
+    ],
+    "native_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "native_instrumenter_sha256": "955d5e88cf37fd9275d449a757c5df8edda3627ee2bb25ae3d5fe8591e97b3f0",
+    "native_instrumented_source_sha256": "c5a4b8d1f68c237363c772f5b68dc557e88cca7d116e845c6292dbf323423543",
+    "native_instrumented_binary_sha256": "ebbd45219a52ca4a61693ce1c6aee8cfe62d7b8681fdbfb46e94759da2551fe8",
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_input_checkpoint_cycle": 2620,
+    "native_seeds": [13507, 24601, 35713],
+    "expected_passive_native_checkpoint_sha256": {
+      "13507": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "24601": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "35713": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    }
+  },
+  "execution_contract": {
+    "aurorapic_start_step": 36000,
+    "aurorapic_end_step": 52000,
+    "native_cycles": 4,
+    "steps_per_cycle": 4000,
+    "measurement_cycles": 4,
+    "serial": true,
+    "runtime_threads": 1,
+    "maximum_simultaneous_processes": 1,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "timeout_seconds_per_member": 2400
+  },
+  "diagnostic_contract": {
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "sampling_order": "pre_collision",
+    "phase_bins": 200,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "promotion_band_eV": [11.5, 15.8],
+    "critical_regions": ["x020_040"],
+    "critical_phase_fraction": [0.25, 0.375],
+    "minimum_band_observations_per_member": 100000,
+    "minimum_band_promotions_per_member": 500,
+    "work_closure_relative_tolerance": 1e-10
+  },
+  "derived_metrics": {
+    "band_supply_fraction": "promotion-band observations divided by all field-push observations in the critical scope",
+    "band_promotion_probability": "promotion-band promotions divided by promotion-band observations",
+    "mean_signed_work_eV": "signed macro work sum divided by promotion-band observations",
+    "mean_positive_work_eV": "positive macro work sum divided by promotion-band observations",
+    "mean_negative_work_eV": "negative macro work sum divided by promotion-band observations"
+  },
+  "prospective_decision_rule": {
+    "band_supply_deficit_supported_if": "both AuroraPIC/native band-supply-fraction ratios are at most 0.90",
+    "positive_work_deficit_supported_if": "both AuroraPIC/native mean-positive-work ratios are at most 0.90",
+    "promotion_conversion_deficit_supported_if": "both AuroraPIC/native band-promotion-probability ratios are at most 0.90",
+    "parity_interval": [0.95, 1.05],
+    "aurorapic_repeatability_gate": "relative range no greater than 0.10 for supply fraction, promotion probability, and mean positive work",
+    "native_repeatability_gate": "relative three-seed range no greater than 0.15 for supply fraction, promotion probability, and mean positive work",
+    "interpretation_requires_all_integrity_population_repeatability_and_work_closure_gates": true,
+    "otherwise": "mixed_or_intermediate_near_threshold_work_result"
+  },
+  "claim_boundary": "This prospective comparison isolates near-threshold mover work in one matched argon CCP across independently evolved microstates. It does not identify the first self-consistent field divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_locked_members_and_gates_are_complete"
+}

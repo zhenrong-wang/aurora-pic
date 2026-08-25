@@ -3430,6 +3430,31 @@ field work delivered to near-threshold electrons across the `x/L=0.2`
 interface during phase `0.25--0.375`, rather than launch another broad
 whole-discharge continuation.
 
+The required causal diagnostic is now implemented in both codes. AuroraPIC
+checkpoint v22 records a configurable subthreshold band's observation count,
+promotion count, and signed/positive/negative mover work without changing the
+particle trajectory. A composed passive transform adds the same quantities to
+the pinned native C implementation for the argon excitation-to-ionization band
+`11.5--15.8 eV`.
+
+The native one-cycle
+[`promotion-band smoke`](../benchmarks/ccp/edupic-promotion-band-work-smoke-20260825.json)
+is trajectory-exact against the previously verified field-push binary: final
+checkpoint, stdout, phase EEDF, threshold ledger, and existing field-push
+ledger hashes are identical. The new ledger contains `4,749,306` band
+observations and `3,902` promotions, and its signed work equals positive minus
+negative work to `6.4e-12 eV`. Peak RSS remains about `80.4 MiB` under the
+`256 MiB` address-space cap.
+
+Before observing any production-state work output, the
+[`prospective rule`](../benchmarks/ccp/edupic-promotion-band-work-rule-20260825.json)
+locks two existing matched-half-step AuroraPIC continuations, three native
+seeds, all solver/instrumenter/checkpoint hashes, the `x/L=0.2--0.4`, phase
+`0.25--0.375` scope, population and repeatability gates, and three possible
+mechanisms: reduced supply into the band, reduced positive work per band
+electron, or reduced conversion across `15.8 eV`. No physics outcome exists
+until every locked member and gate is complete.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

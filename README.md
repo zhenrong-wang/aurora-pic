@@ -107,6 +107,10 @@ The phase-EEDF history diagnostic now also supports a configurable
 subthreshold promotion band with restart-safe signed/positive/negative mover
 work, enabling the next near-threshold causal comparison without changing the
 particle trajectory.
+The native counterpart passes a byte-exact one-cycle passivity smoke, and the
+production comparison is preregistered in
+`benchmarks/ccp/edupic-promotion-band-work-rule-20260825.json` before any
+four-cycle work output is observed.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision
