@@ -36,6 +36,7 @@ def relative_range(members: list[dict[str, float | int]],
 
 
 def analyze(rule_path: Path, candidate_paths: list[Path],
+            candidate_report_paths: list[Path],
             native_directories: list[Path]) -> dict[str, object]:
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     diagnostic = rule["diagnostic_contract"]
@@ -43,6 +44,8 @@ def analyze(rule_path: Path, candidate_paths: list[Path],
     lower, upper = map(float, diagnostic["critical_phase_fraction"])
     candidates = [aggregate(read_rows(path), regions, lower, upper)
                   for path in candidate_paths]
+    candidate_reports = [json.loads(path.read_text(encoding="utf-8"))
+                         for path in candidate_report_paths]
     native_paths = [directory / "edupic_phase_eedf_threshold_crossings.csv"
                     for directory in native_directories]
     natives = [aggregate(read_rows(path), regions, lower, upper)
@@ -71,6 +74,24 @@ def analyze(rule_path: Path, candidate_paths: list[Path],
         for name, column in PROCESS_COLUMNS.items()
     }
     repeatability_limit = 0.08
+    rule_hash = sha256(rule_path)
+    locked_states = rule["locked_initial_states"]
+    reports_linked = all(
+        report.get("all_gates_passed") is True and
+        report.get("rule_sha256") == rule_hash and
+        report.get("inputs", {}).get("initial_state_id") == locked["id"] and
+        report.get("inputs", {}).get("input_checkpoint_sha256") ==
+            locked["checkpoint_sha256"] and
+        report.get("inputs", {}).get("base_config_sha256") ==
+            locked["base_config_sha256"] and
+        report.get("inputs", {}).get("prior_report_sha256") ==
+            locked["prior_report_sha256"] and
+        report.get("inputs", {}).get("solver_sha256") ==
+            locked["solver_sha256"] and
+        report.get("output_hashes", {}).get(
+            "phase_eedf_threshold_crossings.csv") == sha256(path)
+        for report, locked, path in zip(
+            candidate_reports, locked_states, candidate_paths, strict=True))
     gates = {
         "candidate_count": len(candidates) == 2,
         "native_count": len(natives) == 3,
@@ -78,6 +99,7 @@ def analyze(rule_path: Path, candidate_paths: list[Path],
             native_hashes == locked["native_crossing_sha256"],
         "native_checkpoint_hashes_locked":
             checkpoint_hashes == locked["native_checkpoint_sha256"],
+        "candidate_runner_reports_linked_and_passing": reports_linked,
         "electron_time_population": all(
             int(member["electron_time_macro_observations"]) >= int(
                 diagnostic[
@@ -115,7 +137,7 @@ def analyze(rule_path: Path, candidate_paths: list[Path],
         "schema_version": 1,
         "case_id": rule["case_id"],
         "scope": "aurorapic_threshold_crossing_microstate_replication_result",
-        "rule_sha256": sha256(rule_path),
+        "rule_sha256": rule_hash,
         "gates": gates,
         "all_measurement_and_repeatability_gates_passed": all_gates,
         "critical_phase_0p125_to_0p5": {
@@ -137,6 +159,8 @@ def analyze(rule_path: Path, candidate_paths: list[Path],
             "analyzer_sha256": sha256(Path(__file__)),
             "aurorapic_crossings_sha256": [sha256(path)
                                              for path in candidate_paths],
+            "aurorapic_runner_report_sha256": [sha256(path)
+                                                 for path in candidate_report_paths],
             "native_crossings_sha256": native_hashes,
             "native_checkpoints_sha256": checkpoint_hashes,
         },
@@ -149,10 +173,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("rule", type=Path)
     parser.add_argument("candidate_crossings", nargs=2, type=Path)
+    parser.add_argument("candidate_reports", nargs=2, type=Path)
     parser.add_argument("native_directories", nargs=3, type=Path)
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
     result = analyze(args.rule, args.candidate_crossings,
+                     args.candidate_reports,
                      args.native_directories)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n",
                            encoding="utf-8", newline="\n")

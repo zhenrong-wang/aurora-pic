@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "threshold_crossing_microstate_replication_execution_record",
+  "rule_sha256": "efde50681b60978a957972f00550331a705fe376bcb56d9568370dc3f0ddb80a",
+  "result_sha256": "76cf52f1717872e021e8a59fa8f7187e339d1a14a4368685808350e65386a36c",
+  "formal_outcome": "promotion_limited_mechanism_confirmed_under_locked_one_case_replication_rule",
+  "aurorapic_microstates": [
+    {
+      "id": "microstate_51949",
+      "wall_seconds": 403.4360126610118,
+      "peak_resident_set_kib": 205888,
+      "exit_status": 0,
+      "all_runner_gates_passed": true,
+      "available_memory_before_launch_kib": 17330872,
+      "available_disk_before_launch_kib": 1718384,
+      "input_deck_sha256": "924d73ac8bf5a50d19fea7ed45735011e82f116c54f416c1796ffe5c8633bbe6",
+      "runner_report_sha256": "57f6847922a14df1e047d8062e2e0c5a73a67e9ab790bc32d2a8b3fb0dcf1fa7",
+      "threshold_crossings_sha256": "85a5218c8faaabea150a46e6cb331b7b079898a2a0c3d40e219479d756a9cf1a",
+      "final_checkpoint_sha256": "d23e17fdc867d2c0dcf004e51d5887cf6099cf32b2a935f1c845f0bc4e7bcebb"
+    },
+    {
+      "id": "microstate_63059",
+      "wall_seconds": 402.70240805899084,
+      "peak_resident_set_kib": 205744,
+      "exit_status": 0,
+      "all_runner_gates_passed": true,
+      "available_memory_before_launch_kib": 17352052,
+      "available_disk_before_launch_kib": 1389652,
+      "input_deck_sha256": "3b454afe72454f638d691e608b8d1ac1b81bb5aa0be27ea7b167c2d512b29087",
+      "runner_report_sha256": "e68f380d030b7a96dd5232f3dd1018309657e86ee8fd44b4784305b6bbbbb901",
+      "threshold_crossings_sha256": "02463ccb63b7bf2d5de65500f23e759b64d4f2a4770b3a1848018d408e44816e",
+      "final_checkpoint_sha256": "42b1a71e1797f4df3eb7b73741f44a8d25b892c254e7b8a7f6fb15113349f0a1"
+    }
+  ],
+  "native_reference": {
+    "members": 3,
+    "status": "reused_hash_locked_passive_ensemble",
+    "independent_of_replication": false
+  },
+  "resource_contract": {
+    "maximum_simultaneous_processes": 1,
+    "serial_execution": true,
+    "low_priority": true,
+    "aurorapic_virtual_memory_limit_kib": 393216,
+    "all_resource_gates_passed": true
+  },
+  "provenance_note": "After observing the outputs, the analyzer was hardened to require cryptographic linkage between each ledger and its passing locked runner report. No scientific threshold, metric, region, phase window, or outcome rule changed."
+}

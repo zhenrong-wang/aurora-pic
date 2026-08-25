@@ -2950,6 +2950,46 @@ independent AuroraPIC microstates and a population-qualified repeatability rule
 declared before those outputs are observed; the original gate will not be
 silently weakened.
 
+### Confirmatory threshold-traffic microstate replication
+
+That clean confirmation is now complete. Before observing either new ledger,
+the replication rule locked two pre-existing constrained AuroraPIC microstates,
+the same critical `x/L=0.2--0.6`, phase `0.125--0.5` window, an 8% candidate
+repeatability limit, population floors, and the already observed three-seed
+native ensemble by hash. Both four-cycle AuroraPIC continuations passed every
+execution, resource, sampling, shape, finite-value, closure, and population
+gate. They completed serially in `403.44 s` and `402.70 s`, with peak RSS of
+`205,888 KiB` and `205,744 KiB`.
+
+The prospective mechanism result passes. The two AuroraPIC/native promotion-
+rate ratios are `0.81265` and `0.80066`, both below the locked `0.90` boundary.
+The corresponding demotion-rate ratios are `0.84982` and `0.84261`, both below
+the `1.10` enhanced-loss boundary. Candidate relative ranges are `1.69%` for
+energetic occupancy, `1.49%` for promotion, `0.85%` for demotion, `4.06%` for
+excitation demotion, `1.12%` for ionization demotion, and `0.94%` for
+subthreshold births; all are below 8%. Excitation and ionization comparisons
+also exceed the locked 500-event floor in every candidate and native member.
+Elastic threshold demotions remain descriptive because their tiny native count
+does not qualify for relative comparison.
+
+Within this matched argon CCP, the energetic-tail deficit is therefore robust
+to the two constrained particle realizations and is associated with reduced
+promotion traffic, not enhanced demotion. This is a useful numerical-physics
+finding: the next diagnostic should resolve the promotion interval into field-
+push work and preceding collision/ionization-product effects, then test the
+responsible implementation choice directly. Interstep transitions are not yet
+a field-only attribution because each interval spans the previous accepted
+collision and the following push.
+
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-threshold-crossing-replication-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-threshold-crossing-replication-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-threshold-crossing-replication-execution-20260825.json)
+retain the evidence. The native ensemble was reused and already observed, so
+this confirms candidate-microstate robustness rather than an independent
+native replication. It remains code-to-code evidence for one case—not
+experimental validation or proof of general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
