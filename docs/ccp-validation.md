@@ -3508,6 +3508,16 @@ quantities are decomposition terms or covariates, not independent causal
 variables. No physics interpretation is allowed until every locked member and
 gate completes.
 
+The three native production members have now completed serially and are sealed
+in the
+[`native mover-decomposition result`](../benchmarks/ccp/edupic-mover-decomposition-native-result-20260825.json).
+Every final checkpoint and prior promotion-work ledger is byte-exact, all
+population and closure gates pass, and peak RSS is at most `81,056 KiB`.
+Relative ranges are `0.15%` for mean origin energy, `2.40%` for longitudinal
+energy fraction, `3.55%` for positive linear work, and `3.87%` for quadratic
+work. The native half is therefore qualified and repeatable. Cross-code
+interpretation remains forbidden until both locked AuroraPIC members complete.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

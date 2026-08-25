@@ -122,6 +122,10 @@ into exact linear alignment and quadratic sampled-field terms while recording
 the band's origin energy partition. The next comparison is prospectively
 locked in `benchmarks/ccp/edupic-mover-decomposition-rule-20260825.json`; no
 production interpretation exists yet.
+The three-member native baseline is complete and passes every locked integrity,
+closure, population, resource, and repeatability gate in
+`benchmarks/ccp/edupic-mover-decomposition-native-result-20260825.json`.
+The two AuroraPIC members are still required before any mechanism outcome.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

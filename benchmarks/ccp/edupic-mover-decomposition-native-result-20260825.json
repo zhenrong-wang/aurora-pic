@@ -1,0 +1,122 @@
+{
+  "all_native_integrity_population_repeatability_and_closure_gates_passed": true,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective comparison decomposes one previously established near-threshold work discrepancy in one matched argon CCP. It does not identify the first self-consistent field divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "critical_scope": {
+    "phase_fraction": [
+      0.25,
+      0.375
+    ],
+    "promotion_band_eV": [
+      11.5,
+      15.8
+    ],
+    "region": "x020_040"
+  },
+  "ensemble_means": {
+    "mean_origin_energy_eV": 13.265773428057281,
+    "mean_positive_linear_work_eV": 0.011733641259312996,
+    "mean_quadratic_work_eV": 7.794461077861842e-05,
+    "origin_longitudinal_energy_fraction": 0.3526488644000078
+  },
+  "gates": {
+    "finite_metrics": true,
+    "linear_work_closure": true,
+    "member_count": true,
+    "native_repeatability": true,
+    "origin_energy_partition": true,
+    "passive_final_checkpoints": true,
+    "population_floors": true,
+    "prior_populations_exact": true,
+    "prior_work_ledgers_exact": true,
+    "resident_memory": true,
+    "total_work_decomposition_closure": true
+  },
+  "members": [
+    {
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "linear_work_closure_residual_eV": 3.092281986027956e-11,
+      "linear_work_sum_eV": 5177.821566240145,
+      "mean_origin_energy_eV": 13.269650657800877,
+      "mean_positive_linear_work_eV": 0.011876865015817374,
+      "mean_quadratic_work_eV": 7.805388144014855e-05,
+      "mover_decomposition_sha256": "52fbdedf46f71a809e819a129ab17b0237e87464fc3f11d1f999b16e7cbba12f",
+      "negative_linear_work_sum_eV": 7437.915099076274,
+      "origin_energy_sum_eV": 14095168.894873329,
+      "origin_longitudinal_energy_fraction": 0.3573844669617398,
+      "origin_longitudinal_energy_sum_eV": 5037394.42223,
+      "peak_resident_set_kib": 80808,
+      "positive_linear_work_sum_eV": 12615.736665316388,
+      "promotion_band_observations": 1062211,
+      "promotion_band_promotions": 1883,
+      "promotion_band_work_sha256": "cd5aa65de1405da43176178da007c6b1e3abf3bc758abff6ce7833959591abe3",
+      "quadratic_work_sum_eV": 82.90969145842163,
+      "seed": 13507,
+      "total_work_decomposition_closure_residual_eV": 0.0,
+      "wall_seconds": 105.61
+    },
+    {
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "linear_work_closure_residual_eV": 4.547473508864641e-12,
+      "linear_work_sum_eV": 5225.714467384512,
+      "mean_origin_energy_eV": 13.273500412845584,
+      "mean_positive_linear_work_eV": 0.011863810942273222,
+      "mean_quadratic_work_eV": 7.939675901241504e-05,
+      "mover_decomposition_sha256": "4fd81003b4edb2e8d843a7ca6711df5ba04379f7f4e58ee3412c6b1f785d14c6",
+      "negative_linear_work_sum_eV": 7429.8634895541445,
+      "origin_energy_sum_eV": 14159347.283398073,
+      "origin_longitudinal_energy_fraction": 0.34893842114763746,
+      "origin_longitudinal_energy_sum_eV": 4940740.285550013,
+      "peak_resident_set_kib": 80884,
+      "positive_linear_work_sum_eV": 12655.577956938652,
+      "promotion_band_observations": 1066738,
+      "promotion_band_promotions": 1869,
+      "promotion_band_work_sha256": "bd2310093d4756b56295ca68f56ff3a4feff546b991b8ebc7fd61d36fcdb1178",
+      "quadratic_work_sum_eV": 84.6955399153856,
+      "seed": 24601,
+      "total_work_decomposition_closure_residual_eV": -8.185452315956354e-12,
+      "wall_seconds": 105.91
+    },
+    {
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "linear_work_closure_residual_eV": -2.7284841053187847e-12,
+      "linear_work_sum_eV": 5091.804341083289,
+      "mean_origin_energy_eV": 13.254169213525389,
+      "mean_positive_linear_work_eV": 0.011460247819848387,
+      "mean_quadratic_work_eV": 7.638319188329168e-05,
+      "mover_decomposition_sha256": "66333fd52cb4f6b827eedb3fbacd3da1922da0413f6f7ce5ed5ff002d79145eb",
+      "negative_linear_work_sum_eV": 7116.774740905555,
+      "origin_energy_sum_eV": 14119639.95483017,
+      "origin_longitudinal_energy_fraction": 0.3516237050906461,
+      "origin_longitudinal_energy_sum_eV": 4964800.115463307,
+      "peak_resident_set_kib": 81056,
+      "positive_linear_work_sum_eV": 12208.579081988846,
+      "promotion_band_observations": 1065298,
+      "promotion_band_promotions": 1854,
+      "promotion_band_work_sha256": "66653b25284ef8ed721731f9260ad59c8a97a7fe42993626ca7f9766369582a5",
+      "quadratic_work_sum_eV": 81.37086154688686,
+      "seed": 35713,
+      "total_work_decomposition_closure_residual_eV": 2.7284841053187847e-12,
+      "wall_seconds": 105.38
+    }
+  ],
+  "physics_claim": "none_until_both_locked_aurorapic_members_and_all_joint_gates_complete",
+  "prior_promotion_band_result_sha256": "1313cb53692e64b4015302e36b6763a58e671a6281091e9e2ecbe5df573d284b",
+  "provenance": {
+    "analyzer_sha256": "61ff78cca96343c34ea5c2b0a24f42dfa2872250ab405e6fb09e7d3f65a97c43",
+    "mover_decomposition_sha256": [
+      "52fbdedf46f71a809e819a129ab17b0237e87464fc3f11d1f999b16e7cbba12f",
+      "4fd81003b4edb2e8d843a7ca6711df5ba04379f7f4e58ee3412c6b1f785d14c6",
+      "66333fd52cb4f6b827eedb3fbacd3da1922da0413f6f7ce5ed5ff002d79145eb"
+    ]
+  },
+  "relative_ranges": {
+    "mean_origin_energy_eV": 0.0014572236911049219,
+    "mean_positive_linear_work_eV": 0.035506215569554564,
+    "mean_quadratic_work_eV": 0.038662931266442796,
+    "origin_longitudinal_energy_fraction": 0.023950299197680238
+  },
+  "rule_sha256": "e9ff35fec7486e109e661bf26eb8ec54449b9cdebad02ce12cbb9a84b03854ae",
+  "schema_version": 1,
+  "scope": "native_near_threshold_mover_decomposition_ensemble_result"
+}
