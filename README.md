@@ -99,6 +99,10 @@ AuroraPIC/native ionization ratios are `0.8530` and `0.8693`, respectively.
 This close descriptive agreement localizes the remaining deficit to
 phase-space ionizing exposure while preserving the stated non-validation
 claim boundary.
+The matched-half-step field-push ledgers further localize reduced energetic
+promotion to all three critical RF-phase octants, strongest at phase
+`0.25--0.375` and in `x/L=0.2--0.4`; the reproducible post hoc result is
+`benchmarks/ccp/edupic-field-push-promotion-localization-20260825.json`.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

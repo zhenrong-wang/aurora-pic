@@ -1,0 +1,494 @@
+{
+  "all_integrity_checks_passed": true,
+  "assessment": {
+    "critical_aggregate_exactly_reproduced": true,
+    "observation": "The matched-half-step promotion deficit is present in all three critical RF-phase octants and is strongest at phase 0.25--0.375, where the two AuroraPIC/native ratios are 0.7549 and 0.7916. Over phase 0.125--0.5 the upstream x/L=0.1--0.2 ratios are 0.8902 and 0.9038, then fall in x/L=0.2--0.4 to 0.7729 and 0.8011. The field-push traffic discrepancy therefore spans the critical phase window and amplifies immediately beyond the upstream region rather than arising in one isolated phase."
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This post hoc localization reuses checksum-locked ledgers from a prospectively accepted aggregate comparison. It identifies where the existing field-push discrepancy is largest, but its spatial and phase subdivisions are descriptive rather than preregistered acceptance gates and do not establish causal onset or experimental validity.",
+  "comparisons": {
+    "critical_x020_to_x060_phase_0p125_to_0p25": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 1031,
+          "field_push_demotions_per_million_pushes": 2.9348247275704114,
+          "field_push_macro_observations": 351298662,
+          "field_push_promotions": 1917,
+          "field_push_promotions_per_million_pushes": 5.456895250002404,
+          "rows": 100
+        },
+        {
+          "field_push_demotions": 1100,
+          "field_push_demotions_per_million_pushes": 3.130759066880334,
+          "field_push_macro_observations": 351352492,
+          "field_push_promotions": 2058,
+          "field_push_promotions_per_million_pushes": 5.857365599672479,
+          "rows": 100
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.8056714011282138,
+          "field_push_promotions_per_million_pushes": 0.7782564873816674
+        },
+        {
+          "field_push_demotions_per_million_pushes": 0.859459517399007,
+          "field_push_promotions_per_million_pushes": 0.8353711346959262
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 3.6427068448261406,
+        "field_push_promotions_per_million_pushes": 7.011692595536656
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 538,
+          "field_push_demotions_per_million_pushes": 3.3741479171130906,
+          "field_push_macro_observations": 159447663,
+          "field_push_promotions": 1069,
+          "field_push_promotions_per_million_pushes": 6.70439428140129,
+          "rows": 50
+        },
+        {
+          "field_push_demotions": 591,
+          "field_push_demotions_per_million_pushes": 3.7054327198687473,
+          "field_push_macro_observations": 159495542,
+          "field_push_promotions": 1164,
+          "field_push_promotions_per_million_pushes": 7.2980096208582435,
+          "rows": 50
+        },
+        {
+          "field_push_demotions": 614,
+          "field_push_demotions_per_million_pushes": 3.8485398974965843,
+          "field_push_macro_observations": 159541025,
+          "field_push_promotions": 1122,
+          "field_push_promotions_per_million_pushes": 7.0326738843504355,
+          "rows": 50
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.06460526997885288,
+        "aurorapic_promotions": 0.07079036889653874,
+        "native_demotions": 0.13023062260892299,
+        "native_promotions": 0.08466077646285065
+      }
+    },
+    "critical_x020_to_x060_phase_0p125_to_0p5": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 4994,
+          "field_push_demotions_per_million_pushes": 4.7695777588411765,
+          "field_push_macro_observations": 1047052853,
+          "field_push_promotions": 8289,
+          "field_push_promotions_per_million_pushes": 7.916505815585605,
+          "rows": 300
+        },
+        {
+          "field_push_demotions": 5330,
+          "field_push_demotions_per_million_pushes": 5.089829440073297,
+          "field_push_macro_observations": 1047186367,
+          "field_push_promotions": 8755,
+          "field_push_promotions_per_million_pushes": 8.360498451752667,
+          "rows": 300
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.8068401702516242,
+          "field_push_promotions_per_million_pushes": 0.7913664778382706
+        },
+        {
+          "field_push_demotions_per_million_pushes": 0.8610151798800388,
+          "field_push_promotions_per_million_pushes": 0.8357498076626377
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 5.911428229154379,
+        "field_push_promotions_per_million_pushes": 10.00359003986454
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 2727,
+          "field_push_demotions_per_million_pushes": 5.74612031048865,
+          "field_push_macro_observations": 474581083,
+          "field_push_promotions": 4652,
+          "field_push_promotions_per_million_pushes": 9.802329183862561,
+          "rows": 150
+        },
+        {
+          "field_push_demotions": 2845,
+          "field_push_demotions_per_million_pushes": 5.992960754663614,
+          "field_push_macro_observations": 474723616,
+          "field_push_promotions": 4798,
+          "field_push_promotions_per_million_pushes": 10.106933462522328,
+          "rows": 150
+        },
+        {
+          "field_push_demotions": 2847,
+          "field_push_demotions_per_million_pushes": 5.995203622310873,
+          "field_push_macro_observations": 474879617,
+          "field_push_promotions": 4797,
+          "field_push_promotions_per_million_pushes": 10.10150747320873,
+          "rows": 150
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.06496367880360601,
+        "aurorapic_promotions": 0.05455458865461939,
+        "native_demotions": 0.04213589375808997,
+        "native_promotions": 0.03044949637539239
+      }
+    },
+    "critical_x020_to_x060_phase_0p25_to_0p375": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 1921,
+          "field_push_demotions_per_million_pushes": 5.49130344617253,
+          "field_push_macro_observations": 349825869,
+          "field_push_promotions": 3530,
+          "field_push_promotions_per_million_pushes": 10.09073459916139,
+          "rows": 100
+        },
+        {
+          "field_push_demotions": 2028,
+          "field_push_demotions_per_million_pushes": 5.796552696360523,
+          "field_push_macro_observations": 349863118,
+          "field_push_promotions": 3702,
+          "field_push_promotions_per_million_pushes": 10.581281105486518,
+          "rows": 100
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.7819086521492494,
+          "field_push_promotions_per_million_pushes": 0.7548905639166128
+        },
+        {
+          "field_push_demotions_per_million_pushes": 0.8253732015269426,
+          "field_push_promotions_per_million_pushes": 0.7915884797272096
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 7.022947541350852,
+        "field_push_promotions_per_million_pushes": 13.367148937201497
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 1075,
+          "field_push_demotions_per_million_pushes": 6.779319320015731,
+          "field_push_macro_observations": 158570492,
+          "field_push_promotions": 2102,
+          "field_push_promotions_per_million_pushes": 13.255934149463318,
+          "rows": 50
+        },
+        {
+          "field_push_demotions": 1155,
+          "field_push_demotions_per_million_pushes": 7.281611056004832,
+          "field_push_macro_observations": 158618744,
+          "field_push_promotions": 2113,
+          "field_push_promotions_per_million_pushes": 13.321250356136977,
+          "rows": 50
+        },
+        {
+          "field_push_demotions": 1112,
+          "field_push_demotions_per_million_pushes": 7.007912248031996,
+          "field_push_macro_observations": 158677786,
+          "field_push_promotions": 2146,
+          "field_push_promotions_per_million_pushes": 13.524262306004195,
+          "rows": 50
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.054084539408294295,
+        "aurorapic_promotions": 0.04745995875136966,
+        "native_demotions": 0.07152149906170101,
+        "native_promotions": 0.020073701415423365
+      }
+    },
+    "critical_x020_to_x060_phase_0p375_to_0p5": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 2042,
+          "field_push_demotions_per_million_pushes": 5.902956971531229,
+          "field_push_macro_observations": 345928322,
+          "field_push_promotions": 2842,
+          "field_push_promotions_per_million_pushes": 8.215574786039056,
+          "rows": 100
+        },
+        {
+          "field_push_demotions": 2202,
+          "field_push_demotions_per_million_pushes": 6.364699777212674,
+          "field_push_macro_observations": 345970757,
+          "field_push_promotions": 2995,
+          "field_push_promotions_per_million_pushes": 8.656801013965467,
+          "rows": 100
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.831855478308144,
+          "field_push_promotions_per_million_pushes": 0.8519004754561541
+        },
+        {
+          "field_push_demotions_per_million_pushes": 0.8969251178681027,
+          "field_push_promotions_per_million_pushes": 0.8976527013372914
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 7.09613283251661,
+        "field_push_promotions_per_million_pushes": 9.643819932885926
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 1114,
+          "field_push_demotions_per_million_pushes": 7.115349810013773,
+          "field_push_macro_observations": 156562928,
+          "field_push_promotions": 1481,
+          "field_push_promotions_per_million_pushes": 9.459455178303768,
+          "rows": 50
+        },
+        {
+          "field_push_demotions": 1099,
+          "field_push_demotions_per_million_pushes": 7.017461858753881,
+          "field_push_macro_observations": 156609330,
+          "field_push_promotions": 1521,
+          "field_push_promotions_per_million_pushes": 9.712065047465563,
+          "rows": 50
+        },
+        {
+          "field_push_demotions": 1121,
+          "field_push_demotions_per_million_pushes": 7.1555868287821776,
+          "field_push_macro_observations": 156660806,
+          "field_push_promotions": 1529,
+          "field_push_promotions_per_million_pushes": 9.759939572888447,
+          "rows": 50
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.07527807716477275,
+        "aurorapic_promotions": 0.052301612192195514,
+        "native_demotions": 0.019464823064665054,
+        "native_promotions": 0.03115823363312823
+      }
+    },
+    "upstream_x010_to_x020_phase_0p125_to_0p5": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 919,
+          "field_push_demotions_per_million_pushes": 119.86971635746845,
+          "field_push_macro_observations": 7666657,
+          "field_push_promotions": 3171,
+          "field_push_promotions_per_million_pushes": 413.6092171594477,
+          "rows": 150
+        },
+        {
+          "field_push_demotions": 957,
+          "field_push_demotions_per_million_pushes": 124.8096554940506,
+          "field_push_macro_observations": 7667676,
+          "field_push_promotions": 3220,
+          "field_push_promotions_per_million_pushes": 419.9447133655621,
+          "rows": 150
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.9698490547885803,
+          "field_push_promotions_per_million_pushes": 0.8902013950437667
+        },
+        {
+          "field_push_demotions_per_million_pushes": 1.0098174091645922,
+          "field_push_promotions_per_million_pushes": 0.9038371345945208
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 123.59626043415501,
+        "field_push_promotions_per_million_pushes": 464.6243192408305
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 418,
+          "field_push_demotions_per_million_pushes": 129.86980707187703,
+          "field_push_macro_observations": 3218608,
+          "field_push_promotions": 1550,
+          "field_push_promotions_per_million_pushes": 481.57464344834784,
+          "rows": 75
+        },
+        {
+          "field_push_demotions": 404,
+          "field_push_demotions_per_million_pushes": 125.96712507475401,
+          "field_push_macro_observations": 3207186,
+          "field_push_promotions": 1513,
+          "field_push_promotions_per_million_pushes": 471.7531194012446,
+          "rows": 75
+        },
+        {
+          "field_push_demotions": 370,
+          "field_push_demotions_per_million_pushes": 114.95184915583401,
+          "field_push_macro_observations": 3218739,
+          "field_push_promotions": 1418,
+          "field_push_promotions_per_million_pushes": 440.545194872899,
+          "rows": 75
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.0403788770520459,
+        "aurorapic_promotions": 0.015201166893002362,
+        "native_demotions": 0.12069910419328951,
+        "native_promotions": 0.08830671765629618
+      }
+    },
+    "x020_to_x040_phase_0p125_to_0p5": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 3739,
+          "field_push_demotions_per_million_pushes": 10.189816218093506,
+          "field_push_macro_observations": 366934979,
+          "field_push_promotions": 7037,
+          "field_push_promotions_per_million_pushes": 19.177784628703932,
+          "rows": 150
+        },
+        {
+          "field_push_demotions": 3875,
+          "field_push_demotions_per_million_pushes": 10.572862145514545,
+          "field_push_macro_observations": 366504353,
+          "field_push_promotions": 7285,
+          "field_push_promotions_per_million_pushes": 19.876980833567345,
+          "rows": 150
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.7952854357746769,
+          "field_push_promotions_per_million_pushes": 0.7729073373403551
+        },
+        {
+          "field_push_demotions_per_million_pushes": 0.8251810532019902,
+          "field_push_promotions_per_million_pushes": 0.8010864981476262
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 12.812778607177362,
+        "field_push_promotions_per_million_pushes": 24.812527585384874
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 2046,
+          "field_push_demotions_per_million_pushes": 12.633606330170336,
+          "field_push_macro_observations": 161949007,
+          "field_push_promotions": 3980,
+          "field_push_promotions_per_million_pushes": 24.575636947252168,
+          "rows": 75
+        },
+        {
+          "field_push_demotions": 2103,
+          "field_push_demotions_per_million_pushes": 12.987916994352183,
+          "field_push_macro_observations": 161919729,
+          "field_push_promotions": 4050,
+          "field_push_promotions_per_million_pushes": 25.01239364104914,
+          "rows": 75
+        },
+        {
+          "field_push_demotions": 2076,
+          "field_push_demotions_per_million_pushes": 12.816812497009565,
+          "field_push_macro_observations": 161974750,
+          "field_push_promotions": 4025,
+          "field_push_promotions_per_million_pushes": 24.84955216785332,
+          "rows": 75
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.03689754478809684,
+        "aurorapic_promotions": 0.035805935413380896,
+        "native_demotions": 0.027652913941974475,
+        "native_promotions": 0.017602265319162085
+      }
+    },
+    "x040_to_x060_phase_0p125_to_0p5": {
+      "aurorapic_pooled_microstates": [
+        {
+          "field_push_demotions": 1255,
+          "field_push_demotions_per_million_pushes": 1.8452683688768927,
+          "field_push_macro_observations": 680117874,
+          "field_push_promotions": 1252,
+          "field_push_promotions_per_million_pushes": 1.840857368791928,
+          "rows": 150
+        },
+        {
+          "field_push_demotions": 1455,
+          "field_push_demotions_per_million_pushes": 2.1375619894078763,
+          "field_push_macro_observations": 680682014,
+          "field_push_promotions": 1470,
+          "field_push_promotions_per_million_pushes": 2.159598710948164,
+          "rows": 150
+        }
+      ],
+      "aurorapic_to_native_ratios": [
+        {
+          "field_push_demotions_per_million_pushes": 0.7892080033069794,
+          "field_push_promotions_per_million_pushes": 0.7880416622549203
+        },
+        {
+          "field_push_demotions_per_million_pushes": 0.9142198815407278,
+          "field_push_promotions_per_million_pushes": 0.9244897441978486
+        }
+      ],
+      "native_edupic_ensemble_mean": {
+        "field_push_demotions_per_million_pushes": 2.3381267817162974,
+        "field_push_promotions_per_million_pushes": 2.3359899063260907
+      },
+      "native_edupic_members": [
+        {
+          "field_push_demotions": 681,
+          "field_push_demotions_per_million_pushes": 2.1782793650386663,
+          "field_push_macro_observations": 312632076,
+          "field_push_promotions": 672,
+          "field_push_promotions_per_million_pushes": 2.149491532020534,
+          "rows": 75
+        },
+        {
+          "field_push_demotions": 742,
+          "field_push_demotions_per_million_pushes": 2.372093285400894,
+          "field_push_macro_observations": 312803887,
+          "field_push_promotions": 748,
+          "field_push_promotions_per_million_pushes": 2.391274632722195,
+          "rows": 75
+        },
+        {
+          "field_push_demotions": 771,
+          "field_push_demotions_per_million_pushes": 2.4640076947093315,
+          "field_push_macro_observations": 312904867,
+          "field_push_promotions": 772,
+          "field_push_promotions_per_million_pushes": 2.4672035542355433,
+          "rows": 75
+        }
+      ],
+      "relative_ranges": {
+        "aurorapic_demotions": 0.1467768366900074,
+        "aurorapic_promotions": 0.15935250171622645,
+        "native_demotions": 0.12220395057488152,
+        "native_promotions": 0.13600744650249288
+      }
+    }
+  },
+  "provenance": {
+    "analyzer_sha256": "b2f32ceadef64be80f548831dba921b3e29805304ba8ed367b0b8e115e7407aa",
+    "input_sha256": {
+      "first": [
+        "607073f8874a33db9535c7306753b3388f1bf17908a91d5c831d12959cfe4551",
+        "09bd035416ad6c9331577079397de044599d286f8c8681ad2cc182fb91808bd8"
+      ],
+      "native": [
+        "6576575c2315664f49e2834671e4d69e7197da2a0d9a2ff68cf82a5bb6a9ab00",
+        "1763e851fba7156c9106aa3901ffe953d4f2cc612e26f63a0456dc95fedf8e3e",
+        "21e770ed671c486cca963cc41603f1c442670a7bca422d9527efabf2d9e1235c"
+      ],
+      "second": [
+        "5d1f2ba8467e103b124e2225a9eb322bc2db24ec28a090efca8d1a4d96fcdcf8",
+        "360f9f8d3dcd3094e69f8256be17e44ad516b76088ba18bb2ad097d983b05ce9"
+      ]
+    },
+    "pooled_result_sha256": "6971a9495a40add90c63f1c348d91e1dcb7765826eac25d891e638a5bc2e1c7a"
+  },
+  "schema_version": 1,
+  "scope": "post_hoc_phase_space_localization_of_pooled_matched_half_step_promotions"
+}

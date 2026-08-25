@@ -60,6 +60,7 @@ PYTHONPATH=scripts python3 scripts/test_fold_edupic_frozen_collision_states.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_coupled_evolution.py
 PYTHONPATH=scripts python3 scripts/test_instrument_edupic_cycle_history.py
 PYTHONPATH=scripts python3 scripts/test_synthesize_edupic_ionization_exposure.py
+PYTHONPATH=scripts python3 scripts/test_localize_edupic_field_push_promotions.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_ionizing_tail.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_energy_pathway.py
 PYTHONPATH=scripts python3 scripts/test_analyze_aurorapic_surface_flux_timestep.py
