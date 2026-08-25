@@ -8,7 +8,8 @@
     "observed_before_declaration": "Two constrained AuroraPIC microstates had native-ensemble interstep-promotion ratios 0.81265 and 0.80066 and demotion ratios 0.84982 and 0.84261. Field-push outputs did not exist in either code when this rule was designed.",
     "new_diagnostic": "Counts threshold transitions between the post-collision velocity entering the mover and the pre-collision velocity leaving it, at the surviving post-drift position.",
     "candidate_independence": "The two AuroraPIC checkpoints predate the field-push diagnostic and preserve a common macrostate with independently constrained particle positions and position-velocity pairings.",
-    "native_independence": "All three native field-push outputs are unseen. They restart from the same locked 2620-cycle checkpoint and differ only by predeclared collision RNG seed."
+    "native_independence": "All three native field-push outputs are unseen. They restart from the same locked 2620-cycle checkpoint and differ only by predeclared collision RNG seed.",
+    "pre_analysis_execution_amendment": "The first AuroraPIC solver invocation completed, but the runner stopped before reading scientific outputs because this rule omitted two inherited generic phase-EEDF gate keys. The keys below were restored from the prior replication rule before any field-push value was inspected; no scientific metric, population floor, repeatability limit, decision boundary, input, or horizon changed."
   },
   "locked_inputs": {
     "aurorapic_solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274",
@@ -83,6 +84,8 @@
     ],
     "critical_regions": ["x020_040", "x040_060"],
     "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "maximum_overflow_fraction": 0.000001,
     "minimum_field_push_observations_critical_aggregate": 100000000,
     "minimum_field_push_promotions_critical_aggregate": 1000,
     "minimum_field_push_demotions_critical_aggregate": 1000
