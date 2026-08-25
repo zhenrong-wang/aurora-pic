@@ -1,0 +1,82 @@
+{
+  "all_runner_population_provenance_and_repeatability_gates_passed": true,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospectively tests one electrode-node field convention in one argon CCP using two serially continued AuroraPIC microstates against a locked native ensemble. It does not reproduce experimental observables, add independent microstates, validate other dimensions, or prove general PIC correctness.",
+  "critical_phase_0p125_to_0p5": {
+    "endpoint_corrected_aurorapic_microstates": [
+      {
+        "field_push_demotions": 2633,
+        "field_push_demotions_per_million_pushes": 5.0574373330788776,
+        "field_push_macro_observations": 520619402,
+        "field_push_promotions": 4309,
+        "field_push_promotions_per_million_pushes": 8.276679630929314,
+        "rows": 150
+      },
+      {
+        "field_push_demotions": 2500,
+        "field_push_demotions_per_million_pushes": 4.800819353150543,
+        "field_push_macro_observations": 520744443,
+        "field_push_promotions": 4202,
+        "field_push_promotions_per_million_pushes": 8.069217168775433,
+        "rows": 150
+      }
+    ],
+    "endpoint_corrected_aurorapic_relative_range": {
+      "field_push_demotions_per_million_pushes": 0.05206153341224987,
+      "field_push_promotions_per_million_pushes": 0.025384041597231708
+    },
+    "endpoint_corrected_aurorapic_to_native_ratios": [
+      {
+        "field_push_demotions_per_million_pushes": 0.8555356061224373,
+        "field_push_promotions_per_million_pushes": 0.8273709336294823
+      },
+      {
+        "field_push_demotions_per_million_pushes": 0.8121251188458214,
+        "field_push_promotions_per_million_pushes": 0.8066321327262927
+      }
+    ],
+    "endpoint_corrected_aurorapic_to_pooled_baseline_ratios": [
+      {
+        "field_push_demotions_per_million_pushes": 1.0603532616077194,
+        "field_push_promotions_per_million_pushes": 1.0454965642335052
+      },
+      {
+        "field_push_demotions_per_million_pushes": 0.9432181195213898,
+        "field_push_promotions_per_million_pushes": 0.965159818561276
+      }
+    ],
+    "native_edupic_ensemble_mean": {
+      "demotions": 5.911428229154379,
+      "promotions": 10.00359003986454
+    }
+  },
+  "gates": {
+    "candidate_repeatability": true,
+    "field_push_demotion_population": true,
+    "field_push_observation_population": true,
+    "field_push_promotion_population": true,
+    "finite_metrics": true,
+    "runner_reports_linked_and_passing": true
+  },
+  "prospective_decision_outcome": {
+    "deficit_persists": true,
+    "directional_persistence_signal_without_interpretation": false,
+    "endpoint_correction_explains_deficit": false,
+    "interpretation_allowed": true,
+    "partial_endpoint_effect": false
+  },
+  "provenance": {
+    "analyzer_sha256": "5f3243fe874d4f5772c2a9016b7952f0b59b219f2d28c37f364c561242ceabf1",
+    "crossings_sha256": [
+      "d5c75893cab0c30eeaad8e55bbeb3ca905a2d03f348aa7c64fb5c92979e2075b",
+      "0ceef95a9869e97092cc0f2901bcc32980f0295de392b2106cb7a3f437136db1"
+    ],
+    "runner_report_sha256": [
+      "0c990045f870c433c2bff1cf4ebac4aa92530c1105c988c508b4bb39a736af9e",
+      "bd153cc77ee4ce6ae07cd403dc0af19ff0345bc6c87e0479f451d52c98452565"
+    ]
+  },
+  "rule_sha256": "ca162b2a1d0207ec6fc69a1b0a8e0bf2924538c6c27eb1e69f300fcc41852d70",
+  "schema_version": 1,
+  "scope": "electrode_half_cell_gauss_control_result"
+}

@@ -3154,6 +3154,32 @@ preserve this mechanism result and the one pre-timestep runner correction. It
 remains one-case code-to-code evidence, not experimental validation or proof
 of general PIC correctness.
 
+The electrode-node discrepancy has now also been corrected in the production
+1D Dirichlet solver. Its endpoint fields integrate Gauss's law across the
+half-volume represented by each electrode node, while the interior potential
+and field formulas remain unchanged. A focused solver test verifies both
+correction signs and magnitudes and guards against endpoint charge leaking
+into the interior Dirichlet potential solution.
+
+The prospectively locked dynamic control loaded the same step-36000 particle
+and RNG states with the corrected solver, relaxed for one RF cycle, and
+measured four cycles. Both branches passed every gate with approximately
+`520.7 million` critical pushes each, zero EEDF overflow, and about `210 MiB`
+peak RSS. Corrected promotion rates are `8.27668` and `8.06922` per million;
+their native eduPIC ratios are `0.82737` and `0.80663`. Both remain below the
+locked `0.90` persistence boundary. The correction changed the two finite
+windows by `+4.55%` and `-3.48%` relative to their pooled baselines, while
+promotion and demotion relative ranges of `2.54%` and `5.21%` pass the `8%`
+repeatability gate.
+
+Thus the physically required endpoint Gauss correction is retained as a
+production numerical fix, but it does not explain the energetic-promotion
+deficit under this CCP contract. The checksum-bound endpoint-control
+[`rule`](../benchmarks/ccp/edupic-endpoint-gauss-control-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-endpoint-gauss-control-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-endpoint-gauss-control-execution-20260825.json)
+preserve the formal result.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

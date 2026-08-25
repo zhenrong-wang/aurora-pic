@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "electrode_half_cell_gauss_control_execution_record",
+  "rule_sha256": "ca162b2a1d0207ec6fc69a1b0a8e0bf2924538c6c27eb1e69f300fcc41852d70",
+  "result_sha256": "2de8253c3dd142cb2b3b5edda6399827cb74fbe1982dedd1f0e2d48d03b25579",
+  "formal_outcome": "electrode_half_cell_correction_does_not_explain_promotion_deficit",
+  "execution_commit": "04b928759b036d3cc0805deba40ce7204205dd19",
+  "branches": [
+    {
+      "id": "microstate_51949",
+      "runner_report_sha256": "0c990045f870c433c2bff1cf4ebac4aa92530c1105c988c508b4bb39a736af9e",
+      "relaxation_deck_sha256": "bc78ca17add6f6a45a2b5ec94fe0faa3f681ffdf44bc70921d92055347c61119",
+      "measurement_deck_sha256": "ca22a9ed55c7bb7f7b1e949689b8a313ec1cdba2c284706ee9ab126ffd3bcd00",
+      "threshold_crossings_sha256": "d5c75893cab0c30eeaad8e55bbeb3ca905a2d03f348aa7c64fb5c92979e2075b",
+      "final_checkpoint_sha256": "e613ff7e7c94d1f16f703761a44135ad539db796e8abcb52f99db2daa0416376",
+      "relaxation_wall_seconds": 118.30621876299847,
+      "measurement_wall_seconds": 435.5086089030083,
+      "maximum_peak_resident_set_kib": 215164
+    },
+    {
+      "id": "microstate_63059",
+      "runner_report_sha256": "bd153cc77ee4ce6ae07cd403dc0af19ff0345bc6c87e0479f451d52c98452565",
+      "relaxation_deck_sha256": "1387e3d2e4019a252520536648cba1b6dc2f7f69a7bfbdaff5f098de7abe8136",
+      "measurement_deck_sha256": "97d536980bf03dd55745345631c40eb6cf1837289d9b95d1f00bc126dca73e9f",
+      "threshold_crossings_sha256": "0ceef95a9869e97092cc0f2901bcc32980f0295de392b2106cb7a3f437136db1",
+      "final_checkpoint_sha256": "f7b97c25b0dab259c331571c31fe107215fa54046329382e8be5c8cf6bb592c7",
+      "relaxation_wall_seconds": 116.50110334801138,
+      "measurement_wall_seconds": 429.60800866199133,
+      "maximum_peak_resident_set_kib": 215148
+    }
+  ],
+  "resource_policy": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "maximum_simultaneous_aurorapic_processes": 1,
+    "all_declared_resource_gates_passed": true
+  }
+}
