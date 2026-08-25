@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "phase_history_execution_record",
+  "rule_sha256": "1a5a9307e22e164c0da4c5a528e489179d3b82836f669cef1abbc5c8e69f279f",
+  "result_sha256": "558b99fce20ea0b0cb6304c0f9bfdf3cfeef7daaf1d76789fbc7646ba3f81b26",
+  "aurorapic": {
+    "wall_seconds": 376.153072770001,
+    "peak_resident_set_kib": 206052,
+    "exit_status": 0,
+    "all_runner_gates_passed": true,
+    "available_memory_before_launch_kib": 17507936,
+    "available_disk_before_launch_kib": 1543944,
+    "input_deck_sha256": "cc66aa9e8bc3882f76b7027645366aa6b305cbfeaa653b41a9d43e1cedb4e4eb",
+    "phase_eedf_moments_sha256": "3759be3fe632dc5ffb209ec34cc578474bf8c4bcfd6c126325facd2fc4c7eb57",
+    "final_checkpoint_sha256": "b67826573995263318c18944b861d89c54fe70530e268c10d5d45ff01d7f0855",
+    "maximum_live_particles": 243436,
+    "maximum_sampled_absolute_field_V_m": 66698.39199468833
+  },
+  "native_edupic_members": [
+    {
+      "seed": 13507,
+      "wall_seconds": 104.18,
+      "peak_resident_set_kib": 80724,
+      "exit_status": 0,
+      "history_sha256": "259dbc9df72fab998b711c53dd2c9ed1d980fffefb9ed5f0195ab841b5c9146d",
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "passive_checkpoint_stdout_histogram_and_moments_match": true
+    },
+    {
+      "seed": 24601,
+      "wall_seconds": 104.24,
+      "peak_resident_set_kib": 80612,
+      "exit_status": 0,
+      "history_sha256": "37183da66b1927854fad87b6ecceb20cfa69f647222f14c0aa92347ed7382770",
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "passive_checkpoint_stdout_histogram_and_moments_match": true
+    },
+    {
+      "seed": 35713,
+      "wall_seconds": 104.81,
+      "peak_resident_set_kib": 80836,
+      "exit_status": 0,
+      "history_sha256": "30782fa19ad8995254697b7a7ceb1329c08ec2e5dfb67d7340cdd69b0f79d201",
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "passive_checkpoint_stdout_histogram_and_moments_match": true
+    }
+  ],
+  "resource_contract": {
+    "maximum_simultaneous_processes": 1,
+    "serial_execution": true,
+    "low_priority": true,
+    "native_virtual_memory_limit_kib": 262144,
+    "aurorapic_virtual_memory_limit_kib": 393216,
+    "all_resource_gates_passed": true
+  }
+}

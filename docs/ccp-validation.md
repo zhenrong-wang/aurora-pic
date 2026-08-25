@@ -2868,6 +2868,52 @@ written. The record leaves that value null rather than imputing it; the
 identical prior physics run measured `196,124 KiB`. The schema adapter is now
 covered by the runner test.
 
+### Direct native energetic-particle history comparison
+
+The next prospective discriminator follows the identity of every sampled
+electron from the beginning of the same four-cycle continuation. It records
+tracked age, time above 15.8 eV, current energetic streak, threshold entries,
+elastic/excitation/ionization collisions, and whether the particle was born
+during the measurement window. Histories update every electron timestep while
+the phase EEDF remains sampled every second step. Native array compaction copies
+the history with the moved particle, ionization products receive fresh history,
+and no random draws or particle-state mutations are added.
+
+Diagnostic passivity is exact for all three native seeds: final checkpoints,
+stdout trajectories, phase histograms, and anisotropy moments are byte-identical
+to the earlier independent runs. Native continuations completed in
+`104.18--104.81 s` at `80,612--80,836 KiB` peak RSS. AuroraPIC completed in
+`376.15 s` at `206,052 KiB`; all execution, sampling, population, overflow,
+finite-value, and three-seed repeatability gates pass.
+
+This is another useful elimination result. In the critical `x/L=0.2--0.6`,
+phase `0.125--0.5` window, AuroraPIC/native energetic-duty fractions are
+`0.15372/0.15380`, a ratio of `0.99950`. Their current-streak fractions differ
+by only `0.61%`, tail-entry rates per 1000 tracked steps by `-0.23%`, elastic
+collision exposure by `+1.65%`, and excitation exposure by `-1.06%`.
+Born-during-window fractions differ by only `0.00095` absolute. None crosses
+its prospectively declared mechanism threshold.
+
+AuroraPIC ionization-collision exposure among observed tail particles is
+`9.49%` lower. That is directionally consistent with the energetic-population
+deficit but remains below the locked `15%` materiality threshold; it is a
+subthreshold clue, not a selected mechanism. Overall, electrons that reach the
+tail have remarkably similar finite-window persistence, turnover, and collision
+histories in both codes even though AuroraPIC has about `13%` fewer energetic
+particles as a fraction of its sampled electron population. The next controlled
+discriminator should therefore target
+promotion into the tail—particularly collision scheduling and ionization-
+product handling—rather than energetic-particle retention.
+
+These histories are observation-conditioned and left-censored for particles
+already alive at the window origin, so they are not unbiased lifetime
+distributions. The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-native-phase-history-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-native-phase-history-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-native-phase-history-execution-20260825.json)
+retain the evidence. This remains a one-case code-to-code mechanism diagnostic,
+not experimental validation or a proof of general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
