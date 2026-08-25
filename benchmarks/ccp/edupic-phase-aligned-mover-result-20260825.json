@@ -1,0 +1,82 @@
+{
+  "all_runner_population_provenance_and_repeatability_gates_passed": true,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospectively tests one RF field-time convention in one argon CCP using two serially continued AuroraPIC microstates against a locked native ensemble. It does not test the electrode half-cell field correction, reproduce experimental observables, add independent microstates, or prove general PIC correctness.",
+  "critical_phase_0p125_to_0p5": {
+    "native_edupic_ensemble_mean": {
+      "demotions": 5.911428229154379,
+      "promotions": 10.00359003986454
+    },
+    "phase_aligned_aurorapic_microstates": [
+      {
+        "field_push_demotions": 2456,
+        "field_push_demotions_per_million_pushes": 4.718786384705807,
+        "field_push_macro_observations": 520472808,
+        "field_push_promotions": 4173,
+        "field_push_promotions_per_million_pushes": 8.017709928085234,
+        "rows": 150
+      },
+      {
+        "field_push_demotions": 2541,
+        "field_push_demotions_per_million_pushes": 4.881349755717933,
+        "field_push_macro_observations": 520552742,
+        "field_push_promotions": 4148,
+        "field_push_promotions_per_million_pushes": 7.968452887334902,
+        "rows": 150
+      }
+    ],
+    "phase_aligned_aurorapic_relative_range": {
+      "field_push_demotions_per_million_pushes": 0.03386688868454945,
+      "field_push_promotions_per_million_pushes": 0.006162459536921381
+    },
+    "phase_aligned_aurorapic_to_native_ratios": [
+      {
+        "field_push_demotions_per_million_pushes": 0.7982481054973111,
+        "field_push_promotions_per_million_pushes": 0.8014832571241397
+      },
+      {
+        "field_push_demotions_per_million_pushes": 0.8257479523550272,
+        "field_push_promotions_per_million_pushes": 0.7965593207618896
+      }
+    ],
+    "phase_aligned_aurorapic_to_pooled_baseline_ratios": [
+      {
+        "field_push_demotions_per_million_pushes": 0.9893509705253847,
+        "field_push_promotions_per_million_pushes": 1.0127839371128085
+      },
+      {
+        "field_push_demotions_per_million_pushes": 0.959039946856773,
+        "field_push_promotions_per_million_pushes": 0.9531073934550424
+      }
+    ]
+  },
+  "gates": {
+    "candidate_repeatability": true,
+    "field_push_demotion_population": true,
+    "field_push_observation_population": true,
+    "field_push_promotion_population": true,
+    "finite_metrics": true,
+    "runner_reports_linked_and_passing": true
+  },
+  "prospective_decision_outcome": {
+    "deficit_persists": true,
+    "directional_persistence_signal_without_interpretation": false,
+    "interpretation_allowed": true,
+    "partial_phase_effect": false,
+    "phase_timing_explains_deficit": false
+  },
+  "provenance": {
+    "analyzer_sha256": "5c3ccab3b0f12de507ac2dd13284a71b28c24acd4528eb6027d29f54588ca5eb",
+    "crossings_sha256": [
+      "386f36b46fe723f4b7e288895e0a480abc71c4e9c4fcc790c00ab42ceb736b15",
+      "b20054ee126a4cf589042d4792a3c24e91b7d6a3d7c70aaf70d8f0c3eb68469b"
+    ],
+    "runner_report_sha256": [
+      "511b0a2120a6be7a36cd64beb350331306aec7fccec48daf1eb46325475ad20f",
+      "76a9ba2a6451fc041384a4c55175459097660310113a321d88189274b944417b"
+    ]
+  },
+  "rule_sha256": "144c12be8f42497255a6a7a5425ea52a6a3beb18622fbc75d13a4e106dc54419",
+  "schema_version": 1,
+  "scope": "one_timestep_rf_phase_alignment_result"
+}

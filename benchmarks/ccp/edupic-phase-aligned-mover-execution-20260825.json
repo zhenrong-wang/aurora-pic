@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "one_timestep_rf_phase_alignment_execution_record",
+  "rule_sha256": "144c12be8f42497255a6a7a5425ea52a6a3beb18622fbc75d13a4e106dc54419",
+  "result_sha256": "0a077dee1d02b60436f049be7c81a15c5c1455d30838c561cc6131ab74668f13",
+  "formal_outcome": "rf_field_time_offset_does_not_explain_promotion_deficit",
+  "execution_commit": "c6d6a6b9b2f31fdf8c6f6d41c9389740588a2b47",
+  "branches": [
+    {
+      "id": "microstate_51949",
+      "runner_report_sha256": "511b0a2120a6be7a36cd64beb350331306aec7fccec48daf1eb46325475ad20f",
+      "relaxation_deck_sha256": "591f0482b867146c33c42a1c153d027ac76029f1f0d01c7c4487cfbedc89d8d6",
+      "measurement_deck_sha256": "ed13ce4817a016de512cde62a90cc989c308920c713ba2184be96b88a347d8e3",
+      "threshold_crossings_sha256": "386f36b46fe723f4b7e288895e0a480abc71c4e9c4fcc790c00ab42ceb736b15",
+      "final_checkpoint_sha256": "29daf3fd74736b5d5d42257c61874d91960fe41dc95e8baf47b8ad9ffb75bded",
+      "relaxation_wall_seconds": 118.54142217800836,
+      "measurement_wall_seconds": 429.16710021099425,
+      "maximum_peak_resident_set_kib": 215076
+    },
+    {
+      "id": "microstate_63059",
+      "runner_report_sha256": "76a9ba2a6451fc041384a4c55175459097660310113a321d88189274b944417b",
+      "relaxation_deck_sha256": "f234ac3f40f6ce77b9dc848ece8e678f47133c3643dac7f34392109a7374521e",
+      "measurement_deck_sha256": "b43ac9bf1e7e0d85021ac017551dd5d6a3db4d4a55510e318273acf74703440b",
+      "threshold_crossings_sha256": "b20054ee126a4cf589042d4792a3c24e91b7d6a3d7c70aaf70d8f0c3eb68469b",
+      "final_checkpoint_sha256": "907b3552856bb0109351ac93e015f7134b1eff2570f5809d7a2053802775604e",
+      "relaxation_wall_seconds": 114.81769559800159,
+      "measurement_wall_seconds": 419.6875732010085,
+      "maximum_peak_resident_set_kib": 215156
+    }
+  ],
+  "non_scientific_execution_corrections": [
+    {
+      "stage": "microstate_51949_initial_relaxation_launch",
+      "observed": "The checkpoint loader rejected the deck before advancing a timestep because wall-impact and phase-history diagnostics present in the checkpoint were disabled in the relaxation deck.",
+      "failed_deck_sha256": "80118cef34e1e1dd641e75a16f303b5404d082bfd2787ca6d1666458d8d1dfd1",
+      "correction": "Build the relaxation deck from the unchanged measurement diagnostic contract so checkpoint-bound diagnostic state remains compatible.",
+      "physics_or_decision_rule_changed": false,
+      "scientific_output_produced_before_failure": false
+    }
+  ],
+  "resource_policy": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "maximum_simultaneous_aurorapic_processes": 1,
+    "all_declared_resource_gates_passed": true
+  }
+}

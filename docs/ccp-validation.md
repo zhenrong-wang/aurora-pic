@@ -3125,6 +3125,35 @@ The reproducible
 is a static source-contract and scale result, not a dynamic equivalence or
 validation claim.
 
+The predeclared phase-aligned control advanced only `phi_left_phase` by the
+audited one-timestep offset, reloaded each locked step-36000 half-step
+checkpoint, relaxed one complete RF cycle, and measured four complete cycles.
+Both serial branches passed every provenance, population, sampling, field,
+and resource gate. They collected approximately `520.5 million` critical
+pushes each with zero EEDF overflow and about `210 MiB` peak RSS. Promotion
+rates are `8.01771` and `7.96845` per million pushes, only `1.28%` above and
+`4.69%` below their respective pooled baselines. Their native eduPIC ratios
+are `0.80148` and `0.79656`, both below the locked `0.90` persistence boundary
+and far outside the `0.95--1.05` parity interval. Promotion and demotion
+relative ranges are `0.62%` and `3.39%`, comfortably passing the `8%`
+repeatability gate.
+
+The formal result is therefore that the one-electron-timestep RF field-time
+convention does not explain the energetic-promotion deficit. Combined with
+the source audit, this excludes the bulk mover algebra, MCC velocity
+staggering, and the RF phase offset under this case contract. The next isolated
+solver mechanism is the electrode-node charged half-cell Gauss correction;
+that requires a prospectively locked code branch because it changes the field
+seen in the wall-adjacent cells.
+
+The checksum-bound phase-alignment
+[`rule`](../benchmarks/ccp/edupic-phase-aligned-mover-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-phase-aligned-mover-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-phase-aligned-mover-execution-20260825.json)
+preserve this mechanism result and the one pre-timestep runner correction. It
+remains one-case code-to-code evidence, not experimental validation or proof
+of general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
