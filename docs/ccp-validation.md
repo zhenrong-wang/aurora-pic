@@ -3371,6 +3371,35 @@ by a missing global endpoint ionizing-energy reservoir. The next localization
 must resolve where that reservoir resides in phase, space, and time, and how
 often its electrons sample the ionization cross section.
 
+### Ionization-exposure synthesis
+
+That phase-space localization had already been completed independently under
+the earlier native phase-EEDF rule. Its prospectively locked regional EEDF
+fold, using the common checksum-bound ionization cross section, predicts an
+AuroraPIC/native ionization-frequency ratio of `0.8530` over `x/L=0.2--0.6`
+and RF phase `0.125--0.5`. The later cycle histories independently measure
+`0.8693` realized ionizations per starting electron. These differ by only
+`0.0164` in absolute ratio, or `1.92%` relative.
+
+The checksum-locked
+[`ionization-exposure synthesis`](../benchmarks/ccp/edupic-ionization-exposure-synthesis-20260825.json)
+connects those results with the endpoint partition. It shows why a global
+energy scalar was misleading: ionizing-band energy per area is near parity at
+`1.015`, yet the endpoint ionizing population fraction is `0.936`, and the
+phase-region cross-section-weighted exposure is `0.853`. Meanwhile electron
+wall loss is much closer to parity at `0.969`. Thus the observed event deficit
+is quantitatively tracked by where and when electrons sample the ionization
+kernel, not by excessive wall loss or a missing global endpoint energy
+reservoir.
+
+This is meaningful cross-diagnostic evidence, not a new formal acceptance
+gate. The EEDF and cycle histories come from independently evolved microstates
+and the synthesis is post hoc, so their close agreement does not prove causal
+onset, experimental validity, or general PIC correctness. It does sharply
+narrow the remaining problem: locate the earliest divergence in energetic
+electron production and transport before the common collision kernel is
+sampled.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

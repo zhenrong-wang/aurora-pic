@@ -1,0 +1,34 @@
+{
+  "assessment": {
+    "collision_sampler_defect_supported": false,
+    "excess_electron_wall_loss_supported": false,
+    "observation": "The prospectively locked critical phase-region EEDF fold predicts an ionization-frequency ratio of 0.8530, while the independent cycle histories measure an event ratio of 0.8693; they differ by 0.0164 in absolute ratio, or 1.92 percent relative. The endpoint ionizing-band energy per area is near parity even though relative tail occupancy is lower, so a global endpoint energy inventory hides the phase-space exposure deficit that quantitatively tracks realized ionization.",
+    "phase_space_ionizing_exposure_deficit_supported": true
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This is a post hoc synthesis of independently evolved, checksum-locked diagnostics. Their close quantitative agreement is cross-diagnostic evidence, not a preregistered acceptance gate or proof of causal onset, experimental validity, or general PIC correctness.",
+  "integrity": {
+    "common_case_identifier": true,
+    "locked_inputs_match": true,
+    "source_measurement_and_repeatability_gates_passed": true
+  },
+  "provenance": {
+    "analyzer_sha256": "1c35e8101d540dbf2426cbfe909b64eb71a2d9125e6bca58076138b35f24b01c",
+    "input_sha256": {
+      "checkpoint_partition": "dc1989badc921b6e2dc0a1b7d5efa94d65c499e869299d68fc22617277ac847e",
+      "cycle_history": "9288e356857e7d5609369a9766f1eb02d3e9244e156a2158dc2ed7c9b4c3c392",
+      "phase_eedf": "5af94a076023bcb0f6b514d3a5de6327be8e6aa290f802cadf300446bbc33bbe"
+    }
+  },
+  "ratios_aurorapic_to_native_edupic": {
+    "absolute_folded_to_realized_ratio_difference": 0.016364250765978805,
+    "critical_phase_region_eedf_folded_ionization_frequency": 0.8529582149853947,
+    "endpoint_ionizing_band_energy_per_area": 1.0151479217614392,
+    "endpoint_ionizing_population_fraction": 0.9358338599619318,
+    "four_cycle_electron_wall_loss_per_starting_electron": 0.9685270576870147,
+    "four_cycle_realized_ionizations_per_starting_electron": 0.8693224657513735,
+    "realized_to_folded_ratio": 1.019185290062842
+  },
+  "schema_version": 1,
+  "scope": "cross_diagnostic_ionization_exposure_synthesis"
+}

@@ -92,6 +92,13 @@ The first complete phase-space result, including ionization, is recorded in
 It also independently integrates the checksum-locked ionization cross section
 over the measured EEDF and compares that prediction with the collision-event
 ledger, keeping this post-diagnostic closure separate from acceptance claims.
+The later checksum-locked
+`benchmarks/ccp/edupic-ionization-exposure-synthesis-20260825.json` links an
+independent native phase-region EEDF fold to native cycle histories: their
+AuroraPIC/native ionization ratios are `0.8530` and `0.8693`, respectively.
+This close descriptive agreement localizes the remaining deficit to
+phase-space ionizing exposure while preserving the stated non-validation
+claim boundary.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision
