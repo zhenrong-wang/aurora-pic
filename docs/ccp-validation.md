@@ -3000,6 +3000,53 @@ the locked result because the critical analyzer selects phase fractions
 records the affected and corrected solver hashes, counts, scope proof, and
 regression-test status.
 
+### Direct field-push threshold attribution
+
+The next prospective campaign isolates the mover-stage interval rather than
+inferring it from consecutive pre-collision states. For each surviving
+electron push it compares the post-collision velocity entering the mover with
+the pre-collision velocity leaving it, attributes the event at the post-drift
+position, and counts threshold promotions and demotions. AuroraPIC preserves
+these accumulators in checkpoint v21. The independent native transform adds no
+random draws or particle-state mutations; all three final native checkpoints
+remain byte-identical to prior passive runs.
+
+All locked gates pass. The two AuroraPIC branches completed in `408.19 s` and
+`395.95 s` at about `206 MiB` peak RSS. Native seeds completed in
+`105.58--112.15 s` at `80,620--80,876 KiB`. Critical-window populations are
+approximately `525 million` candidate pushes and `475 million` native pushes
+per member, with more than 2,500 demotions and 4,100 promotions in every
+candidate and more than 2,700 demotions and 4,600 promotions in every native
+member. Candidate relative ranges are `1.56%` for promotions and `2.61%` for
+demotions; native ranges are `3.04%` and `4.21%`, within the prospective `8%`
+and `15%` limits.
+
+The field-push promotion-deficit outcome is supported. AuroraPIC/native
+promotion-rate ratios are `0.80585` and `0.79340`, remarkably close to the
+earlier whole-interstep ratios of `0.81265` and `0.80066`. Field-push demotion
+ratios are also lower, `0.83234` and `0.81092`; enhanced mover-stage loss is
+not supported. Thus, under the currently compared algorithm contracts, the
+missing energetic-tail traffic is already present across the mover-stage
+interval rather than being introduced primarily by the accepted-collision
+stage.
+
+This result deliberately stops short of blaming field interpolation or the
+leapfrog mover. These constrained AuroraPIC checkpoints use time-centered MCC
+velocity, whereas native eduPIC applies MCC to its half-step velocity. Each
+ledger isolates its own configured mover interval, but their staggered
+before/after states are not identical. The next decisive experiment is an
+AuroraPIC matched-half-step continuation with the same field-push diagnostic;
+only persistence there would localize the discrepancy beyond collision-
+velocity staggering.
+
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-field-push-threshold-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-field-push-threshold-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-field-push-threshold-execution-20260825.json)
+retain the evidence and the two non-scientific execution corrections. This is
+one-case code-to-code mechanism evidence, not experimental validation or proof
+of general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "field_push_threshold_execution_record",
+  "rule_sha256": "60bcd878f77513e9e0126a61d03f9dadac063fbd47a4fc22323533f30185dede",
+  "result_sha256": "dab0572dba9b6cfe659ecfa83600bf52b71bbeb0eabfbba57193eb43f4382ebc",
+  "formal_outcome": "field_push_promotion_deficit_supported_under_current_algorithm_contracts",
+  "aurorapic_microstates": [
+    {
+      "id": "microstate_51949",
+      "wall_seconds": 408.1883888320008,
+      "peak_resident_set_kib": 206352,
+      "exit_status": 0,
+      "all_runner_gates_passed": true,
+      "available_memory_before_launch_kib": 16900112,
+      "available_disk_before_launch_kib": 1440752,
+      "input_deck_sha256": "8694561a104eb661606b31a0e410fbed8e0be3da6420186d19877eeabf7ea4f1",
+      "runner_report_sha256": "f01de653fcc1fb7d52c428058c20a7dafe4af386b60d02a975ba62786669ce27",
+      "threshold_crossings_sha256": "07e365eae925d182e119aefb8fe99763bcd1d0bc9cccc0d6e8257c4bfe97e651",
+      "final_checkpoint_sha256": "ddf2c27ab7c18da395f0034bdc068dcf3b64fe3879d765241b05153afa541ab9"
+    },
+    {
+      "id": "microstate_63059",
+      "wall_seconds": 395.9540001360001,
+      "peak_resident_set_kib": 206484,
+      "exit_status": 0,
+      "all_runner_gates_passed": true,
+      "available_memory_before_launch_kib": 16661896,
+      "available_disk_before_launch_kib": 1436900,
+      "input_deck_sha256": "a45622632c4aec36bbcf73f4bd6d0b09c52319e01961e04184f5557606484a3b",
+      "runner_report_sha256": "db603b403b6f16445de9c6ac2a526f7c88d2e1870413a3d96edf4434f2a7c8a5",
+      "threshold_crossings_sha256": "7c7852f3d26aea186b7995820972c41a80b723a033bce5751582576c625e9e50",
+      "final_checkpoint_sha256": "061a870430c65c62e0357819e1c0d44447377ce0ea98a329033231e871345862"
+    }
+  ],
+  "native_edupic_members": [
+    {
+      "seed": 13507,
+      "wall_seconds": 106.06,
+      "peak_resident_set_kib": 80876,
+      "exit_status": 0,
+      "field_push_sha256": "6576575c2315664f49e2834671e4d69e7197da2a0d9a2ff68cf82a5bb6a9ab00",
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "passive_checkpoint_match": true
+    },
+    {
+      "seed": 24601,
+      "wall_seconds": 105.58,
+      "peak_resident_set_kib": 80808,
+      "exit_status": 0,
+      "field_push_sha256": "1763e851fba7156c9106aa3901ffe953d4f2cc612e26f63a0456dc95fedf8e3e",
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "passive_checkpoint_match": true
+    },
+    {
+      "seed": 35713,
+      "wall_seconds": 112.15,
+      "peak_resident_set_kib": 80620,
+      "exit_status": 0,
+      "field_push_sha256": "21e770ed671c486cca963cc41603f1c442670a7bca422d9527efabf2d9e1235c",
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "passive_checkpoint_match": true
+    }
+  ],
+  "non_scientific_attempts": [
+    {
+      "stage": "aurorapic_microstate_51949",
+      "issue": "The solver completed but the runner stopped before reading scientific outputs because two inherited generic sampling keys were absent from the rule.",
+      "resolution": "The missing prior-rule gates were restored and checksum-locked before any field-push value was inspected; the incomplete raw directory was deleted and the branch was rerun."
+    },
+    {
+      "stage": "native_seed_13507",
+      "issue": "The first invocation omitted eduPIC's measurement-mode argument and emitted no field-push diagnostic.",
+      "resolution": "The directory was deleted, the locked cycle-2620 checkpoint restored, and the seed rerun with measurement mode enabled."
+    }
+  ],
+  "resource_contract": {
+    "maximum_simultaneous_processes": 1,
+    "serial_execution": true,
+    "low_priority": true,
+    "native_virtual_memory_limit_kib": 262144,
+    "aurorapic_virtual_memory_limit_kib": 393216,
+    "all_resource_gates_passed": true
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "algorithm_contract_limit": "The locked AuroraPIC microstates use time-centered MCC velocity while native eduPIC uses its leapfrog half-step MCC velocity. Each ledger isolates its configured mover stage, but the before/after velocity staggering is not identical. A supported field-push deficit would require a subsequent matched-half-step AuroraPIC test before attribution to the electric-field interpolation or mover itself.",
+  "all_measurement_repeatability_and_passivity_gates_passed": true,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective campaign localizes one energetic-threshold discrepancy in one argon CCP across constrained candidate microstates and native collision-seed replicates. It is not experimental validation, a published-observable acceptance result, proof of general PIC correctness, or a matched-staggering comparison.",
+  "critical_phase_0p125_to_0p5": {
+    "aurorapic_microstates": [
+      {
+        "field_push_demotions": 2583,
+        "field_push_demotions_per_million_pushes": 4.920292762105339,
+        "field_push_macro_observations": 524968762,
+        "field_push_promotions": 4232,
+        "field_push_promotions_per_million_pushes": 8.061432043836543,
+        "rows": 150
+      },
+      {
+        "field_push_demotions": 2518,
+        "field_push_demotions_per_million_pushes": 4.79370261757885,
+        "field_push_macro_observations": 525272467,
+        "field_push_promotions": 4169,
+        "field_push_promotions_per_million_pushes": 7.936833285419469,
+        "rows": 150
+      }
+    ],
+    "aurorapic_relative_range": {
+      "field_push_demotions_per_million_pushes": 0.02606345578282627,
+      "field_push_promotions_per_million_pushes": 0.01557653356195064
+    },
+    "aurorapic_to_native_ratios": [
+      {
+        "field_push_demotions_per_million_pushes": 0.8323357015211837,
+        "field_push_promotions_per_million_pushes": 0.8058538996211909
+      },
+      {
+        "field_push_demotions_per_million_pushes": 0.81092122440681,
+        "field_push_promotions_per_million_pushes": 0.7933984953192807
+      }
+    ],
+    "native_edupic_ensemble_mean": {
+      "field_push_demotions_per_million_pushes": 5.911428229154379,
+      "field_push_promotions_per_million_pushes": 10.00359003986454
+    },
+    "native_edupic_members": [
+      {
+        "field_push_demotions": 2727,
+        "field_push_demotions_per_million_pushes": 5.74612031048865,
+        "field_push_macro_observations": 474581083,
+        "field_push_promotions": 4652,
+        "field_push_promotions_per_million_pushes": 9.802329183862561,
+        "rows": 150
+      },
+      {
+        "field_push_demotions": 2845,
+        "field_push_demotions_per_million_pushes": 5.992960754663614,
+        "field_push_macro_observations": 474723616,
+        "field_push_promotions": 4798,
+        "field_push_promotions_per_million_pushes": 10.106933462522328,
+        "rows": 150
+      },
+      {
+        "field_push_demotions": 2847,
+        "field_push_demotions_per_million_pushes": 5.995203622310873,
+        "field_push_macro_observations": 474879617,
+        "field_push_promotions": 4797,
+        "field_push_promotions_per_million_pushes": 10.10150747320873,
+        "rows": 150
+      }
+    ],
+    "native_relative_range": {
+      "field_push_demotions_per_million_pushes": 0.04213589375808997,
+      "field_push_promotions_per_million_pushes": 0.03044949637539239
+    }
+  },
+  "gates": {
+    "candidate_repeatability": true,
+    "candidate_runner_reports_linked_and_passing": true,
+    "field_push_demotion_population": true,
+    "field_push_observation_population": true,
+    "field_push_promotion_population": true,
+    "finite_metrics": true,
+    "native_diagnostic_passivity": true,
+    "native_repeatability": true
+  },
+  "native_passivity": {
+    "13507": true,
+    "24601": true,
+    "35713": true
+  },
+  "prospective_decision_outcome": {
+    "field_push_demotion_enhancement_supported": false,
+    "field_push_promotion_deficit_supported": true,
+    "field_push_promotion_parity_supported": false,
+    "interpretation_allowed": true,
+    "mixed_or_intermediate_result": false
+  },
+  "provenance": {
+    "analyzer_sha256": "716fff0a16bae0b4aa3359bdcc7c73fc337722a45823d535bd2fb8e3830a8980",
+    "aurorapic_crossings_sha256": [
+      "07e365eae925d182e119aefb8fe99763bcd1d0bc9cccc0d6e8257c4bfe97e651",
+      "7c7852f3d26aea186b7995820972c41a80b723a033bce5751582576c625e9e50"
+    ],
+    "aurorapic_runner_report_sha256": [
+      "f01de653fcc1fb7d52c428058c20a7dafe4af386b60d02a975ba62786669ce27",
+      "db603b403b6f16445de9c6ac2a526f7c88d2e1870413a3d96edf4434f2a7c8a5"
+    ],
+    "native_checkpoints_sha256": [
+      "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    ],
+    "native_field_push_sha256": [
+      "6576575c2315664f49e2834671e4d69e7197da2a0d9a2ff68cf82a5bb6a9ab00",
+      "1763e851fba7156c9106aa3901ffe953d4f2cc612e26f63a0456dc95fedf8e3e",
+      "21e770ed671c486cca963cc41603f1c442670a7bca422d9527efabf2d9e1235c"
+    ]
+  },
+  "rule_sha256": "60bcd878f77513e9e0126a61d03f9dadac063fbd47a4fc22323533f30185dede",
+  "schema_version": 1,
+  "scope": "native_edupic_to_aurorapic_field_push_threshold_result"
+}
