@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_native_edupic_to_aurorapic_energetic_particle_history",
+  "question": "Is AuroraPIC's energetic-tail deficit associated with different energetic-electron persistence, collision exposure, or population turnover after gross velocity anisotropy failed to localize it?",
+  "basis": {
+    "prior_result_sha256": "a23b58651cb2c10f64ff82bc6e06038e1e1ff89c8dd788dff24ddb8b76b24b0b",
+    "prior_result": "The locked anisotropy comparison found an AuroraPIC/native critical-tail population ratio of 0.871342 but longitudinal-energy, component-temperature, and directional-imbalance ratios within 0.6 percent of unity.",
+    "native_pilot_observed_before_declaration": "Seed 13507 was run only to prove diagnostic passivity and schema integrity. Its critical aggregate contained 842571 tail observations; the observed native history levels are therefore not prospectively blinded, but no AuroraPIC particle-history output existed when this rule was declared.",
+    "interpretive_limit": "These are finite-window, observation-conditioned histories. Particles present when measurement begins are left-censored; born_during_window explicitly identifies the uncensored subset but does not remove survivor bias."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "4242454ffe75eaa4e499ce0a660402b48de893b8f5571fcdd55d6113d7108bd8",
+    "aurorapic_base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "aurorapic_checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "aurorapic_checkpoint_step": 56000,
+    "aurorapic_prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "native_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_input_checkpoint_cycle": 2620,
+    "native_instrumenter_sha256": "cfc881ca78c335cba91122a320de65883cb48ccff4c99fdb95c66963904dbc9d",
+    "native_instrumented_source_sha256": "d19cd256afa706ae169c5d2296b3360e619b6de0040d07347a3fefc278c9020c",
+    "native_instrumented_binary_sha256": "208aafae83090374772210b7970dcefbecb9e7567f26142a08d2211ee43a2af0",
+    "native_instrumentation_audit_sha256": "a1b2da9f36dc195dafd8470bf2c62bd0e43d79bfc82bbc0e9d318eaa7bbcd749"
+  },
+  "locked_initial_state": {
+    "step": 56000,
+    "checkpoint_sha256": "86e51d2bc6ac885b9d7746af971352f84a68e1719b5072a8e5cde30d5e1f43f8",
+    "prior_report_sha256": "1d87b9ebfbe3668513c844fc5314868e1bae625df259c7f659981f9ba03a9b4a",
+    "base_config_sha256": "32a0363610ec31811339d6e3409fe9350079b8f4a43e3e502b9b816bed0de3ec",
+    "solver_sha256": "4242454ffe75eaa4e499ce0a660402b48de893b8f5571fcdd55d6113d7108bd8"
+  },
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "start_step": 56000,
+    "end_step": 72000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "native_seeds": [13507, 24601, 35713],
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "history_update_interval_steps": 1,
+    "history_origin": "measurement_continuation_start",
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "minimum_tail_macro_observations_critical_aggregate": 100000,
+    "maximum_overflow_fraction": 0.000001
+  },
+  "derived_metrics": {
+    "energetic_duty_fraction": "tail-count-weighted mean of each observed tail particle's energetic_steps / age_steps",
+    "current_streak_fraction": "tail_mean_consecutive_energetic_steps / tail_mean_age_steps",
+    "tail_entries_per_1000_age_steps": "1000 * tail_mean_entries / tail_mean_age_steps",
+    "collision_count_per_1000_age_steps": "1000 * tail_mean_process_collisions / tail_mean_age_steps for each process",
+    "born_during_window_fraction": "fraction of energetic observations belonging to particles created after the history origin"
+  },
+  "prospective_decision_rule": {
+    "energetic_persistence_supported_if": "absolute energetic-duty-fraction difference is at least 0.03 or the AuroraPIC/native current-streak-fraction ratio differs from unity by at least 0.15",
+    "collision_exposure_supported_if": "the AuroraPIC/native elastic-, excitation-, or ionization-collision count per 1000 age steps differs from unity by at least 0.15",
+    "population_turnover_supported_if": "the AuroraPIC/native tail-entry rate per 1000 age steps differs from unity by at least 0.15 or born-during-window fraction differs by at least 0.02 absolute",
+    "native_repeatability_gate": "relative three-seed range no greater than 0.15 for age, duty, current streak, entry rate, and elastic exposure; no greater than 0.30 for excitation and ionization exposure; absolute three-seed range no greater than 0.01 for born fraction",
+    "null_interpretation": "If measurement and repeatability gates pass but none of the mechanism thresholds is crossed, these finite-window particle histories do not localize the tail deficit; collision scheduling and ionization-product handling become the next controlled algorithmic discriminators.",
+    "measurement_validity_is_separate": true
+  },
+  "implementation_difference_to_record": "Native eduPIC extends its electron collision loop over secondaries appended during that same timestep; AuroraPIC freezes the initial particle count and processes collision products on a later timestep. The passive history diagnostic measures this existing difference and does not alter either algorithm.",
+  "claim_boundary": "This compares one deterministic four-cycle AuroraPIC continuation with three deterministic four-cycle native eduPIC continuations of independently equilibrated states. It is a code-to-code mechanism diagnostic for one argon CCP case, not experimental validation, a full lifetime measurement, a proof of code-wide correctness, or unrestricted uncertainty quantification.",
+  "physics_claim": "none_until_prospective_outputs_are_complete"
+}
