@@ -1,0 +1,47 @@
+{
+  "all_provenance_population_and_repeatability_gates_passed": true,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospectively pools two consecutive four-cycle blocks for each of two constrained AuroraPIC microstates against the already-locked native ensemble. It reduces finite-window uncertainty but does not add independent microstates, reproduce published observables, validate against experiment, or prove general PIC correctness.",
+  "critical_phase_0p125_to_0p5": {
+    "first_blocks": [
+      {"field_push_demotions": 2373, "field_push_demotions_per_million_pushes": 4.525084384814778, "field_push_macro_observations": 524410110, "field_push_promotions": 3989, "field_push_promotions_per_million_pushes": 7.606642061115107, "rows": 150},
+      {"field_push_demotions": 2631, "field_push_demotions_per_million_pushes": 5.015512211024144, "field_push_macro_observations": 524572544, "field_push_promotions": 4349, "field_push_promotions_per_million_pushes": 8.29055971331965, "rows": 150}
+    ],
+    "native_edupic_ensemble_mean": {"demotions": 5.911428229154379, "promotions": 10.00359003986454},
+    "pooled_aurorapic_relative_range": {"field_push_demotions_per_million_pushes": 0.06496367880360601, "field_push_promotions_per_million_pushes": 0.05455458865461939},
+    "pooled_aurorapic_to_native_ratios": [
+      {"field_push_demotions_per_million_pushes": 0.8068401702516242, "field_push_promotions_per_million_pushes": 0.7913664778382706},
+      {"field_push_demotions_per_million_pushes": 0.8610151798800388, "field_push_promotions_per_million_pushes": 0.8357498076626377}
+    ],
+    "pooled_microstates": [
+      {"field_push_demotions": 4994, "field_push_demotions_per_million_pushes": 4.7695777588411765, "field_push_macro_observations": 1047052853, "field_push_promotions": 8289, "field_push_promotions_per_million_pushes": 7.916505815585605},
+      {"field_push_demotions": 5330, "field_push_demotions_per_million_pushes": 5.089829440073297, "field_push_macro_observations": 1047186367, "field_push_promotions": 8755, "field_push_promotions_per_million_pushes": 8.360498451752667}
+    ],
+    "second_blocks": [
+      {"field_push_demotions": 2621, "field_push_demotions_per_million_pushes": 5.014897910866046, "field_push_macro_observations": 522642743, "field_push_promotions": 4300, "field_push_promotions_per_million_pushes": 8.227417404320489, "rows": 150},
+      {"field_push_demotions": 2699, "field_push_demotions_per_million_pushes": 5.164425205033277, "field_push_macro_observations": 522613823, "field_push_promotions": 4406, "field_push_promotions_per_million_pushes": 8.430699315812012, "rows": 150}
+    ]
+  },
+  "gates": {
+    "each_block_demotion_population": true,
+    "each_block_observation_population": true,
+    "each_block_promotion_population": true,
+    "finite_metrics": true,
+    "first_block_reports_and_crossings_linked": true,
+    "first_block_result_linked": true,
+    "pooled_candidate_repeatability": true,
+    "second_block_reports_and_crossings_linked": true
+  },
+  "prospective_decision_outcome": {"deficit_persists": true, "interpretation_allowed": true, "partial_staggering_effect": false, "staggering_explains_deficit": false},
+  "provenance": {
+    "analyzer_sha256": "b29ab9a22ee0e0d981d9878390ca8e5e9a9954a32db606d4912ae1bd59ca01fc",
+    "first_crossings_sha256": ["607073f8874a33db9535c7306753b3388f1bf17908a91d5c831d12959cfe4551", "09bd035416ad6c9331577079397de044599d286f8c8681ad2cc182fb91808bd8"],
+    "first_report_sha256": ["090777de87ef80acfcfb464c8425de3e00474f706103fb170587747c5e65dfa3", "241f3978a9ae16c391e18c1bff6ace9205258defd52b04acc672494bad6ab140"],
+    "first_result_sha256": "e4730df01b511450bb0e85fc7e6ef6867623d49d45cf6b65595f53c3f111ae17",
+    "second_crossings_sha256": ["5d1f2ba8467e103b124e2225a9eb322bc2db24ec28a090efca8d1a4d96fcdcf8", "360f9f8d3dcd3094e69f8256be17e44ad516b76088ba18bb2ad097d983b05ce9"],
+    "second_report_sha256": ["9d6e68c0c82d64caccd283d018d83ef0ec8304c3edc4c9f874f11eb971ba8718", "355e33c7a42155fd1b40f87e76a9d7a3b316a699773868afc672e1eb8850de78"]
+  },
+  "rule_sha256": "d0af3ae0936353b4b904f3e77be6fc4ec214037f614832da18353756c020298d",
+  "schema_version": 1,
+  "scope": "pooled_matched_half_step_threshold_replication_result"
+}

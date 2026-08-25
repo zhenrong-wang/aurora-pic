@@ -3077,6 +3077,29 @@ and [`execution record`](../benchmarks/ccp/edupic-matched-half-step-threshold-ex
 preserve the gated outcome. This remains one-case code-to-code mechanism
 evidence, not published-observable or experimental validation.
 
+The prospectively declared replication then continued both half-step
+checkpoints through a second non-overlapping four-cycle block and pooled raw
+counts within each microstate. Every second-block runner and population gate
+passed. The pooled windows contain approximately `1.047 billion` critical
+pushes per microstate, with `8,289` and `8,755` promotions. Promotion and
+demotion relative ranges fell to `5.46%` and `6.50%`, passing the unchanged
+`8%` repeatability gate. Pooled AuroraPIC/native promotion-rate ratios are
+`0.79137` and `0.83575`; both pass the prospective persistence criterion of at
+most `0.90` and neither approaches the `0.95--1.05` parity interval. The formal
+outcome is therefore that the field-push energetic-promotion deficit persists
+when AuroraPIC uses matched leapfrog-half-step collision sampling. Velocity
+staggering is excluded as the explanation under this case contract; the next
+mechanism audit can focus on field interpolation, push timing, and the
+self-consistent field/particle-state coupling.
+
+The pooled replication
+[`rule`](../benchmarks/ccp/edupic-matched-half-step-replication-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-matched-half-step-replication-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-matched-half-step-replication-execution-20260825.json)
+are checksum-bound. Pooling extends the observation window but does not add
+independent microstates, so this is a mechanism-localization milestone rather
+than general or experimental validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
