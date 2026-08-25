@@ -3100,6 +3100,31 @@ are checksum-bound. Pooling extends the observation window but does not add
 independent microstates, so this is a mechanism-localization milestone rather
 than general or experimental validation.
 
+### Mover-contract audit
+
+A checksum-locked source audit now compares the pinned eduPIC 1.0 mover with
+AuroraPIC's 1D electrostatic path. The bulk contracts agree: both use centered
+interior nodal fields, linear cloud-in-cell interpolation, the same electron
+kick algebra, and kick-then-drift leapfrog ordering. No bulk mover-formula
+mismatch was found.
+
+Two narrower differences remain. eduPIC advances time and solves the field
+before each kick, while AuroraPIC kicks with the retained current-time field
+and solves at the end of the step. At 4,000 steps per RF cycle this is a phase
+offset of `0.0015707963 rad`, or at most `0.3927 V` on the `250 V` waveform.
+That scale is too small to assume it explains a `16--21%` promotion deficit,
+but it is cleanly testable by advancing AuroraPIC's configured phase by one
+timestep. Second, eduPIC's two electrode-node fields include the charged
+half-cell Gauss correction `rho dx/(2 epsilon)`; AuroraPIC currently uses only
+the one-sided potential gradient. This directly affects wall-adjacent
+interpolation cells and deserves a separate prospective solver branch if the
+phase-aligned test cannot restore parity.
+
+The reproducible
+[`audit`](../benchmarks/ccp/edupic-mover-contract-audit-20260825.json)
+is a static source-contract and scale result, not a dynamic equivalence or
+validation claim.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,43 @@
+{
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This is a source-contract and scale audit, not a dynamic equivalence proof or validation result.",
+  "differences": {
+    "electrode_node_field": {
+      "aurorapic": "one-sided potential gradient only",
+      "direct_scope": "the two wall-adjacent interpolation cells; indirect distribution effects can propagate inward",
+      "edupic": "one-sided potential gradient plus charged half-cell Gauss correction",
+      "left_missing_term": "-rho[0] dx/(2 epsilon)",
+      "right_missing_term": "+rho[n-1] dx/(2 epsilon)"
+    },
+    "rf_field_time": {
+      "aurorapic": "kick with retained E(t), drift, then solve E(t+dt)",
+      "edupic": "advance time, solve E(t+dt), then kick",
+      "maximum_normalized_voltage_difference": 0.0015707961653038773,
+      "maximum_voltage_difference_V": 0.39269904132596933,
+      "phase_advance_rad": 0.0015707963267948967,
+      "rf_cycle_fraction": 0.00025
+    }
+  },
+  "equivalent_contracts": {
+    "drift": "x <- x + v_half dt",
+    "electron_kick": "v_half <- v_half + (q/m) E dt",
+    "interior_nodal_field": "centered potential difference at interior nodes",
+    "ordering": "charge deposit, Poisson solve, kick, drift",
+    "particle_field_interpolation": "linear cloud-in-cell interpolation between adjacent nodes"
+  },
+  "inputs": {
+    "aurorapic_field_solver_sha256": "5d6b34776117c097fcec213dd22766d25b05c0aaaf4713ab7f19ef32277b76fe",
+    "aurorapic_simulation_sha256": "2dbdef4f6bfff07823e362b47b2bde14ca67e02ed6c5e91df0942bada6526c57",
+    "electrode_voltage_amplitude_V": 250.0,
+    "pinned_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "steps_per_rf_cycle": 4000
+  },
+  "interpretation": {
+    "boundary_field_difference_requires_a_prospective_solver_branch": true,
+    "bulk_mover_mismatch_found": false,
+    "phase_alignment_is_cleanly_testable_by_configuration": true,
+    "rf_phase_offset_is_small": true
+  },
+  "schema_version": 1,
+  "scope": "static_1d_electrostatic_mover_contract_audit"
+}
