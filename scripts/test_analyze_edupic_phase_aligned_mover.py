@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+
+from analyze_edupic_phase_aligned_mover import decision
+
+
+def main() -> int:
+    assert decision([0.80, 0.85], True)["deficit_persists"]
+    assert decision([0.97, 1.02], True)["phase_timing_explains_deficit"]
+    assert decision([0.92, 0.94], True)["partial_phase_effect"]
+    blocked = decision([0.80, 0.85], False)
+    assert not blocked["interpretation_allowed"]
+    assert blocked["directional_persistence_signal_without_interpretation"]
+    print("phase-aligned mover analyzer tests passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
