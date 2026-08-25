@@ -14,7 +14,7 @@ from run_aurorapic_edupic_pilot import (
 )
 from run_aurorapic_ionizing_tail_block import analyze_output
 from run_aurorapic_matched_half_step_thresholds import (
-    common_deck, measurement_deck, remove_global,
+    measurement_deck,
 )
 
 
@@ -35,22 +35,21 @@ def relaxation_deck(base: str, rule: dict[str, object],
     execution = rule["execution_contract"]
     phase = rule["locked_inputs"]["phase_aligned_rad"]
     end = int(execution["relaxation_end_step"])
-    result = common_deck(base, rule, state, output)
-    result = remove_global(result, "initial_state_path")
-    result = remove_global(result, "initial_state_signature")
+    # Build from the measurement contract so restart-bound phase-history and
+    # wall-impact state remain compatible with the input checkpoint.
+    result = measurement_deck(base, rule, state, output, checkpoint)
     for key, value in {
         "phi_left_phase": phase,
         "steps": end,
-        "spatial_average_interval": 10,
+        "spatial_average_interval":
+            rule["diagnostic_contract"]["spatial_average_interval_steps"],
         "spatial_average_start_step": int(execution["initial_step"]) + 1,
         "spatial_average_end_step": end,
         "spatial_average_rf_cycles": execution["relaxation_cycles"],
-        "spatial_average_phase_bins": 20,
+        "spatial_average_phase_bins": rule["diagnostic_contract"]["phase_bins"],
         "checkpoint_interval": end,
     }.items():
         result = set_global(result, key, str(value))
-    result = insert_global(result, "spatial_average_reset_on_restart", "true")
-    result = insert_global(result, "restart_path", str(checkpoint))
     return result
 
 
