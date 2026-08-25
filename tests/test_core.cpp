@@ -3970,8 +3970,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v20\n") == 0,
-                "1D wall-impact checkpoint did not use v20");
+                    "AuroraPIC-checkpoint-v21\n") == 0,
+                "1D wall-impact checkpoint did not use v21");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4427,6 +4427,33 @@ int main() {
                     "interstep promotion");
             std::filesystem::remove_all(first_observation.output_dir);
 
+            auto field_promotion = first_observation;
+            field_promotion.output_dir =
+                "test_output_phase_eedf_field_promotion";
+            field_promotion.phi_right = 10.0;
+            field_promotion.phase_eedf.tail_threshold = 0.01;
+            field_promotion.species[0].charge = -1.0;
+            field_promotion.species[0].drift_velocity = 0.0;
+            std::filesystem::remove_all(field_promotion.output_dir);
+            pic::Simulation field_promotion_simulation(field_promotion);
+            field_promotion_simulation.initialize();
+            field_promotion_simulation.step();
+            std::uint64_t field_promotions = 0;
+            std::uint64_t field_interstep_promotions = 0;
+            for (const auto& phase : field_promotion_simulation
+                     .phase_eedf_threshold_crossings()) {
+                for (const auto& region : phase) {
+                    field_promotions += region.field_push_promotions;
+                    field_interstep_promotions +=
+                        region.interstep_promotions;
+                }
+            }
+            require(field_promotions > 0,
+                    "field push did not record an energetic promotion");
+            require(field_interstep_promotions == 0,
+                    "first field-push sample leaked into interstep counts");
+            std::filesystem::remove_all(field_promotion.output_dir);
+
             pic::Simulation continuous(cfg);
             continuous.initialize();
             const double initial_energy =
@@ -4651,6 +4678,10 @@ int main() {
                             expected.interstep_promotions &&
                         actual.interstep_demotions ==
                             expected.interstep_demotions &&
+                        actual.field_push_promotions ==
+                            expected.field_push_promotions &&
+                        actual.field_push_demotions ==
+                            expected.field_push_demotions &&
                         actual.collision_promotions ==
                             expected.collision_promotions &&
                         actual.collision_demotions ==
@@ -4667,7 +4698,7 @@ int main() {
                     "1D threshold-crossing ledger was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v20\n") == 0,
+                    "AuroraPIC-checkpoint-v21\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4737,6 +4768,9 @@ int main() {
                         std::string::npos &&
                 threshold_crossing_csv.find(
                     "interstep_promotions_per_million_electron_steps") !=
+                        std::string::npos &&
+                threshold_crossing_csv.find(
+                    "field_push_promotions_per_million_electron_steps") !=
                         std::string::npos &&
                 threshold_crossing_csv.find(
                     "ionization_collision_demotions") !=

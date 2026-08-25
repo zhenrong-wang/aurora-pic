@@ -109,6 +109,8 @@ struct PhaseEedfThresholdCrossingAccumulator1D {
     std::uint64_t energetic_time_macro_observations{0};
     std::uint64_t interstep_promotions{0};
     std::uint64_t interstep_demotions{0};
+    std::uint64_t field_push_promotions{0};
+    std::uint64_t field_push_demotions{0};
     std::array<std::uint64_t, 6> collision_promotions{};
     std::array<std::uint64_t, 6> collision_demotions{};
     std::uint64_t energetic_births{0};
@@ -229,6 +231,8 @@ private:
     bool phase_eedf_history_active() const;
     std::size_t phase_eedf_history_phase() const;
     void update_phase_eedf_histories();
+    bool phase_eedf_collision_state_energetic(
+        const Particle& particle, const Species& species) const;
     void add_phase_eedf_collision_history(
         std::size_t particle_id,
         CollisionProcessKind process,
@@ -313,6 +317,7 @@ private:
     std::vector<std::vector<PhaseEedfAccumulator1D>>
         phase_eedf_accumulators_{};
     std::vector<ParticleHistory1D> phase_eedf_particle_histories_{};
+    std::vector<unsigned char> phase_eedf_field_push_origin_energetic_{};
     std::vector<std::vector<PhaseEedfThresholdCrossingAccumulator1D>>
         phase_eedf_threshold_crossings_{};
     std::size_t phase_surface_flux_species_id_{0};

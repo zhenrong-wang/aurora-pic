@@ -41,6 +41,7 @@ constexpr const char* kCheckpointMagicV17 = "AuroraPIC-checkpoint-v17";
 constexpr const char* kCheckpointMagicV18 = "AuroraPIC-checkpoint-v18";
 constexpr const char* kCheckpointMagicV19 = "AuroraPIC-checkpoint-v19";
 constexpr const char* kCheckpointMagicV20 = "AuroraPIC-checkpoint-v20";
+constexpr const char* kCheckpointMagicV21 = "AuroraPIC-checkpoint-v21";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -1368,6 +1369,11 @@ void Simulation::step() {
             SpeciesPower1D{});
         if (!species_due(species_id)) continue;
         const double timestep = species_timestep(species_id);
+        if (species_id == phase_eedf_species_id_ &&
+            phase_eedf_history_active()) {
+            phase_eedf_field_push_origin_energetic_.assign(
+                particles.size(), 0);
+        }
         runtime_static_chunks(
             std::size_t{0}, particles.size(), cfg_.runtime,
             [&](std::size_t chunk, std::size_t begin,
@@ -1381,6 +1387,11 @@ void Simulation::step() {
                      particle_id < end; ++particle_id) {
                     auto& p = particles[particle_id];
                     if (!p.alive) continue;
+                    if (species_id == phase_eedf_species_id_ &&
+                        phase_eedf_history_active()) {
+                        phase_eedf_field_push_origin_energetic_[particle_id] =
+                            phase_eedf_collision_state_energetic(p, sp) ? 1 : 0;
+                    }
                     const double old_position = p.x;
                     kick_leapfrog(
                         p, interpolate_electric(grid_, p.x),
@@ -1859,6 +1870,25 @@ std::size_t Simulation::phase_eedf_history_phase() const {
             steps_per_cycle);
 }
 
+bool Simulation::phase_eedf_collision_state_energetic(
+    const Particle& particle, const Species& species) const {
+    const double longitudinal_velocity =
+        cfg_.collision_velocity_sampling ==
+                CollisionVelocitySampling1D::LeapfrogHalfStep
+            ? particle.v_half
+            : particle.v;
+    const double velocity_squared =
+        longitudinal_velocity * longitudinal_velocity +
+        (cfg_.velocity_dimensions == 3
+             ? particle.velocity_y * particle.velocity_y +
+                   particle.velocity_z * particle.velocity_z
+             : 0.0);
+    const double energy_scale =
+        cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
+    return 0.5 * species.mass() * velocity_squared / energy_scale >=
+        cfg_.phase_eedf.tail_threshold;
+}
+
 void Simulation::update_phase_eedf_histories() {
     if (!phase_eedf_history_active() ||
         !species_due(phase_eedf_species_id_)) return;
@@ -1867,6 +1897,10 @@ void Simulation::update_phase_eedf_histories() {
     if (phase_eedf_particle_histories_.size() != particles.size()) {
         throw std::logic_error(
             "phase EEDF particle history is misaligned");
+    }
+    if (phase_eedf_field_push_origin_energetic_.size() != particles.size()) {
+        throw std::logic_error(
+            "phase EEDF field-push origin state is misaligned");
     }
     const double energy_scale =
         cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
@@ -1888,6 +1922,10 @@ void Simulation::update_phase_eedf_histories() {
             0.5 * species.mass() * velocity_squared / energy_scale;
         const bool energetic =
             energy >= cfg_.phase_eedf.tail_threshold;
+        const bool field_push_energetic =
+            phase_eedf_collision_state_energetic(particle, species);
+        const bool field_push_origin_energetic =
+            phase_eedf_field_push_origin_energetic_[particle_id] != 0;
         for (std::size_t region_id = 0;
              region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
             const auto& configured = cfg_.phase_eedf.regions[region_id];
@@ -1905,6 +1943,12 @@ void Simulation::update_phase_eedf_histories() {
             } else if (has_previous &&
                        history.energetic_previous_step && !energetic) {
                 ++crossing.interstep_demotions;
+            }
+            if (!field_push_origin_energetic && field_push_energetic) {
+                ++crossing.field_push_promotions;
+            } else if (field_push_origin_energetic &&
+                       !field_push_energetic) {
+                ++crossing.field_push_demotions;
             }
         }
         if (energetic) {
@@ -2830,6 +2874,9 @@ void Simulation::write_spatial_average() const {
                    "interstep_promotions,interstep_demotions,"
                    "interstep_promotions_per_million_electron_steps,"
                    "interstep_demotions_per_million_electron_steps,"
+                   "field_push_promotions,field_push_demotions,"
+                   "field_push_promotions_per_million_electron_steps,"
+                   "field_push_demotions_per_million_electron_steps,"
                    "elastic_collision_promotions,elastic_collision_demotions,"
                    "excitation_collision_promotions,"
                    "excitation_collision_demotions,"
@@ -2875,6 +2922,18 @@ void Simulation::write_spatial_average() const {
                         << (observations > 0.0
                                 ? 1.0e6 * static_cast<double>(
                                       value.interstep_demotions) /
+                                      observations
+                                : 0.0) << ','
+                        << value.field_push_promotions << ','
+                        << value.field_push_demotions << ','
+                        << (observations > 0.0
+                                ? 1.0e6 * static_cast<double>(
+                                      value.field_push_promotions) /
+                                      observations
+                                : 0.0) << ','
+                        << (observations > 0.0
+                                ? 1.0e6 * static_cast<double>(
+                                      value.field_push_demotions) /
                                       observations
                                 : 0.0);
                     for (std::size_t process = 0; process < 6; ++process) {
@@ -3096,7 +3155,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV20 << '\n';
+    out << kCheckpointMagicV21 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -3385,7 +3444,9 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
                 << value.electron_time_macro_observations << ' '
                 << value.energetic_time_macro_observations << ' '
                 << value.interstep_promotions << ' '
-                << value.interstep_demotions;
+                << value.interstep_demotions << ' '
+                << value.field_push_promotions << ' '
+                << value.field_push_demotions;
             for (const auto count : value.collision_promotions) {
                 out << ' ' << count;
             }
@@ -3483,7 +3544,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v20 = magic == kCheckpointMagicV20;
+    const bool checkpoint_v21 = magic == kCheckpointMagicV21;
+    const bool checkpoint_v20 =
+        magic == kCheckpointMagicV20 || checkpoint_v21;
     const bool checkpoint_v19 =
         magic == kCheckpointMagicV19 || checkpoint_v20;
     const bool checkpoint_v18 =
@@ -4667,6 +4730,10 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                             value.energetic_time_macro_observations >>
                             value.interstep_promotions >>
                             value.interstep_demotions;
+                        if (checkpoint_v21) {
+                            in >> value.field_push_promotions >>
+                                value.field_push_demotions;
+                        }
                         for (auto& count : value.collision_promotions) {
                             in >> count;
                         }
@@ -4681,6 +4748,10 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                             value.interstep_promotions <=
                                 value.electron_time_macro_observations &&
                             value.interstep_demotions <=
+                                value.electron_time_macro_observations &&
+                            value.field_push_promotions <=
+                                value.electron_time_macro_observations &&
+                            value.field_push_demotions <=
                                 value.electron_time_macro_observations;
                         if (key !=
                                 "phase_eedf_threshold_crossing_accumulator" ||
@@ -4695,6 +4766,11 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                                 value;
                         }
                     }
+                }
+                if (!checkpoint_v21 && !reset && crossings_enabled) {
+                    throw std::runtime_error(
+                        "legacy checkpoint cannot restore phase EEDF "
+                        "field-push threshold crossings");
                 }
                 in >> key;
             } else if (!reset && cfg_.phase_eedf.history_enabled) {
