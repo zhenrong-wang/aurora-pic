@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Focused deck-generation tests for the ionizing-tail continuation."""
 
+import argparse
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 
-from run_aurorapic_ionizing_tail_block import analyze_surface_flux, build_deck
+from run_aurorapic_ionizing_tail_block import (
+    ACKNOWLEDGEMENT, TailBlockError, analyze_surface_flux, build_deck,
+    validate_inputs,
+)
 
 
 def main() -> None:
@@ -97,6 +102,40 @@ def main() -> None:
         assert all(result[key] for key in (
             "contract", "shape", "finite", "histogram_closure",
             "crossing_sufficiency")), result
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        paths = []
+        for name in ("solver", "config", "checkpoint", "report"):
+            path = root / name
+            path.write_text(name, encoding="utf-8")
+            paths.append(path)
+        digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        locked = {
+            "id": "state_b", "step": 10,
+            "solver_sha256": digest(paths[0]),
+            "base_config_sha256": digest(paths[1]),
+            "checkpoint_sha256": digest(paths[2]),
+            "prior_report_sha256": digest(paths[3]),
+        }
+        replication_rule = {
+            "locked_initial_states": [{**locked, "id": "state_a"}, locked],
+            "execution_contract": {
+                "start_step": 10, "end_step": 18,
+                "cycles": 2, "steps_per_cycle": 4,
+            },
+        }
+        args = argparse.Namespace(
+            acknowledge_cost=ACKNOWLEDGEMENT, initial_state_id="state_b",
+            executable=paths[0], base_config=paths[1], checkpoint=paths[2],
+            prior_report=paths[3])
+        assert validate_inputs(args, replication_rule) == (10, 18)
+        args.initial_state_id = "unknown"
+        try:
+            validate_inputs(args, replication_rule)
+            raise AssertionError("unlocked initial state was accepted")
+        except TailBlockError:
+            pass
 
 
 if __name__ == "__main__":

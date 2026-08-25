@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_independent_microstate_threshold_crossing_replication",
+  "question": "Does the exploratory AuroraPIC promotion-rate deficit reproduce in both pre-existing constrained independent microstates?",
+  "basis": {
+    "failed_primary_result_sha256": "54ec7b14b15971f973dfe9eccd010854b5f6ef6316c11ee5e46b459f328889f4",
+    "observed_before_declaration": "The primary candidate had an AuroraPIC/native promotion-rate ratio of 0.8266, but its global interpretation gate failed solely because native elastic threshold demotions numbered 4, 4, and 0. Primary promotion, demotion, occupancy, birth, excitation, and ionization populations and repeatability passed.",
+    "replication_independence": "The two AuroraPIC checkpoints are pre-existing constrained subcell-position and position-velocity-pairing microstates whose global density, power, and current repeatability passed a separate prospective campaign. Neither contains threshold-crossing diagnostics, and both candidate crossing outputs are unseen at declaration.",
+    "native_reference_status": "The three-seed native crossing ensemble is reused and therefore not blinded in this replication. Its exact crossing-file and checkpoint hashes are locked."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "63f3a2309bb551f8ee4b1f1e88c47eeb79c045335116914daa55f43ea2fe2c88",
+    "native_crossing_sha256": [
+      "595ad76d8284757ca473500b9e495d0e49d6fecdc527822f9d47506e4cf6e600",
+      "88b3af2b6d890fd337f7b2ac44a0a2a25163570f25ab3785b5668a91397dd35d",
+      "c8f7bb30801c2c92bde739e7cd85d39fcacd8ce558c5be9dd34af4e4b44e2281"
+    ],
+    "native_checkpoint_sha256": [
+      "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    ]
+  },
+  "locked_initial_states": [
+    {
+      "id": "microstate_51949",
+      "step": 24000,
+      "checkpoint_sha256": "55c1cbc6f608f127a684f9c77ccdbc4bbc2fa83c0af3aa20b3bc833c12f5b6f3",
+      "prior_report_sha256": "b0c25c681fa06ef95ed44ae133ccc3a1218d21555204e4c89e7f135ef5745d55",
+      "base_config_sha256": "0954fe561819c0c52e444f8190cb46f6d92d9f24bbb56fe078f33bb578e18814",
+      "solver_sha256": "63f3a2309bb551f8ee4b1f1e88c47eeb79c045335116914daa55f43ea2fe2c88"
+    },
+    {
+      "id": "microstate_63059",
+      "step": 24000,
+      "checkpoint_sha256": "f03463f5cb800256c2c7fc2cef3373d3c4468fe8805c0df6b823beabfd05497f",
+      "prior_report_sha256": "3d58bab5368c4a4c16b5c0ca83d96203cfda46a6df47e15ba814ff61026ce9f2",
+      "base_config_sha256": "c5392c4040e4fb2044c794b61505e88922f91a39b41fb4dc1a1be5f8cd36b84d",
+      "solver_sha256": "63f3a2309bb551f8ee4b1f1e88c47eeb79c045335116914daa55f43ea2fe2c88"
+    }
+  ],
+  "execution_contract": {
+    "cycles": 4,
+    "steps_per_cycle": 4000,
+    "start_step": 24000,
+    "end_step": 40000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "history_update_interval_steps": 1,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "minimum_tail_macro_observations_critical_aggregate": 100000,
+    "minimum_electron_time_macro_observations_critical_aggregate": 100000000,
+    "minimum_interstep_promotions_critical_aggregate": 1000,
+    "minimum_interstep_demotions_critical_aggregate": 1000,
+    "minimum_process_demotions_for_relative_comparison": 500,
+    "maximum_overflow_fraction": 0.000001
+  },
+  "prospective_decision_rule": {
+    "promotion_limited_confirmed_if": "both independent AuroraPIC/native interstep-promotion rate ratios are at most 0.90",
+    "demotion_enhanced_rejected_if": "both independent AuroraPIC/native interstep-demotion rate ratios are below 1.10",
+    "candidate_repeatability_gate": "relative range across the two candidate microstates no greater than 0.08 for occupancy, promotion, demotion, excitation-demotion, ionization-demotion, and subthreshold-birth rates",
+    "population_qualified_process_gate": "a process-relative comparison is admissible only when every candidate and native member has at least 500 events; elastic demotions are descriptive because they do not meet this floor",
+    "confirmation_requires_all_measurement_and_repeatability_gates": true
+  },
+  "claim_boundary": "This is a confirmatory replication across two constrained AuroraPIC microstates against one already-observed three-seed native ensemble. It tests robustness to preserved-macrostate particle realization for one argon CCP case; it is not an independent native replication, experimental validation, or proof of general PIC correctness.",
+  "physics_claim": "none_until_both_replication_branches_are_complete"
+}

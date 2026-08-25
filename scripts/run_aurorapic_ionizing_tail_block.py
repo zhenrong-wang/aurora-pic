@@ -22,6 +22,7 @@ RULE_SHA256S = {
     "d44eb2156b4e8012c2f7a7388fc525d8eafeeebe70ba03b6635aa2f91d928bf9",
     "1a5a9307e22e164c0da4c5a528e489179d3b82836f669cef1abbc5c8e69f279f",
     "09bef1e9384521fe5c2f160496500cf8e7f89d13e7652f54fb968035cbc336d8",
+    "efde50681b60978a957972f00550331a705fe376bcb56d9568370dc3f0ddb80a",
 }
 ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_ONE_BOUNDED_TAIL_BLOCK"
 CLI_ACKNOWLEDGEMENT = "I_UNDERSTAND_THIS_IS_A_LARGE_RUN"
@@ -175,7 +176,18 @@ def validate_inputs(args: argparse.Namespace,
                     rule: dict[str, object]) -> tuple[int, int]:
     if args.acknowledge_cost != ACKNOWLEDGEMENT:
         raise TailBlockError("missing exact bounded-run acknowledgement")
-    locked = rule["locked_initial_state"]
+    if "locked_initial_states" in rule:
+        if not args.initial_state_id:
+            raise TailBlockError("replication rule requires initial-state id")
+        matches = [state for state in rule["locked_initial_states"]
+                   if state["id"] == args.initial_state_id]
+        if len(matches) != 1:
+            raise TailBlockError("initial-state id is not locked by the rule")
+        locked = matches[0]
+    else:
+        if args.initial_state_id:
+            raise TailBlockError("single-state rule rejects initial-state id")
+        locked = rule["locked_initial_state"]
     paths = {
         "solver_sha256": args.executable.resolve(),
         "base_config_sha256": args.base_config.resolve(),
@@ -439,6 +451,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "scope": "aurorapic_spatial_phase_ionizing_tail_block",
         "rule_sha256": rule_sha256,
         "inputs": {
+            "initial_state_id": args.initial_state_id,
             "solver_sha256": sha256(args.executable.resolve()),
             "base_config_sha256": sha256(args.base_config.resolve()),
             "prior_report_sha256": sha256(args.prior_report.resolve()),
@@ -466,6 +479,7 @@ def main() -> int:
     parser.add_argument("prior_report", type=Path)
     parser.add_argument("work_dir", type=Path)
     parser.add_argument("--acknowledge-cost", required=True)
+    parser.add_argument("--initial-state-id")
     args = parser.parse_args()
     try:
         result = execute(args)
