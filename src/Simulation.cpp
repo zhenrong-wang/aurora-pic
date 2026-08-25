@@ -1877,7 +1877,7 @@ void Simulation::update_phase_eedf_histories() {
         const auto& particle = particles[particle_id];
         if (!particle.alive) continue;
         auto& history = phase_eedf_particle_histories_[particle_id];
-        ++history.age_steps;
+        const bool has_previous = history.age_steps > 0;
         const double velocity_squared =
             particle.v * particle.v +
             (cfg_.velocity_dimensions == 3
@@ -1888,7 +1888,6 @@ void Simulation::update_phase_eedf_histories() {
             0.5 * species.mass() * velocity_squared / energy_scale;
         const bool energetic =
             energy >= cfg_.phase_eedf.tail_threshold;
-        const bool has_previous = history.age_steps > 0;
         for (std::size_t region_id = 0;
              region_id < cfg_.phase_eedf.regions.size(); ++region_id) {
             const auto& configured = cfg_.phase_eedf.regions[region_id];
@@ -1918,6 +1917,7 @@ void Simulation::update_phase_eedf_histories() {
             history.consecutive_energetic_steps = 0;
         }
         history.energetic_previous_step = energetic;
+        ++history.age_steps;
     }
 }
 

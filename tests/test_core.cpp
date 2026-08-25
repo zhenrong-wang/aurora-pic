@@ -4395,6 +4395,38 @@ int main() {
                 "1D phase EEDF accepted a tail threshold at its energy "
                 "maximum");
 
+            auto first_observation = cfg;
+            first_observation.steps = 1;
+            first_observation.output_interval = 1;
+            first_observation.output_dir =
+                "test_output_phase_eedf_first_observation";
+            first_observation.collisions = {};
+            first_observation.spatial_average.end_step = 1;
+            first_observation.spatial_average.rf_frequency = 10.0;
+            first_observation.spatial_average.rf_cycles = 1;
+            first_observation.spatial_average.phase_bins = 1;
+            std::filesystem::remove_all(first_observation.output_dir);
+            pic::Simulation first_observation_simulation(first_observation);
+            first_observation_simulation.initialize();
+            first_observation_simulation.step();
+            std::uint64_t first_energetic_observations = 0;
+            std::uint64_t first_promotions = 0;
+            for (const auto& phase : first_observation_simulation
+                     .phase_eedf_threshold_crossings()) {
+                for (const auto& region : phase) {
+                    first_energetic_observations +=
+                        region.energetic_time_macro_observations;
+                    first_promotions += region.interstep_promotions;
+                }
+            }
+            require(first_energetic_observations > 0,
+                    "first threshold observation did not contain the "
+                    "energetic test population");
+            require(first_promotions == 0,
+                    "first threshold observation was misclassified as an "
+                    "interstep promotion");
+            std::filesystem::remove_all(first_observation.output_dir);
+
             pic::Simulation continuous(cfg);
             continuous.initialize();
             const double initial_energy =
