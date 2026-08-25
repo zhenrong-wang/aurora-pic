@@ -117,6 +117,12 @@ struct PhaseEedfThresholdCrossingAccumulator1D {
     double field_push_promotion_band_signed_work{0.0};
     double field_push_promotion_band_positive_work{0.0};
     double field_push_promotion_band_negative_work{0.0};
+    double field_push_promotion_band_origin_energy{0.0};
+    double field_push_promotion_band_origin_longitudinal_energy{0.0};
+    double field_push_promotion_band_linear_work{0.0};
+    double field_push_promotion_band_positive_linear_work{0.0};
+    double field_push_promotion_band_negative_linear_work{0.0};
+    double field_push_promotion_band_quadratic_work{0.0};
     std::array<std::uint64_t, 6> collision_promotions{};
     std::array<std::uint64_t, 6> collision_demotions{};
     std::uint64_t energetic_births{0};
@@ -326,6 +332,8 @@ private:
         phase_eedf_accumulators_{};
     std::vector<ParticleHistory1D> phase_eedf_particle_histories_{};
     std::vector<double> phase_eedf_field_push_origin_energy_{};
+    std::vector<double>
+        phase_eedf_field_push_origin_longitudinal_velocity_{};
     std::vector<std::vector<PhaseEedfThresholdCrossingAccumulator1D>>
         phase_eedf_threshold_crossings_{};
     std::size_t phase_surface_flux_species_id_{0};

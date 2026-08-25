@@ -3988,8 +3988,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v22\n") == 0,
-                "1D wall-impact checkpoint did not use v22");
+                    "AuroraPIC-checkpoint-v23\n") == 0,
+                "1D wall-impact checkpoint did not use v23");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4471,6 +4471,10 @@ int main() {
             std::uint64_t field_band_observations = 0;
             std::uint64_t field_band_promotions = 0;
             double field_band_signed_work = 0.0;
+            double field_band_linear_work = 0.0;
+            double field_band_quadratic_work = 0.0;
+            double field_band_origin_energy = 0.0;
+            double field_band_origin_longitudinal_energy = 0.0;
             for (const auto& phase : field_promotion_simulation
                      .phase_eedf_threshold_crossings()) {
                 for (const auto& region : phase) {
@@ -4483,6 +4487,15 @@ int main() {
                         region.field_push_promotion_band_promotions;
                     field_band_signed_work +=
                         region.field_push_promotion_band_signed_work;
+                    field_band_linear_work +=
+                        region.field_push_promotion_band_linear_work;
+                    field_band_quadratic_work +=
+                        region.field_push_promotion_band_quadratic_work;
+                    field_band_origin_energy +=
+                        region.field_push_promotion_band_origin_energy;
+                    field_band_origin_longitudinal_energy +=
+                        region
+                            .field_push_promotion_band_origin_longitudinal_energy;
                 }
             }
             require(field_promotions > 0,
@@ -4491,8 +4504,16 @@ int main() {
                     "first field-push sample leaked into interstep counts");
             require(field_band_observations > 0 &&
                         field_band_promotions == field_promotions &&
-                        std::isfinite(field_band_signed_work),
+                        std::isfinite(field_band_signed_work) &&
+                        field_band_origin_energy >=
+                            field_band_origin_longitudinal_energy &&
+                        field_band_origin_longitudinal_energy >= 0.0,
                     "field-push promotion-band work was not recorded");
+            require_near(
+                field_band_signed_work,
+                field_band_linear_work + field_band_quadratic_work,
+                1e-10,
+                "field-push mover decomposition does not close");
             std::filesystem::remove_all(field_promotion.output_dir);
 
             pic::Simulation continuous(cfg);
@@ -4752,6 +4773,40 @@ int main() {
                         expected.field_push_promotion_band_negative_work,
                         1e-12,
                         "1D restart lost promotion-band negative work");
+                    require_near(
+                        actual.field_push_promotion_band_origin_energy,
+                        expected.field_push_promotion_band_origin_energy,
+                        1e-12,
+                        "1D restart lost promotion-band origin energy");
+                    require_near(
+                        actual
+                            .field_push_promotion_band_origin_longitudinal_energy,
+                        expected
+                            .field_push_promotion_band_origin_longitudinal_energy,
+                        1e-12,
+                        "1D restart lost promotion-band longitudinal energy");
+                    require_near(
+                        actual.field_push_promotion_band_linear_work,
+                        expected.field_push_promotion_band_linear_work,
+                        1e-12,
+                        "1D restart lost promotion-band linear work");
+                    require_near(
+                        actual.field_push_promotion_band_positive_linear_work,
+                        expected
+                            .field_push_promotion_band_positive_linear_work,
+                        1e-12,
+                        "1D restart lost promotion-band positive linear work");
+                    require_near(
+                        actual.field_push_promotion_band_negative_linear_work,
+                        expected
+                            .field_push_promotion_band_negative_linear_work,
+                        1e-12,
+                        "1D restart lost promotion-band negative linear work");
+                    require_near(
+                        actual.field_push_promotion_band_quadratic_work,
+                        expected.field_push_promotion_band_quadratic_work,
+                        1e-12,
+                        "1D restart lost promotion-band quadratic work");
                     observed_electron_time = observed_electron_time ||
                         expected.electron_time_macro_observations > 0;
                 }
@@ -4760,7 +4815,7 @@ int main() {
                     "1D threshold-crossing ledger was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v22\n") == 0,
+                    "AuroraPIC-checkpoint-v23\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);
@@ -4836,6 +4891,12 @@ int main() {
                         std::string::npos &&
                 threshold_crossing_csv.find(
                     "field_push_promotion_band_mean_signed_work_normalized") !=
+                        std::string::npos &&
+                threshold_crossing_csv.find(
+                    "field_push_promotion_band_mean_origin_energy_normalized") !=
+                        std::string::npos &&
+                threshold_crossing_csv.find(
+                    "field_push_promotion_band_mean_quadratic_work_normalized") !=
                         std::string::npos &&
                 threshold_crossing_csv.find(
                     "ionization_collision_demotions") !=

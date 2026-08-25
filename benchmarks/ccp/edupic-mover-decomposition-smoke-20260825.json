@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_near_threshold_mover_decomposition_passivity_smoke",
+  "inputs": {
+    "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "seed": 13507,
+    "cycles": 1,
+    "promotion_band_eV": [11.5, 15.8],
+    "instrumenter_sha256": "6beff0abd1be20932b8e8c303c2959d8a0751561022d7583c3c1455a8fbeb9b0",
+    "instrumented_source_sha256": "9455225da950eb7fb119dac2fcb0fd8444820268c9032991495ef236f9796731",
+    "instrumented_binary_sha256": "d13bda91aba9576ee128dc038589d62a4c2710df929fdf4f7fac075093273184",
+    "instrumentation_audit_sha256": "45c67c27fe80a498e710e435146236aeb27ae05858f3d949d9fb5bd3e98f9e14"
+  },
+  "passivity": {
+    "reference": "promotion-band-work one-cycle instrumented smoke",
+    "final_checkpoint_sha256": "93ed640d2f9dbf0f117539969a9d9541c97ad4f694b92decd2211111b9c5663f",
+    "stdout_sha256": "a327c0e5dd0f710b51008791228b05de0fc39dad893cdba0e955c8de8d843016",
+    "phase_eedf_sha256": "9e9091c338f5b2a49798f525fe222cb9d48f134cf91ea29a9630b9352937bc7b",
+    "phase_eedf_moments_sha256": "684dbdba0ed94f67f6a531343971aaa0af687de3d1bb186039ccac36849d739e",
+    "phase_eedf_history_sha256": "da36c0f4032facc2f730adee498cdb4a7b7b318595e0f2a693ba2ecf75273e44",
+    "threshold_crossings_sha256": "7d9d95112f6be4f54db8af62fce9beac603c549daafd89116f7308ca36a4ad21",
+    "field_push_thresholds_sha256": "236c3c9b4be2f218729e9205a0ac51e5cb87a8650770b8a25c83076c14333f16",
+    "promotion_band_work_sha256": "4fd92bbd0e223855e370397d0ed5124e2b07bd5f7895df1261d832d05f0a9a2f",
+    "trajectory_and_all_existing_diagnostics_exact": true
+  },
+  "new_ledger": {
+    "sha256": "eca820c8587240fb57d0e2e72ec366b8c2e4e6b64488e2f9301f5d0e3fe9f04b",
+    "rows": 1400,
+    "promotion_band_observations": 4749306,
+    "origin_macro_energy_sum_eV": 62658253.878768295,
+    "origin_longitudinal_macro_energy_sum_eV": 21183294.061468247,
+    "linear_macro_work_sum_eV": 6058.419133469132,
+    "positive_linear_macro_work_sum_eV": 30339.416790188512,
+    "negative_linear_macro_work_sum_eV": 24280.997656719388,
+    "quadratic_macro_work_sum_eV": 226.48358695126308,
+    "linear_work_closure_residual_eV": 8.185452315956354e-12,
+    "total_work_decomposition_closure_residual_eV": -9.094947017729282e-13
+  },
+  "resources": {
+    "maximum_simultaneous_processes": 1,
+    "wall_seconds": 27.20,
+    "peak_resident_set_kib": 81088,
+    "address_space_limit_kib": 262144
+  },
+  "claim_boundary": "This one-cycle smoke proves passive native instrumentation and mover-decomposition arithmetic on one locked continuation. It is not a cross-code physics result."
+}

@@ -3487,6 +3487,27 @@ distribution, so these two supported deficits are not claimed as independent
 causes. This one-case solver-to-solver comparison neither compares experiment
 nor establishes a published benchmark pass or general PIC correctness.
 
+The next discriminator is now implemented but has no production outcome yet.
+For every band observation, checkpoint v23 accumulates origin total and
+longitudinal energy and decomposes mover work exactly as
+`delta K = m v_x delta v_x + 0.5 m delta v_x^2`. The linear term probes
+velocity--field alignment; the quadratic term probes particle-sampled field
+strength and is proportional to `E^2` under the locked half-step convention.
+The composed native transform's
+[`one-cycle smoke`](../benchmarks/ccp/edupic-mover-decomposition-smoke-20260825.json)
+is byte-exact for the trajectory and all prior diagnostics. Its two algebraic
+closures are below `8.2e-12 eV`, with `81,088 KiB` peak RSS.
+
+Before any production decomposition output is observed, the
+[`prospective mover-decomposition rule`](../benchmarks/ccp/edupic-mover-decomposition-rule-20260825.json)
+locks the two AuroraPIC states, three native seeds, binaries, instrumenter,
+scope, population/repeatability gates, and four possible associations: sampled
+field strength, favorable alignment, longitudinal energy partition, and origin
+energy distribution. Multiple associations may be supported because the
+quantities are decomposition terms or covariates, not independent causal
+variables. No physics interpretation is allowed until every locked member and
+gate completes.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

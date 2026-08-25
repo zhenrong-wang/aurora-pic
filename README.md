@@ -117,6 +117,11 @@ pass, both microstates support reduced positive mover work and reduced
 conditional promotion conversion, while the stricter band-supply-deficit rule
 is not met. This localizes one matched CCP discrepancy; it is not an
 experimental validation or a claim of general solver correctness.
+Checkpoint v23 and a passive native transform now decompose that mover work
+into exact linear alignment and quadratic sampled-field terms while recording
+the band's origin energy partition. The next comparison is prospectively
+locked in `benchmarks/ccp/edupic-mover-decomposition-rule-20260825.json`; no
+production interpretation exists yet.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

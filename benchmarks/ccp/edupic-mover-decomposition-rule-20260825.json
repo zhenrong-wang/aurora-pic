@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_near_threshold_mover_decomposition_comparison",
+  "question": "Is AuroraPIC's lower positive work in the 11.5--15.8 eV band associated with weaker particle-sampled field strength, less favorable longitudinal velocity-field alignment, reduced longitudinal energy partition, or a lower origin-energy distribution?",
+  "basis": {
+    "promotion_band_work_result_sha256": "c825ed803c2c17575b3c6b963591f8dc7e3076d49a5913537bd8d9583fdbf714",
+    "observed_before_declaration": "Both locked AuroraPIC members have lower positive work and conditional promotion probability under the preceding prospective rule; the band-supply deficit is not supported. No production-state native or AuroraPIC mover-decomposition output exists.",
+    "smoke_record_sha256": "6b56b1dbd741d66fdd2e46ac5dfaf2f3d09ed7b5b49da54c72da30751c448ab2",
+    "smoke_scope": "One native cycle established passivity, exact algebraic closure, and bounded resources only. Its decomposition values are not used to set a production outcome."
+  },
+  "locked_inputs": {
+    "aurorapic_solver_sha256": "12a8779cf494c33c1f4c89331f266e1c8c9d8360b21a9a8c2371a206f2b2b4c1",
+    "aurorapic_continuation_states": [
+      {
+        "id": "microstate_51949_cycle36000",
+        "checkpoint_sha256": "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+        "prior_report_sha256": "9d6e68c0c82d64caccd283d018d83ef0ec8304c3edc4c9f874f11eb971ba8718",
+        "prior_deck_sha256": "162c3698e531268fe63406cf9ab29d525f4320904409b59139053a0b5e9bee04"
+      },
+      {
+        "id": "microstate_63059_cycle36000",
+        "checkpoint_sha256": "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233",
+        "prior_report_sha256": "355e33c7a42155fd1b40f87e76a9d7a3b316a699773868afc672e1eb8850de78",
+        "prior_deck_sha256": "e422bfd823704a26a181ff4ad9d3e6857f553aeda88724bbad7f6df7fd92f878"
+      }
+    ],
+    "native_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "native_instrumenter_sha256": "6beff0abd1be20932b8e8c303c2959d8a0751561022d7583c3c1455a8fbeb9b0",
+    "native_instrumented_source_sha256": "9455225da950eb7fb119dac2fcb0fd8444820268c9032991495ef236f9796731",
+    "native_instrumented_binary_sha256": "d13bda91aba9576ee128dc038589d62a4c2710df929fdf4f7fac075093273184",
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_input_checkpoint_cycle": 2620,
+    "native_seeds": [13507, 24601, 35713],
+    "expected_passive_native_checkpoint_sha256": {
+      "13507": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "24601": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "35713": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    }
+  },
+  "execution_contract": {
+    "aurorapic_start_step": 36000,
+    "aurorapic_end_step": 52000,
+    "native_cycles": 4,
+    "steps_per_cycle": 4000,
+    "measurement_cycles": 4,
+    "serial": true,
+    "runtime_threads": 1,
+    "maximum_simultaneous_processes": 1,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 1048576,
+    "timeout_seconds_per_member": 2400
+  },
+  "diagnostic_contract": {
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "sampling_order": "pre_collision",
+    "phase_bins": 200,
+    "critical_region": "x020_040",
+    "critical_x_over_L": [0.2, 0.4],
+    "critical_phase_fraction": [0.25, 0.375],
+    "promotion_band_eV": [11.5, 15.8],
+    "minimum_band_observations_per_member": 100000,
+    "minimum_band_promotions_per_member": 500,
+    "work_closure_relative_tolerance": 1e-10
+  },
+  "derived_metrics": {
+    "mean_origin_energy_eV": "origin total kinetic-energy sum divided by band observations; within-band energy-distribution covariate",
+    "origin_longitudinal_energy_fraction": "origin longitudinal kinetic-energy sum divided by origin total kinetic-energy sum",
+    "mean_positive_linear_work_eV": "positive part of m*v_x*delta_v_x divided by band observations; favorable alignment metric",
+    "mean_quadratic_work_eV": "0.5*m*delta_v_x^2 divided by band observations; particle-sampled field-strength metric proportional to E squared",
+    "total_work_identity": "signed mover work equals signed linear work plus nonnegative quadratic work"
+  },
+  "prospective_decision_rule": {
+    "field_strength_deficit_supported_if": "both AuroraPIC/native mean-quadratic-work ratios are at most 0.90",
+    "favorable_alignment_deficit_supported_if": "both AuroraPIC/native mean-positive-linear-work ratios are at most 0.90",
+    "longitudinal_energy_partition_deficit_supported_if": "both AuroraPIC/native origin-longitudinal-energy-fraction ratios are at most 0.90",
+    "lower_origin_energy_distribution_supported_if": "both AuroraPIC/native mean-origin-energy ratios are at most 0.995",
+    "parity_interval": [0.95, 1.05],
+    "aurorapic_repeatability_gate": "relative range no greater than 0.10 for all four declared metrics",
+    "native_repeatability_gate": "relative three-seed range no greater than 0.15 for all four declared metrics",
+    "interpretation_requires_all_integrity_population_repeatability_and_both_work_closure_gates": true,
+    "multiple_supported_mechanisms": "allowed; metrics are exact decomposition terms or covariates and are not asserted to be statistically independent",
+    "otherwise": "mixed_or_intermediate_near_threshold_mover_result"
+  },
+  "claim_boundary": "This prospective comparison decomposes one previously established near-threshold work discrepancy in one matched argon CCP. It does not identify the first self-consistent field divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_locked_members_and_gates_are_complete"
+}

@@ -43,6 +43,7 @@ constexpr const char* kCheckpointMagicV19 = "AuroraPIC-checkpoint-v19";
 constexpr const char* kCheckpointMagicV20 = "AuroraPIC-checkpoint-v20";
 constexpr const char* kCheckpointMagicV21 = "AuroraPIC-checkpoint-v21";
 constexpr const char* kCheckpointMagicV22 = "AuroraPIC-checkpoint-v22";
+constexpr const char* kCheckpointMagicV23 = "AuroraPIC-checkpoint-v23";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -1374,6 +1375,8 @@ void Simulation::step() {
             phase_eedf_history_active()) {
             phase_eedf_field_push_origin_energy_.assign(
                 particles.size(), 0.0);
+            phase_eedf_field_push_origin_longitudinal_velocity_.assign(
+                particles.size(), 0.0);
         }
         runtime_static_chunks(
             std::size_t{0}, particles.size(), cfg_.runtime,
@@ -1392,6 +1395,12 @@ void Simulation::step() {
                         phase_eedf_history_active()) {
                         phase_eedf_field_push_origin_energy_[particle_id] =
                             phase_eedf_collision_state_energy(p, sp);
+                        phase_eedf_field_push_origin_longitudinal_velocity_[
+                            particle_id] =
+                            cfg_.collision_velocity_sampling ==
+                                    CollisionVelocitySampling1D::LeapfrogHalfStep
+                                ? p.v_half
+                                : p.v;
                     }
                     const double old_position = p.x;
                     kick_leapfrog(
@@ -1908,6 +1917,11 @@ void Simulation::update_phase_eedf_histories() {
         throw std::logic_error(
             "phase EEDF field-push origin state is misaligned");
     }
+    if (phase_eedf_field_push_origin_longitudinal_velocity_.size() !=
+        particles.size()) {
+        throw std::logic_error(
+            "phase EEDF field-push longitudinal origin state is misaligned");
+    }
     const double energy_scale =
         cfg_.units.system == UnitSystem::SI ? ELEMENTARY_CHARGE_SI : 1.0;
     const std::size_t phase = phase_eedf_history_phase();
@@ -1932,6 +1946,26 @@ void Simulation::update_phase_eedf_histories() {
             phase_eedf_collision_state_energy(particle, species);
         const double field_push_origin_energy =
             phase_eedf_field_push_origin_energy_[particle_id];
+        const double field_push_origin_longitudinal_velocity =
+            phase_eedf_field_push_origin_longitudinal_velocity_[particle_id];
+        const double field_push_longitudinal_velocity =
+            cfg_.collision_velocity_sampling ==
+                    CollisionVelocitySampling1D::LeapfrogHalfStep
+                ? particle.v_half
+                : particle.v;
+        const double field_push_longitudinal_delta =
+            field_push_longitudinal_velocity -
+            field_push_origin_longitudinal_velocity;
+        const double field_push_origin_longitudinal_energy =
+            0.5 * species.mass() *
+            field_push_origin_longitudinal_velocity *
+            field_push_origin_longitudinal_velocity / energy_scale;
+        const double field_push_linear_work =
+            species.mass() * field_push_origin_longitudinal_velocity *
+            field_push_longitudinal_delta / energy_scale;
+        const double field_push_quadratic_work =
+            0.5 * species.mass() * field_push_longitudinal_delta *
+            field_push_longitudinal_delta / energy_scale;
         const bool field_push_energetic =
             field_push_energy >= cfg_.phase_eedf.tail_threshold;
         const bool field_push_origin_energetic =
@@ -1978,6 +2012,19 @@ void Simulation::update_phase_eedf_histories() {
                     std::max(0.0, field_push_work);
                 crossing.field_push_promotion_band_negative_work +=
                     std::max(0.0, -field_push_work);
+                crossing.field_push_promotion_band_origin_energy +=
+                    field_push_origin_energy;
+                crossing
+                    .field_push_promotion_band_origin_longitudinal_energy +=
+                    field_push_origin_longitudinal_energy;
+                crossing.field_push_promotion_band_linear_work +=
+                    field_push_linear_work;
+                crossing.field_push_promotion_band_positive_linear_work +=
+                    std::max(0.0, field_push_linear_work);
+                crossing.field_push_promotion_band_negative_linear_work +=
+                    std::max(0.0, -field_push_linear_work);
+                crossing.field_push_promotion_band_quadratic_work +=
+                    field_push_quadratic_work;
             }
         }
         if (energetic) {
@@ -2918,6 +2965,31 @@ void Simulation::write_spatial_average() const {
                 << (si ? "eV" : "normalized") << ','
                 << "field_push_promotion_band_mean_signed_work_"
                 << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_origin_macro_energy_sum_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_origin_longitudinal_macro_"
+                   "energy_sum_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_linear_macro_work_sum_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_positive_linear_macro_work_"
+                   "sum_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_negative_linear_macro_work_"
+                   "sum_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_quadratic_macro_work_sum_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_mean_origin_energy_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_origin_longitudinal_energy_"
+                   "fraction,"
+                << "field_push_promotion_band_mean_linear_work_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_mean_positive_linear_work_"
+                << (si ? "eV" : "normalized") << ','
+                << "field_push_promotion_band_mean_quadratic_work_"
+                << (si ? "eV" : "normalized") << ','
                 <<
                    "elastic_collision_promotions,elastic_collision_demotions,"
                    "excitation_collision_promotions,"
@@ -2994,6 +3066,44 @@ void Simulation::write_spatial_average() const {
                         << value.field_push_promotion_band_negative_work << ','
                         << (value.field_push_promotion_band_observations > 0
                                 ? value.field_push_promotion_band_signed_work /
+                                      static_cast<double>(
+                                          value.field_push_promotion_band_observations)
+                                : 0.0) << ','
+                        << value.field_push_promotion_band_origin_energy << ','
+                        << value
+                               .field_push_promotion_band_origin_longitudinal_energy
+                        << ','
+                        << value.field_push_promotion_band_linear_work << ','
+                        << value
+                               .field_push_promotion_band_positive_linear_work
+                        << ','
+                        << value
+                               .field_push_promotion_band_negative_linear_work
+                        << ','
+                        << value.field_push_promotion_band_quadratic_work << ','
+                        << (value.field_push_promotion_band_observations > 0
+                                ? value.field_push_promotion_band_origin_energy /
+                                      static_cast<double>(
+                                          value.field_push_promotion_band_observations)
+                                : 0.0) << ','
+                        << (value.field_push_promotion_band_origin_energy > 0.0
+                                ? value
+                                      .field_push_promotion_band_origin_longitudinal_energy /
+                                      value.field_push_promotion_band_origin_energy
+                                : 0.0) << ','
+                        << (value.field_push_promotion_band_observations > 0
+                                ? value.field_push_promotion_band_linear_work /
+                                      static_cast<double>(
+                                          value.field_push_promotion_band_observations)
+                                : 0.0) << ','
+                        << (value.field_push_promotion_band_observations > 0
+                                ? value
+                                      .field_push_promotion_band_positive_linear_work /
+                                      static_cast<double>(
+                                          value.field_push_promotion_band_observations)
+                                : 0.0) << ','
+                        << (value.field_push_promotion_band_observations > 0
+                                ? value.field_push_promotion_band_quadratic_work /
                                       static_cast<double>(
                                           value.field_push_promotion_band_observations)
                                 : 0.0);
@@ -3218,7 +3328,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV22 << '\n';
+    out << kCheckpointMagicV23 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -3516,7 +3626,14 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
                 << value.field_push_promotion_band_promotions << ' '
                 << value.field_push_promotion_band_signed_work << ' '
                 << value.field_push_promotion_band_positive_work << ' '
-                << value.field_push_promotion_band_negative_work;
+                << value.field_push_promotion_band_negative_work << ' '
+                << value.field_push_promotion_band_origin_energy << ' '
+                << value
+                       .field_push_promotion_band_origin_longitudinal_energy
+                << ' ' << value.field_push_promotion_band_linear_work << ' '
+                << value.field_push_promotion_band_positive_linear_work << ' '
+                << value.field_push_promotion_band_negative_linear_work << ' '
+                << value.field_push_promotion_band_quadratic_work;
             for (const auto count : value.collision_promotions) {
                 out << ' ' << count;
             }
@@ -3614,7 +3731,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v22 = magic == kCheckpointMagicV22;
+    const bool checkpoint_v23 = magic == kCheckpointMagicV23;
+    const bool checkpoint_v22 =
+        magic == kCheckpointMagicV22 || checkpoint_v23;
     const bool checkpoint_v21 =
         magic == kCheckpointMagicV21 || checkpoint_v22;
     const bool checkpoint_v20 =
@@ -4823,6 +4942,21 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                                     value.field_push_promotion_band_signed_work >>
                                     value.field_push_promotion_band_positive_work >>
                                     value.field_push_promotion_band_negative_work;
+                                if (checkpoint_v23) {
+                                    in >>
+                                        value
+                                            .field_push_promotion_band_origin_energy >>
+                                        value
+                                            .field_push_promotion_band_origin_longitudinal_energy >>
+                                        value
+                                            .field_push_promotion_band_linear_work >>
+                                        value
+                                            .field_push_promotion_band_positive_linear_work >>
+                                        value
+                                            .field_push_promotion_band_negative_linear_work >>
+                                        value
+                                            .field_push_promotion_band_quadratic_work;
+                                }
                             }
                         }
                         for (auto& count : value.collision_promotions) {
@@ -4865,7 +4999,69 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                                 1.0e-10 * std::max(
                                     1.0,
                                     value.field_push_promotion_band_positive_work +
-                                    value.field_push_promotion_band_negative_work);
+                                    value.field_push_promotion_band_negative_work) &&
+                            (!checkpoint_v23 ||
+                             (std::isfinite(
+                                  value
+                                      .field_push_promotion_band_origin_energy) &&
+                              value.field_push_promotion_band_origin_energy >=
+                                  0.0 &&
+                              std::isfinite(
+                                  value
+                                      .field_push_promotion_band_origin_longitudinal_energy) &&
+                              value
+                                      .field_push_promotion_band_origin_longitudinal_energy >=
+                                  0.0 &&
+                              value
+                                      .field_push_promotion_band_origin_longitudinal_energy <=
+                                  value.field_push_promotion_band_origin_energy +
+                                      1.0e-10 * std::max(
+                                          1.0,
+                                          value
+                                              .field_push_promotion_band_origin_energy) &&
+                              std::isfinite(
+                                  value.field_push_promotion_band_linear_work) &&
+                              std::isfinite(
+                                  value
+                                      .field_push_promotion_band_positive_linear_work) &&
+                              value
+                                      .field_push_promotion_band_positive_linear_work >=
+                                  0.0 &&
+                              std::isfinite(
+                                  value
+                                      .field_push_promotion_band_negative_linear_work) &&
+                              value
+                                      .field_push_promotion_band_negative_linear_work >=
+                                  0.0 &&
+                              std::isfinite(
+                                  value
+                                      .field_push_promotion_band_quadratic_work) &&
+                              value.field_push_promotion_band_quadratic_work >=
+                                  0.0 &&
+                              std::abs(
+                                  value.field_push_promotion_band_linear_work -
+                                  (value
+                                       .field_push_promotion_band_positive_linear_work -
+                                   value
+                                       .field_push_promotion_band_negative_linear_work)) <=
+                                  1.0e-10 * std::max(
+                                      1.0,
+                                      value
+                                          .field_push_promotion_band_positive_linear_work +
+                                      value
+                                          .field_push_promotion_band_negative_linear_work) &&
+                              std::abs(
+                                  value.field_push_promotion_band_signed_work -
+                                  (value
+                                       .field_push_promotion_band_linear_work +
+                                   value
+                                       .field_push_promotion_band_quadratic_work)) <=
+                                  1.0e-10 * std::max(
+                                      1.0,
+                                      value
+                                          .field_push_promotion_band_positive_work +
+                                      value
+                                          .field_push_promotion_band_negative_work)));
                         if (key !=
                                 "phase_eedf_threshold_crossing_accumulator" ||
                             stored_phase != phase || stored_region != region ||
@@ -4880,10 +5076,10 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                         }
                     }
                 }
-                if (!checkpoint_v22 && !reset && crossings_enabled) {
+                if (!checkpoint_v23 && !reset && crossings_enabled) {
                     throw std::runtime_error(
                         "legacy checkpoint cannot restore phase EEDF "
-                        "promotion-band field-work accumulators");
+                        "promotion-band mover-decomposition accumulators");
                 }
                 in >> key;
             } else if (!reset && cfg_.phase_eedf.history_enabled) {
