@@ -66,7 +66,7 @@
     "lower_ionization_replenishment_not_excess_wall_loss": true
   },
   "assessment": {
-    "finding": "AuroraPIC produces about 13.1 percent fewer ionizations per starting electron while electron wall loss is only about 3.1 percent lower than native. Its total kinetic energy is about 12.2 percent higher, field energy agrees within 1.6 percent, and its global endpoint energetic fraction is about 6.4 percent lower. The discrepancy is therefore distribution-shaped: lower ionizing-tail replenishment occurs despite greater total kinetic energy, rather than because of excessive wall loss or globally insufficient kinetic energy.",
+    "finding": "AuroraPIC produces about 13.1 percent fewer ionizations per starting electron while electron wall loss is only about 3.1 percent lower than native. Its population-weighted total kinetic energy is about 12.2 percent higher, field energy agrees within 1.6 percent, and its global endpoint energetic fraction is about 6.4 percent lower. A subsequent checkpoint partition shows that most of the total-energy difference comes from AuroraPIC's approximately nine-percent larger species populations; per-electron energy is only about four percent higher. The lower ionization therefore requires spatial, phase, temporal, or finer EEDF-shape localization rather than a claim of globally insufficient kinetic energy.",
     "causal_limit": "Lower ionization can be a consequence and amplifier of a lower energetic tail; this independently evolved-state comparison does not identify the first causal divergence."
   },
   "verification": {

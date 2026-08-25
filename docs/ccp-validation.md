@@ -3354,6 +3354,23 @@ energy but less ionizing-tail supply. Lower ionization is both a consequence
 and a feedback amplifier of that tail difference, so this result still does
 not identify the first causal divergence.
 
+A deterministic decomposition of the five locked final checkpoints then
+qualified the total-energy statement. AuroraPIC has `9.29%` more electrons
+and `8.95%` more ions than the independently evolved native ensemble, which
+explains most of its larger population-weighted kinetic energy. Its mean
+electron energy is only `4.17%` higher and the increase is nearly isotropic:
+the per-particle x, y, and z energy ratios are `1.045`, `1.040`, and `1.040`.
+Ion mean energy is `1.6%` lower, excluding ion overheating and a directional
+heating defect at this endpoint.
+
+The [`checkpoint energy partition`](../benchmarks/ccp/edupic-checkpoint-energy-partition-20260825.json)
+also finds that total ionizing-band energy per area agrees within `1.6%`, even
+though the fraction of electrons above `15.8 eV` is `6.4%` lower in
+AuroraPIC. Therefore the `13.1%` normalized ionization deficit is not explained
+by a missing global endpoint ionizing-energy reservoir. The next localization
+must resolve where that reservoir resides in phase, space, and time, and how
+often its electrons sample the ionization cross section.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

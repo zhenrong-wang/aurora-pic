@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "locked_final_checkpoint_species_direction_and_energy_band_partition",
+  "inputs": {
+    "native_checkpoint_sha256": [
+      "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    ],
+    "aurorapic_checkpoint_sha256": [
+      "15fab37306177b7042d4eb16592261fdbb9ed5817ee2ef05ea0304ffdb5e12b6",
+      "f4e7d8c7a3e012903df93ef39184a4f560d99a1664f60226646d11e15e29d233"
+    ],
+    "electron_mass_kg": 9.10938356e-31,
+    "ion_mass_kg": 6.6335209e-26,
+    "represented_weight_per_m2": 700000000.0,
+    "energy_bands_eV": [[0.0, 11.5], [11.5, 15.8], [15.8, "infinity"]]
+  },
+  "ensemble_means": {
+    "native": {
+      "electrons": 108578.66666666667,
+      "ions": 113996.66666666667,
+      "electron_mean_energy_eV": 1.723599439100698,
+      "electron_energy_band_fractions": [0.9865781014602196, 0.010864616945274632, 0.0025572815945056767],
+      "electron_energy_band_J_m-2": [1.868013516519668e-05, 1.7483578338380215e-06, 5.603823563791151e-07],
+      "electron_directional_energy_per_macro_J_m-2": [6.372100806842711e-11, 6.470554708393991e-11, 6.487919549769064e-11],
+      "ion_mean_energy_eV": 0.5796589870224423
+    },
+    "aurorapic": {
+      "electrons": 118670.0,
+      "ions": 124194.0,
+      "electron_mean_energy_eV": 1.795434288033239,
+      "electron_energy_band_fractions": [0.9871703065828543, 0.010436502711549774, 0.002393190705595851],
+      "electron_energy_band_J_m-2": [2.1492450612319492e-05, 1.8343304183709028e-06, 5.68870984470037e-07],
+      "electron_directional_energy_per_macro_J_m-2": [6.660053461842723e-11, 6.729866220900254e-11, 6.746300190489432e-11],
+      "ion_mean_energy_eV": 0.5706446018021891
+    }
+  },
+  "aurorapic_to_native_ratios": {
+    "electron_population": 1.0929402952083895,
+    "ion_population": 1.0894529079797655,
+    "electron_mean_energy": 1.041677229234898,
+    "ion_mean_energy": 0.9844488131434694,
+    "electron_directional_energy_per_macro": [1.045189595037604, 1.040075623218187, 1.0398248835760555],
+    "sub_excitation_population_fraction": 1.000600260065578,
+    "excitation_band_population_fraction": 0.9605955539257967,
+    "ionizing_population_fraction": 0.9358338599619318,
+    "sub_excitation_energy_per_area": 1.1505511294352138,
+    "excitation_band_energy_per_area": 1.0491733344678948,
+    "ionizing_band_energy_per_area": 1.0151479217614392
+  },
+  "assessment": {
+    "directional_heating_defect_supported": false,
+    "ion_overheating_supported": false,
+    "lower_relative_ionizing_tail_supported": true,
+    "finding": "AuroraPIC's approximately four-percent higher per-electron energy is nearly isotropic across velocity components, while ion mean energy is within two percent. Its much larger total kinetic energy is primarily a nine-percent population difference between independently evolved states. The ionizing-band energy per area agrees within 1.6 percent, but the fraction of electrons in that band is 6.4 percent lower. The lower four-cycle ionization rate therefore depends on spatial, phase, or temporal tail structure rather than a missing global endpoint ionizing-energy reservoir alone."
+  },
+  "claim_boundary": "This deterministic checkpoint partition compares independently evolved endpoint ensembles. It does not resolve phase or position and cannot identify causal onset."
+}
