@@ -3333,6 +3333,27 @@ boundaries. This comparison can identify differing time-resolved observables;
 because the native and AuroraPIC states evolved independently, it cannot by
 itself assign causal onset to one algorithm.
 
+All three preregistered native members subsequently completed serially in
+`101.97--102.74 s` with at most `80,728 KiB` RSS. Every final checkpoint is
+byte-identical to its previously locked passive run, and all twelve per-cycle
+species balances and electron-channel sums close exactly. Native relative
+ranges are `2.90%` for ionization, `1.54%` for electron wall loss, `2.01%`
+for ion wall loss, and `2.84%` for final energetic fraction, passing the
+prospective `8%` gate.
+
+The [`cycle-history result`](../benchmarks/ccp/edupic-cycle-history-result-20260825.json)
+reveals a robust distribution-level difference. Normalized by starting
+electrons, AuroraPIC/native four-cycle ionization is `0.8693`, whereas the
+electron-wall-loss ratio is `0.9685`. AuroraPIC therefore replenishes about
+`13.1%` fewer electrons through ionization; its declining population is not
+caused primarily by excessive wall loss. At the same time its total kinetic
+energy is `12.2%` higher than native, its field energy is within `1.6%`, and
+its global final energetic fraction is `6.4%` lower. This combination points
+to an EEDF-shape or energy-partition problem: AuroraPIC has more total kinetic
+energy but less ionizing-tail supply. Lower ionization is both a consequence
+and a feedback amplifier of that tail difference, so this result still does
+not identify the first causal divergence.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_cycle_resolved_coupled_state_result",
+  "rule_sha256": "58be0c0a0410920eddd5bc33440b9d82591bb4314765c4283e6d9a058ca9fe00",
+  "all_passivity_balance_and_repeatability_gates_passed": true,
+  "native_members": [
+    {
+      "seed": 13507,
+      "history_sha256": "855534212b4eb3b9f9e52431952aad8084b5e96fecb8a009c468ddc702987ddc",
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "ionizations": 1924,
+      "electron_wall_losses": 1929,
+      "ion_wall_losses": 1926,
+      "final_energetic_fraction": 0.0025970198736485367
+    },
+    {
+      "seed": 24601,
+      "history_sha256": "951a6c8963b5abb20ce4056d2a91da8305ea611450b6798e4bf1ef2ac15f8cac",
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "ionizations": 1909,
+      "electron_wall_losses": 1959,
+      "ion_wall_losses": 1965,
+      "final_energetic_fraction": 0.0025243917045171872
+    },
+    {
+      "seed": 35713,
+      "history_sha256": "92c95440451bb56d0afdc001462cdfa6977ed690c001493e5f7f3525343dd454",
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "ionizations": 1965,
+      "electron_wall_losses": 1947,
+      "ion_wall_losses": 1938,
+      "final_energetic_fraction": 0.0025504332053513062
+    }
+  ],
+  "native_repeatability_relative_ranges": {
+    "ionizations": 0.028975508796136598,
+    "electron_wall_losses": 0.015424164524421594,
+    "ion_wall_losses": 0.02007205352547607,
+    "final_energetic_fraction": 0.028400536447527408,
+    "four_cycle_mean_energetic_fraction": 0.04447609811199107,
+    "four_cycle_mean_total_kinetic_energy": 0.002011450369192979,
+    "four_cycle_mean_field_energy": 0.002551343002775519
+  },
+  "normalized_four_cycle_comparison": {
+    "native_mean_ionizations_per_starting_electron": 0.017797668928978154,
+    "aurorapic_mean_ionizations_per_starting_electron": 0.015471913437965895,
+    "aurorapic_to_native_ionization_ratio": 0.8693224657513735,
+    "native_mean_electron_wall_losses_per_starting_electron": 0.01791124494663462,
+    "aurorapic_mean_electron_wall_losses_per_starting_electron": 0.01734752536767544,
+    "aurorapic_to_native_electron_wall_loss_ratio": 0.9685270576870147,
+    "native_mean_final_energetic_fraction": 0.0025572815945056767,
+    "aurorapic_mean_final_energetic_fraction": 0.002393190705595851,
+    "aurorapic_to_native_final_energetic_fraction_ratio": 0.9358338599619318,
+    "native_mean_total_kinetic_energy_J_m-2": 2.8449592631240968e-05,
+    "aurorapic_mean_total_kinetic_energy_J_m-2": 3.190835278929125e-05,
+    "aurorapic_to_native_total_kinetic_energy_ratio": 1.1215750328267322,
+    "native_mean_field_energy_J_m-2": 5.4126675370556595e-05,
+    "aurorapic_mean_field_energy_J_m-2": 5.4981971619665415e-05,
+    "aurorapic_to_native_field_energy_ratio": 1.0158017510451802
+  },
+  "prospective_outcomes": {
+    "gross_traffic_difference_supported": true,
+    "energetic_occupancy_difference_supported": false,
+    "bulk_energy_or_field_difference_supported": true,
+    "lower_ionization_replenishment_not_excess_wall_loss": true
+  },
+  "assessment": {
+    "finding": "AuroraPIC produces about 13.1 percent fewer ionizations per starting electron while electron wall loss is only about 3.1 percent lower than native. Its total kinetic energy is about 12.2 percent higher, field energy agrees within 1.6 percent, and its global endpoint energetic fraction is about 6.4 percent lower. The discrepancy is therefore distribution-shaped: lower ionizing-tail replenishment occurs despite greater total kinetic energy, rather than because of excessive wall loss or globally insufficient kinetic energy.",
+    "causal_limit": "Lower ionization can be a consequence and amplifier of a lower energetic tail; this independently evolved-state comparison does not identify the first causal divergence."
+  },
+  "verification": {
+    "all_12_native_cycle_species_balances_close_exactly": true,
+    "all_12_native_cycle_channel_sums_close_exactly": true,
+    "all_native_final_checkpoints_match_prior_passive_hashes": true,
+    "maximum_peak_resident_set_kib": 80728,
+    "maximum_simultaneous_processes": 1
+  },
+  "claim_boundary": "This compares independently evolved native and AuroraPIC states over four-cycle windows. It identifies robust differences in normalized observables but cannot assign causal onset, validate experiment, or prove general PIC correctness."
+}
