@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_pooled_matched_half_step_threshold_replication",
+  "question": "Does pooling a prospectively replicated four-cycle block per microstate satisfy the original repeatability gate and support persistence or parity of mover-stage promotion traffic?",
+  "basis": {
+    "observed_result_sha256": "e4730df01b511450bb0e85fc7e6ef6867623d49d45cf6b65595f53c3f111ae17",
+    "observed_before_declaration": "Both first-block promotion ratios were below 0.90, but promotion and demotion relative ranges were 0.08604 and 0.10281, above the locked 0.08 repeatability gate.",
+    "unchanged_contract": "The critical regions, phase interval, 15.8 eV threshold, four-cycle block size, native reference, population floors, 8% repeatability gate, and 0.90/0.95-1.05 decision boundaries are unchanged.",
+    "pooling_rule": "For each microstate, add raw observations, promotions, and demotions from its first and second non-overlapping four-cycle blocks, derive rates from the pooled counts, and only then evaluate cross-microstate repeatability and native ratios.",
+    "independence_limit": "The second block is a serial continuation of the first block's particle and RNG state, not an independent realization; pooling extends the observation window and does not increase the microstate ensemble size."
+  },
+  "locked_inputs": {
+    "first_block_result_sha256": "e4730df01b511450bb0e85fc7e6ef6867623d49d45cf6b65595f53c3f111ae17",
+    "first_block_crossings_sha256": ["607073f8874a33db9535c7306753b3388f1bf17908a91d5c831d12959cfe4551", "09bd035416ad6c9331577079397de044599d286f8c8681ad2cc182fb91808bd8"],
+    "native_field_push_rates_per_million": {"promotions": 10.00359003986454, "demotions": 5.911428229154379}
+  },
+  "locked_continuation_states": [
+    {
+      "id": "microstate_51949",
+      "solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274",
+      "base_config_sha256": "2d62ce0a6b3763979472d2ad8bf0a9f8e711828cf5da54d90e47b2f83101bb5c",
+      "checkpoint_sha256": "7eed1bcd7db7bea0920c71621f853952d252c6c68b148371c7eb64512bb1a766",
+      "prior_report_sha256": "090777de87ef80acfcfb464c8425de3e00474f706103fb170587747c5e65dfa3",
+      "first_block_crossings_sha256": "607073f8874a33db9535c7306753b3388f1bf17908a91d5c831d12959cfe4551",
+      "electrons": 119131,
+      "ions": 124645,
+      "seed": 13507
+    },
+    {
+      "id": "microstate_63059",
+      "solver_sha256": "72950e35229e9ff9ad61e754fb830f20d86af45f87fcfed508b781d127916274",
+      "base_config_sha256": "628cd4caf421c0cc70327079ae7963265b447d0ec7b091a05a8456258fa5d969",
+      "checkpoint_sha256": "374f9491857315dd3fb872e8733c766307c5dff636f5d5182ea14af673bcb018",
+      "prior_report_sha256": "241f3978a9ae16c391e18c1bff6ace9205258defd52b04acc672494bad6ab140",
+      "first_block_crossings_sha256": "09bd035416ad6c9331577079397de044599d286f8c8681ad2cc182fb91808bd8",
+      "electrons": 119210,
+      "ions": 124766,
+      "seed": 13507
+    }
+  ],
+  "execution_contract": {
+    "steps_per_cycle": 4000,
+    "measurement_cycles": 4,
+    "start_step": 20000,
+    "end_step": 36000,
+    "output_interval_steps": 400,
+    "serial": true,
+    "runtime_threads": 1,
+    "maximum_simultaneous_processes": 1,
+    "minimum_available_memory_kib": 1048576,
+    "minimum_available_disk_kib": 4194304,
+    "maximum_peak_resident_set_kib": 358400,
+    "maximum_total_particles": 500000,
+    "maximum_absolute_field_V_m": 10000000.0,
+    "timeout_seconds": 2400
+  },
+  "diagnostic_contract": {
+    "spatial_average_interval_steps": 2,
+    "spatial_average_samples": 8000,
+    "phase_bins": 200,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "phase_eedf_species": "electrons",
+    "particle_history": true,
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "tail_threshold_eV": 15.8,
+    "regions": [
+      {"name": "x000_010", "x_min_m": 0.0, "x_max_m": 0.0025},
+      {"name": "x010_020", "x_min_m": 0.0025, "x_max_m": 0.005},
+      {"name": "x020_040", "x_min_m": 0.005, "x_max_m": 0.01},
+      {"name": "x040_060", "x_min_m": 0.01, "x_max_m": 0.015},
+      {"name": "x060_080", "x_min_m": 0.015, "x_max_m": 0.02},
+      {"name": "x080_090", "x_min_m": 0.02, "x_max_m": 0.0225},
+      {"name": "x090_100", "x_min_m": 0.0225, "x_max_m": 0.025}
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_fraction": [0.125, 0.5],
+    "minimum_macro_observations_per_critical_region_phase_bin": 100000,
+    "maximum_overflow_fraction": 0.000001,
+    "minimum_field_push_observations_critical_aggregate": 100000000,
+    "minimum_field_push_promotions_critical_aggregate": 1000,
+    "minimum_field_push_demotions_critical_aggregate": 1000
+  },
+  "prospective_decision_rule": {
+    "deficit_persists_if": "both pooled AuroraPIC/native promotion-rate ratios are at most 0.90",
+    "staggering_explains_deficit_if": "both pooled AuroraPIC/native promotion-rate ratios lie in [0.95, 1.05]",
+    "partial_staggering_effect_if": "all gates pass but neither persistence nor parity criterion is met",
+    "pooled_candidate_repeatability_gate": "relative range across the two pooled microstate rates no greater than 0.08 for both promotions and demotions",
+    "interpretation_requires_all_second_block_runner_population_provenance_and_pooled_repeatability_gates": true
+  },
+  "claim_boundary": "This prospectively pools two consecutive four-cycle blocks for each of two constrained AuroraPIC microstates against the already-locked native ensemble. It reduces finite-window uncertainty but does not add independent microstates, reproduce published observables, validate against experiment, or prove general PIC correctness.",
+  "physics_claim": "none_until_both_replication_blocks_and_all_pooled_gates_are_complete"
+}
