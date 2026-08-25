@@ -3047,6 +3047,36 @@ retain the evidence and the two non-scientific execution corrections. This is
 one-case code-to-code mechanism evidence, not experimental validation or proof
 of general PIC correctness.
 
+### Matched-half-step continuation
+
+The predeclared follow-up removed the velocity-staggering ambiguity without
+overriding checkpoint identity. Live positions and time-centered velocities
+from each locked step-24000 checkpoint were exported to checksum-bound APS v2
+states. AuroraPIC rebuilt the adjacent half-step velocity from the
+self-consistent field, used `leapfrog_half_step` collision sampling, relaxed
+for one complete RF cycle, and then measured the same four-cycle field-push
+window. Both serial branches passed every runner, population, safety, and
+provenance gate with zero EEDF overflow and about `206 MiB` peak RSS.
+
+The directional evidence does not support velocity staggering as the missing
+promotion mechanism: matched-half-step AuroraPIC/native promotion-rate ratios
+are `0.76039` and `0.82876`, both below the prospective persistence boundary
+of `0.90` and farther from parity than the time-centered ratios. Demotion-rate
+ratios are `0.76548` and `0.84844`. This is not yet a formal persistence result,
+however. Promotion and demotion relative ranges across the two microstates are
+`8.60%` and `10.28%`, narrowly exceeding the locked `8%` repeatability limit.
+The analyzer therefore correctly forbids interpretation and records only a
+directional persistence signal. A prospectively pooled second four-cycle block
+is the smallest follow-up that can reduce finite-window uncertainty without
+changing the diagnostic, critical window, or decision boundaries.
+
+The checksum-bound
+[`rule`](../benchmarks/ccp/edupic-matched-half-step-threshold-rule-20260825.json),
+[`result`](../benchmarks/ccp/edupic-matched-half-step-threshold-result-20260825.json),
+and [`execution record`](../benchmarks/ccp/edupic-matched-half-step-threshold-execution-20260825.json)
+preserve the gated outcome. This remains one-case code-to-code mechanism
+evidence, not published-observable or experimental validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "matched_half_step_threshold_execution_record",
+  "rule_sha256": "960ae236fd92f32d24b382236e0fe2264370ad6072fcba681a140a7757a74fbf",
+  "result_sha256": "e4730df01b511450bb0e85fc7e6ef6867623d49d45cf6b65595f53c3f111ae17",
+  "formal_outcome": "inconclusive_repeatability_gate_failed_with_directional_persistence_signal",
+  "branches": [
+    {"id": "microstate_51949", "equilibration_wall_seconds": 87.50448949499696, "measurement_wall_seconds": 415.4668937690003, "peak_resident_set_kib": 205964, "all_runner_gates_passed": true, "runner_report_sha256": "090777de87ef80acfcfb464c8425de3e00474f706103fb170587747c5e65dfa3", "threshold_crossings_sha256": "607073f8874a33db9535c7306753b3388f1bf17908a91d5c831d12959cfe4551", "equilibration_checkpoint_sha256": "b92b2b54c4d35a2b8e24c6194943eae308998f6b52ceb66dd5545f020c7f2e19", "final_checkpoint_sha256": "7eed1bcd7db7bea0920c71621f853952d252c6c68b148371c7eb64512bb1a766"},
+    {"id": "microstate_63059", "equilibration_wall_seconds": 86.2897430150042, "measurement_wall_seconds": 411.3614825199911, "peak_resident_set_kib": 205996, "all_runner_gates_passed": true, "runner_report_sha256": "241f3978a9ae16c391e18c1bff6ace9205258defd52b04acc672494bad6ab140", "threshold_crossings_sha256": "09bd035416ad6c9331577079397de044599d286f8c8681ad2cc182fb91808bd8", "equilibration_checkpoint_sha256": "aff78377ff63d62583219d8b9a05739d07a6e82d5c0d4c7ebeccca5b8bdcf2", "final_checkpoint_sha256": "374f9491857315dd3fb872e8733c766307c5dff636f5d5182ea14af673bcb018"}
+  ],
+  "resource_contract": {"maximum_simultaneous_processes": 1, "serial_execution": true, "low_priority": true, "all_resource_gates_passed": true}
+}

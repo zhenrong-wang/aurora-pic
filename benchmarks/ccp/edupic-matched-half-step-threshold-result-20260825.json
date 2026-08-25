@@ -1,0 +1,40 @@
+{
+  "all_measurement_repeatability_and_provenance_gates_passed": false,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective campaign tests one velocity-staggering mechanism in one argon CCP using two constrained AuroraPIC microstates and the already-locked three-seed native ensemble. The portable-state transition resets the random stream and permits one RF cycle of relaxation. It is not experimental validation, a published-observable acceptance result, an unrestricted uncertainty analysis, or proof of general PIC correctness.",
+  "critical_phase_0p125_to_0p5": {
+    "aurorapic_matched_half_step_microstates": [
+      {"field_push_demotions": 2373, "field_push_demotions_per_million_pushes": 4.525084384814778, "field_push_macro_observations": 524410110, "field_push_promotions": 3989, "field_push_promotions_per_million_pushes": 7.606642061115107, "rows": 150},
+      {"field_push_demotions": 2631, "field_push_demotions_per_million_pushes": 5.015512211024144, "field_push_macro_observations": 524572544, "field_push_promotions": 4349, "field_push_promotions_per_million_pushes": 8.29055971331965, "rows": 150}
+    ],
+    "aurorapic_relative_range": {"field_push_demotions_per_million_pushes": 0.10280862863927473, "field_push_promotions_per_million_pushes": 0.08604252017539248},
+    "aurorapic_to_native_ratios": [
+      {"field_push_demotions_per_million_pushes": 0.7654807280747591, "field_push_promotions_per_million_pushes": 0.7603912226313214},
+      {"field_push_demotions_per_million_pushes": 0.848443390767785, "field_push_promotions_per_million_pushes": 0.8287584437468526}
+    ],
+    "native_edupic_ensemble_mean": {"demotions": 5.911428229154379, "promotions": 10.00359003986454}
+  },
+  "gates": {
+    "candidate_repeatability": false,
+    "candidate_runner_reports_linked_and_passing": true,
+    "field_push_demotion_population": true,
+    "field_push_observation_population": true,
+    "field_push_promotion_population": true,
+    "finite_metrics": true
+  },
+  "prospective_decision_outcome": {
+    "deficit_persists": false,
+    "directional_persistence_signal_without_interpretation": true,
+    "interpretation_allowed": false,
+    "partial_staggering_effect": false,
+    "staggering_explains_deficit": false
+  },
+  "provenance": {
+    "analyzer_sha256": "73077c636978accc90f788fff8b93fa4c633105ee32d37d7963212970166ebad",
+    "crossings_sha256": ["607073f8874a33db9535c7306753b3388f1bf17908a91d5c831d12959cfe4551", "09bd035416ad6c9331577079397de044599d286f8c8681ad2cc182fb91808bd8"],
+    "runner_report_sha256": ["090777de87ef80acfcfb464c8425de3e00474f706103fb170587747c5e65dfa3", "241f3978a9ae16c391e18c1bff6ace9205258defd52b04acc672494bad6ab140"]
+  },
+  "rule_sha256": "960ae236fd92f32d24b382236e0fe2264370ad6072fcba681a140a7757a74fbf",
+  "schema_version": 1,
+  "scope": "matched_half_step_field_push_threshold_result"
+}
