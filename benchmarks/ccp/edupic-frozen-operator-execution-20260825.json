@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "frozen_edupic_aurorapic_operator_execution_record",
+  "implementation_commit": "1f56511423da70e198546129381cf4fdb8799bbe",
+  "pinned_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+  "test_source_sha256": "85dfa25e35ac6a5c34217a45bd333327d9dc3fdf19209bc2cecf0872300c90a4",
+  "test_binary_sha256": "c96942220bdcdf5760bf899ce2bd27df70536b30ee9b908576143fd3c080fb17",
+  "result_sha256": "7be56644b5431044939fdc32e5572797f3d2f670b06ea9020cca16e36811e437",
+  "formal_outcome": "frozen_poisson_interpolation_kick_drift_and_threshold_traffic_are_equivalent_within_roundoff",
+  "operator_contract": {
+    "nodes": 401,
+    "particles": 20000,
+    "wall_adjacent_samples": 100,
+    "rf_case_length_m": 0.025,
+    "left_potential_V": 250.0,
+    "right_potential_V": 0.0,
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "threshold_eV": 15.8,
+    "collisions": false,
+    "self_consistent_time_evolution": false
+  },
+  "acceptance_limits": {
+    "maximum_potential_error_V": 2e-12,
+    "maximum_nodal_field_error_V_m": 1e-7,
+    "maximum_interpolated_field_error_V_m": 1e-7,
+    "maximum_velocity_error_m_s": 1e-8,
+    "maximum_position_error_m": 1e-16,
+    "threshold_promotion_and_demotion_counts": "exact equality"
+  },
+  "non_scientific_execution_corrections": [
+    {
+      "observed": "The first execution used a 1e-18 m absolute drift-error limit and stopped before emitting a result.",
+      "correction": "The limit was changed to 1e-16 m to accommodate independent floating-point evaluation order; the eventual observed maximum was 3.47e-18 m.",
+      "operator_formula_or_frozen_input_changed": false,
+      "scientific_result_emitted_before_correction": false
+    }
+  ],
+  "verification": {
+    "ctest_serial": "3/3 passed",
+    "wall_seconds": 0.0,
+    "large_run": false
+  }
+}

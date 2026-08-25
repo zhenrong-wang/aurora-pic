@@ -3180,6 +3180,39 @@ deficit under this CCP contract. The checksum-bound endpoint-control
 and [`execution record`](../benchmarks/ccp/edupic-endpoint-gauss-control-execution-20260825.json)
 preserve the formal result.
 
+### Frozen-state operator equivalence
+
+The mover investigation now separates operator correctness from differences
+in the evolved plasma distribution. A compiled deterministic test evaluates a
+401-node frozen Poisson state using an independent transcription of the
+checksum-pinned eduPIC Thomas solve, endpoint fields, CIC interpolation,
+electron kick, and drift. The same field and 20,000 identical particle states
+are evaluated through AuroraPIC's production solver and pusher. One hundred
+samples lie in the two wall-adjacent interpolation cells, and the velocity set
+deliberately exercises both directions across the `15.8 eV` threshold.
+
+All equivalence gates pass. Maximum discrepancies are `2.84e-14 V` in
+potential, `2.27e-10 V/m` in nodal field, `2.29e-10 V/m` in interpolated
+field, `9.31e-10 m/s` after the kick, and `3.47e-18 m` after drift. Both
+implementations classify exactly `10,000` promotions and `10,000` demotions.
+The test runs in less than a second and is now a permanent CTest regression.
+
+This proves formula-level frozen-state equivalence of the compared 1D
+electrostatic Poisson/interpolation/kick/drift operator to roundoff. It also
+changes the interpretation of the dynamic promotion deficit: the deficit is
+not evidence of an incorrect instantaneous AuroraPIC mover. It must arise
+from state evolution before the measured push, such as collision-channel
+sampling, collision kinematics, particle creation/loss history, or the
+self-consistent distribution those mechanisms produce. A frozen collision-
+operator comparison is therefore the next localization step.
+
+The checksum-bound frozen-operator
+[`result`](../benchmarks/ccp/edupic-frozen-operator-result-20260825.json) and
+[`execution record`](../benchmarks/ccp/edupic-frozen-operator-execution-20260825.json)
+retain the numerical errors, exact threshold counts, source and binary hashes,
+and the pre-result tolerance correction. This is an operator verification,
+not a dynamic discharge or experimental validation result.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

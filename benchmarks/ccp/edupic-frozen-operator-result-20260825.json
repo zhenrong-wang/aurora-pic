@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "scope": "frozen_edupic_aurorapic_operator_equivalence",
+  "pinned_edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+  "nodes": 401,
+  "particles": 20000,
+  "wall_adjacent_samples": 100,
+  "maximum_potential_error_V": 2.8421709430404007e-14,
+  "maximum_nodal_field_error_V_m": 2.2737367544323206e-10,
+  "maximum_interpolated_field_error_V_m": 2.2919266484677792e-10,
+  "maximum_velocity_error_m_s": 9.3132257461547852e-10,
+  "maximum_position_error_m": 3.4694469519536142e-18,
+  "native_promotions": 10000,
+  "aurorapic_promotions": 10000,
+  "native_demotions": 10000,
+  "aurorapic_demotions": 10000,
+  "all_equivalence_gates_passed": true,
+  "claim_boundary": "Deterministic frozen-state formula equivalence; no collisions, self-consistent evolution, or experimental validation."
+}
