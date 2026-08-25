@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "aurorapic_threshold_crossing_first_observation_audit",
+  "affected_solver_sha256": "63f3a2309bb551f8ee4b1f1e88c47eeb79c045335116914daa55f43ea2fe2c88",
+  "corrected_solver_sha256": "26b594ced50027ffa3980ef0e01ceb218102deaf088907f67fa75672b1044ad6",
+  "fix_commit": "930f326",
+  "defect": "AuroraPIC incremented particle-history age before testing for a prior synchronized observation, so energetic electrons in the first measurement timestep were counted as interstep promotions.",
+  "native_status": "The native instrumentation tested age before incrementing it and did not have this defect.",
+  "affected_phase_bin": 0,
+  "locked_comparison_phase_fraction": [0.125, 0.5],
+  "affected_rows_selected_by_locked_comparison": 0,
+  "observed_spurious_promotions_all_regions": {
+    "microstate_51949": 348,
+    "microstate_63059": 311
+  },
+  "locked_critical_promotions_unchanged": {
+    "microstate_51949": 4229,
+    "microstate_63059": 4169
+  },
+  "impact_on_replication_result": "none",
+  "reason": "The first measurement is deterministically assigned to phase bin 0, whereas the prospective analyzer selects only phase bins whose centers lie in [0.125, 0.5).",
+  "regression_test_added": true
+}

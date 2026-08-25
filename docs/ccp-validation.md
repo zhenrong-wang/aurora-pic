@@ -2990,6 +2990,16 @@ this confirms candidate-microstate robustness rather than an independent
 native replication. It remains code-to-code evidence for one case—not
 experimental validation or proof of general PIC correctness.
 
+A subsequent diagnostic audit found and corrected an AuroraPIC first-sample
+classification bug: history age was incremented before checking whether a
+previous synchronized state existed. This added `348` and `311` false
+promotions across all regions of phase bin 0 in the two runs. It does not alter
+the locked result because the critical analyzer selects phase fractions
+`0.125--0.5`; phase bin 0 contributes no selected rows. The
+[`first-observation audit`](../benchmarks/ccp/edupic-threshold-crossing-first-observation-audit-20260825.json)
+records the affected and corrected solver hashes, counts, scope proof, and
+regression-test status.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
