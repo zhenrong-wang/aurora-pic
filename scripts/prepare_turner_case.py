@@ -392,6 +392,7 @@ species = electrons
 neutral_density = {neutral_density:.17g}
 neutral_temperature = {neutral_temperature:.17g}
 max_frequency = {electron_majorant:.17g}
+opportunity_sampling = single_bernoulli
 max_candidates_per_particle = {guard.getint('max_candidates_per_particle')}
 gas_data_file = {electron_gas}
 
@@ -405,6 +406,7 @@ species = ions
 neutral_density = {neutral_density:.17g}
 neutral_temperature = {neutral_temperature:.17g}
 max_frequency = {ion_majorant:.17g}
+opportunity_sampling = single_bernoulli
 max_candidates_per_particle = {guard.getint('max_candidates_per_particle')}
 gas_data_file = {ion_gas}
 
@@ -454,6 +456,8 @@ loading = quiet_start
         },
         "collision_guard": {
             "method": "sampled production-kernel thermal bound plus safety factor",
+            "opportunity_sampling": "single_bernoulli",
+            "opportunity_sampling_basis": "Turner et al. 2013 equations 4-5: at most one collision opportunity per species timestep",
             "runtime_behavior": "fail fast if an encountered exact bound exceeds majorant",
             "scan_intervals": intervals,
             "thermal_neutral_sigma_limit": sigma_limit,

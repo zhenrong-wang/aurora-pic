@@ -16,7 +16,7 @@ import tempfile
 MAGIC = "AuroraPIC-particle-state-v2"
 MAGIC_V3 = "AuroraPIC-particle-state-v3"
 CHECKPOINT_MAGICS = {
-    "AuroraPIC-checkpoint-v14", "AuroraPIC-checkpoint-v15",
+    "AuroraPIC-checkpoint-v12", "AuroraPIC-checkpoint-v14", "AuroraPIC-checkpoint-v15",
     "AuroraPIC-checkpoint-v16"}
 FNV_OFFSET = 14695981039346656037
 FNV_PRIME = 1099511628211
@@ -72,7 +72,8 @@ def parse_checkpoint(path: Path, expected_step: int) -> dict[str, object]:
     with path.open(encoding="utf-8") as stream:
         checkpoint_magic = stream.readline().rstrip("\n")
         if checkpoint_magic not in CHECKPOINT_MAGICS:
-            raise ExportError("only 1D checkpoint v14-v16 is supported")
+            raise ExportError(
+                "only supported 1D3V checkpoint formats may be exported")
         dimension = None
         units = None
         velocity_dimensions = None

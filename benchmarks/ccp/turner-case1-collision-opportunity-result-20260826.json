@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "scope": "prospective_common_state_collision_opportunity_discriminator",
+  "rule_sha256": "fb69855a54cc7d64a23c306e14d475eac28cec77803a055091ad7ee733a1a2ab",
+  "locked_input_hashes_passed": true,
+  "members": {
+    "poisson_clock": {
+      "13507": {
+        "config_sha256": "bf197cf78f430992bfa3ff06cc9beda5da214d4c3a646e33697bdd5455596304",
+        "peak_resident_set_kib": 8184,
+        "wall_seconds": 102.99084148700058,
+        "candidates": 9914201,
+        "null_collisions": 7703368,
+        "channels": {
+          "electron_mcc.elastic": 2002743,
+          "electron_mcc.excitation_triplet": 13319,
+          "electron_mcc.excitation_singlet": 23068,
+          "electron_mcc.ionization": 24645,
+          "ion_mcc.isotropic": 33117,
+          "ion_mcc.backward": 113941
+        },
+        "endpoint_populations": {
+          "electrons": 12396,
+          "ions": 19392
+        },
+        "integrated_density_m2": {
+          "electrons": 3257143516540.5264,
+          "ions": 5092355692138.673
+        },
+        "wall_losses": {
+          "absorbed_left_count_electrons": 12464,
+          "absorbed_right_count_electrons": 12290,
+          "absorbed_left_count_ions": 12379,
+          "absorbed_right_count_ions": 12418
+        },
+        "electrical_work_J_m2": {
+          "electrons": 8.092899657393729e-05,
+          "ions": 0.00021586469467872317
+        }
+      },
+      "24680": {
+        "config_sha256": "5661037cbae121cbe0819fdb04d3af2449d25b071a989f828cb04c20ecd216d7",
+        "peak_resident_set_kib": 8332,
+        "wall_seconds": 102.94678869999916,
+        "candidates": 9931154,
+        "null_collisions": 7716544,
+        "channels": {
+          "electron_mcc.elastic": 2005620,
+          "electron_mcc.excitation_triplet": 13398,
+          "electron_mcc.excitation_singlet": 23280,
+          "electron_mcc.ionization": 24638,
+          "ion_mcc.isotropic": 33165,
+          "ion_mcc.backward": 114509
+        },
+        "endpoint_populations": {
+          "electrons": 12360,
+          "ions": 19342
+        },
+        "integrated_density_m2": {
+          "electrons": 3264850274963.3784,
+          "ions": 5102578528747.56
+        },
+        "wall_losses": {
+          "absorbed_left_count_electrons": 12361,
+          "absorbed_right_count_electrons": 12422,
+          "absorbed_left_count_ions": 12400,
+          "absorbed_right_count_ions": 12440
+        },
+        "electrical_work_J_m2": {
+          "electrons": 8.10398441577716e-05,
+          "ions": 0.0002161279501326854
+        }
+      },
+      "97531": {
+        "config_sha256": "e1f6e7a9fddba16d41c0e6429e74549cff9c43b25c1e40ea2e2829188cb829dd",
+        "peak_resident_set_kib": 8312,
+        "wall_seconds": 104.57314731799852,
+        "candidates": 9935497,
+        "null_collisions": 7720580,
+        "channels": {
+          "electron_mcc.elastic": 2006613,
+          "electron_mcc.excitation_triplet": 13263,
+          "electron_mcc.excitation_singlet": 23020,
+          "electron_mcc.ionization": 24702,
+          "ion_mcc.isotropic": 33413,
+          "ion_mcc.backward": 113906
+        },
+        "endpoint_populations": {
+          "electrons": 12420,
+          "ions": 19428
+        },
+        "integrated_density_m2": {
+          "electrons": 3263740710144.0425,
+          "ions": 5101305471496.581
+        },
+        "wall_losses": {
+          "absorbed_left_count_electrons": 12549,
+          "absorbed_right_count_electrons": 12238,
+          "absorbed_left_count_ions": 12398,
+          "absorbed_right_count_ions": 12420
+        },
+        "electrical_work_J_m2": {
+          "electrons": 8.081869390239314e-05,
+          "ions": 0.0002160889472901598
+        }
+      }
+    },
+    "single_bernoulli": {
+      "13507": {
+        "config_sha256": "58357cfcc4bb111a54dfd032a00d901b59987f3a78b789a8ac83bb996373dd7f",
+        "peak_resident_set_kib": 8292,
+        "wall_seconds": 107.1431808769994,
+        "candidates": 9781492,
+        "null_collisions": 7601219,
+        "channels": {
+          "electron_mcc.elastic": 1972722,
+          "electron_mcc.excitation_triplet": 13277,
+          "electron_mcc.excitation_singlet": 22857,
+          "electron_mcc.ionization": 24635,
+          "ion_mcc.isotropic": 33050,
+          "ion_mcc.backward": 113732
+        },
+        "endpoint_populations": {
+          "electrons": 12404,
+          "ions": 19375
+        },
+        "integrated_density_m2": {
+          "electrons": 3249530915527.3457,
+          "ions": 5087674300231.932
+        },
+        "wall_losses": {
+          "absorbed_left_count_electrons": 12444,
+          "absorbed_right_count_electrons": 12292,
+          "absorbed_left_count_ions": 12402,
+          "absorbed_right_count_ions": 12402
+        },
+        "electrical_work_J_m2": {
+          "electrons": 8.071681724101102e-05,
+          "ions": 0.0002163141851679893
+        }
+      },
+      "24680": {
+        "config_sha256": "1f6e20a89bebc931ea7edb1601c57589f5a69d6c784b76f6916fbaba6260f4b1",
+        "peak_resident_set_kib": 8332,
+        "wall_seconds": 100.58459821100405,
+        "candidates": 9705903,
+        "null_collisions": 7545324,
+        "channels": {
+          "electron_mcc.elastic": 1955282,
+          "electron_mcc.excitation_triplet": 12800,
+          "electron_mcc.excitation_singlet": 22452,
+          "electron_mcc.ionization": 24368,
+          "ion_mcc.isotropic": 32482,
+          "ion_mcc.backward": 113195
+        },
+        "endpoint_populations": {
+          "electrons": 12223,
+          "ions": 19219
+        },
+        "integrated_density_m2": {
+          "electrons": 3224223244018.5547,
+          "ions": 5055575108947.756
+        },
+        "wall_losses": {
+          "absorbed_left_count_electrons": 12448,
+          "absorbed_right_count_electrons": 12202,
+          "absorbed_left_count_ions": 12305,
+          "absorbed_right_count_ions": 12388
+        },
+        "electrical_work_J_m2": {
+          "electrons": 7.97504626237542e-05,
+          "ions": 0.00021493814206565193
+        }
+      },
+      "97531": {
+        "config_sha256": "ddf83ae9e61b61b448f9d09019d2882743072898fd978de236e1a6b775971077",
+        "peak_resident_set_kib": 8360,
+        "wall_seconds": 101.75536680700316,
+        "candidates": 9680581,
+        "null_collisions": 7530207,
+        "channels": {
+          "electron_mcc.elastic": 1945156,
+          "electron_mcc.excitation_triplet": 12877,
+          "electron_mcc.excitation_singlet": 22945,
+          "electron_mcc.ionization": 24264,
+          "ion_mcc.isotropic": 32334,
+          "ion_mcc.backward": 112798
+        },
+        "endpoint_populations": {
+          "electrons": 12118,
+          "ions": 19085
+        },
+        "integrated_density_m2": {
+          "electrons": 3211604985656.7397,
+          "ions": 5043040232543.948
+        },
+        "wall_losses": {
+          "absorbed_left_count_electrons": 12708,
+          "absorbed_right_count_electrons": 11943,
+          "absorbed_left_count_ions": 12332,
+          "absorbed_right_count_ions": 12391
+        },
+        "electrical_work_J_m2": {
+          "electrons": 7.990052690838464e-05,
+          "ions": 0.00021498251867328025
+        }
+      }
+    }
+  },
+  "ensemble_means": {
+    "poisson_clock": {
+      "mean_candidates": 9926950.666666666,
+      "mean_channels": {
+        "electron_mcc.elastic": 2004992.0,
+        "electron_mcc.excitation_triplet": 13326.666666666666,
+        "electron_mcc.excitation_singlet": 23122.666666666668,
+        "electron_mcc.ionization": 24661.666666666668,
+        "ion_mcc.isotropic": 33231.666666666664,
+        "ion_mcc.backward": 114118.66666666667
+      },
+      "mean_endpoint_populations": {
+        "electrons": 12392.0,
+        "ions": 19387.333333333332
+      },
+      "mean_integrated_density_m2": {
+        "electrons": 3261911500549.316,
+        "ions": 5098746564127.6045
+      }
+    },
+    "single_bernoulli": {
+      "mean_candidates": 9722658.666666666,
+      "mean_channels": {
+        "electron_mcc.elastic": 1957720.0,
+        "electron_mcc.excitation_triplet": 12984.666666666666,
+        "electron_mcc.excitation_singlet": 22751.333333333332,
+        "electron_mcc.ionization": 24422.333333333332,
+        "ion_mcc.isotropic": 32622.0,
+        "ion_mcc.backward": 113241.66666666667
+      },
+      "mean_endpoint_populations": {
+        "electrons": 12248.333333333334,
+        "ions": 19226.333333333332
+      },
+      "mean_integrated_density_m2": {
+        "electrons": 3228453048400.8804,
+        "ions": 5062096547241.212
+      }
+    }
+  },
+  "ratios": {
+    "poisson_to_single_candidates": 1.0210119481722009,
+    "poisson_to_single_ionization": 1.0097997734314221,
+    "single_to_poisson_integrated_ion_density": 0.992811955560952
+  },
+  "implementation_passed": false,
+  "resource_gates_passed": true,
+  "classification": "collision_opportunity_execution_failed",
+  "claim_boundary": "This paired 32-cycle continuation identifies the immediate response to the collision-opportunity convention from one common stationary particle state across three RNG seeds. It is not a fresh 1280-cycle Turner realization, a formal published-density comparison, an equilibrium sensitivity result, or experimental validation."
+}

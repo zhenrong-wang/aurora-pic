@@ -31,6 +31,10 @@ struct SpeciesConfig {
 };
 
 enum class CollisionModelKind { BGK, NullCollision };
+enum class CollisionOpportunitySampling {
+    PoissonClock,
+    SingleBernoulli
+};
 enum class AngularScatteringKind {
     Isotropic,
     Backward,
@@ -94,6 +98,16 @@ inline std::string to_string(CollisionModelKind model) {
     switch (model) {
         case CollisionModelKind::BGK: return "bgk";
         case CollisionModelKind::NullCollision: return "null_collision";
+    }
+    return "unknown";
+}
+
+inline std::string to_string(CollisionOpportunitySampling sampling) {
+    switch (sampling) {
+        case CollisionOpportunitySampling::PoissonClock:
+            return "poisson_clock";
+        case CollisionOpportunitySampling::SingleBernoulli:
+            return "single_bernoulli";
     }
     return "unknown";
 }
@@ -195,6 +209,8 @@ struct CollisionConfig {
     double neutral_density{0.0};
     std::string species{};
     double max_frequency{0.0};
+    CollisionOpportunitySampling opportunity_sampling{
+        CollisionOpportunitySampling::PoissonClock};
     std::size_t max_candidates_per_particle{64};
     std::vector<CollisionChannelConfig> channels{};
     std::string gas_name{};

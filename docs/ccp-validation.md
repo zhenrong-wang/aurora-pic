@@ -3913,6 +3913,58 @@ The next Turner discriminator must target helium collision/sheath-transport
 conventions or an independent matched implementation, not the subcycle charge
 policy.
 
+### Turner collision-opportunity scheduling correction
+
+The next specification audit found a material mismatch in the historical
+Turner decks. Turner et al. prescribe one collision test per particle and
+species timestep with probability `1 - exp(-nu_max dt)`, and explicitly permit
+at most one collision. AuroraPIC's general MCC default is instead a continuous
+Poisson clock that may admit repeated opportunities. At the Case 1 majorants,
+the Poisson mean exceeds the prescribed Bernoulli opportunity probability by
+`1.389%` for electrons and `1.110%` for ions. This is comparable to the scale
+of the unresolved density error and therefore cannot be dismissed.
+
+AuroraPIC now exposes a restart-fingerprinted per-model
+`opportunity_sampling` contract. `poisson_clock` remains the production
+default; `single_bernoulli` implements the Turner algorithm. The Turner deck
+preparer emits `single_bernoulli` for both collision targets and records the
+paper basis in preflight output. Kernel tests verify the one-opportunity bound,
+probability, configuration parsing, and signature separation.
+
+The first
+[`prospective rule`](../benchmarks/ccp/turner-case1-collision-opportunity-rule-20260826.json)
+continued a common late Turner particle state for 32 cycles under both modes
+and three paired seeds. Its raw-candidate-ratio gate failed (`1.0210` versus a
+declared `1.009--1.016`) because the modes rapidly developed different
+particle populations; that formal failure is preserved in the
+[`result`](../benchmarks/ccp/turner-case1-collision-opportunity-result-20260826.json).
+Post-result exposure normalization showed why: observed candidates agreed with
+mode-specific predictions from mean population exposure to `0.019%` for
+Poisson and `0.013%` for Bernoulli. More importantly, the Turner mode reduced
+ionization by `0.970%`, mean ion density by `0.719%`, and endpoint ion
+population by `0.830%`—all in the direction required to reduce AuroraPIC's
+positive density bias.
+
+A second
+[`independent-seed rule`](../benchmarks/ccp/turner-case1-collision-opportunity-exposure-rule-20260826.json)
+prospectively declared the correct exposure-normalized gate, used three new
+seeds, and shortened the horizon to 16 cycles. All six runs were serial and
+resource bounded. The checksum-bound
+[`result`](../benchmarks/ccp/turner-case1-collision-opportunity-exposure-result-20260826.json)
+passes: exposure residuals are `-0.0394%` for Poisson and `-0.0126%` for
+Bernoulli, inside the declared `+/-0.1%` limit. The physical direction repeats:
+`single_bernoulli` lowers ionization by `1.336%`, mean ion density by `0.497%`,
+and endpoint ion population by `1.061%`. The formal classification is
+`turner_bias_direction_supported`.
+
+This is a concrete correction to benchmark fidelity and explains a meaningful
+fraction of the short-horizon density excess. It is not yet the equilibrium
+answer: source, transport, wall loss, and fields can readjust over hundreds of
+RF cycles. The next decisive gate is a fresh `single_bernoulli` Case 1
+trajectory through the prescribed 1,280-cycle duration, followed by the
+unchanged final-32-cycle published `X^2` comparison. Historical Poisson results
+remain valid records of the old algorithm and must not be relabeled.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

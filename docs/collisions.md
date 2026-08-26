@@ -99,6 +99,16 @@ type = charge_exchange
 cross_section_file = charge_exchange.dat
 ```
 
+The default `opportunity_sampling = poisson_clock` draws exponential waiting
+times and may admit more than one null-collision opportunity for a particle
+within one species step. This is the continuous-time interpretation and
+remains the general production default. A collision model may instead set
+`opportunity_sampling = single_bernoulli`; it performs at most one opportunity
+with probability `1 - exp(-max_frequency * species_dt)`. The latter reproduces
+the collision scheduling prescribed by Turner et al. for the helium CCP
+benchmark. The selection is part of the collision-model restart fingerprint;
+the default preserves historical signatures.
+
 Cross-section paths are resolved relative to the configuration file. Each
 table is whitespace-separated text with exactly two numeric columns:
 

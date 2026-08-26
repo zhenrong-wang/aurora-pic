@@ -414,6 +414,22 @@ CollisionModelKind parse_collision_model(
         "'; expected bgk or null_collision");
 }
 
+CollisionOpportunitySampling parse_collision_opportunity_sampling(
+    const KeyValue& kv,
+    CollisionOpportunitySampling def) {
+    const auto value = lower(trim(as<std::string>(
+        kv, "opportunity_sampling", to_string(def))));
+    if (value == "poisson_clock") {
+        return CollisionOpportunitySampling::PoissonClock;
+    }
+    if (value == "single_bernoulli") {
+        return CollisionOpportunitySampling::SingleBernoulli;
+    }
+    throw std::runtime_error(
+        "invalid collision opportunity_sampling: '" + value +
+        "'; expected poisson_clock or single_bernoulli");
+}
+
 CollisionProcessKind parse_collision_process(
     const KeyValue& kv, CollisionProcessKind def) {
     const auto value = lower(trim(as<std::string>(
@@ -1767,6 +1783,7 @@ Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> collision_keys{
         "enabled", "model", "frequency", "neutral_temperature_velocity",
         "neutral_density", "species", "max_frequency",
+        "opportunity_sampling",
         "max_candidates_per_particle", "neutral_mass",
         "neutral_temperature", "gas_data_file"
     };
@@ -1932,6 +1949,9 @@ Config load_config(const std::string& path) {
         as<double>(
             collision, "max_frequency",
             cfg.collisions.max_frequency);
+    cfg.collisions.opportunity_sampling =
+        parse_collision_opportunity_sampling(
+            collision, cfg.collisions.opportunity_sampling);
     cfg.collisions.max_candidates_per_particle =
         as<std::size_t>(
             collision, "max_candidates_per_particle",
@@ -2128,6 +2148,10 @@ Config load_config(const std::string& path) {
             as<double>(
                 block.values, "max_frequency",
                 named.config.max_frequency);
+        named.config.opportunity_sampling =
+            parse_collision_opportunity_sampling(
+                block.values,
+                named.config.opportunity_sampling);
         named.config.max_candidates_per_particle =
             as<std::size_t>(
                 block.values, "max_candidates_per_particle",

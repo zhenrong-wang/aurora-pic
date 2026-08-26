@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_common_state_collision_opportunity_discriminator",
+  "observed_before_declaration": "The published Turner algorithm permits at most one collision opportunity per particle and species timestep, whereas the historical AuroraPIC Turner campaigns used the production Poisson clock. At the locked Case 1 majorants, Poisson mean opportunities exceed the Turner Bernoulli probabilities by 1.3891 percent for electrons and 1.1103 percent for ions.",
+  "reference": {
+    "paper": "M. M. Turner et al., Physics of Plasmas 20, 013507 (2013)",
+    "doi": "10.1063/1.4775084",
+    "arxiv": "https://arxiv.org/html/1211.5246v2",
+    "prescription": "Equations 4-5 and surrounding text: test once per timestep, with probability 1-exp(-nu_max*dt), and permit at most one collision."
+  },
+  "locked_inputs": {
+    "solver_parent_commit": "96c630d",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "source_checkpoint_sha256": "6299e2cc38bd12ecefacfb7cf2ca0e28c6d8e5a071ac78ee69afa53570dfa4a5",
+    "particle_state_sha256": "57a354072c4d390c38669160fb9d9271617c47ef108f66c2a164e3625774325b",
+    "particle_state_signature": 17539134275055829240,
+    "source_populations": {
+      "electrons": 12505,
+      "ions": 19544
+    },
+    "electron_gas_manifest_sha256": "c439675b5ebd6798d472ac58b8d03e4dd76cd943b0b9c563b581c82e6113ad62",
+    "ion_gas_manifest_sha256": "32688254fd2d82ff79488096aa5337ab95c973f3ffaff65bfc8f489e1974b48f"
+  },
+  "physics_contract": {
+    "nodes": 129,
+    "length_m": 0.067,
+    "timestep_s": 1.8436578171091445e-10,
+    "rf_frequency_hz": 13560000,
+    "voltage_amplitude_V": 450,
+    "neutral_density_m3": 9.64e20,
+    "neutral_temperature_K": 300,
+    "electron_max_frequency_s": 1.5e8,
+    "ion_max_frequency_s": 1.2e8,
+    "macro_weight_m2": 261718750.00000003
+  },
+  "ensemble_contract": {
+    "seeds": [13507, 24680, 97531],
+    "modes": ["poisson_clock", "single_bernoulli"],
+    "measurement_cycles": 32,
+    "steps": 12800,
+    "same_particle_state_each_member": true,
+    "same_seed_within_mode_pair": true,
+    "maximum_concurrent_processes": 1
+  },
+  "acceptance": {
+    "poisson_to_single_total_candidate_ratio": [1.009, 1.016],
+    "all_members_complete": true,
+    "all_outputs_finite": true,
+    "maximum_peak_resident_set_kib_each": 524288,
+    "directional_observables_without_pass_threshold": [
+      "ionization count ratio",
+      "electron and ion endpoint populations",
+      "integrated electron and ion density",
+      "species wall losses",
+      "species electrical work"
+    ]
+  },
+  "decision_rule": {
+    "implementation_pass": "The ensemble-mean Poisson/single candidate ratio is inside the preregistered interval and every execution/resource/finite-value gate passes.",
+    "turner_bias_direction_supported": "In addition to implementation pass, single_bernoulli reduces ensemble-mean ionization and integrated ion density relative to poisson_clock, the direction needed to reduce AuroraPIC's positive Turner density bias.",
+    "turner_bias_direction_not_supported": "Implementation passes but either ensemble-mean ionization or integrated ion density does not decrease.",
+    "failure": "The candidate-ratio or execution integrity gate fails."
+  },
+  "execution_contract": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 1048576,
+    "timeout_seconds_each": 600
+  },
+  "claim_boundary": "This paired 32-cycle continuation identifies the immediate response to the collision-opportunity convention from one common stationary particle state across three RNG seeds. It is not a fresh 1280-cycle Turner realization, a formal published-density comparison, an equilibrium sensitivity result, or experimental validation."
+}

@@ -179,6 +179,9 @@ def main() -> int:
             and collision["ion"]["majorant_dt"] < 0.1
             and collision["electron"]["configured_majorant_s"]
             > collision["electron"]["sampled_peak_frequency_s"]
+            and collision["opportunity_sampling"] == "single_bernoulli"
+            and output.read_text(encoding="utf-8").count(
+                "opportunity_sampling = single_bernoulli") == 2
             and "runtime_backend = serial" in output.read_text(encoding="utf-8")
             and "spatial_average_start_step = 499201"
             in output.read_text(encoding="utf-8"),

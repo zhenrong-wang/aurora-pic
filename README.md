@@ -79,6 +79,12 @@ The prospective Turner subcycle-policy invariance control additionally proves
 that the held-density correction is inactive for this unit-cadence helium
 case: six physical diagnostic outputs remain byte-identical, so the existing
 three-seed density discrepancy is preserved rather than silently reclassified.
+The subsequent specification audit identified a distinct mismatch: Turner
+permits one Bernoulli collision opportunity per particle step, while the
+general AuroraPIC default uses a Poisson clock. An explicit fingerprinted
+`single_bernoulli` mode now passes exposure-normalized statistical tests and
+repeatedly moves helium ionization and density toward the Turner reference;
+the full corrected equilibrium comparison remains outstanding.
 `compare_edupic_phase_space.py` checksum-locks the public eduPIC Figure 11 raw
 matrices and directly compares AuroraPIC over position and RF phase. It covers
 potential, electric field, electron/ion density, current density, ohmic power,

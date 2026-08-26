@@ -393,6 +393,28 @@ int main() {
                     pic::CollisionProcessKind::Elastic,
                     table_path, 0.0, 1.0, 1.0}};
             pic::NullCollisionModel elastic(elastic_config, 1.0);
+            auto single_config = elastic_config;
+            single_config.opportunity_sampling =
+                pic::CollisionOpportunitySampling::SingleBernoulli;
+            pic::NullCollisionModel single_bernoulli(
+                single_config, 1.0);
+            require(
+                single_bernoulli.signature() != elastic.signature(),
+                "MCC signature ignored opportunity sampling");
+            std::mt19937_64 opportunity_rng(11473);
+            std::uint64_t single_candidates = 0;
+            for (std::size_t sample = 0; sample < 10000; ++sample) {
+                double velocity = std::sqrt(2.0);
+                const auto stats = single_bernoulli.collide(
+                    velocity, 0.1, opportunity_rng);
+                require(
+                    stats.candidates <= 1,
+                    "single-Bernoulli MCC admitted repeated opportunities");
+                single_candidates += stats.candidates;
+            }
+            require(
+                single_candidates > 1650 && single_candidates < 2000,
+                "single-Bernoulli MCC probability left its statistical envelope");
             auto lower_bin_config = elastic_config;
             lower_bin_config.channels.front()
                 .cross_section_interpolation =

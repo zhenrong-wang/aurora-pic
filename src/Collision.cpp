@@ -599,6 +599,12 @@ NullCollisionModel::NullCollisionModel(
     const std::uint64_t candidate_limit =
         config_.max_candidates_per_particle;
     hash_uint64(signature_, candidate_limit);
+    if (config_.opportunity_sampling !=
+        CollisionOpportunitySampling::PoissonClock) {
+        hash_string(
+            signature_,
+            "single_bernoulli_collision_opportunity_v1");
+    }
     for (const auto& channel_config : config_.channels) {
         if (channel_config.name.empty()) {
             throw std::invalid_argument(
@@ -1184,11 +1190,22 @@ CollisionStepStatistics& NullCollisionModel::collide_reusing_storage(
     while (true) {
         validate_frequency_bound(
             std::abs(velocity), channel_rates);
-        const double waiting_time =
-            -std::log(open_unit_interval(rng)) / config_.max_frequency;
-        if (!std::isfinite(waiting_time) ||
-            waiting_time >= timestep - elapsed) {
-            break;
+        double waiting_time = 0.0;
+        if (config_.opportunity_sampling ==
+            CollisionOpportunitySampling::SingleBernoulli) {
+            if (statistics.candidates != 0 ||
+                open_unit_interval(rng) >=
+                    -std::expm1(-config_.max_frequency * timestep)) {
+                break;
+            }
+        } else {
+            waiting_time =
+                -std::log(open_unit_interval(rng)) /
+                config_.max_frequency;
+            if (!std::isfinite(waiting_time) ||
+                waiting_time >= timestep - elapsed) {
+                break;
+            }
         }
         elapsed += waiting_time;
         ++statistics.candidates;
@@ -1279,11 +1296,22 @@ CollisionStepStatistics& NullCollisionModel::collide_reusing_storage(
     while (true) {
         validate_frequency_bound(
             projectile_speed(), channel_rates);
-        const double waiting_time =
-            -std::log(open_unit_interval(rng)) / config_.max_frequency;
-        if (!std::isfinite(waiting_time) ||
-            waiting_time >= timestep - elapsed) {
-            break;
+        double waiting_time = 0.0;
+        if (config_.opportunity_sampling ==
+            CollisionOpportunitySampling::SingleBernoulli) {
+            if (statistics.candidates != 0 ||
+                open_unit_interval(rng) >=
+                    -std::expm1(-config_.max_frequency * timestep)) {
+                break;
+            }
+        } else {
+            waiting_time =
+                -std::log(open_unit_interval(rng)) /
+                config_.max_frequency;
+            if (!std::isfinite(waiting_time) ||
+                waiting_time >= timestep - elapsed) {
+                break;
+            }
         }
         elapsed += waiting_time;
         ++statistics.candidates;
