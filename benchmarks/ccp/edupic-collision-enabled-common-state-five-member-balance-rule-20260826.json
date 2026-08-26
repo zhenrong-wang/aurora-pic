@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_four_period_electron_balance_equivalence_extension",
+  "question": "With five independent members per implementation, is the four-period electron population balance practically equivalent within 0.1% of the shared initial population?",
+  "basis": {
+    "parent_four_period_rule_sha256": "0ca376bb8bf4ed520d2e1c3e76585df9beff269f4e93dbe2d3627811bbe02404",
+    "parent_four_period_execution_lock_sha256": "fd0698d16d3f94bc4a25122b581f10ee6c4ae9fd21b5d83ba226237120c4d121",
+    "parent_four_period_execution_sha256": "49f2471863652e1e7e03eb01c72ea87264d88045f7ddbd026f89d65fe4ffa29f",
+    "parent_four_period_result_sha256": "a521550b8caeb87f5d1dba7f37155112bb1e9745c7c18619656f4c03f3454182",
+    "observed_before_declaration": "The three-member four-period collision, wall, ion-population, and field gates passed. The electron endpoint means differed by 13.33 particles but the frozen sign clause failed because the mean net changes were -3.67 and +9.67 particles, both smaller than member scatter. Four-period outputs for seeds 51949 and 63059 have not been generated or observed."
+  },
+  "locked_inputs": {
+    "edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "edupic_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+    "aurorapic_particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "aurorapic_particle_state_signature": 14415241886702705000,
+    "electron_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "ion_gas_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+    "initial_populations": {
+      "electrons": 108586,
+      "ions": 114005
+    }
+  },
+  "physics_contract": {
+    "gas": "argon",
+    "neutral_density_m3": 2.0694208669001848e+21,
+    "neutral_temperature_K": 350,
+    "electron_target_approximation": "cold_gas_in_both_codes",
+    "nodes": 400,
+    "length_m": 0.025,
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "ion_timestep_multiplier": 20,
+    "macro_weight_aurorapic_1d": 700000000,
+    "electrode_voltage_amplitude_V": 250,
+    "rf_frequency_hz": 13560000,
+    "aurorapic_initial_phase_rad": 1.5723671231216914,
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "subcycle_charge_deposition": "pre_push_held_with_upcoming_due_refresh",
+    "particle_boundaries": "absorbing_dirichlet_electrodes"
+  },
+  "ensemble_contract": {
+    "random_generators": {
+      "edupic": "std::mt19937",
+      "aurorapic": "std::mt19937_64"
+    },
+    "interpretation": "Independent within-code ensembles; identical seed labels are not paired trajectories.",
+    "seeds_each_implementation": [
+      13507,
+      24601,
+      35713,
+      51949,
+      63059
+    ],
+    "rf_periods": 4,
+    "electron_pushes": 15999,
+    "endpoint_alignment": "eduPIC pre-push step 16000 in the fourth requested cycle equals AuroraPIC post-step horizon 15999",
+    "members_each_implementation": 5,
+    "reuse": "Reuse the first three members only after their complete endpoint and field hashes match the parent execution record; execute seeds 51949 and 63059 prospectively for both codes."
+  },
+  "instrumentation_contract": {
+    "edupic": "Seed after checkpoint load; passively count the five selected collision branches; accumulate native wall counters; record the last cycle's pre-push-step-4000 field as global pre-push step 16000 and stop before that push.",
+    "aurorapic": "Use unmodified production diagnostics at step 15999 with the corrected pre_push_held cadence.",
+    "random_draws_added_by_instrumentation": 0
+  },
+  "primary_observables": [
+    "conservative_90_percent_confidence_interval_for_electron_endpoint_mean_difference",
+    "accepted_collision_count_for_each_of_five_channels",
+    "absorbed_left_and_right_particle_counts_for_each_species",
+    "final_ion_population",
+    "ensemble_mean_final_electric_field_profile",
+    "ensemble_mean_final_field_energy_proxy"
+  ],
+  "prospective_decision_rule": {
+    "integrity_gate": "All parent hashes, reused-member hashes, binaries, five locked seeds per code, finite values, 400-node aligned fields, serial execution, endpoint timing, and resource limits pass.",
+    "count_scale": "Symmetric relative ensemble-mean difference abs(A-B)/max((abs(A)+abs(B))/2,1).",
+    "collision_traffic_compatible_if": "Electron elastic and excitation differ by at most 5%; electron ionization and both ion channels differ by at most 10%; zero-versus-nonzero fails.",
+    "wall_traffic_compatible_if": "Each species/side absorption mean differs by at most 10%; a both-means-below-20 endpoint is low-count inconclusive.",
+    "field_compatible_if": "Ensemble-mean final field-profile relative RMS is at most 5% and the ratio of mean field-energy proxies is in [0.90,1.10].",
+    "localized_discrepancy_if": "Integrity passes but a substantive physics or electron-balance equivalence gate fails; preserve failures without tolerance retuning.",
+    "inconclusive_if": "Integrity fails or fewer than five valid members exist for either code.",
+    "electron_balance_equivalent_if": "Let D be AuroraPIC minus eduPIC final electron ensemble mean. Form a conservative two-sided 90% interval D +/- 2.131846786326649 * sqrt(s_A^2/5 + s_E^2/5), using the t(4) 95th percentile rather than an estimated larger Welch degree of freedom. The complete interval must lie within +/-0.001 times the shared initial electron population (108.586 particles).",
+    "ion_population_compatible_if": "The final ion population means differ by at most 1% of the shared initial ion population and their mean net-change signs agree.",
+    "five_member_support_if": "Integrity, electron-balance equivalence, ion-population, collision, and field gates pass and no wall endpoint fails."
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_member": 480
+  },
+  "claim_boundary": "A pass supports practical four-period electron-balance equivalence, alongside collision, wall, ion-population, and field consistency, for one mature 1D argon CCP state. It is not a steady-state Turner pass, experimental validation, formal convergence, or validation of other states, gases, geometries, or dimensions.",
+  "physics_claim": "none_until_all_four_new_members_and_the_combined_five_member_prospective_gates_are_complete"
+}
