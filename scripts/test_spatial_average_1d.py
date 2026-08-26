@@ -155,7 +155,7 @@ def main() -> int:
             and metadata["moments_complete"] is True
             and metadata["expected_samples"] == 4
             and metadata["final_step"] == 4
-            and metadata["spatial_average_version"] == 6
+            and metadata["spatial_average_version"] == 7
             and metadata["sampling_order"] == "post_collision",
             "completed spatial-average metadata is incorrect",
         )
@@ -211,7 +211,7 @@ def main() -> int:
                     "spatial_moments", "spatial_energy", "spatial_fields",
                     "spatial_phase", "phase_bin", "phase_species",
                     "phase_fields", "spatial_collision", "phase_eedf",
-                    "wall_impact",
+                    "phase_surface_flux", "wall_impact",
                 ))
             ) + "\n",
             encoding="utf-8",
