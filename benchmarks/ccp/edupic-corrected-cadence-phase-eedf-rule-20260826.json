@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_corrected_cadence_common_state_phase_eedf_ensemble",
+  "question": "Does the corrected held-ion-density refresh cadence remove the previously observed 13-15% phase-resolved ionizing-tail deficit relative to native eduPIC?",
+  "basis": {
+    "prior_phase_eedf_rule_sha256": "7e4d31734f0d91c1bece68313b40f6c8ddceb14f79ff0db2b199094ae4f2adb0",
+    "prior_phase_eedf_result_sha256": "5af94a076023bcb0f6b514d3a5de6327be8e6aa290f802cadf300446bbc33bbe",
+    "four_period_balance_result_sha256": "73fa50e481b046c252ee202ed24e212688bd6148d0593206d216b6e53fddfc96",
+    "previous_critical_folded_ionization_ratio": 0.8529582149853947,
+    "previous_critical_ionizing_tail_ratio": 0.8718238925361137,
+    "observed_before_declaration": "The old phase-EEDF comparison used an independently evolved AuroraPIC trajectory before the held-density cadence correction. The corrected common-state five-member run now closes four-period collision, loss, population, and field observables. No corrected-cadence common-state phase-EEDF output has been generated or observed."
+  },
+  "locked_inputs": {
+    "source_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "source_checkpoint_cycle": 2620,
+    "particle_state_sha256": "a22309eeef57658c2b9bbe709b1cb7757ba06049816cd11ad48cff81450dd870",
+    "particle_state_signature": 16659304071935497571,
+    "particle_state_export_manifest_sha256": "2b0633829304c71f62c6e808d23573754bac43b7fa6f2bbdf5f1093200c001bc",
+    "source_populations": {
+      "electrons": 108591,
+      "ions": 114007
+    },
+    "electron_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "ion_gas_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+    "ionization_table_sha256": "419958d75e53776ced9f8b81ff77518bf5fc5a18779d167e7231d752d1d9e7e0",
+    "native_reference_members": {
+      "13507": {
+        "phase_eedf_sha256": "c799e63a548bfa26a9581c0abe2d08928a8a6f4f35ce9d2e679b4dcc49cf1298",
+        "moments_sha256": "5a9bcbec400f3dfc7dfc61f0e1c840854c6ab0322a519841e19191e92651f171"
+      },
+      "24601": {
+        "phase_eedf_sha256": "422f640b8a2b9eb4baf00cd852b28858061d7db48d923f84796e00994a2a1093",
+        "moments_sha256": "e8673068f7b9e12e5dbe89885596b88fa8ef36700890d4893d2f46bf67617d9c"
+      },
+      "35713": {
+        "phase_eedf_sha256": "0caa1322d5953b88178421576b9f6847b052f0b05474daef10c46ef02a5cc34d",
+        "moments_sha256": "5ee30c2226bc9e47ebe90941da68bfbee755969fd713de7987e6d3e68f912deb"
+      }
+    }
+  },
+  "physics_contract": {
+    "nodes": 400,
+    "length_m": 0.025,
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "ion_timestep_multiplier": 20,
+    "macro_weight_aurorapic_1d": 700000000,
+    "electrode_voltage_amplitude_V": 250.0,
+    "rf_frequency_hz": 13560000.0,
+    "aurorapic_initial_phase_rad": 1.5723671231216914,
+    "neutral_density_m3": 2.0694208669001848e+21,
+    "neutral_temperature_K": 350.0,
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "subcycle_charge_deposition": "pre_push_held_with_upcoming_due_refresh"
+  },
+  "diagnostic_contract": {
+    "measurement_cycles": 4,
+    "electron_pushes": 16000,
+    "phase_bins": 200,
+    "sample_every_timesteps": 2,
+    "samples_per_phase_bin": 40,
+    "sampling_order": "pre_collision",
+    "regions": [
+      "x000_010:0:0.0025",
+      "x010_020:0.0025:0.005",
+      "x020_040:0.005:0.01",
+      "x040_060:0.01:0.015",
+      "x060_080:0.015:0.02",
+      "x080_090:0.02:0.0225",
+      "x090_100:0.0225:0.025"
+    ],
+    "critical_regions": ["x020_040", "x040_060"],
+    "critical_phase_bins": [25, 100],
+    "energy_bins": 320,
+    "energy_max_eV": 80.0,
+    "energy_bin_width_eV": 0.25,
+    "candidate_seeds": [13507, 24601, 35713],
+    "native_reference_seeds": [13507, 24601, 35713]
+  },
+  "prospective_decision_rule": {
+    "integrity_gate": "All rule, binary, state, gas, native-reference, candidate-output, shape, coordinate, finite-value, serial-execution, and resource hashes/checks pass.",
+    "measurement_gate": "Each candidate has at least 100000 macro observations in every critical region/phase bin, maximum histogram overflow at most 1e-6, and candidate critical folded-ionization and tail relative ranges at most 0.15.",
+    "strong_phase_eedf_closure_if": "The candidate-ensemble/native-ensemble critical folded-ionization and above-15.8-eV ratios are both in [0.95,1.05], all three critical phase-slice folded-ionization ratios are in [0.90,1.10], and critical total-variation distance is at most 0.06.",
+    "major_cadence_support_if": "Strong closure does not pass, but the critical folded-ionization ratio is in [0.94,1.06] and its absolute log-ratio error is at most 40% of the previous result's error; the critical tail ratio is in [0.94,1.06].",
+    "cadence_not_supported_if": "Integrity and measurement gates pass but neither closure nor major-support gates pass.",
+    "inconclusive_if": "Integrity or measurement gates fail."
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_member": 480
+  },
+  "claim_boundary": "This control can determine whether the corrected ion-density cadence removes the old four-cycle regional phase-EEDF discrepancy for one mature 1D argon CCP state. It is not a published Turner helium pass, experimental validation, long-window stationarity, or validation of other gases, geometries, or dimensions.",
+  "physics_claim": "none_until_the_candidate_binary_and_analyzer_are_locked_and_all_three_candidate_members_and_prospective_gates_are_complete"
+}
