@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_full_length_published_profile_comparison_after_collision_schedule_correction",
+  "hypothesis": "Replacing AuroraPIC's repeated Poisson collision opportunities with Turner's prescribed at-most-one Bernoulli opportunity per particle timestep removes a known positive collision-rate bias and may improve the published Case 1 ion-density comparison.",
+  "observed_before_declaration": {
+    "legacy_seed_13507": {
+      "opportunity_sampling": "poisson_clock",
+      "x_squared": 574.3986511135444,
+      "integrated_ion_density_bias_percent": 2.4834268915580937,
+      "relative_l2": 0.028741105427741283
+    },
+    "corrected_short_horizon_evidence": "A prospective independent three-seed, 16-cycle common-state test verified the single-Bernoulli scheduler and repeated the expected direction: 1.336 percent less ionization, 0.497 percent less integrated mean ion density, and 1.061 percent fewer endpoint ions. This does not determine the full equilibrium result."
+  },
+  "locked_inputs": {
+    "solver_commit": "0ce60b23733576b8c2f42242c5a6fc16ce844fb5",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "generated_deck_sha256": "da46a5b90154eaaba8041d3b2fdd206bbea62b8da90438d6ad40724a2b3d95fd",
+    "preflight_sha256": "9fde202ce19b0ffc008c0b949b12f931d0f1a98852c38fffd6e4f6eb5c71f6a5",
+    "case_manifest_sha256": "fdfcf67e61620d0bab6a85411aeeb40f16d486fdb427f3ca9c3d30a3fd58af18",
+    "source_artifact_sha256": "a0a5fe93900d7d7b213157f1eab664e06aab6e718f2189910e65f23bd699d661",
+    "normalization_audit_sha256": "29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740",
+    "published_profile_sha256": "7bd2f942a29a1431a02dd19724c35ae34f982ab82a2e7b03cb790fefc7400014",
+    "electron_gas_manifest_sha256": "c439675b5ebd6798d472ac58b8d03e4dd76cd943b0b9c563b581c82e6113ad62",
+    "ion_gas_manifest_sha256": "32688254fd2d82ff79488096aa5337ab95c973f3ffaff65bfc8f489e1974b48f",
+    "comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c"
+  },
+  "simulation_contract": {
+    "seed": 13507,
+    "collision_opportunity_sampling": "single_bernoulli",
+    "nodes": 129,
+    "cells": 128,
+    "particles_per_species": 65536,
+    "timestep_s": 1.8436578171091445e-10,
+    "steps_per_rf_cycle": 400,
+    "rf_cycles": 1280,
+    "steps": 512000,
+    "averaging_cycles": 32,
+    "averaging_first_step": 499201,
+    "averaging_last_step": 512000,
+    "averaging_samples": 12800
+  },
+  "primary_acceptance": {
+    "observable": "published-node time-averaged ion-density profile",
+    "statistic": "sum((candidate_mean-reference_mean)^2/reference_population_stddev^2)",
+    "turner_case1_95_percent_interval": [55, 303],
+    "turner_case1_99_percent_interval": [48, 405],
+    "coordinate_interpolation": false,
+    "post_result_threshold_changes_permitted": false
+  },
+  "secondary_descriptive_observables": [
+    "integrated ion-density bias percent",
+    "relative L2 profile error",
+    "midplane ion density",
+    "time-averaged electron power per area",
+    "time-averaged ion power per area",
+    "time-averaged ion current per area",
+    "particle source-loss balance",
+    "stationarity over the final averaging window"
+  ],
+  "decision_rule": {
+    "accepted_at_95_percent": "The run and provenance gates pass and X^2 is within the closed interval [55,303].",
+    "accepted_at_99_percent_only": "The run and provenance gates pass, X^2 is outside [55,303], and X^2 is within [48,405].",
+    "rejected_at_99_percent": "The run and provenance gates pass and X^2 is outside [48,405].",
+    "execution_invalid": "The trajectory, final averaging window, provenance, finite-output, resource, or exact source-loss-balance gate fails."
+  },
+  "execution_contract": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 1048576,
+    "maximum_peak_resident_set_kib": 786432,
+    "maximum_wall_seconds": 18000,
+    "checkpoint_interval_steps": 12800,
+    "maximum_concurrent_processes": 1,
+    "minimum_free_disk_before_launch_gib": 5
+  },
+  "claim_boundary": "This is a prospective one-seed, full-length code-to-code benchmark against Turner's published statistical profile after correcting one identified algorithm mismatch. Acceptance would establish statistical consistency for this realization and this electrostatic 1D helium CCP case, not experimental validation, multi-seed coverage, convergence of every observable, or general validation of AuroraPIC across geometries, gases, dimensions, and regimes."
+}

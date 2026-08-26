@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-26T07:41:58Z",
+  "status": "preregistered_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-single-bernoulli-full-rule-20260826.json",
+    "sha256": "3650058e28cd674f13a9f041d9e59a0d012ae35644f742c21078f775e58879af"
+  },
+  "execution_identity": {
+    "solver_commit": "0ce60b23733576b8c2f42242c5a6fc16ce844fb5",
+    "solver_binary": "build/aurorapic_cli",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "deck": "tmp/turner-case1-single-bernoulli-preflight-20260826/turner_case1.cfg",
+    "deck_sha256": "da46a5b90154eaaba8041d3b2fdd206bbea62b8da90438d6ad40724a2b3d95fd",
+    "preflight_sha256": "9fde202ce19b0ffc008c0b949b12f931d0f1a98852c38fffd6e4f6eb5c71f6a5",
+    "output_directory": "tmp/turner-case1-single-bernoulli-preflight-20260826/output"
+  },
+  "reference_identity": {
+    "profile": "tmp/turner-normalized-v3/turner_case1_benchmark.csv",
+    "profile_sha256": "7bd2f942a29a1431a02dd19724c35ae34f982ab82a2e7b03cb790fefc7400014",
+    "normalization_audit": "tmp/turner-normalized-v3/audit.json",
+    "normalization_audit_sha256": "29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740",
+    "comparator": "scripts/compare_turner.py",
+    "comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c"
+  },
+  "host_prelaunch": {
+    "available_memory_gib": 19,
+    "available_disk_gib": 51,
+    "output_directory_absent": true
+  },
+  "launch_command_contract": {
+    "serial": true,
+    "nice_increment": 10,
+    "address_space_limit_bytes": 1073741824,
+    "wall_timeout_seconds": 18000,
+    "large_run_acknowledgement": "I_UNDERSTAND_THIS_IS_A_LARGE_RUN",
+    "stdout_stderr_log": "tmp/turner-case1-single-bernoulli-preflight-20260826/run.log",
+    "resource_log": "tmp/turner-case1-single-bernoulli-preflight-20260826/time.txt"
+  },
+  "integrity_rule": "The exact files and hashes above must be rechecked immediately before launch. Any mismatch or pre-existing output directory invalidates this execution lock."
+}
