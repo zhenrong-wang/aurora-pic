@@ -1,0 +1,294 @@
+{
+  "schema_version": 1,
+  "scope": "five_member_four_period_electron_balance_result",
+  "rule_sha256": "d98f48279fae91b61bffea4150411535ba8f0c0d6153738f85d2c38bfea8fd53",
+  "execution_lock_sha256": "f992a0f5b2db08f707e05fb83f7022d16206788e8f27551e5fb125421525043f",
+  "execution_report_sha256": "83be70ea05a9a8fdd2817ad02f0c83a46fd5b9172546c20cf31bcfcd3384796a",
+  "integrity": {
+    "rule_hash_matches_report": true,
+    "rule_hash_matches_lock": true,
+    "lock_hash_matches_report": true,
+    "edupic_binary_hash_matches": true,
+    "aurorapic_binary_hash_matches": true,
+    "all_ten_members_complete": true,
+    "all_resource_gates_passed": true,
+    "edupic_five_unique_locked_seeds": true,
+    "edupic_endpoint_alignment": true,
+    "aurorapic_five_unique_locked_seeds": true,
+    "aurorapic_endpoint_alignment": true,
+    "edupic_field_shape_13507": true,
+    "edupic_field_shape_24601": true,
+    "edupic_field_shape_35713": true,
+    "edupic_field_shape_51949": true,
+    "edupic_field_shape_63059": true,
+    "aurorapic_field_shape_13507": true,
+    "aurorapic_field_shape_24601": true,
+    "aurorapic_field_shape_35713": true,
+    "aurorapic_field_shape_51949": true,
+    "aurorapic_field_shape_63059": true,
+    "field_hashes_match": true,
+    "field_values_finite": true,
+    "crosscode_coordinates_match": true,
+    "parent_execution_hash_matches": true,
+    "reused_parent_members_verified": true
+  },
+  "integrity_passed": true,
+  "collision_channels": {
+    "electron_elastic": {
+      "edupic": {
+        "mean": 1860512.2,
+        "sample_standard_deviation": 7454.663587312308,
+        "minimum": 1850102.0,
+        "maximum": 1869246.0
+      },
+      "aurorapic": {
+        "mean": 1859740.6,
+        "sample_standard_deviation": 6415.329866811215,
+        "minimum": 1852066.0,
+        "maximum": 1866535.0
+      },
+      "symmetric_relative_mean_difference": 0.00041481052040326957,
+      "threshold": 0.05,
+      "nonzero_both": true,
+      "passed": true
+    },
+    "electron_excitation": {
+      "edupic": {
+        "mean": 5596.4,
+        "sample_standard_deviation": 38.298825047251775,
+        "minimum": 5548.0,
+        "maximum": 5650.0
+      },
+      "aurorapic": {
+        "mean": 5562.4,
+        "sample_standard_deviation": 69.83766891871463,
+        "minimum": 5457.0,
+        "maximum": 5631.0
+      },
+      "symmetric_relative_mean_difference": 0.006093845216331505,
+      "threshold": 0.05,
+      "nonzero_both": true,
+      "passed": true
+    },
+    "electron_ionization": {
+      "edupic": {
+        "mean": 1941.6,
+        "sample_standard_deviation": 29.11700534052223,
+        "minimum": 1897.0,
+        "maximum": 1971.0
+      },
+      "aurorapic": {
+        "mean": 1963.8,
+        "sample_standard_deviation": 24.201239637671456,
+        "minimum": 1945.0,
+        "maximum": 2006.0
+      },
+      "symmetric_relative_mean_difference": 0.011368873866953474,
+      "threshold": 0.1,
+      "nonzero_both": true,
+      "passed": true
+    },
+    "ion_isotropic": {
+      "edupic": {
+        "mean": 31734.4,
+        "sample_standard_deviation": 128.98759630290039,
+        "minimum": 31565.0,
+        "maximum": 31927.0
+      },
+      "aurorapic": {
+        "mean": 32222.6,
+        "sample_standard_deviation": 289.33942005886445,
+        "minimum": 31779.0,
+        "maximum": 32503.0
+      },
+      "symmetric_relative_mean_difference": 0.015266507184514505,
+      "threshold": 0.1,
+      "nonzero_both": true,
+      "passed": true
+    },
+    "ion_backward": {
+      "edupic": {
+        "mean": 30362.0,
+        "sample_standard_deviation": 182.0604295282201,
+        "minimum": 30186.0,
+        "maximum": 30670.0
+      },
+      "aurorapic": {
+        "mean": 30384.2,
+        "sample_standard_deviation": 112.96548145340682,
+        "minimum": 30226.0,
+        "maximum": 30480.0
+      },
+      "symmetric_relative_mean_difference": 0.0007309099169989473,
+      "threshold": 0.1,
+      "nonzero_both": true,
+      "passed": true
+    }
+  },
+  "collision_traffic_compatible": true,
+  "wall_absorption": {
+    "electron_absorbed_left": {
+      "edupic": {
+        "mean": 983.4,
+        "sample_standard_deviation": 28.79756934187328,
+        "minimum": 951.0,
+        "maximum": 1021.0
+      },
+      "aurorapic": {
+        "mean": 966.8,
+        "sample_standard_deviation": 16.724233913695418,
+        "minimum": 940.0,
+        "maximum": 984.0
+      },
+      "symmetric_relative_mean_difference": 0.017023894985129757,
+      "threshold": 0.1,
+      "status": "passed"
+    },
+    "electron_absorbed_right": {
+      "edupic": {
+        "mean": 971.0,
+        "sample_standard_deviation": 19.595917942265423,
+        "minimum": 937.0,
+        "maximum": 986.0
+      },
+      "aurorapic": {
+        "mean": 973.2,
+        "sample_standard_deviation": 13.141537200799608,
+        "minimum": 952.0,
+        "maximum": 988.0
+      },
+      "symmetric_relative_mean_difference": 0.002263141652093453,
+      "threshold": 0.1,
+      "status": "passed"
+    },
+    "ion_absorbed_left": {
+      "edupic": {
+        "mean": 973.2,
+        "sample_standard_deviation": 15.801898620102586,
+        "minimum": 951.0,
+        "maximum": 989.0
+      },
+      "aurorapic": {
+        "mean": 968.6,
+        "sample_standard_deviation": 11.081516141756055,
+        "minimum": 957.0,
+        "maximum": 987.0
+      },
+      "symmetric_relative_mean_difference": 0.004737872077453932,
+      "threshold": 0.1,
+      "status": "passed"
+    },
+    "ion_absorbed_right": {
+      "edupic": {
+        "mean": 958.8,
+        "sample_standard_deviation": 15.238110119040353,
+        "minimum": 939.0,
+        "maximum": 978.0
+      },
+      "aurorapic": {
+        "mean": 956.4,
+        "sample_standard_deviation": 10.454664030948102,
+        "minimum": 948.0,
+        "maximum": 974.0
+      },
+      "symmetric_relative_mean_difference": 0.0025062656641603774,
+      "threshold": 0.1,
+      "status": "passed"
+    }
+  },
+  "wall_traffic_has_failure": false,
+  "populations": {
+    "electrons": {
+      "initial": 108586.0,
+      "edupic": {
+        "mean": 108573.2,
+        "sample_standard_deviation": 37.93019905036091,
+        "minimum": 108525.0,
+        "maximum": 108624.0
+      },
+      "aurorapic": {
+        "mean": 108609.8,
+        "sample_standard_deviation": 25.994230129011324,
+        "minimum": 108581.0,
+        "maximum": 108652.0
+      },
+      "mean_difference_fraction_of_initial": 0.00033706002615443813,
+      "mean_changes": {
+        "edupic": -12.80000000000291,
+        "aurorapic": 23.80000000000291
+      },
+      "change_signs_agree": false,
+      "threshold": 0.01,
+      "passed": false
+    },
+    "ions": {
+      "initial": 114005.0,
+      "edupic": {
+        "mean": 114014.6,
+        "sample_standard_deviation": 36.63741257239654,
+        "minimum": 113964.0,
+        "maximum": 114067.0
+      },
+      "aurorapic": {
+        "mean": 114043.8,
+        "sample_standard_deviation": 30.979025162196436,
+        "minimum": 114019.0,
+        "maximum": 114096.0
+      },
+      "mean_difference_fraction_of_initial": 0.00025612911714395937,
+      "mean_changes": {
+        "edupic": 9.60000000000582,
+        "aurorapic": 38.80000000000291
+      },
+      "change_signs_agree": true,
+      "threshold": 0.01,
+      "passed": true
+    }
+  },
+  "population_compatible": true,
+  "field": {
+    "ensemble_mean_profile_relative_rms": 0.007222733406256094,
+    "relative_rms_reference": "edupic_ensemble_mean_profile",
+    "relative_rms_threshold": 0.05,
+    "field_energy_proxy": {
+      "edupic": {
+        "mean": 197413907747.65454,
+        "sample_standard_deviation": 940188321.804297,
+        "minimum": 196585714225.7457,
+        "maximum": 199004680103.54767
+      },
+      "aurorapic": {
+        "mean": 197443051750.358,
+        "sample_standard_deviation": 418731050.9516839,
+        "minimum": 196734695668.76294,
+        "maximum": 197839210343.25635
+      }
+    },
+    "aurorapic_to_edupic_mean_field_energy_proxy_ratio": 1.0001476289235949,
+    "energy_ratio_interval": [
+      0.9,
+      1.1
+    ],
+    "passed": true
+  },
+  "field_compatible": true,
+  "formal_outcome": "four_period_electron_balance_equivalence_supported",
+  "claim_boundary": "A pass supports practical four-period electron-balance equivalence, alongside collision, wall, ion-population, and field consistency, for one mature 1D argon CCP state. It is not a steady-state Turner pass, experimental validation, formal convergence, or validation of other states, gases, geometries, or dimensions.",
+  "electron_balance_equivalence": {
+    "aurorapic_minus_edupic_mean_particles": 36.60000000000582,
+    "standard_error_particles": 20.564046294443123,
+    "critical_value": 2.131846786326649,
+    "critical_value_contract": "t_0.95_with_4_df_conservative_lower_df",
+    "confidence_level": 0.9,
+    "lower_particles": -7.239396006675186,
+    "upper_particles": 80.43939600668682,
+    "equivalence_margin_particles": 108.586,
+    "equivalence_interval_particles": [
+      -108.586,
+      108.586
+    ],
+    "passed": true
+  },
+  "five_member_support_gate_passed": true,
+  "parent_execution_report_sha256": "49f2471863652e1e7e03eb01c72ea87264d88045f7ddbd026f89d65fe4ffa29f"
+}

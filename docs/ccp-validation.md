@@ -3814,6 +3814,37 @@ material collision-rate, field, or density disagreement. A higher-power
 prospective balance test is required to distinguish a real small bias from
 sampling noise.
 
+That higher-power follow-up is now complete. The corrected
+[`five-member rule`](../benchmarks/ccp/edupic-collision-enabled-common-state-five-member-balance-rule-20260826.json)
+reuses the three parent members only after exact endpoint and field-hash
+verification and adds seeds 51949 and 63059 in each code. An initial execution
+attempt exposed a JSON-generation defect that rounded the unsigned 64-bit APS
+signature. AuroraPIC rejected the state before initialization; the attempt,
+cause, quarantine, and unchanged-threshold disposition are preserved in the
+[`preflight failure record`](../benchmarks/ccp/edupic-collision-enabled-common-state-five-member-balance-preflight-failure-20260826.json).
+The exact signature was restored and the execution was relocked before all four
+new members were rerun.
+
+The checksum-bound
+[`five-member result`](../benchmarks/ccp/edupic-collision-enabled-common-state-five-member-balance-result-20260826.json)
+yields `four_period_electron_balance_equivalence_supported`. The AuroraPIC
+minus eduPIC final-electron mean difference is 36.6 particles. Its conservative
+two-sided 90% interval, using the preregistered t(4) critical value, is
+`[-7.24, 80.44]` particles and lies wholly inside the practical-equivalence
+band `[-108.586, 108.586]`, or +/-0.1% of the initial population. The combined
+five-member collision, wall-loss, ion-population, field-profile, and
+field-energy gates also pass. The final field-profile relative RMS is
+`0.00722`, and the field-energy ratio is `1.000148`. The
+[`execution record`](../benchmarks/ccp/edupic-collision-enabled-common-state-five-member-balance-execution-20260826.json)
+also proves that all six reused parent members matched their locked endpoints
+and fields.
+
+This prospective equivalence result resolves the earlier sign-only failure at
+the declared practical scale without altering or erasing that original formal
+outcome. It supports four-period integrated stochastic consistency for this
+state; steady-state published-profile validation remains the next distinct
+scientific claim.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
