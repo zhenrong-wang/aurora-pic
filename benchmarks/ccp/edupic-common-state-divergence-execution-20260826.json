@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic_helium_case1_collision_free_common_state_divergence_v1",
+  "scope": "execution_record_for_preregistered_common_state_divergence",
+  "artifacts": {
+    "rule_sha256": "88c7c12718d087cb442b544c394dae07546d0bcf76642951429dfcb3647547d0",
+    "result_sha256": "f303d59f2e38374a64d5bceaa4db14ab7cea4da529bfc5cd5fc9287e8cc97f49",
+    "analyzer_sha256": "9fb93c97cb5a81066f2fe9328db01e815c6a1f51799051812d174e80a326dceb",
+    "aurorapic_runner_sha256": "f3b6d6bb1630fd4619f947409371c6b91f2b67e87e4965735645593588622033",
+    "aurorapic_report_sha256": "d1b3c0b0a2d16981629fb0d4dd6e270b23c2388a41c17a70456a995645b13717",
+    "native_trace_sha256": "72b4e6ba19eb9c518aa920ea461943d3611de6c09ce328a59fef382964c49cda",
+    "native_population_sha256": "415984f10ff3d02af1c77a092661795286ee238521e53458ede73a80363cc520",
+    "native_final_checkpoint_sha256": "47768dab56c3ec3f31b86c2e02fc0a428315b41a8088add3b3b14d288b53d3fc"
+  },
+  "native_primary": {
+    "instrumented_source_sha256": "b423fe256ab2d4757041886737215f56f45c9d49d61ebf9913b32e8226bd5c13",
+    "binary_sha256": "2556a5f25237840e9578255d6e46afadb1856ecee3981879c9d600b8d91b5fa9",
+    "wall_seconds": 8.73,
+    "peak_resident_set_kib": 47596,
+    "exit_status": 0
+  },
+  "passive_population_extension": {
+    "instrumenter_sha256": "ad054fa140b8e8e6d8368a180859155a5b97e947f67601f4d0e25b0709c13048",
+    "audit_sha256": "043445bd30e072bb65dbd22f7527a499f874814f4f4f64c53a3950f0faf583f9",
+    "instrumented_source_sha256": "309831c5eddfc1ad5c9b43d4b07ace352dce8b8f7706c3183e7ee29b3b411127",
+    "binary_sha256": "83631eee130647fba4e1682844987eda259875d70022e9f8c07de81304222036",
+    "wall_seconds": 8.81,
+    "peak_resident_set_kib": 47852,
+    "exit_status": 0,
+    "grid_trace_byte_identical_to_primary": true,
+    "final_checkpoint_byte_identical_to_primary": true
+  },
+  "aurorapic": {
+    "serial_horizons_completed": 15,
+    "sum_reported_wall_seconds": 88.93,
+    "maximum_member_wall_seconds": 23.37,
+    "maximum_peak_resident_set_kib": 16168,
+    "all_resource_gates_passed": true
+  },
+  "outcome": {
+    "integrity_gate_passed": true,
+    "initial_parity_gate_passed": true,
+    "formal_outcome": "one_step_mover_or_boundary_mismatch",
+    "earliest_sustained_material_divergence_horizon": 1,
+    "post_hoc_mechanism_candidate": "ion_density_refresh_staggering",
+    "causal_claim_allowed": false,
+    "required_follow_up": "prospectively lock and run an AuroraPIC pre-push held-ion-density control"
+  }
+}

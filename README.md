@@ -154,6 +154,14 @@ inconclusive because the preregistered pointwise repeatability gate fails at
 several phase-0.2 cells and one charge-density cell. The narrower phase-0.3
 field comparison is repeatable in both codes; it is a useful localization, not
 a substitute for the failed joint gate or a validation claim.
+A collision-free common-particle-state trace now closes the initial charge and
+field profiles to relative RMS errors of `2.6e-14` and `2.7e-9`. The localized
+field metric crosses its locked 2% divergence band after one step, while
+populations remain identical through 100 steps. Source inspection identifies
+ion-density refresh staggering as the leading mechanism candidate: eduPIC
+holds the pre-push ion density between 20-step ion updates, whereas AuroraPIC
+redeposits the moved ions. A prospective lag-control branch is still required
+before treating that association as causal.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

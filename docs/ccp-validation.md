@@ -3675,6 +3675,45 @@ phase, and predates this measurement window. This test cannot identify its
 first divergence from a common state or establish published-benchmark or
 experimental validity.
 
+### Collision-free common-state divergence
+
+APS v3 adds an explicitly signed `leapfrog_half_step` interchange contract for
+structured electrostatic 1D states. A real 222,591-particle eduPIC checkpoint
+was converted and independently loaded with matching semantic signature while
+using less than 27 MiB RSS. The
+[`prospective common-state rule`](../benchmarks/ccp/edupic-common-state-divergence-rule-20260826.json)
+then disables collisions in both codes and compares logarithmically spaced
+charge and field profiles from the same mature particle coordinates and
+half-step velocities. The checksum-bound
+[`result`](../benchmarks/ccp/edupic-common-state-divergence-result-20260826.json)
+and [`execution record`](../benchmarks/ccp/edupic-common-state-divergence-execution-20260826.json)
+preserve the reductions, passive-instrumentation check, and resource envelope.
+
+The initial profiles agree extremely closely: charge relative RMS is
+`2.63e-14`, field relative RMS is `2.70e-9`, and the critical regional
+field-energy ratio is `1.00000015`. This is direct dynamic evidence that the
+state conversion, macro-weight normalization, charge deposition, boundary
+drive, Poisson solve, endpoint Gauss correction, and field reduction agree at
+the common initial state.
+
+After one step, full-domain field relative RMS remains only `5.37e-4`, but the
+critical regional field-energy ratio becomes `0.96687` and stays outside the
+locked `[0.98,1.02]` band for the next samples. The preregistered outcome is
+therefore `one_step_mover_or_boundary_mismatch`. Electron and ion populations
+are exactly equal through horizon 100; the first four-particle electron-loss
+difference occurs only at horizon 200. The field discrepancy consequently
+precedes the boundary-loss bifurcation.
+
+Source ordering provides a specific post-hoc mechanism candidate. eduPIC
+deposits ion density immediately before each 20-electron-step ion push, moves
+the ions, and then reuses the pre-push density until the next ion update.
+AuroraPIC moves due ions and redeposits all live species at their new positions
+for the following field solve. That difference acts immediately after the
+first common-state ion move and is consistent with the observed localized
+departure. It is not yet a causal result: the next prospectively locked control
+must make AuroraPIC retain the pre-push ion density and test whether the trace
+collapses toward eduPIC.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
