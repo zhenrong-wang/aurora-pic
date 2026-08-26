@@ -437,6 +437,41 @@ does **not** yet establish Turner code-to-code verification. The next
 credibility work must isolate late-time stochastic drift and the roughly 2%
 density-amplitude bias before another production campaign is justified.
 
+## Corrected collision-schedule Case 1 acceptance
+
+A second exact, prospectively registered Case 1 trajectory completed on 26
+August 2026 after the collision opportunity scheduler was corrected to match
+Turner et al.'s at-most-one Bernoulli trial per particle timestep. The rule and
+execution identity were committed before launch. The run used the unchanged
+published geometry, gas data, seed 13507, 65,536 initial macro-particles per
+species, 512,000 timesteps, and the prescribed final 32-period average.
+
+The unmodified published comparison gives `X² = 142.985`, inside the locked
+Case 1 95% interval (`55--303`). Relative profile L2 error is 1.408%, the
+maximum pointwise relative error is 2.984%, and integrated ion density is
+1.017% below the published mean. The former Poisson-clock trajectory at the
+same seed gave `X² = 574.399`, 2.874% relative L2 error, and a 2.483% positive
+integrated-density bias. The formal outcome therefore changes from rejection
+beyond the 99% interval to acceptance at 95%. No fitted amplitude,
+interpolation, or post-result acceptance change was used.
+
+Independent final-window integrity checks close both species' integer
+source/loss balances exactly. Mean ion current is `0.216840 A m^-2`, 0.986%
+below Turner Table III; electron and ion electrical powers are respectively
+`34.1211` and `90.1413 W m^-2`, 0.522% and 0.506% below the reported values.
+These scalar agreements are descriptive because the publication provides no
+single-realization acceptance intervals for them. Total live population rises
+0.735% across the final 32 cycle boundaries, which is disclosed as residual
+finite-window drift and motivates a corrected-schedule multi-window and
+multi-seed robustness campaign.
+
+This is a meaningful code-to-code verification milestone: one full-length,
+prospectively declared AuroraPIC realization is statistically consistent with
+the published Turner ensemble. It is not yet experimental validation,
+multi-seed coverage, asymptotic convergence, or evidence for every gas,
+geometry, dimension, and plasma regime. The checksum-pinned decision record is
+[`turner-case1-single-bernoulli-full-result-20260826.json`](../benchmarks/ccp/turner-case1-single-bernoulli-full-result-20260826.json).
+
 ## Post-benchmark source/wall diagnostic
 
 Checkpoint v6 wall accounting was introduced after the exact 1,280-cycle run,
