@@ -14,7 +14,7 @@
     "edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
     "edupic_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
     "aurorapic_particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
-    "aurorapic_particle_state_signature": 14415241886702705000,
+    "aurorapic_particle_state_signature": 14415241886702705324,
     "electron_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
     "ion_gas_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
     "initial_populations": {

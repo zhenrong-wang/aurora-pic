@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "scope": "five_member_balance_prephysics_preflight_failure",
+  "failed_rule_sha256": "7daa90533e52686d82ca1afd1d092ac8219dc18a89bc13be6838dc1c76dd76fe",
+  "failed_execution_lock_sha256": "ec81e753e8d5c7ecf4d983e36e7f3402fc676dfac0fdf6d4762024269b60907a",
+  "failure": "AuroraPIC external particle-state signature mismatch before simulation initialization",
+  "expected_by_failed_deck": 14415241886702705000,
+  "actual_particle_state_signature": 14415241886702705324,
+  "cause": "The new JSON rule was constructed through a JavaScript number, which cannot exactly represent this unsigned 64-bit integer and rounded it during serialization.",
+  "physics_output_observed": false,
+  "outputs_before_failure": {
+    "new_edupic_members_completed": [51949, 63059],
+    "new_aurorapic_members_completed": [],
+    "aurorapic_seed_51949": "rejected before output directory creation"
+  },
+  "disposition": "Quarantine every new-member directory from the failed contract, preserve the original three-member parent data, correct only the signature, issue a new execution lock, and rerun all four new members. No threshold or decision rule changes are permitted."
+}
