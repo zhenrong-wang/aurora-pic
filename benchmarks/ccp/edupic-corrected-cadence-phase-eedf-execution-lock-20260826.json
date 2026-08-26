@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scope": "corrected_cadence_common_state_phase_eedf_execution_lock",
+  "rule_sha256": "cbc2c8bfe65ff133de2e5f5ef82e5bb7e985efe5beb04ad0d9c8d0544a5a560c",
+  "implementation_commit": "b36db4e7c901e1d518e9cb7a58ea0b81de569a65",
+  "runner_sha256": "f109a726bdc006a6348e441579dc64a36af19ea960a745099ba13c60bc5a1869",
+  "analyzer_sha256": "16584c6a7aa307497f4caadf109ad310be85b43a72e74c88f284cd7aa9b5267e",
+  "aurorapic_binary_sha256": "af6cc19a473c9b53ab72cad0c00f9281195db143c1ef76a4b687c94eac4abb00",
+  "members": {
+    "candidate_seeds": [13507, 24601, 35713],
+    "native_reference_seeds": [13507, 24601, 35713],
+    "measurement_cycles": 4,
+    "electron_pushes": 16000
+  },
+  "execution": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_member": 480
+  },
+  "candidate_outputs_observed_before_lock": false
+}
