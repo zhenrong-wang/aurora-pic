@@ -55,6 +55,14 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
     rule = json.loads(rule_path.read_text(encoding="utf-8"))
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    periods = int(rule["ensemble_contract"].get("rf_periods", 1))
+    horizon = int(rule["ensemble_contract"]["electron_pushes"])
+    members_each = int(rule["ensemble_contract"]["members_each_implementation"])
+    completion_label = ("all_ten_members_complete" if periods == 1 else
+                        "all_six_members_complete")
+    completion_value = (report["all_ten_members_complete"]
+                        if "all_ten_members_complete" in report else
+                        report["all_members_complete"])
     integrity: dict[str, bool] = {
         "rule_hash_matches_report": report["rule_sha256"] == sha256(rule_path),
         "rule_hash_matches_lock": lock["rule_sha256"] == sha256(rule_path),
@@ -65,7 +73,7 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
         "aurorapic_binary_hash_matches": (
             report["aurorapic_binary_sha256"] ==
             lock["aurorapic_binary_sha256"]),
-        "all_ten_members_complete": bool(report["all_ten_members_complete"]),
+        completion_label: bool(completion_value),
         "all_resource_gates_passed": bool(report["all_resource_gates_passed"]),
     }
     by_code = {"edupic": [], "aurorapic": []}
@@ -73,10 +81,11 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
     for member in report["members"]:
         by_code[member["implementation"]].append(member)
     for implementation, members in by_code.items():
-        integrity[f"{implementation}_five_unique_locked_seeds"] = (
+        seed_count = "five" if members_each == 5 else "three"
+        integrity[f"{implementation}_{seed_count}_unique_locked_seeds"] = (
             sorted(item["seed"] for item in members) == sorted(expected_seeds))
         integrity[f"{implementation}_endpoint_alignment"] = all(
-            item["endpoint"]["pre_push_step"] == 4000 for item in members)
+            item["endpoint"]["pre_push_step"] == horizon + 1 for item in members)
 
     observable_results: dict[str, object] = {}
     for key, threshold in COLLISION_THRESHOLDS.items():
@@ -110,6 +119,7 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
 
     population_results: dict[str, object] = {}
     population_passes = []
+    population_threshold = 0.005 if periods == 1 else 0.01
     for key in POPULATION_KEYS:
         initial = float(rule["locked_inputs"]["initial_populations"][key])
         left_summary = summary([
@@ -122,14 +132,14 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
         right_change = right_summary["mean"] - initial
         same_sign = ((left_change == 0.0 and right_change == 0.0) or
                      (left_change * right_change > 0.0))
-        passed = difference_fraction <= 0.005 and same_sign
+        passed = difference_fraction <= population_threshold and same_sign
         population_passes.append(passed)
         population_results[key] = {
             "initial": initial, "edupic": left_summary,
             "aurorapic": right_summary,
             "mean_difference_fraction_of_initial": difference_fraction,
             "mean_changes": {"edupic": left_change, "aurorapic": right_change},
-            "change_signs_agree": same_sign, "threshold": 0.005,
+            "change_signs_agree": same_sign, "threshold": population_threshold,
             "passed": passed,
         }
 
@@ -144,7 +154,7 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
                         "edupic_collision_endpoint_field.csv")
             else:
                 path = (output_root / implementation / f"seed-{member['seed']}" /
-                        "output" / "fields_3999.csv")
+                        "output" / f"fields_{horizon}.csv")
             field_hashes_pass &= sha256(path) == member["field_sha256"]
             x, electric = read_field(path, implementation)
             if implementation not in coordinates:
@@ -175,14 +185,17 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
     }
     energy_ratio = (energy_summary["aurorapic"]["mean"] /
                     energy_summary["edupic"]["mean"])
-    field_passed = relative_rms <= 0.02 and 0.95 <= energy_ratio <= 1.05
+    field_rms_threshold = 0.02 if periods == 1 else 0.05
+    energy_interval = [0.95, 1.05] if periods == 1 else [0.90, 1.10]
+    field_passed = (relative_rms <= field_rms_threshold and
+                    energy_interval[0] <= energy_ratio <= energy_interval[1])
     field_result = {
         "ensemble_mean_profile_relative_rms": relative_rms,
         "relative_rms_reference": "edupic_ensemble_mean_profile",
-        "relative_rms_threshold": 0.02,
+        "relative_rms_threshold": field_rms_threshold,
         "field_energy_proxy": energy_summary,
         "aurorapic_to_edupic_mean_field_energy_proxy_ratio": energy_ratio,
-        "energy_ratio_interval": [0.95, 1.05],
+        "energy_ratio_interval": energy_interval,
         "passed": field_passed,
     }
 
@@ -195,12 +208,15 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
     if not integrity_passed:
         outcome = "inconclusive_integrity_failure"
     elif pilot_supported:
-        outcome = "one_period_collision_enabled_stochastic_consistency_supported"
+        outcome = ("one_period_collision_enabled_stochastic_consistency_supported"
+                   if periods == 1 else
+                   "four_period_collision_enabled_stochastic_consistency_supported")
     else:
         outcome = "localized_collision_enabled_common_state_discrepancy"
     return {
         "schema_version": 1,
-        "scope": "collision_enabled_common_state_ensemble_result",
+        "scope": ("collision_enabled_common_state_ensemble_result" if periods == 1
+                  else "collision_enabled_common_state_four_period_result"),
         "rule_sha256": sha256(rule_path), "execution_lock_sha256": sha256(lock_path),
         "execution_report_sha256": sha256(report_path),
         "integrity": integrity, "integrity_passed": integrity_passed,
@@ -209,7 +225,8 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
         "wall_absorption": wall_results, "wall_traffic_has_failure": wall_has_failure,
         "populations": population_results, "population_compatible": population_passed,
         "field": field_result, "field_compatible": field_passed,
-        "pilot_support_gate_passed": pilot_supported,
+        ("pilot_support_gate_passed" if periods == 1 else
+         "four_period_support_gate_passed"): pilot_supported,
         "formal_outcome": outcome,
         "claim_boundary": rule["claim_boundary"],
     }

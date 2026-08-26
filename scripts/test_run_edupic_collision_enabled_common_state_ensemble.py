@@ -22,7 +22,8 @@ def main() -> None:
             "aurorapic_particle_state_signature": 42,
             "initial_populations": {"electrons": 10, "ions": 11},
         },
-        "ensemble_contract": {"electron_pushes": 3999},
+        "ensemble_contract": {
+            "electron_pushes": 3999, "members_each_implementation": 5},
     }
     value = deck(rule, Path("state.aps"), 13507, Path("e.gas"),
                  Path("i.gas"), Path("output"))

@@ -226,7 +226,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             if implementation == "edupic":
                 shutil.copy2(paths["checkpoint"], member / "picdata.bin")
                 run_process(
-                    [str(paths["edupic_binary"]), "1", "pilot", str(seed)],
+                    [str(paths["edupic_binary"]),
+                     str(rule["ensemble_contract"].get("rf_periods", 1)),
+                     "pilot", str(seed)],
                     member, contract)
                 summary = summarize_native(member, seed)
             else:
@@ -243,17 +245,25 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
             summary["orchestration_wall_seconds"] = time.monotonic() - started
             members.append(summary)
     maximum_rss = int(contract["maximum_peak_resident_set_kib"])
-    return {
+    expected_members = (2 * int(
+        rule["ensemble_contract"]["members_each_implementation"]))
+    complete = len(members) == expected_members
+    result = {
         "schema_version": 1,
-        "scope": "collision_enabled_common_state_ensemble_execution",
+        "scope": ("collision_enabled_common_state_ensemble_execution" if
+                  int(rule["ensemble_contract"].get("rf_periods", 1)) == 1 else
+                  "collision_enabled_common_state_four_period_execution"),
         **expected,
         "execution_lock_sha256": sha256(paths["lock"]),
         "members": members,
-        "all_ten_members_complete": len(members) == 10,
+        "all_members_complete": complete,
         "all_resource_gates_passed": all(
             item["peak_resident_set_kib"] <= maximum_rss for item in members),
         "total_member_wall_seconds": sum(item["wall_seconds"] for item in members),
     }
+    if expected_members == 10:
+        result["all_ten_members_complete"] = complete
+    return result
 
 
 def main() -> int:

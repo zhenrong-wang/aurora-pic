@@ -17,13 +17,15 @@ void do_one_cycle (void){
 """
     result = instrument(source)
     assert result.count("MTgen.seed") == 1
-    assert result.count("save_collision_enabled_common_state_endpoint(t + 1)") == 1
+    assert result.count("save_collision_enabled_common_state_endpoint(") == 2
     assert result.count("N_e_elastic++") == 1
     assert result.count("N_e_excitation++") == 1
     assert result.count("N_e_ionization++") == 1
     assert result.count("N_i_isotropic++") == 1
     assert result.count("N_i_backward++") == 1
-    assert "if ((t + 1) == 4000)" in result
+    assert "if ((t + 1) == N_T" in result
+    assert "cycle == cycles_done + no_of_cycles" in result
+    assert "global_pre_push_step" in result
     print("collision-enabled common-state instrumenter tests passed")
 
 

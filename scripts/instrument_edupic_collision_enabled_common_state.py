@@ -95,8 +95,12 @@ void save_collision_enabled_common_state_endpoint(int pre_push_step) {
         "        solve_Poisson(rho,Time);                                                 // compute potential and electric field\n")
     source = replace_once(
         source, solve,
-        solve + "        if ((t + 1) == 4000) {\n"
-        "            save_collision_enabled_common_state_endpoint(t + 1);\n"
+        solve + "        if ((t + 1) == N_T &&\n"
+        "            cycle == cycles_done + no_of_cycles) {\n"
+        "            const int global_pre_push_step =\n"
+        "                (cycle - cycles_done - 1) * N_T + t + 1;\n"
+        "            save_collision_enabled_common_state_endpoint(\n"
+        "                global_pre_push_step);\n"
         "            return;\n"
         "        }\n",
         "endpoint hook")
@@ -129,7 +133,7 @@ def main() -> int:
         "transform": "edupic_collision_enabled_common_state_endpoint_v1",
         "source_sha256": EXPECTED_SOURCE_SHA256,
         "instrumented_source_sha256": sha256(args.output),
-        "endpoint_pre_push_step": 4000,
+        "endpoint": "pre_push_step_N_T_of_last_requested_cycle",
         "rng_seed_timing": "immediately_after_checkpoint_load",
         "channel_counters_added": [
             "electron_elastic", "electron_excitation", "electron_ionization",
