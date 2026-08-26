@@ -3733,6 +3733,9 @@ causally supported explanation for the immediate discrepancy, while a
 one-base-step refresh-cadence alignment remains to be prospectively tested.
 The checksum and resource envelope are preserved in the
 [`execution record`](../benchmarks/ccp/edupic-ion-density-refresh-control-execution-20260826.json).
+The follow-up cadence hypothesis and its non-retroactive thresholds are fixed
+in the [`upcoming-due refresh rule`](../benchmarks/ccp/edupic-ion-density-refresh-cadence-rule-20260826.json)
+before implementation or execution.
 
 ## Bounded execution ladder
 

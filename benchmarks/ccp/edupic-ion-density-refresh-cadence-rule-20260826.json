@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_held_density_refresh_cadence_control",
+  "question": "Does refreshing held ion charge before constructing the field for an upcoming due push remove the residual horizon-20 discrepancy?",
+  "basis": {
+    "held_density_control_result_sha256": "ca6488b15a2037ce596776ed74df7dfdd91191d0e3b1359a8e4d529cbf7f68b4",
+    "held_density_execution_sha256": "a2629d1096b6d662c12201ac4efc250e69365e8099f3f6673921031fe3a9ffd9",
+    "instrumented_edupic_source_sha256": "b423fe256ab2d4757041886737215f56f45c9d49d61ebf9913b32e8226bd5c13",
+    "aurorapic_parent_commit": "980c03207bca2d3d51166bd1560910d96334a3b8",
+    "observed_before_declaration": "The first held-density control passed strong-support gates at horizons 1, 2, and 5 but produced a critical field-energy ratio of 1.034377 at horizon 20. Source audit then showed that eduPIC refreshes ion density before its t=20 field solve and second ion push, while AuroraPIC's horizon-20 field was retained from the end of step 19 before its beginning-of-step-20 cache refresh. No upcoming-due refresh implementation or output has been produced or observed."
+  },
+  "locked_inputs": {
+    "parent_control_rule_sha256": "49e51ebefd79ace7faa6f0084e0a8ae6505eecc52ba6cdab7f5c501cf8b610fc",
+    "particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "native_trace_sha256": "72b4e6ba19eb9c518aa920ea461943d3611de6c09ce328a59fef382964c49cda",
+    "native_population_sha256": "415984f10ff3d02af1c77a092661795286ee238521e53458ede73a80363cc520",
+    "first_control_report_sha256": "7f471d00d6bfd0696e8b7117200526ee0ad07c32a069669cfb309fed38d7b1de",
+    "first_control_result_sha256": "ca6488b15a2037ce596776ed74df7dfdd91191d0e3b1359a8e4d529cbf7f68b4"
+  },
+  "implementation_contract": {
+    "initial_field": "Initialize held caches from common-state particle positions before the t=0 field solve.",
+    "upcoming_due_refresh": "Immediately before the field solve advancing retained field time from n to n+1, refresh a held species iff (n+1) modulo timestep_multiplier is zero.",
+    "particle_push": "Do not refresh the cache again at the beginning of the due push; use the already constructed field and cache at that time level.",
+    "between_pushes": "Retain the cache unchanged at all other field solves.",
+    "restart": "Checkpoint v24 continues to preserve the retained cache exactly; checkpoint-split and continuous trajectories must match.",
+    "default_invariance": "current_position remains unchanged and the full conservative regression passes."
+  },
+  "sampling_contract": {
+    "matching_horizons": [0, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800, 1600, 2400, 3200, 3999],
+    "primary_cadence_horizons": [20, 50, 100],
+    "same_native_trace_and_reductions_as_parent_control": true
+  },
+  "prospective_decision_rule": {
+    "integrity_gate": "All hashes, implementation and restart tests, output shapes, coordinates, populations, finite values, and resource gates pass; the binary is locked before execution.",
+    "initial_parity_gate": "Unchanged: horizon-zero charge and field relative RMS at most 2e-6 and critical field-energy ratio in [0.995,1.005].",
+    "cadence_supported_if": "At horizons 20, 50, and 100, absolute critical-field log-ratio error is at most 20% of the first held-density control error and full-domain field relative RMS does not exceed the first control; populations match native.",
+    "early_trajectory_closure_if": "Cadence support passes and no material field-divergence flag occurs through horizon 100.",
+    "full_trace_closure_if": "No material field-divergence flag occurs through horizon 3999 and population differences are zero at every horizon.",
+    "cadence_not_supported_if": "Integrity and initial parity pass but cadence support fails.",
+    "material_field_divergence": "Full-domain field relative RMS greater than 0.01 or critical field-energy ratio outside [0.98,1.02]."
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_horizon": 180
+  },
+  "claim_boundary": "This control can resolve the deterministic collision-free 1D cache-refresh cadence discrepancy. It cannot establish collision equivalence, experimental agreement, a published Turner benchmark pass, other-state or multidimensional correctness, or general PIC validity.",
+  "physics_claim": "none_until_all_control_outputs_and_gates_complete"
+}
