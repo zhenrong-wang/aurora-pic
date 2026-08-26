@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-26T09:40:01Z",
+  "status": "preregistered_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-single-bernoulli-confirmation-ensemble-rule-20260826.json",
+    "sha256": "e6e0a481b7148f3b4a8b419a20c5dd0f19566952034a01d8e1570d52da2e2fa5"
+  },
+  "prepared_ensemble": {
+    "directory": "tmp/turner-case1-single-bernoulli-confirmation-ensemble-20260826",
+    "manifest": "tmp/turner-case1-single-bernoulli-confirmation-ensemble-20260826/ensemble.json",
+    "manifest_sha256": "a23de421edb3c0ecdad061e09dc8e35997f50f1272abc81726187d16871fb360",
+    "seeds_in_execution_order": [162631810, 500474954, 3662142586],
+    "results_directory_absent_before_launch": true
+  },
+  "execution_identity": {
+    "solver_binary": "build/aurorapic_cli",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "large_run_acknowledgement": "I_UNDERSTAND_THIS_IS_A_LARGE_RUN",
+    "serial": true,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "wall_timeout_seconds_each": 18000,
+    "continue_members_after_prior_scientific_rejection": true,
+    "stop_members_after_prior_execution_integrity_failure": true
+  },
+  "postprocessing_identity": {
+    "reference_profile": "tmp/turner-normalized-v3/turner_case1_benchmark.csv",
+    "reference_profile_sha256": "7bd2f942a29a1431a02dd19724c35ae34f982ab82a2e7b03cb790fefc7400014",
+    "normalization_audit": "tmp/turner-normalized-v3/audit.json",
+    "normalization_audit_sha256": "29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740",
+    "comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c",
+    "balance_analyzer_sha256": "8268cec6b89f8ed1c1a9c0c1cef2861d680482ab26e846ecdc8957477a04fa40",
+    "attachment_tool_sha256": "48e24aed94764d9bc1acb978cb6d6fa29e8d49f588435ec4b77b69a12357902c",
+    "ensemble_analyzer_sha256": "40bcc4d7105a3e2d4d364f52cc96cf14a3ee05b7b40f0321b73d242e02eb4fb1"
+  },
+  "host_prelaunch": {
+    "available_memory_gib": 19,
+    "available_disk_gib": 49,
+    "minimum_required_disk_gib": 10
+  },
+  "integrity_rule": "Recheck every locked hash, absence of every member output directory, and host resource floor before the first launch. Before later launches, require the previous member's exit status, final checkpoint, exact averaging artifacts, comparison, balance report, attachment, and resource limits to pass."
+}

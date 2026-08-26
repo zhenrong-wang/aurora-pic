@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_fresh_seed_full_length_confirmation_ensemble",
+  "observed_before_declaration": {
+    "corrected_seed_13507_result": "accepted_at_95_percent",
+    "corrected_seed_13507_x_squared": 142.98523597641775,
+    "corrected_seed_13507_result_sha256": "78714d8e80000bc06ca440574399fe74eba5d6207fd1bb7d4bfb2a449c514844",
+    "fresh_seed_outcomes_observed": false
+  },
+  "seed_contract": {
+    "seeds": [162631810, 500474954, 3662142586],
+    "derivation": "Unsigned big-endian value of the first four SHA-256 bytes of the UTF-8 labels aurorapic-turner-corrected-confirmation-20260826-1 through -3.",
+    "selection_rule": "All three derived values had zero exact repository occurrences outside ignored temporary/build trees before preparation. No simulation outcome from these seeds was observed before this rule.",
+    "independent_of_prior_corrected_full_run": true
+  },
+  "locked_inputs": {
+    "solver_source_commit": "0ce60b23733576b8c2f42242c5a6fc16ce844fb5",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "case_manifest_sha256": "fdfcf67e61620d0bab6a85411aeeb40f16d486fdb427f3ca9c3d30a3fd58af18",
+    "normalization_audit_sha256": "29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740",
+    "published_profile_sha256": "7bd2f942a29a1431a02dd19724c35ae34f982ab82a2e7b03cb790fefc7400014",
+    "ensemble_manifest_sha256": "a23de421edb3c0ecdad061e09dc8e35997f50f1272abc81726187d16871fb360",
+    "comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c",
+    "balance_analyzer_sha256": "8268cec6b89f8ed1c1a9c0c1cef2861d680482ab26e846ecdc8957477a04fa40",
+    "ensemble_analyzer_sha256": "40bcc4d7105a3e2d4d364f52cc96cf14a3ee05b7b40f0321b73d242e02eb4fb1"
+  },
+  "member_artifacts": [
+    {
+      "seed": 162631810,
+      "deck_sha256": "98ce739c50fd86ffaaa0c90eb22c4e455a46c52bc2131e3e90296440a50883a3",
+      "preflight_sha256": "97499ee04d7773f79652147067f2368ec918a7047068dcaeb98eaca4066a3a18"
+    },
+    {
+      "seed": 500474954,
+      "deck_sha256": "2896d449985ceaae8eb1e05a48aa67dcb00cfbbbf691251e7299cf2ea7326db4",
+      "preflight_sha256": "ab272bed41cb534db795ba9c417971984c3620a1a569dd6c938f474155f4c163"
+    },
+    {
+      "seed": 3662142586,
+      "deck_sha256": "d5e7d88a7380371577ebba6ba16d5241821b18c7380493ca3b281c78f53210d2",
+      "preflight_sha256": "a4bae9ae7be77623fcf266a95a72f79a5712045e5db8858eedecc9f3aead92fe"
+    }
+  ],
+  "simulation_contract_each": {
+    "collision_opportunity_sampling": "single_bernoulli",
+    "nodes": 129,
+    "particles_per_species": 65536,
+    "steps": 512000,
+    "rf_cycles": 1280,
+    "averaging_first_step": 499201,
+    "averaging_last_step": 512000,
+    "averaging_samples": 12800
+  },
+  "primary_published_profile_acceptance": {
+    "individual_95_percent_interval": [55, 303],
+    "individual_99_percent_interval": [48, 405],
+    "required_members_within_95_percent": 2,
+    "required_members_within_99_percent": 3,
+    "rationale": "Requiring at least two of three independent members inside the published 95 percent interval and no member outside the 99 percent interval is a prospective ensemble robustness rule; Turner publishes individual-realization intervals, not this derived ensemble decision."
+  },
+  "supplemental_integrity_acceptance": {
+    "source_loss_balance_exact_each_species_each_member": true,
+    "maximum_absolute_final_window_population_change_fraction_each": 0.015,
+    "maximum_absolute_electron_power_relative_difference_each": 0.03,
+    "maximum_absolute_ion_power_relative_difference_each": 0.03,
+    "maximum_absolute_mean_ion_current_relative_difference_each": 0.03,
+    "note": "These are predeclared AuroraPIC engineering robustness screens, not Turner-published confidence intervals."
+  },
+  "decision_rule": {
+    "confirmation_passed": "All three executions and provenance audits pass, at least two members pass the published 95 percent interval, all three pass the 99 percent interval, and every supplemental integrity gate passes.",
+    "published_profile_confirmed_but_supplemental_screen_failed": "The primary published-profile ensemble rule passes but at least one supplemental integrity gate fails.",
+    "published_profile_confirmation_failed": "Fewer than two members pass the 95 percent interval or any member fails the 99 percent interval.",
+    "execution_invalid": "Any member is incomplete, non-finite, provenance-invalid, resource-invalid, or lacks the exact final averaging window."
+  },
+  "execution_contract": {
+    "maximum_concurrent_processes": 1,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib_each": 1048576,
+    "maximum_peak_resident_set_kib_each": 786432,
+    "maximum_wall_seconds_each": 18000,
+    "minimum_free_disk_before_each_launch_gib": 10,
+    "stop_after_any_execution_integrity_failure": true
+  },
+  "claim_boundary": "Passing would confirm that the corrected collision schedule yields robust code-to-code statistical consistency for three fresh full-length realizations of one 1D electrostatic helium CCP benchmark. It would not establish experimental validation, asymptotic numerical convergence, other gases, external geometries, multidimensional solvers, electromagnetic physics, or general predictive validity."
+}
