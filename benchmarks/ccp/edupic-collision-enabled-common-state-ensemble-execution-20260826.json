@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "scope": "collision_enabled_common_state_ensemble_execution",
+  "rule_sha256": "fcfa77f716c806e3725e9ce6b09384ec790e0966658347ef78c1da5775d08109",
+  "edupic_binary_sha256": "3b094d5a76dbe801f81aac33dd6bb9dcf6c1098abcd4bcac6b5fa112de8f9ae2",
+  "aurorapic_binary_sha256": "af6cc19a473c9b53ab72cad0c00f9281195db143c1ef76a4b687c94eac4abb00",
+  "execution_lock_sha256": "e1fbcd3d3deccaa8a924e148665647cedff6b6a680e1cfd7c5d8ddd800d35198",
+  "members": [
+    {
+      "implementation": "edupic",
+      "seed": 13507,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108560,
+        "ions": 114006,
+        "electron_elastic": 464764,
+        "electron_excitation": 1341,
+        "electron_ionization": 488,
+        "ion_isotropic": 7935,
+        "ion_backward": 7594,
+        "electron_absorbed_left": 249,
+        "electron_absorbed_right": 265,
+        "ion_absorbed_left": 238,
+        "ion_absorbed_right": 249
+      },
+      "field_sha256": "6d638347f613ce59b5f66ac6b0c9191c497309410874eeedd3feaaf169342e89",
+      "wall_seconds": 15.82,
+      "peak_resident_set_kib": 38564,
+      "orchestration_wall_seconds": 15.850977633999719
+    },
+    {
+      "implementation": "edupic",
+      "seed": 24601,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108596,
+        "ions": 114020,
+        "electron_elastic": 463936,
+        "electron_excitation": 1429,
+        "electron_ionization": 502,
+        "ion_isotropic": 7982,
+        "ion_backward": 7479,
+        "electron_absorbed_left": 234,
+        "electron_absorbed_right": 258,
+        "ion_absorbed_left": 242,
+        "ion_absorbed_right": 245
+      },
+      "field_sha256": "76c8d3a0d001f6fad3a77b86ca1f3faa9236a4a1dd5881ac10ff4e6bee9e2d3b",
+      "wall_seconds": 16.13,
+      "peak_resident_set_kib": 38436,
+      "orchestration_wall_seconds": 16.15385968699411
+    },
+    {
+      "implementation": "edupic",
+      "seed": 35713,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108578,
+        "ions": 114003,
+        "electron_elastic": 464317,
+        "electron_excitation": 1436,
+        "electron_ionization": 481,
+        "ion_isotropic": 7854,
+        "ion_backward": 7703,
+        "electron_absorbed_left": 237,
+        "electron_absorbed_right": 252,
+        "ion_absorbed_left": 231,
+        "ion_absorbed_right": 252
+      },
+      "field_sha256": "11dc887186f203b6517c89f544d478adc7548d4aa081976fd240929ae2fbfc68",
+      "wall_seconds": 15.82,
+      "peak_resident_set_kib": 38564,
+      "orchestration_wall_seconds": 15.85226798000076
+    },
+    {
+      "implementation": "edupic",
+      "seed": 51949,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108560,
+        "ions": 113995,
+        "electron_elastic": 464943,
+        "electron_excitation": 1429,
+        "electron_ionization": 470,
+        "ion_isotropic": 8033,
+        "ion_backward": 7540,
+        "electron_absorbed_left": 241,
+        "electron_absorbed_right": 255,
+        "ion_absorbed_left": 236,
+        "ion_absorbed_right": 244
+      },
+      "field_sha256": "4a279abfa46228f9aa80c400f9d33da1759e820867fb663856af56461c7e7266",
+      "wall_seconds": 16.03,
+      "peak_resident_set_kib": 38292,
+      "orchestration_wall_seconds": 16.054911342995183
+    },
+    {
+      "implementation": "edupic",
+      "seed": 63059,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108563,
+        "ions": 113991,
+        "electron_elastic": 465145,
+        "electron_excitation": 1351,
+        "electron_ionization": 477,
+        "ion_isotropic": 7828,
+        "ion_backward": 7744,
+        "electron_absorbed_left": 251,
+        "electron_absorbed_right": 249,
+        "ion_absorbed_left": 245,
+        "ion_absorbed_right": 246
+      },
+      "field_sha256": "9125b74645faac8db2bd226e213acda452d7270fe906ad87e4232af7e853e762",
+      "wall_seconds": 15.99,
+      "peak_resident_set_kib": 38464,
+      "orchestration_wall_seconds": 16.002823670998623
+    },
+    {
+      "implementation": "aurorapic",
+      "seed": 13507,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108548,
+        "ions": 113991,
+        "electron_elastic": 465902,
+        "electron_excitation": 1394,
+        "electron_ionization": 471,
+        "ion_isotropic": 7992,
+        "ion_backward": 7429,
+        "electron_absorbed_left": 247,
+        "electron_absorbed_right": 262,
+        "ion_absorbed_left": 238,
+        "ion_absorbed_right": 247
+      },
+      "field_sha256": "161ad02efb2c60a260bc8bc12577eae6edbda1d53407dd101bd92654d9027a86",
+      "wall_seconds": 68.62,
+      "peak_resident_set_kib": 188392,
+      "orchestration_wall_seconds": 68.66372329300066
+    },
+    {
+      "implementation": "aurorapic",
+      "seed": 24601,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108552,
+        "ions": 113964,
+        "electron_elastic": 465077,
+        "electron_excitation": 1414,
+        "electron_ionization": 456,
+        "ion_isotropic": 8107,
+        "ion_backward": 7634,
+        "electron_absorbed_left": 239,
+        "electron_absorbed_right": 251,
+        "ion_absorbed_left": 250,
+        "ion_absorbed_right": 247
+      },
+      "field_sha256": "6d5e89d5f9d2b6108281cb3ac5066eacfe63394c838353a8b4a397ddf7e42e75",
+      "wall_seconds": 69.01,
+      "peak_resident_set_kib": 188448,
+      "orchestration_wall_seconds": 69.06450357999711
+    },
+    {
+      "implementation": "aurorapic",
+      "seed": 35713,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108606,
+        "ions": 114041,
+        "electron_elastic": 464341,
+        "electron_excitation": 1342,
+        "electron_ionization": 526,
+        "ion_isotropic": 8023,
+        "ion_backward": 7400,
+        "electron_absorbed_left": 249,
+        "electron_absorbed_right": 257,
+        "ion_absorbed_left": 249,
+        "ion_absorbed_right": 241
+      },
+      "field_sha256": "5833bdc1cec3f26a8570e86451bfab5c96f3cd0a19adde740503a3ff9733c60f",
+      "wall_seconds": 69.47,
+      "peak_resident_set_kib": 188496,
+      "orchestration_wall_seconds": 69.51870887499535
+    },
+    {
+      "implementation": "aurorapic",
+      "seed": 51949,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108586,
+        "ions": 114009,
+        "electron_elastic": 464283,
+        "electron_excitation": 1400,
+        "electron_ionization": 489,
+        "ion_isotropic": 8218,
+        "ion_backward": 7574,
+        "electron_absorbed_left": 243,
+        "electron_absorbed_right": 246,
+        "ion_absorbed_left": 237,
+        "ion_absorbed_right": 248
+      },
+      "field_sha256": "4f041d84a55de3a1fd2bcb915fe563c57b05a9346f52ee3b8d5353c9b9ec7ec5",
+      "wall_seconds": 69.64,
+      "peak_resident_set_kib": 188116,
+      "orchestration_wall_seconds": 69.66844810600014
+    },
+    {
+      "implementation": "aurorapic",
+      "seed": 63059,
+      "endpoint": {
+        "pre_push_step": 4000,
+        "electrons": 108562,
+        "ions": 113973,
+        "electron_elastic": 464170,
+        "electron_excitation": 1413,
+        "electron_ionization": 471,
+        "ion_isotropic": 8064,
+        "ion_backward": 7613,
+        "electron_absorbed_left": 241,
+        "electron_absorbed_right": 254,
+        "ion_absorbed_left": 252,
+        "ion_absorbed_right": 251
+      },
+      "field_sha256": "26740ea58499116e36639e8474b3e70baaaf1c18575e9f7112abb53c95a1192a",
+      "wall_seconds": 70.63,
+      "peak_resident_set_kib": 188332,
+      "orchestration_wall_seconds": 70.67810510300478
+    }
+  ],
+  "all_ten_members_complete": true,
+  "all_resource_gates_passed": true,
+  "total_member_wall_seconds": 427.16
+}

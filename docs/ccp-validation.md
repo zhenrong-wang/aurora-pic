@@ -3751,6 +3751,40 @@ preserves the binary, runner, report, reductions, and resource hashes. It does
 not by itself validate collisions or establish agreement with Turner's
 published steady-state ensemble.
 
+### Collision-enabled common-state ensemble
+
+The next prospective layer starts both implementations from that same mature
+state, enables the pinned eduPIC argon electron and ion collision laws, and
+runs five independent RNG members per code to the aligned one-period endpoint.
+The generators differ (`mt19937` versus `mt19937_64`), so the
+[`rule`](../benchmarks/ccp/edupic-collision-enabled-common-state-ensemble-rule-20260826.json)
+compares ensemble statistics rather than falsely pairing seed trajectories.
+The native instrumentation adds no random draws and only counts collision
+branches already selected by eduPIC. The checksum-bound
+[`execution record`](../benchmarks/ccp/edupic-collision-enabled-common-state-ensemble-execution-20260826.json)
+contains all ten endpoint observations, binary hashes, and resource results.
+
+The prospective
+[`result`](../benchmarks/ccp/edupic-collision-enabled-common-state-ensemble-result-20260826.json)
+passes every integrity and physics gate, yielding
+`one_period_collision_enabled_stochastic_consistency_supported`. Symmetric
+relative differences between mean accepted counts are `0.000288` for electron
+elastic, `0.00330` for excitation, `0.00207` for ionization, `0.0193` for ion
+isotropic, and `0.0108` for ion backward collisions. All four electrode-loss
+means pass their 10% gates. Mean final populations differ by 0.6 electron and
+7.4 ions out of initial populations above 108,000, with matching net-change
+signs. The ensemble-mean endpoint electric-field profiles differ by `0.00621`
+relative RMS, and the AuroraPIC-to-eduPIC mean field-energy proxy ratio is
+`0.999083`.
+
+This is an end-to-end collision-enabled dynamic cross-code result: it jointly
+exercises collision selection and products, ion creation, particle absorption,
+subcycled charge deposition, Poisson solution, and the mover for one RF
+period. It materially strengthens numerical and implementation credibility.
+It remains a bounded pilot for one mature 1D argon state—not a steady-state
+Turner benchmark pass, experimental validation, convergence proof, or evidence
+for other gases and dimensions.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
