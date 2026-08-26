@@ -58,7 +58,7 @@ def analyze(rule_path: Path, lock_path: Path, report_path: Path,
     periods = int(rule["ensemble_contract"].get("rf_periods", 1))
     horizon = int(rule["ensemble_contract"]["electron_pushes"])
     members_each = int(rule["ensemble_contract"]["members_each_implementation"])
-    completion_label = ("all_ten_members_complete" if periods == 1 else
+    completion_label = ("all_ten_members_complete" if members_each == 5 else
                         "all_six_members_complete")
     completion_value = (report["all_ten_members_complete"]
                         if "all_ten_members_complete" in report else

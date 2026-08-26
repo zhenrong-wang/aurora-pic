@@ -189,6 +189,18 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
         "electron_gas": args.electron_gas, "ion_gas": args.ion_gas}.items()}
     rule = json.loads(paths["rule"].read_text(encoding="utf-8"))
     lock = json.loads(paths["lock"].read_text(encoding="utf-8"))
+    parent_report = None
+    parent_members: dict[tuple[str, int], dict[str, object]] = {}
+    if args.parent_report is not None:
+        parent_path = args.parent_report.resolve()
+        expected_parent = rule["basis"]["parent_four_period_execution_sha256"]
+        if sha256(parent_path) != expected_parent:
+            raise RunError("parent execution report hash differs")
+        parent_report = json.loads(parent_path.read_text(encoding="utf-8"))
+        parent_members = {
+            (item["implementation"], int(item["seed"])): item
+            for item in parent_report["members"]
+        }
     expected = {
         "rule_sha256": sha256(paths["rule"]),
         "edupic_binary_sha256": sha256(paths["edupic_binary"]),
@@ -212,6 +224,7 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     horizon = int(rule["ensemble_contract"]["electron_pushes"])
     contract = rule["execution_contract"]
     members: list[dict[str, object]] = []
+    reused_parent_members_verified = True
     for implementation in ("edupic", "aurorapic"):
         for seed in rule["ensemble_contract"]["seeds_each_implementation"]:
             member = root / implementation / f"seed-{seed}"
@@ -219,6 +232,11 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
                 summary = (summarize_native(member, seed)
                            if implementation == "edupic" else
                            summarize_aurora(member, seed, horizon))
+                if parent_report is not None and (implementation, seed) in parent_members:
+                    parent = parent_members[(implementation, seed)]
+                    reused_parent_members_verified &= (
+                        summary["endpoint"] == parent["endpoint"] and
+                        summary["field_sha256"] == parent["field_sha256"])
                 members.append(summary)
                 continue
             member.mkdir(parents=True)
@@ -263,6 +281,9 @@ def execute(args: argparse.Namespace) -> dict[str, object]:
     }
     if expected_members == 10:
         result["all_ten_members_complete"] = complete
+    if parent_report is not None:
+        result["parent_execution_sha256"] = sha256(args.parent_report.resolve())
+        result["reused_parent_members_verified"] = reused_parent_members_verified
     return result
 
 
@@ -278,6 +299,7 @@ def main() -> int:
     parser.add_argument("--ion-gas", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--parent-report", type=Path)
     args = parser.parse_args()
     try:
         report = execute(args)
