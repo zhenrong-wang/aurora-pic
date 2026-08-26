@@ -3644,6 +3644,37 @@ organization of net charge rather than a gross sheath scalar. Establishing
 onset now requires matched earlier phase-resolved charge/field histories; the
 mature averages cannot reveal which evolution step diverged first.
 
+### Four-cycle phase-snapshot onset test
+
+The subsequent
+[`prospective onset rule`](../benchmarks/ccp/edupic-phase-snapshot-onset-rule-20260826.json)
+locks ten instantaneous grid snapshots per RF cycle, three native seeds, two
+AuroraPIC microstates, and a four-cycle window. Passive native instrumentation
+is confirmed by byte-identical final checkpoints and all eight pre-existing
+diagnostics. Every source, executable, snapshot-set, shape, coordinate,
+resource, and passivity check in the
+[`result`](../benchmarks/ccp/edupic-phase-snapshot-onset-result-20260826.json)
+passes.
+
+At the primary phase `0.3`, each AuroraPIC member remains below the native
+ensemble in every cycle. The eight field-energy ratios span `0.6581--0.7946`;
+the deficit is therefore already present in cycle one and does not emerge
+during the locked window. Four-cycle relative ranges at this phase are below
+`0.161` for every individual trajectory, and the cross-member field
+repeatability limits pass at phase `0.3` in both codes.
+
+The preregistered *joint* repeatability gate nevertheless fails. AuroraPIC has
+five failing cycle/phase/metric cells (maximum relative range `0.2582`), and
+the native ensemble has three, all in the phase-`0.2` field metric (maximum
+`0.5049`). The four-cycle phase-neighborhood rule also fails because one
+AuroraPIC member's phase-`0.2` ratio is `1.0150`, despite phase-`0.3` and
+phase-`0.4` deficits. The formal outcome is consequently
+`inconclusive_failed_joint_gate`. The defensible observation is narrower: the
+previously localized phase-`0.3` field deficit is stable, repeatable at that
+phase, and predates this measurement window. This test cannot identify its
+first divergence from a common state or establish published-benchmark or
+experimental validity.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

@@ -1,0 +1,636 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "four_cycle_phase_snapshot_onset_result",
+  "inputs": {
+    "rule_sha256": "9191cb223924ba970e3a018eb25c1e7d0c96856c72e03839e141d14b0455d305",
+    "instrumenter_sha256": "7fab3eab56c0a1502c3c16dbc7b7e2c7d57c0972c6ddc90dd1cde417cad57a67"
+  },
+  "integrity": {
+    "rule_basis_hash_matches": true,
+    "source_hash_matches": true,
+    "instrumenter_hash_matches": true,
+    "instrumented_source_hash_matches": true,
+    "native_checkpoint_hashes_match": true,
+    "native_prior_diagnostics_byte_identical": true,
+    "native_binary_hashes_match": true,
+    "aurora_snapshot_hashes_match": true,
+    "resource_limits_pass": true
+  },
+  "integrity_gate_passed": true,
+  "repeatability": {
+    "aurorapic_passed": false,
+    "native_passed": false,
+    "aurorapic_limit": 0.15,
+    "native_limit": 0.2,
+    "post_hoc_primary_phase_field_only": {
+      "aurorapic": true,
+      "native": true,
+      "both_passed": true,
+      "not_a_substitute_for_locked_joint_gate": true
+    },
+    "details": {
+      "aurorapic": {
+        "maximum_relative_range": 0.2582207050651198,
+        "failures": [
+          {
+            "cell": "cycle_1_phase_0.2",
+            "metric": "regional_mean_squared_field_V2_m2",
+            "relative_range": 0.2283965189705011
+          },
+          {
+            "cell": "cycle_2_phase_0.3",
+            "metric": "regional_charge_density_rms_C_m3",
+            "relative_range": 0.204702072820081
+          },
+          {
+            "cell": "cycle_3_phase_0.2",
+            "metric": "regional_mean_squared_field_V2_m2",
+            "relative_range": 0.17050246816525874
+          },
+          {
+            "cell": "cycle_3_phase_0.2",
+            "metric": "regional_charge_density_rms_C_m3",
+            "relative_range": 0.2582207050651198
+          },
+          {
+            "cell": "cycle_4_phase_0.2",
+            "metric": "regional_mean_squared_field_V2_m2",
+            "relative_range": 0.1759542089088023
+          }
+        ]
+      },
+      "native": {
+        "maximum_relative_range": 0.5048631938587798,
+        "failures": [
+          {
+            "cell": "cycle_1_phase_0.2",
+            "metric": "regional_mean_squared_field_V2_m2",
+            "relative_range": 0.2391684066335605
+          },
+          {
+            "cell": "cycle_2_phase_0.2",
+            "metric": "regional_mean_squared_field_V2_m2",
+            "relative_range": 0.262589937239668
+          },
+          {
+            "cell": "cycle_4_phase_0.2",
+            "metric": "regional_mean_squared_field_V2_m2",
+            "relative_range": 0.5048631938587798
+          }
+        ]
+      }
+    }
+  },
+  "cycle_stability": {
+    "relative_ranges": {
+      "aurorapic": {
+        "microstate_51949_cycle36000": 0.1051503299430303,
+        "microstate_63059_cycle36000": 0.14084738370300479
+      },
+      "native": {
+        "13507": 0.1363016722644943,
+        "24601": 0.16082182515605684,
+        "35713": 0.15421328529255202
+      }
+    },
+    "limit": 0.2,
+    "passed": true
+  },
+  "native_members": [
+    {
+      "seed": 13507,
+      "ledger_sha256": "bde7439b87d1fe87177e42f637e43167570ced86b7eb3a07a8986ca12b08650f",
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "passive_diagnostics": {
+        "stdout.txt": true,
+        "edupic_phase_eedf.csv": true,
+        "edupic_phase_eedf_moments.csv": true,
+        "edupic_phase_eedf_history.csv": true,
+        "edupic_phase_eedf_threshold_crossings.csv": true,
+        "edupic_phase_eedf_field_push_thresholds.csv": true,
+        "edupic_phase_eedf_promotion_band_work.csv": true,
+        "edupic_phase_eedf_mover_decomposition.csv": true
+      },
+      "wall_seconds": 105.68,
+      "peak_resident_set_kib": 80804
+    },
+    {
+      "seed": 24601,
+      "ledger_sha256": "b8a040be5220d11153a58b4923570d446593b19b6a03ab5c20df422e0ae5485c",
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "passive_diagnostics": {
+        "stdout.txt": true,
+        "edupic_phase_eedf.csv": true,
+        "edupic_phase_eedf_moments.csv": true,
+        "edupic_phase_eedf_history.csv": true,
+        "edupic_phase_eedf_threshold_crossings.csv": true,
+        "edupic_phase_eedf_field_push_thresholds.csv": true,
+        "edupic_phase_eedf_promotion_band_work.csv": true,
+        "edupic_phase_eedf_mover_decomposition.csv": true
+      },
+      "wall_seconds": 105.96000000000001,
+      "peak_resident_set_kib": 80960
+    },
+    {
+      "seed": 35713,
+      "ledger_sha256": "dfbc9a7354636eae8bfed284f9761d50e7fb48d38f83180d5a19d4754b554206",
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "passive_diagnostics": {
+        "stdout.txt": true,
+        "edupic_phase_eedf.csv": true,
+        "edupic_phase_eedf_moments.csv": true,
+        "edupic_phase_eedf_history.csv": true,
+        "edupic_phase_eedf_threshold_crossings.csv": true,
+        "edupic_phase_eedf_field_push_thresholds.csv": true,
+        "edupic_phase_eedf_promotion_band_work.csv": true,
+        "edupic_phase_eedf_mover_decomposition.csv": true
+      },
+      "wall_seconds": 106.17,
+      "peak_resident_set_kib": 81060
+    }
+  ],
+  "aurorapic_members": [
+    {
+      "id": "microstate_51949_cycle36000",
+      "snapshot_set_sha256": "b7a86b8f05b0386f3912d9e34eef23931f6ce6fdb46a458bfa8f2b249e6927a0"
+    },
+    {
+      "id": "microstate_63059_cycle36000",
+      "snapshot_set_sha256": "11e540634ee0cc0771e063c0af50c664bd9f8e7fca447dffa85cb76ee7d13bac"
+    }
+  ],
+  "native_summary": {
+    "cycle_1_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 565222.0457432979,
+        "regional_charge_density_rms_C_m3": 3.011744447552375e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.2391684066335605,
+        "regional_charge_density_rms_C_m3": 0.10227778894523472
+      }
+    },
+    "cycle_1_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 3086773.461029975,
+        "regional_charge_density_rms_C_m3": 3.1793978108721125e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.13681018172286558,
+        "regional_charge_density_rms_C_m3": 0.09864938735116355
+      }
+    },
+    "cycle_1_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 27792608.827344876,
+        "regional_charge_density_rms_C_m3": 6.044642183093061e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.032369885382069426,
+        "regional_charge_density_rms_C_m3": 0.01171650216408761
+      }
+    },
+    "cycle_2_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 687049.7639295271,
+        "regional_charge_density_rms_C_m3": 3.093233942718394e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.262589937239668,
+        "regional_charge_density_rms_C_m3": 0.1714303303786222
+      }
+    },
+    "cycle_2_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 2895421.977022762,
+        "regional_charge_density_rms_C_m3": 3.1902495531609636e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.077654929853753,
+        "regional_charge_density_rms_C_m3": 0.1768334393449114
+      }
+    },
+    "cycle_2_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 27899313.122732516,
+        "regional_charge_density_rms_C_m3": 6.057565736919613e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.04563026179236468,
+        "regional_charge_density_rms_C_m3": 0.034575739350233524
+      }
+    },
+    "cycle_3_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 842794.2834050265,
+        "regional_charge_density_rms_C_m3": 2.908854655583631e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.028815625094222204,
+        "regional_charge_density_rms_C_m3": 0.12138726805327439
+      }
+    },
+    "cycle_3_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 3329742.69064576,
+        "regional_charge_density_rms_C_m3": 3.103220720669591e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.04891595493688493,
+        "regional_charge_density_rms_C_m3": 0.021546298945174795
+      }
+    },
+    "cycle_3_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 28327922.27461551,
+        "regional_charge_density_rms_C_m3": 6.129413407700552e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.01658932615645861,
+        "regional_charge_density_rms_C_m3": 0.07382957739603337
+      }
+    },
+    "cycle_4_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 915038.9489806026,
+        "regional_charge_density_rms_C_m3": 2.567058248652991e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.5048631938587798,
+        "regional_charge_density_rms_C_m3": 0.0820807499754458
+      }
+    },
+    "cycle_4_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 3115114.042182837,
+        "regional_charge_density_rms_C_m3": 3.2723949320207844e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.09379344905123475,
+        "regional_charge_density_rms_C_m3": 0.0681081092271088
+      }
+    },
+    "cycle_4_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 27901501.746425282,
+        "regional_charge_density_rms_C_m3": 6.0912962676577786e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.07316356401156336,
+        "regional_charge_density_rms_C_m3": 0.01998672310800354
+      }
+    }
+  },
+  "aurorapic_summary": {
+    "cycle_1_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 683727.3222841155,
+        "regional_charge_density_rms_C_m3": 2.7179495273505867e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.2283965189705011,
+        "regional_charge_density_rms_C_m3": 0.024883938284368266
+      }
+    },
+    "cycle_1_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 2136511.4019369716,
+        "regional_charge_density_rms_C_m3": 3.474589813562992e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.05752222383754566,
+        "regional_charge_density_rms_C_m3": 0.07890833463734472
+      }
+    },
+    "cycle_1_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 20102108.59092119,
+        "regional_charge_density_rms_C_m3": 6.186378390510547e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.05028404720318575,
+        "regional_charge_density_rms_C_m3": 0.019519418604278433
+      }
+    },
+    "cycle_2_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 684705.4508682875,
+        "regional_charge_density_rms_C_m3": 2.989383194066617e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.009625250999397289,
+        "regional_charge_density_rms_C_m3": 0.008528629924655534
+      }
+    },
+    "cycle_2_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 2164430.2359626233,
+        "regional_charge_density_rms_C_m3": 3.1844239624758216e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.12585148578246402,
+        "regional_charge_density_rms_C_m3": 0.204702072820081
+      }
+    },
+    "cycle_2_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 19742630.048841354,
+        "regional_charge_density_rms_C_m3": 6.103798909171171e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.026026601458154688,
+        "regional_charge_density_rms_C_m3": 0.0035090853527643437
+      }
+    },
+    "cycle_3_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 731337.2283096332,
+        "regional_charge_density_rms_C_m3": 3.125986154343739e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.17050246816525874,
+        "regional_charge_density_rms_C_m3": 0.2582207050651198
+      }
+    },
+    "cycle_3_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 2277772.22433785,
+        "regional_charge_density_rms_C_m3": 3.51042512224193e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.04701304730755907,
+        "regional_charge_density_rms_C_m3": 0.00024952896464017655
+      }
+    },
+    "cycle_3_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 19585207.893711194,
+        "regional_charge_density_rms_C_m3": 6.179044700386853e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.04560329425938892,
+        "regional_charge_density_rms_C_m3": 0.030955169543272994
+      }
+    },
+    "cycle_4_phase_0.2": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 654843.0475111166,
+        "regional_charge_density_rms_C_m3": 2.9740910053454568e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.1759542089088023,
+        "regional_charge_density_rms_C_m3": 0.08444586850014027
+      }
+    },
+    "cycle_4_phase_0.3": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 2179584.881431739,
+        "regional_charge_density_rms_C_m3": 3.321132659668067e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.1189942347892854,
+        "regional_charge_density_rms_C_m3": 0.09822242307726396
+      }
+    },
+    "cycle_4_phase_0.4": {
+      "means": {
+        "regional_mean_squared_field_V2_m2": 19405200.07979072,
+        "regional_charge_density_rms_C_m3": 6.0894440930442776e-05
+      },
+      "relative_ranges": {
+        "regional_mean_squared_field_V2_m2": 0.018112238385034975,
+        "regional_charge_density_rms_C_m3": 0.022241208864173086
+      }
+    }
+  },
+  "aurorapic_to_native_ratios": {
+    "cycle_1_phase_0.2": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 1.2096614550569709,
+        "regional_charge_density_rms_C_m3": 0.9024502492432406
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 1.3478026877908726,
+          "regional_charge_density_rms_C_m3": 0.9136785073966814
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 1.0715202223230693,
+          "regional_charge_density_rms_C_m3": 0.8912219910897999
+        }
+      }
+    },
+    "cycle_1_phase_0.3": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.6921503728440356,
+        "regional_charge_density_rms_C_m3": 1.092845255690073
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.6722433585060479,
+          "regional_charge_density_rms_C_m3": 1.0497279561186597
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7120573871820232,
+          "regional_charge_density_rms_C_m3": 1.1359625552614865
+        }
+      }
+    },
+    "cycle_1_phase_0.4": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.7232897320219511,
+        "regional_charge_density_rms_C_m3": 1.0234482378152878
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7051047645086654,
+          "regional_charge_density_rms_C_m3": 1.013459680528424
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7414746995352368,
+          "regional_charge_density_rms_C_m3": 1.0334367951021517
+        }
+      }
+    },
+    "cycle_2_phase_0.2": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.9965878555174351,
+        "regional_charge_density_rms_C_m3": 0.9664264809662244
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.9917916513912819,
+          "regional_charge_density_rms_C_m3": 0.9623053340634504
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 1.0013840596435883,
+          "regional_charge_density_rms_C_m3": 0.9705476278689985
+        }
+      }
+    },
+    "cycle_2_phase_0.3": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.7475353344482845,
+        "regional_charge_density_rms_C_m3": 0.9981739388759197
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7945745507058882,
+          "regional_charge_density_rms_C_m3": 0.896009801714477
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7004961181906805,
+          "regional_charge_density_rms_C_m3": 1.1003380760373624
+        }
+      }
+    },
+    "cycle_2_phase_0.4": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.7076385702397435,
+        "regional_charge_density_rms_C_m3": 1.0076323021919147
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.6984298567177195,
+          "regional_charge_density_rms_C_m3": 1.0058643683156177
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7168472837617677,
+          "regional_charge_density_rms_C_m3": 1.0094002360682115
+        }
+      }
+    },
+    "cycle_3_phase_0.2": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.8677529531345555,
+        "regional_charge_density_rms_C_m3": 1.0746450147804112
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.9417299632681224,
+          "regional_charge_density_rms_C_m3": 1.2133928114860681
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7937759430009886,
+          "regional_charge_density_rms_C_m3": 0.9358972180747543
+        }
+      }
+    },
+    "cycle_3_phase_0.3": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.684068541012731,
+        "regional_charge_density_rms_C_m3": 1.1312199286567264
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.6679884676726088,
+          "regional_charge_density_rms_C_m3": 1.1313610647255155
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7001486143528532,
+          "regional_charge_density_rms_C_m3": 1.1310787925879373
+        }
+      }
+    },
+    "cycle_3_phase_0.4": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.6913746692697398,
+        "regional_charge_density_rms_C_m3": 1.0080972336804608
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.675610188026642,
+          "regional_charge_density_rms_C_m3": 1.0237001440728024
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7071391505128376,
+          "regional_charge_density_rms_C_m3": 0.9924943232881194
+        }
+      }
+    },
+    "cycle_4_phase_0.2": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.7156449987627775,
+        "regional_charge_density_rms_C_m3": 1.1585600003062055
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7786053735712002,
+          "regional_charge_density_rms_C_m3": 1.1096421975885153
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.6526846239543549,
+          "regional_charge_density_rms_C_m3": 1.2074778030238957
+        }
+      }
+    },
+    "cycle_4_phase_0.3": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.6996806062048534,
+        "regional_charge_density_rms_C_m3": 1.0148935958708338
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.7413095853709782,
+          "regional_charge_density_rms_C_m3": 1.0647362499468493
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.6580516270387284,
+          "regional_charge_density_rms_C_m3": 0.9650509417948185
+        }
+      }
+    },
+    "cycle_4_phase_0.4": {
+      "ensemble_mean": {
+        "regional_mean_squared_field_V2_m2": 0.6954894491396649,
+        "regional_charge_density_rms_C_m3": 0.9996959309591728
+      },
+      "aurorapic_members": {
+        "microstate_51949_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.6891910137911177,
+          "regional_charge_density_rms_C_m3": 1.0108131539597363
+        },
+        "microstate_63059_cycle36000": {
+          "regional_mean_squared_field_V2_m2": 0.701787884488212,
+          "regional_charge_density_rms_C_m3": 0.9885787079586094
+        }
+      }
+    }
+  },
+  "primary_phase_field_energy_ratios_by_cycle": {
+    "microstate_51949_cycle36000": [
+      0.6722433585060479,
+      0.7945745507058882,
+      0.6679884676726088,
+      0.7413095853709782
+    ],
+    "microstate_63059_cycle36000": [
+      0.7120573871820232,
+      0.7004961181906805,
+      0.7001486143528532,
+      0.6580516270387284
+    ]
+  },
+  "four_cycle_field_energy_ratios_by_phase": {
+    "microstate_51949_cycle36000": {
+      "0.2": 1.0149824190053693,
+      "0.3": 0.7190289905638808,
+      "0.4": 0.6920839557610361
+    },
+    "microstate_63059_cycle36000": {
+      "0.2": 0.8798412122305003,
+      "0.3": 0.6926884366910713,
+      "0.4": 0.7168122545745135
+    }
+  },
+  "decision": {
+    "all_joint_gates_passed": false,
+    "deficit_present_in_cycle_one": true,
+    "deficit_persists_all_cycles": true,
+    "deficit_emerges_within_window": false,
+    "phase_neighborhood_deficit": false,
+    "formal_outcome": "inconclusive_failed_joint_gate"
+  },
+  "claim_boundary": "This comparison can establish onset or persistence only within the four-cycle locked measurement window of independently evolved states. It cannot identify divergence from a common initial condition, establish causation, compare experiment, establish a published benchmark pass, or prove general PIC correctness."
+}

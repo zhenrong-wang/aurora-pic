@@ -146,6 +146,14 @@ and repeatability gates but supports none of its preregistered gross-mechanism
 rules. The remaining mature difference is therefore associated with subtler
 phase/spatial net-charge organization, not a large sheath-width or integrated
 positive-charge mismatch.
+A cycle-resolved follow-up then shows that the phase-0.3 regional field-energy
+deficit is already present in the first measured cycle and persists in all four
+cycles for both AuroraPIC microstates (`0.658--0.795` relative to the native
+ensemble). Integrity and cycle-stability gates pass, but the formal result is
+inconclusive because the preregistered pointwise repeatability gate fails at
+several phase-0.2 cells and one charge-density cell. The narrower phase-0.3
+field comparison is repeatable in both codes; it is a useful localization, not
+a substitute for the failed joint gate or a validation claim.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

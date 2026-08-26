@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "four_cycle_phase_snapshot_onset_execution_record",
+  "rule_sha256": "9191cb223924ba970e3a018eb25c1e7d0c96856c72e03839e141d14b0455d305",
+  "result_sha256": "34c7cd00cf934626c3c2c974197df77816e362ec65d39ec1bc6f6d65f9a49d54",
+  "analyzer_sha256": "ca4913f2707c14ed09677535a999a5dca518d0909648a292de54bb82192fc252",
+  "instrumenter_sha256": "7fab3eab56c0a1502c3c16dbc7b7e2c7d57c0972c6ddc90dd1cde417cad57a67",
+  "formal_outcome": "inconclusive_failed_joint_gate",
+  "native_members": [
+    {
+      "seed": 13507,
+      "snapshot_ledger_sha256": "bde7439b87d1fe87177e42f637e43167570ced86b7eb3a07a8986ca12b08650f",
+      "final_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "wall_seconds": 105.68,
+      "peak_resident_set_kib": 80804,
+      "passivity_passed": true
+    },
+    {
+      "seed": 24601,
+      "snapshot_ledger_sha256": "b8a040be5220d11153a58b4923570d446593b19b6a03ab5c20df422e0ae5485c",
+      "final_checkpoint_sha256": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "wall_seconds": 105.96,
+      "peak_resident_set_kib": 80960,
+      "passivity_passed": true
+    },
+    {
+      "seed": 35713,
+      "snapshot_ledger_sha256": "dfbc9a7354636eae8bfed284f9761d50e7fb48d38f83180d5a19d4754b554206",
+      "final_checkpoint_sha256": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267",
+      "wall_seconds": 106.17,
+      "peak_resident_set_kib": 81060,
+      "passivity_passed": true
+    }
+  ],
+  "aurorapic_snapshot_set_sha256": [
+    "b7a86b8f05b0386f3912d9e34eef23931f6ce6fdb46a458bfa8f2b249e6927a0",
+    "11e540634ee0cc0771e063c0af50c664bd9f8e7fca447dffa85cb76ee7d13bac"
+  ],
+  "resource_contract": {
+    "maximum_simultaneous_processes": 1,
+    "address_space_limit_kib": 262144,
+    "maximum_peak_resident_set_kib": 131072,
+    "all_resource_gates_passed": true
+  },
+  "provenance_note": "The rule and passive instrumentation smoke were committed before any three-member native production output was generated. Production members ran serially. The formal joint-gate failure is retained; the post-hoc primary-phase repeatability observation is explicitly labeled and does not replace the locked decision."
+}
