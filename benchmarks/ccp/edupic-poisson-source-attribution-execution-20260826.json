@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "phase_mean_poisson_source_attribution_execution_record",
+  "rule_sha256": "b709974cf7b9f49c725e6b49004f9554a3d49ff850020cb30ebc2762e33f39ee",
+  "grid_field_sampling_result_sha256": "529009df1637c33e37e67864d4400d05c7417d6c5b45665351f4151902304f71",
+  "result_sha256": "d5d9a2717f33e7fae36bd7f7e52923dd346d56f0d85dabf5cf9303297d235301",
+  "analyzer_sha256": "47d9bd899a1ed534ae6a639873f5f7c0644a26d9c6da9ce02bcd8eee50f8159e",
+  "formal_outcome": "electron_space_charge_dominant",
+  "interpretation_qualification": "The preregistered dominance criterion passes, but the post-hoc absolute-attribution/gap ratios of 137.36 and 143.47 expose severe electron-ion cancellation. The stable inference is common-operator closure, boundary-drive parity, and a net-space-charge origin; electron and ion terms are not interpreted as independent physical causes.",
+  "aurorapic_members": [
+    {
+      "id": "microstate_51949_cycle36000",
+      "runner_report_sha256": "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+      "spatial_phase_fields_sha256": "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50",
+      "spatial_phase_moments_sha256": "7418580793b8181d03a04296534fdce33cdc56ef87ec54d997a3a03a3731b733"
+    },
+    {
+      "id": "microstate_63059_cycle36000",
+      "runner_report_sha256": "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704",
+      "spatial_phase_fields_sha256": "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7",
+      "spatial_phase_moments_sha256": "f4073abf0cf163a735790875919545f0f227c508e7496cdf58b615d8fab2c095"
+    }
+  ],
+  "resource_contract": {
+    "new_simulation_runs": 0,
+    "analysis_processes": 1,
+    "serial_execution": true
+  },
+  "provenance_note": "The rule was committed and pushed before the first Poisson reconstruction or Shapley reduction. The absolute-attribution/gap ratio was added after observing the outcome, is explicitly labeled post hoc, and changes no preregistered metric, gate, threshold, or decision."
+}

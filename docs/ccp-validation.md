@@ -3574,6 +3574,45 @@ matched checkpoints and phases, before the mature field deficit is present.
 As before, this one-case solver comparison is neither experimental validation
 nor proof of general PIC correctness.
 
+### Discrete Poisson source attribution
+
+Both implementations use the same nodal tridiagonal Dirichlet Poisson solve,
+centered interior electric field, and half-control-volume Gauss-law endpoint
+field. Before evaluating the density outputs, the
+[`Poisson source-attribution rule`](../benchmarks/ccp/edupic-poisson-source-attribution-rule-20260826.json)
+locked the phase-space files and hashes, exact operator, critical window,
+reconstruction tolerance, boundary-drive parity interval, three-factor
+substitution, and Shapley decision rule.
+
+The
+[`prospective result`](../benchmarks/ccp/edupic-poisson-source-attribution-result-20260826.json)
+passes every declared gate. Reconstructing the full phase-resolved electric
+field from electron density, ion density, and endpoint potentials gives
+relative RMS errors of about `2.91e-10` for both AuroraPIC members and
+`1.95--1.97e-7` for the three native members. The native error is consistent
+with its six-digit text output. This provides unusually direct evidence that
+the density deposition, potential, and electric-field diagnostics obey the
+same discrete field equation in both production calculations.
+
+The critical-window boundary-drive mean-square-field ratio is `0.99727` for
+both AuroraPIC members, excluding the prescribed voltage as the mature field
+gap. Under the preregistered Shapley rule, electron-space-charge fractions are
+`69.17` and `72.23`, ion-space-charge fractions are `-68.18` and `-71.24`, and
+boundary fractions are approximately `0.008`; the allocations close to the
+field-energy gap within about `1.1e-7 V^2/m^2`. The formal declared outcome is
+therefore `electron_space_charge_dominant`.
+
+That label requires an important qualification. The absolute attribution sums
+are `137.36` and `143.47` times the small net gap, a conditioning diagnostic
+added transparently after the locked outcome. Electron and ion space-charge
+fields almost cancel, as expected in a quasineutral plasma; replacing either
+species independently creates a large, non-evolved charge imbalance. Thus the
+formal result must not be presented as an independent electron-causation
+claim. The robust findings are narrower: the operator closes, the external
+drive is at parity, and the mature field difference resides in the net
+space-charge distribution. The next discriminator should use net-charge and
+sheath-edge modes directly and then seek their earliest temporal divergence.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

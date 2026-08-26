@@ -1,0 +1,114 @@
+{
+  "all_hash_shape_operator_boundary_gap_and_closure_gates_passed": true,
+  "aurorapic_members": [
+    {
+      "aurorapic_reconstructed_grid_mean_squared_field_V2_m2": 4011482.6396812457,
+      "boundary_drive_mean_squared_field_V2_m2": 18162295.868555814,
+      "boundary_drive_to_native_ratio": 0.9972661882276258,
+      "id": "microstate_51949_cycle36000",
+      "native_ensemble_reconstructed_grid_mean_squared_field_V2_m2": 6021972.114855132,
+      "native_minus_aurorapic_gap_V2_m2": 2010489.4751738864,
+      "normalized_shapley_fractions": {
+        "boundary_drive": 0.0077292052915735755,
+        "electron_space_charge": 69.17023365082942,
+        "ion_space_charge": -68.17796285612104
+      },
+      "operator_reconstruction_relative_rms_error": 2.913893965504886e-10,
+      "post_hoc_absolute_attribution_to_gap_ratio": 137.35592571224203,
+      "shapley_attribution_V2_m2": {
+        "boundary_drive": 15539.485890166983,
+        "electron_space_charge": 139066026.75031114,
+        "ion_space_charge": -137071076.76102751
+      },
+      "shapley_closure_residual_V2_m2": -9.802170097827911e-08
+    },
+    {
+      "aurorapic_reconstructed_grid_mean_squared_field_V2_m2": 4079800.845998447,
+      "boundary_drive_mean_squared_field_V2_m2": 18162295.868555814,
+      "boundary_drive_to_native_ratio": 0.9972661882276258,
+      "id": "microstate_63059_cycle36000",
+      "native_ensemble_reconstructed_grid_mean_squared_field_V2_m2": 6021972.114855132,
+      "native_minus_aurorapic_gap_V2_m2": 1942171.2688566851,
+      "normalized_shapley_fractions": {
+        "boundary_drive": 0.008029802716081025,
+        "electron_space_charge": 72.22841980832601,
+        "ion_space_charge": -71.23644961104203
+      },
+      "operator_reconstruction_relative_rms_error": 2.9138526061660255e-10,
+      "post_hoc_absolute_attribution_to_gap_ratio": 143.47289922208412,
+      "shapley_attribution_V2_m2": {
+        "boundary_drive": 15595.25212975994,
+        "electron_space_charge": 140279961.74664986,
+        "ion_space_charge": -138353385.72992283
+      },
+      "shapley_closure_residual_V2_m2": 1.050066202878952e-07
+    }
+  ],
+  "aurorapic_operator_reconstruction_relative_rms_errors": [
+    2.913893965504886e-10,
+    2.9138526061660255e-10
+  ],
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective algebraic attribution explains the mature phase-mean field-energy gap of one localized region/window using the common discrete Poisson operator. Component substitutions are diagnostic counterfactuals, not independently evolved plasma states. The result cannot identify the first temporal divergence, validate against experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "gates": {
+    "boundary_drive_parity": true,
+    "finite_metrics": true,
+    "locked_hashes_and_reports": true,
+    "member_counts": true,
+    "operator_reconstruction": true,
+    "positive_field_gap": true,
+    "shapley_closure": true
+  },
+  "interpretation_note": "The Shapley allocation is an exact algebraic decomposition of a mature phase-mean field-energy gap under the shared linear Poisson operator. Its component substitutions are not independently evolved states. The absolute-attribution/gap ratio was added after observing the locked outcome as a transparent conditioning diagnostic; it does not alter any preregistered gate or decision.",
+  "native_ensemble_boundary_drive_mean_squared_field_V2_m2": 18212084.2789571,
+  "native_ensemble_reconstructed_grid_mean_squared_field_V2_m2": 6021972.114855132,
+  "native_operator_reconstruction_relative_rms_errors": [
+    1.961414070557122e-07,
+    1.9724542390238368e-07,
+    1.945642613702498e-07
+  ],
+  "prospective_decision_outcome": {
+    "dominance_supported": {
+      "boundary_drive": false,
+      "electron_space_charge": true,
+      "ion_space_charge": false
+    },
+    "interpretation_allowed": true,
+    "result": "electron_space_charge_dominant"
+  },
+  "provenance": {
+    "analyzer_sha256": "47d9bd899a1ed534ae6a639873f5f7c0644a26d9c6da9ce02bcd8eee50f8159e",
+    "aurorapic_field_sha256": [
+      "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50",
+      "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7"
+    ],
+    "aurorapic_moment_sha256": [
+      "7418580793b8181d03a04296534fdce33cdc56ef87ec54d997a3a03a3731b733",
+      "f4073abf0cf163a735790875919545f0f227c508e7496cdf58b615d8fab2c095"
+    ],
+    "native_input_sha256": [
+      [
+        "1aa0e9e694ed01056140919de807aaed4809d77474ed0cf885b01ec506ad56ca",
+        "18a5d476355eee4c5b89538c5f7183959bfa1160b8d4325179db763692bab6a2",
+        "3c8c14f1dd2a9ab965781113e9afc5f7367a1bbfe4f7a978e36d3896a72e472c",
+        "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c"
+      ],
+      [
+        "e4551f0f03e2217ebd6cc6afa164db8db5649c115406dfaeb253f44b9b4b1636",
+        "aa06b389a10b960de240d117dbae738fd12101977529d05920a749aa6259ebb9",
+        "59e4d0502358c99b5de9ebed5a32bf683d84658abca217b2ba2dbf642ae72a57",
+        "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451"
+      ],
+      [
+        "805e83840fbc09e3567fa43668148f5978ba76c3017f31924a83f0a2d774fb76",
+        "e2a8be975a559fee0e23a643614dffa6ede27adc71936feeb78c1110aa0ec89b",
+        "16b63b4e7f86da328430d64937ffea879ecfaeb852e3d97e0162a1a4b5a05fa1",
+        "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+      ]
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa"
+  },
+  "rule_sha256": "b709974cf7b9f49c725e6b49004f9554a3d49ff850020cb30ebc2762e33f39ee",
+  "schema_version": 1,
+  "scope": "phase_mean_poisson_source_attribution_result"
+}

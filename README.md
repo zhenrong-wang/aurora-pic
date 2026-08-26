@@ -136,6 +136,11 @@ grid mean-square field ratio of `0.6710` and particle-sampling-factor ratio of
 `1.1957`; all gates pass. Weaker grid fields are therefore supported, while
 differential avoidance of strong-field locations is not. This remains a
 bounded diagnosis in one evolved CCP state.
+An exact discrete-Poisson reconstruction subsequently closes to relative RMS
+errors below `2.0e-7` in both codes and places the boundary drive at `0.9973`
+parity, localizing the mature field gap to net space charge. Independent
+electron/ion attribution is strongly cancellation-conditioned and is not
+treated as a physical causal separation.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision
