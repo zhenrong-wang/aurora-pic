@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_grid_field_vs_particle_sampling_comparison",
+  "question": "Is the lower near-threshold particle-sampled field strength in AuroraPIC associated with weaker grid electric fields in the same region and phase, differential particle localization within that field, or both?",
+  "basis": {
+    "mover_decomposition_result_sha256": "254ab2713443c32ec4bfaf7893c4336918a93214eaed152ef9187211626863f6",
+    "observed_before_declaration": "The prospective mover decomposition supports lower quadratic kick work in both AuroraPIC microstates. The existing phase-resolved grid-field outputs have not been reduced over the critical scope or compared for this question.",
+    "post_hoc_status": "This rule is prospective with respect to the declared grid-field and sampling-factor reductions, but reuses already generated locked production outputs."
+  },
+  "locked_inputs": {
+    "aurorapic_members": [
+      {
+        "id": "microstate_51949_cycle36000",
+        "runner_report_sha256": "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+        "spatial_phase_fields_sha256": "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50"
+      },
+      {
+        "id": "microstate_63059_cycle36000",
+        "runner_report_sha256": "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704",
+        "spatial_phase_fields_sha256": "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7"
+      }
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa",
+    "native_members": [
+      {
+        "seed": 13507,
+        "efield_xt_sha256": "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c"
+      },
+      {
+        "seed": 24601,
+        "efield_xt_sha256": "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451"
+      },
+      {
+        "seed": 35713,
+        "efield_xt_sha256": "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+      }
+    ]
+  },
+  "grid_contract": {
+    "length_m": 0.025,
+    "nodes": 400,
+    "phase_bins": 200,
+    "phase_centers": "(phase_bin + 0.5) / 200",
+    "critical_x_over_L": [0.2, 0.4],
+    "critical_phase_fraction": [0.25, 0.375],
+    "critical_phase_bins": [50, 75],
+    "spatial_reduction": "piecewise-linear boundary interpolation followed by trapezoidal integration of squared phase-mean grid field, divided by region width",
+    "phase_reduction": "arithmetic mean over phase bins 50 through 74",
+    "aurorapic_field": "electric_field_mean_V_m",
+    "native_field": "four-cycle mean efield_xt.dat",
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "electron_mass_kg": 9.10938356e-31,
+    "elementary_charge_C": 1.60217662e-19
+  },
+  "derived_metrics": {
+    "grid_mean_squared_field_V2_m2": "critical phase/space mean of squared phase-mean grid electric field",
+    "grid_rms_field_V_m": "square root of grid mean squared field",
+    "particle_sampled_mean_squared_field_V2_m2": "2*m_e*mean_quadratic_work_eV/(e*dt^2)",
+    "particle_sampling_factor": "particle-sampled mean squared field divided by grid mean squared field"
+  },
+  "prospective_decision_rule": {
+    "grid_field_deficit_supported_if": "both AuroraPIC/native grid-mean-squared-field ratios are at most 0.90",
+    "differential_particle_sampling_deficit_supported_if": "both AuroraPIC/native particle-sampling-factor ratios are at most 0.90",
+    "parity_interval": [0.95, 1.05],
+    "aurorapic_repeatability_gate": "relative two-member range no greater than 0.10 for grid mean squared field and particle sampling factor",
+    "native_repeatability_gate": "relative three-seed range no greater than 0.15 for grid mean squared field and particle sampling factor",
+    "interpretation_requires_all_hash_shape_phase_repeatability_and_finite_metric_gates": true,
+    "multiple_supported_mechanisms": "allowed; grid amplitude and conditional particle localization can differ simultaneously",
+    "otherwise": "mixed_or_intermediate_grid_field_sampling_result"
+  },
+  "claim_boundary": "This prospective reduction distinguishes grid-field amplitude from conditional particle sampling in one previously localized region/phase window of one matched argon CCP. It does not identify the first temporal divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_locked_inputs_and_gates_are_evaluated"
+}
