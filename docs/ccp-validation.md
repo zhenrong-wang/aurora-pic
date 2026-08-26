@@ -3785,6 +3785,35 @@ It remains a bounded pilot for one mature 1D argon state—not a steady-state
 Turner benchmark pass, experimental validation, convergence proof, or evidence
 for other gases and dimensions.
 
+The prospectively locked four-period extension then repeated three seeds per
+code through 15,999 pushes. Its
+[`execution record`](../benchmarks/ccp/edupic-collision-enabled-common-state-four-period-execution-20260826.json)
+completed all six members serially in 954.15 member-seconds. Peak RSS was
+38.5 MiB for instrumented eduPIC and 188.7 MiB for AuroraPIC, below the frozen
+256 MiB reporting gate.
+
+The
+[`four-period result`](../benchmarks/ccp/edupic-collision-enabled-common-state-four-period-result-20260826.json)
+passes the collision, wall-loss, ion-population, and field gates. Relative
+ensemble-mean differences are `0.00230` for elastic collisions, `0.00955` for
+excitation, `0.00119` for ionization, `0.00985` for ion-isotropic collisions,
+and `0.00223` for ion-backward collisions. Wall-loss differences range from
+`0.00102` to `0.0151`. The final mean-field relative RMS is `0.00860`, and
+the field-energy ratio is `0.999834`.
+
+The frozen electron-population sign clause alone fails. eduPIC's mean change
+is -3.67 electrons and AuroraPIC's is +9.67 electrons from an initial 108,586;
+the mean endpoints differ by only 13.33 particles (`0.0123%`). Those changes
+are smaller than the member scatter (endpoint standard deviations 37.1 and
+12.7 particles), while the separately observed ionization and both electron
+wall-loss components all pass. The formal outcome must therefore remain
+`localized_collision_enabled_common_state_discrepancy`; tolerances are not
+retuned after observation. Physically, this localizes the unresolved question
+to a near-zero residual of stochastic electron creation and loss, not to a
+material collision-rate, field, or density disagreement. A higher-power
+prospective balance test is required to distinguish a real small bias from
+sampling noise.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes
