@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "scope": "collision_enabled_common_state_ensemble_execution_lock",
+  "rule_sha256": "fcfa77f716c806e3725e9ce6b09384ec790e0966658347ef78c1da5775d08109",
+  "implementation_commit": "d79633553af7c3e676c64a9da8c63970526b5307",
+  "instrumenter_sha256": "df8f92a8877fdcc7e6b18493a17b47916820c4e5f4d71c4ddfdc57f78bb7df7b",
+  "runner_sha256": "6d96406635a1883de4593b53a12cc166d67e404067452a23a7f587071188d4ec",
+  "instrumented_edupic_source_sha256": "9bc0f9553d32a4aa0259c7877d9580f91400bd70e92f8295f95688a46ad31f34",
+  "edupic_binary_sha256": "3b094d5a76dbe801f81aac33dd6bb9dcf6c1098abcd4bcac6b5fa112de8f9ae2",
+  "aurorapic_binary_sha256": "af6cc19a473c9b53ab72cad0c00f9281195db143c1ef76a4b687c94eac4abb00",
+  "compiler": "g++ -O2 -std=c++17 for instrumented eduPIC; existing serial AuroraPIC release-style build",
+  "members": {
+    "edupic": 5,
+    "aurorapic": 5,
+    "seeds_each": [13507, 24601, 35713, 51949, 63059],
+    "electron_pushes_each": 3999
+  },
+  "execution": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_member": 180
+  },
+  "outputs_observed_before_lock": false
+}
