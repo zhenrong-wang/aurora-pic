@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "net_charge_and_sheath_structure_execution_record",
+  "rule_sha256": "774e662cd1388bb359e90c96294d357d5732c7ee0852044347381d823ad8996d",
+  "poisson_source_attribution_result_sha256": "d5d9a2717f33e7fae36bd7f7e52923dd346d56f0d85dabf5cf9303297d235301",
+  "result_sha256": "7315e980bd5cf5462a96be279e4e9d9ba29ec1dcc9cb541d1c34574fdae1ccd8",
+  "analyzer_sha256": "98001a9e94dec1ed2851bf92336e6a578669bb258f36e05f76ae5756b821877a",
+  "formal_outcome": "mixed_or_intermediate_net_charge_sheath_result",
+  "supported_associations": [],
+  "resource_contract": {
+    "new_simulation_runs": 0,
+    "analysis_processes": 1,
+    "serial_execution": true
+  },
+  "provenance_note": "The prospective rule was committed and pushed before any declared net-charge, cancellation, or sheath metric was reduced. No input, scope, threshold, metric, gate, or decision rule changed after observing the result."
+}

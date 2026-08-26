@@ -3613,6 +3613,37 @@ drive is at parity, and the mature field difference resides in the net
 space-charge distribution. The next discriminator should use net-charge and
 sheath-edge modes directly and then seek their earliest temporal divergence.
 
+### Net-charge and sheath-structure discriminator
+
+The next
+[`prospective rule`](../benchmarks/ccp/edupic-net-charge-sheath-rule-20260826.json)
+therefore avoids separate electron/ion substitutions. It locks the bounded
+charge separation `(ni-ne)/(ni+ne)`, the direct net-space-charge field,
+drive--space-charge cancellation, and left-sheath density-ratio crossings at
+`ne/ni = 0.8`, `0.9`, and `0.95`. All three thresholds are reported because a
+single density-ratio crossing is not a unique physical sheath edge.
+
+The
+[`result`](../benchmarks/ccp/edupic-net-charge-sheath-result-20260826.json)
+passes every hash, shape, crossing, positivity, and repeatability gate, but
+none of the four preregistered association rules passes. The two AuroraPIC
+critical charge-separation-RMS ratios are `0.7945/0.7981`, opposite the
+declared larger-separation hypothesis. Drive--space-charge cancellation ratios
+are `1.0883/1.0839`, below the locked `1.10` support threshold. Sheath-width
+ratios span `0.9607--0.9719`, rather than indicating a wider sheath, while
+positive-sheath-charge ratios span `1.0206--1.0277`, rather than indicating
+missing positive charge. AuroraPIC relative ranges are below `0.46%` and
+native ranges below `2.01%` across all metrics.
+
+This disciplined null result excludes a large width, integrated positive
+charge, or bounded charge-separation-amplitude explanation under the declared
+criteria. The modestly stronger cancellation is real and repeatable but does
+not cross the prospective support threshold. Combined with the exact Poisson
+closure, the remaining field gap points to the detailed phase and spatial
+organization of net charge rather than a gross sheath scalar. Establishing
+onset now requires matched earlier phase-resolved charge/field histories; the
+mature averages cannot reveal which evolution step diverged first.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

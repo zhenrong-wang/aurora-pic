@@ -141,6 +141,11 @@ errors below `2.0e-7` in both codes and places the boundary drive at `0.9973`
 parity, localizing the mature field gap to net space charge. Independent
 electron/ion attribution is strongly cancellation-conditioned and is not
 treated as a physical causal separation.
+A subsequent three-threshold net-charge/sheath comparison passes all integrity
+and repeatability gates but supports none of its preregistered gross-mechanism
+rules. The remaining mature difference is therefore associated with subtler
+phase/spatial net-charge organization, not a large sheath-width or integrated
+positive-charge mismatch.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

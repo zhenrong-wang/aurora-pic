@@ -1,0 +1,168 @@
+{
+  "all_hash_shape_crossing_positive_and_repeatability_gates_passed": true,
+  "aurorapic_member_to_native_mean_ratios": [
+    {
+      "critical_charge_separation_rms": 0.7944596501998626,
+      "drive_space_charge_cancellation_fraction": 1.088339499962146,
+      "left_sheath_width_ne_over_ni_0.80_m": 0.9719137451511489,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.9606845170539847,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.9678854082549916,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 1.0277022703175638,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 1.0230244196464469,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 1.025325861457086
+    },
+    {
+      "critical_charge_separation_rms": 0.7981055472038849,
+      "drive_space_charge_cancellation_fraction": 1.0838960114562255,
+      "left_sheath_width_ne_over_ni_0.80_m": 0.9714890263542403,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.964378723546874,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.9644797240112017,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 1.0242218015561209,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 1.0206010168990969,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 1.0212726765564375
+    }
+  ],
+  "aurorapic_members": [
+    {
+      "critical_charge_separation_rms": 0.09236240531275026,
+      "drive_space_charge_cancellation_fraction": 1.5126414138196165,
+      "id": "microstate_51949_cycle36000",
+      "left_sheath_width_ne_over_ni_0.80_m": 0.00545658594447527,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.005681704660359615,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.005923958510921551,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 3.7668532994425286e-07,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 3.8420916632543923e-07,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 3.8955956336008737e-07
+    },
+    {
+      "critical_charge_separation_rms": 0.0927862705357724,
+      "drive_space_charge_cancellation_fraction": 1.506465579223775,
+      "id": "microstate_63059_cycle36000",
+      "left_sheath_width_ne_over_ni_0.80_m": 0.005454201458579141,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.005703553029802838,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.005903113964666965,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 3.75409628253568e-07,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 3.832990281788328e-07,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 3.88019607137906e-07
+    }
+  ],
+  "aurorapic_relative_ranges": {
+    "critical_charge_separation_rms": 0.004578647090826817,
+    "drive_space_charge_cancellation_fraction": 0.004091166434360683,
+    "left_sheath_width_ne_over_ni_0.80_m": 0.00043708777525272607,
+    "left_sheath_width_ne_over_ni_0.90_m": 0.0038380105286683797,
+    "left_sheath_width_ne_over_ni_0.95_m": 0.0035248868724884527,
+    "positive_sheath_charge_ne_over_ni_0.80_C_m2": 0.0033923952734417917,
+    "positive_sheath_charge_ne_over_ni_0.90_C_m2": 0.002371670174008422,
+    "positive_sheath_charge_ne_over_ni_0.95_C_m2": 0.003960898852769154
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "These threshold-sensitive sheath proxies and net-charge metrics characterize one mature left-sheath phase/window. They do not define a unique sheath edge, identify the first temporal divergence, turn algebraic association into causation, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "gates": {
+    "aurorapic_repeatability": true,
+    "finite_positive_metrics": true,
+    "locked_hashes_and_reports": true,
+    "member_counts": true,
+    "native_repeatability": true,
+    "ordered_sheath_threshold_crossings": true
+  },
+  "interpretation_note": "Density-ratio crossings are threshold-sensitive sheath proxies, not unique physical sheath edges. All source-field quantities use net charge and avoid independent electron/ion substitution.",
+  "native_means": {
+    "critical_charge_separation_rms": 0.11625814512985601,
+    "drive_space_charge_cancellation_fraction": 1.389861724096413,
+    "left_sheath_width_ne_over_ni_0.80_m": 0.005614269755621862,
+    "left_sheath_width_ne_over_ni_0.90_m": 0.005914225283637352,
+    "left_sheath_width_ne_over_ni_0.95_m": 0.006120516396255941,
+    "positive_sheath_charge_ne_over_ni_0.80_C_m2": 3.6653157322290993e-07,
+    "positive_sheath_charge_ne_over_ni_0.90_C_m2": 3.755620676759802e-07,
+    "positive_sheath_charge_ne_over_ni_0.95_C_m2": 3.7993732334663445e-07
+  },
+  "native_members": [
+    {
+      "critical_charge_separation_rms": 0.11598588299079601,
+      "drive_space_charge_cancellation_fraction": 1.3892450946559147,
+      "left_sheath_width_ne_over_ni_0.80_m": 0.005604475095512963,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.005903833694950171,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.006096793004865669,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 3.654928279622936e-07,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 3.747554064502531e-07,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 3.790005815480476e-07,
+      "seed": 13507
+    },
+    {
+      "critical_charge_separation_rms": 0.11755936063774221,
+      "drive_space_charge_cancellation_fraction": 1.387455858385815,
+      "left_sheath_width_ne_over_ni_0.80_m": 0.005654818842966412,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.005940137979195765,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.006150960018641709,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 3.6720586741297034e-07,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 3.754708897646817e-07,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 3.7983596988689006e-07,
+      "seed": 24601
+    },
+    {
+      "critical_charge_separation_rms": 0.11522919176102982,
+      "drive_space_charge_cancellation_fraction": 1.3928842192475097,
+      "left_sheath_width_ne_over_ni_0.80_m": 0.0055835153283862096,
+      "left_sheath_width_ne_over_ni_0.90_m": 0.005898704176766121,
+      "left_sheath_width_ne_over_ni_0.95_m": 0.0061137961652604446,
+      "positive_sheath_charge_ne_over_ni_0.80_C_m2": 3.668960242934658e-07,
+      "positive_sheath_charge_ne_over_ni_0.90_C_m2": 3.7645990681300583e-07,
+      "positive_sheath_charge_ne_over_ni_0.95_C_m2": 3.809754186049658e-07,
+      "seed": 35713
+    }
+  ],
+  "native_relative_ranges": {
+    "critical_charge_separation_rms": 0.020043059125962135,
+    "drive_space_charge_cancellation_fraction": 0.003905684117766364,
+    "left_sheath_width_ne_over_ni_0.80_m": 0.012700407654762632,
+    "left_sheath_width_ne_over_ni_0.90_m": 0.00700578696998189,
+    "left_sheath_width_ne_over_ni_0.95_m": 0.008850072488846747,
+    "positive_sheath_charge_ne_over_ni_0.80_C_m2": 0.004673647717750455,
+    "positive_sheath_charge_ne_over_ni_0.90_C_m2": 0.004538531735381025,
+    "positive_sheath_charge_ne_over_ni_0.95_C_m2": 0.005197796940619274
+  },
+  "prospective_decision_outcome": {
+    "interpretation_allowed": true,
+    "larger_charge_separation_supported": false,
+    "lower_positive_sheath_charge_supported": false,
+    "result": "mixed_or_intermediate_net_charge_sheath_result",
+    "stronger_space_charge_cancellation_supported": false,
+    "wider_left_sheath_supported": false
+  },
+  "provenance": {
+    "analyzer_sha256": "98001a9e94dec1ed2851bf92336e6a578669bb258f36e05f76ae5756b821877a",
+    "aurorapic_field_sha256": [
+      "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50",
+      "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7"
+    ],
+    "aurorapic_moment_sha256": [
+      "7418580793b8181d03a04296534fdce33cdc56ef87ec54d997a3a03a3731b733",
+      "f4073abf0cf163a735790875919545f0f227c508e7496cdf58b615d8fab2c095"
+    ],
+    "native_input_sha256": [
+      [
+        "1aa0e9e694ed01056140919de807aaed4809d77474ed0cf885b01ec506ad56ca",
+        "18a5d476355eee4c5b89538c5f7183959bfa1160b8d4325179db763692bab6a2",
+        "3c8c14f1dd2a9ab965781113e9afc5f7367a1bbfe4f7a978e36d3896a72e472c",
+        "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c"
+      ],
+      [
+        "e4551f0f03e2217ebd6cc6afa164db8db5649c115406dfaeb253f44b9b4b1636",
+        "aa06b389a10b960de240d117dbae738fd12101977529d05920a749aa6259ebb9",
+        "59e4d0502358c99b5de9ebed5a32bf683d84658abca217b2ba2dbf642ae72a57",
+        "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451"
+      ],
+      [
+        "805e83840fbc09e3567fa43668148f5978ba76c3017f31924a83f0a2d774fb76",
+        "e2a8be975a559fee0e23a643614dffa6ede27adc71936feeb78c1110aa0ec89b",
+        "16b63b4e7f86da328430d64937ffea879ecfaeb852e3d97e0162a1a4b5a05fa1",
+        "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+      ]
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa"
+  },
+  "rule_sha256": "774e662cd1388bb359e90c96294d357d5732c7ee0852044347381d823ad8996d",
+  "schema_version": 1,
+  "scope": "net_charge_and_sheath_structure_result"
+}
