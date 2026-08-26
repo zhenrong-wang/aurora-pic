@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "upcoming_due_held_density_cadence_result",
+  "provenance": {
+    "cadence_rule_sha256": "5a701f664730f29d77f40d8ae2f3e079256233d38077adc8d82c0a3b1cbec64c",
+    "execution_lock_sha256": "09b6f27fe5d95f5a072d9cbf8b2badffeba1dfa59b156f9f45f2f2e14e31d065",
+    "control_report_sha256": "b851461c2f96e532fd781336fe44c1464e142ebcfbe73edc4766da049800396f"
+  },
+  "integrity": {
+    "cadence_rule_hash_matches_lock": true,
+    "binary_hash_matches_lock": true,
+    "runner_hash_matches_lock": true,
+    "particle_state_hash_matches": true,
+    "first_result_hash_matches": true,
+    "first_report_hash_matches": true,
+    "native_trace_hash_matches": true,
+    "native_population_hash_matches": true,
+    "all_resource_gates_passed": true,
+    "all_horizons_complete": true
+  },
+  "integrity_gate_passed": true,
+  "initial_parity_gate_passed": true,
+  "comparisons": [
+    {
+      "edupic_pre_push_step": 1,
+      "aurorapic_horizon": 0,
+      "charge_relative_rms": 2.6533719144841868e-14,
+      "field_relative_rms": 2.7031521335925313e-09,
+      "critical_field_energy_ratio": 1.000000152670293,
+      "first_control_field_relative_rms": 2.7031521335925313e-09,
+      "critical_log_error_fraction_of_first_control": 0.0,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 2,
+      "aurorapic_horizon": 1,
+      "charge_relative_rms": 4.033843388267722e-11,
+      "field_relative_rms": 5.387324972786896e-09,
+      "critical_field_energy_ratio": 1.0000003154825476,
+      "first_control_field_relative_rms": 5.387324972786896e-09,
+      "critical_log_error_fraction_of_first_control": 1.0,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 3,
+      "aurorapic_horizon": 2,
+      "charge_relative_rms": 1.688909709046286e-10,
+      "field_relative_rms": 8.076297664413057e-09,
+      "critical_field_energy_ratio": 1.0000004788017534,
+      "first_control_field_relative_rms": 8.076297664413057e-09,
+      "critical_log_error_fraction_of_first_control": 1.0,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 6,
+      "aurorapic_horizon": 5,
+      "charge_relative_rms": 1.4719772161017455e-09,
+      "field_relative_rms": 1.6149775584547668e-08,
+      "critical_field_energy_ratio": 1.0000009705929,
+      "first_control_field_relative_rms": 1.6149775584547668e-08,
+      "critical_log_error_fraction_of_first_control": 1.0,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 11,
+      "aurorapic_horizon": 10,
+      "charge_relative_rms": 9.632800898803624e-09,
+      "field_relative_rms": 2.965747118083625e-08,
+      "critical_field_energy_ratio": 1.000001794633805,
+      "first_control_field_relative_rms": 2.965747118083625e-08,
+      "critical_log_error_fraction_of_first_control": 1.0,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 21,
+      "aurorapic_horizon": 20,
+      "charge_relative_rms": 6.328515708892577e-08,
+      "field_relative_rms": 5.7821562842976876e-08,
+      "critical_field_energy_ratio": 1.000003561244999,
+      "first_control_field_relative_rms": 0.0005366880181350689,
+      "critical_log_error_fraction_of_first_control": 0.0001053640424729996,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 51,
+      "aurorapic_horizon": 50,
+      "charge_relative_rms": 7.570328523818714e-07,
+      "field_relative_rms": 1.7838263441332716e-07,
+      "critical_field_energy_ratio": 1.0000069500785755,
+      "first_control_field_relative_rms": 2.4248241661974075e-05,
+      "critical_log_error_fraction_of_first_control": 0.00462431288021134,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 101,
+      "aurorapic_horizon": 100,
+      "charge_relative_rms": 3.171401591393503e-06,
+      "field_relative_rms": 4.1636953433934275e-07,
+      "critical_field_energy_ratio": 1.0000025597934878,
+      "first_control_field_relative_rms": 0.0005252908577892568,
+      "critical_log_error_fraction_of_first_control": 8.330572592670167e-05,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 201,
+      "aurorapic_horizon": 200,
+      "charge_relative_rms": 1.3031377081346223e-05,
+      "field_relative_rms": 1.0090723959319649e-06,
+      "critical_field_energy_ratio": 0.9999986805345448,
+      "first_control_field_relative_rms": 0.0005285888007863837,
+      "critical_log_error_fraction_of_first_control": 5.11149778248775e-05,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 401,
+      "aurorapic_horizon": 400,
+      "charge_relative_rms": 3.1736477365123256e-05,
+      "field_relative_rms": 1.9018287492227887e-06,
+      "critical_field_energy_ratio": 0.9999971549523894,
+      "first_control_field_relative_rms": 0.0006282815551465092,
+      "critical_log_error_fraction_of_first_control": 0.00011713326227404816,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 801,
+      "aurorapic_horizon": 800,
+      "charge_relative_rms": 9.079351612045212e-05,
+      "field_relative_rms": 4.380172527833056e-06,
+      "critical_field_energy_ratio": 0.999998424185428,
+      "first_control_field_relative_rms": 0.0008867461234002309,
+      "critical_log_error_fraction_of_first_control": 7.073013067323533e-05,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 1601,
+      "aurorapic_horizon": 1600,
+      "charge_relative_rms": 0.001187015431280685,
+      "field_relative_rms": 7.795062481239606e-06,
+      "critical_field_energy_ratio": 1.0000107020580322,
+      "first_control_field_relative_rms": 0.0007740487130983015,
+      "critical_log_error_fraction_of_first_control": 0.004139575161272338,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 2401,
+      "aurorapic_horizon": 2400,
+      "charge_relative_rms": 0.03576745377307509,
+      "field_relative_rms": 0.00022258033906192887,
+      "critical_field_energy_ratio": 0.9999880212973818,
+      "first_control_field_relative_rms": 0.0032243631519434804,
+      "critical_log_error_fraction_of_first_control": 0.007884726608100218,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 3201,
+      "aurorapic_horizon": 3200,
+      "charge_relative_rms": 0.35067017224096036,
+      "field_relative_rms": 0.0037129811577462446,
+      "critical_field_energy_ratio": 1.0057159555113921,
+      "first_control_field_relative_rms": 0.011099950568817095,
+      "critical_log_error_fraction_of_first_control": 0.05909315604893658,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    },
+    {
+      "edupic_pre_push_step": 4000,
+      "aurorapic_horizon": 3999,
+      "charge_relative_rms": 0.4518630513784951,
+      "field_relative_rms": 0.005512213795277425,
+      "critical_field_energy_ratio": 0.9994773893822171,
+      "first_control_field_relative_rms": 0.009637067540471703,
+      "critical_log_error_fraction_of_first_control": 0.0032302282374728764,
+      "electron_population_difference": 0,
+      "ion_population_difference": 0
+    }
+  ],
+  "material_field_divergence_flags": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "cadence_support_gate_passed": true,
+  "early_trajectory_closure_through_horizon_100": true,
+  "full_trace_closure_gate_passed": true,
+  "formal_outcome": "full_collision_free_common_state_trace_closure",
+  "claim_boundary": "This control can resolve the deterministic collision-free 1D cache-refresh cadence discrepancy. It cannot establish collision equivalence, experimental agreement, a published Turner benchmark pass, other-state or multidimensional correctness, or general PIC validity."
+}

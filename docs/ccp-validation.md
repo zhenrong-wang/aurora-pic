@@ -3737,6 +3737,20 @@ The follow-up cadence hypothesis and its non-retroactive thresholds are fixed
 in the [`upcoming-due refresh rule`](../benchmarks/ccp/edupic-ion-density-refresh-cadence-rule-20260826.json)
 before implementation or execution.
 
+The prospective [`cadence result`](../benchmarks/ccp/edupic-ion-density-refresh-cadence-result-20260826.json)
+passes every gate and yields
+`full_collision_free_common_state_trace_closure`. Electron and ion
+populations match eduPIC exactly at all 15 horizons. No material field flag
+occurs through horizon 3999. At the final horizon, full-field relative RMS is
+`0.00551` and the critical regional field-energy ratio is `0.999477`; at
+horizon 20 those values are `5.78e-8` and `1.00000356`. This establishes that
+the prior deterministic collision-free difference came from the held-density
+time level and its refresh cadence, within this common-state experiment. The
+[`execution record`](../benchmarks/ccp/edupic-ion-density-refresh-cadence-execution-20260826.json)
+preserves the binary, runner, report, reductions, and resource hashes. It does
+not by itself validate collisions or establish agreement with Turner's
+published steady-state ensemble.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

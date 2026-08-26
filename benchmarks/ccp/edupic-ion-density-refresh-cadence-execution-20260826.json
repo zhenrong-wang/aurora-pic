@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "execution_record_for_upcoming_due_refresh_control",
+  "artifacts": {
+    "execution_lock_sha256": "09b6f27fe5d95f5a072d9cbf8b2badffeba1dfa59b156f9f45f2f2e14e31d065",
+    "result_sha256": "0510aef17871bbea20304b5014679d472d67a8ae1bf3cbf86fb8bd6b7206a78d",
+    "analyzer_sha256": "89f8635f1310b571073e81037b6dba7013b72d93796236496d4e6b9412fc79b3",
+    "runner_sha256": "e6127e1359fe945989f609d563b6b60e9d00f5edbca39ae49b47f48df2fbc499",
+    "aurorapic_binary_sha256": "af6cc19a473c9b53ab72cad0c00f9281195db143c1ef76a4b687c94eac4abb00",
+    "control_report_sha256": "b851461c2f96e532fd781336fe44c1464e142ebcfbe73edc4766da049800396f"
+  },
+  "resources": {
+    "serial_horizons_completed": 15,
+    "sum_reported_wall_seconds": 73.69,
+    "maximum_member_wall_seconds": 19.28,
+    "maximum_peak_resident_set_kib": 16196,
+    "all_resource_gates_passed": true
+  },
+  "outcome": {
+    "integrity_gate_passed": true,
+    "initial_parity_gate_passed": true,
+    "cadence_support_gate_passed": true,
+    "early_trajectory_closure_through_horizon_100": true,
+    "full_trace_closure_gate_passed": true,
+    "formal_outcome": "full_collision_free_common_state_trace_closure",
+    "population_differences_at_all_horizons": 0,
+    "material_field_divergence_flags": 0
+  }
+}
