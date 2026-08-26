@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_collision_enabled_common_state_four_period_ensemble",
+  "question": "Does the one-period collision-enabled cross-code consistency persist through four RF periods of accumulated stochastic field-particle feedback?",
+  "basis": {
+    "one_period_rule_sha256": "fcfa77f716c806e3725e9ce6b09384ec790e0966658347ef78c1da5775d08109",
+    "one_period_execution_sha256": "7310f8cc5d76189d88fd25ad5437ac3361f29126c34edd2786d6ceadf168d664",
+    "one_period_result_sha256": "635a1ee9d7e9f2e37da9f3e2417c79929d491776932768aa392001fb7d745695",
+    "one_period_formal_outcome": "one_period_collision_enabled_stochastic_consistency_supported",
+    "observed_before_declaration": "All one-period gates passed. No collision-enabled common-state output beyond one RF period has been generated or observed with the corrected held-density cadence."
+  },
+  "locked_inputs": {
+    "edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "edupic_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+    "aurorapic_particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "aurorapic_particle_state_signature": 14415241886702705324,
+    "electron_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "ion_gas_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+    "initial_populations": {
+      "electrons": 108586,
+      "ions": 114005
+    }
+  },
+  "physics_contract": {
+    "gas": "argon",
+    "neutral_density_m3": 2.0694208669001848e+21,
+    "neutral_temperature_K": 350.0,
+    "electron_target_approximation": "cold_gas_in_both_codes",
+    "nodes": 400,
+    "length_m": 0.025,
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "ion_timestep_multiplier": 20,
+    "macro_weight_aurorapic_1d": 700000000,
+    "electrode_voltage_amplitude_V": 250.0,
+    "rf_frequency_hz": 13560000.0,
+    "aurorapic_initial_phase_rad": 1.5723671231216914,
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "subcycle_charge_deposition": "pre_push_held_with_upcoming_due_refresh",
+    "particle_boundaries": "absorbing_dirichlet_electrodes"
+  },
+  "ensemble_contract": {
+    "random_generators": {
+      "edupic": "std::mt19937",
+      "aurorapic": "std::mt19937_64"
+    },
+    "interpretation": "Independent within-code ensembles; identical seed labels are not paired trajectories.",
+    "seeds_each_implementation": [13507, 24601, 35713],
+    "rf_periods": 4,
+    "electron_pushes": 15999,
+    "endpoint_alignment": "eduPIC pre-push step 16000 in the fourth requested cycle equals AuroraPIC post-step horizon 15999",
+    "members_each_implementation": 3
+  },
+  "instrumentation_contract": {
+    "edupic": "Seed after checkpoint load; passively count the five selected collision branches; accumulate native wall counters; record the last cycle's pre-push-step-4000 field as global pre-push step 16000 and stop before that push.",
+    "aurorapic": "Use unmodified production diagnostics at step 15999 with the corrected pre_push_held cadence.",
+    "random_draws_added_by_instrumentation": 0
+  },
+  "primary_observables": [
+    "accepted_collision_count_for_each_of_five_channels",
+    "absorbed_left_and_right_particle_counts_for_each_species",
+    "final_electron_and_ion_populations",
+    "ensemble_mean_final_electric_field_profile",
+    "ensemble_mean_final_field_energy_proxy"
+  ],
+  "prospective_decision_rule": {
+    "integrity_gate": "All hashes, three locked seeds per code, finite values, 400-node aligned fields, serial execution, endpoint timing, and resource limits pass.",
+    "count_scale": "Symmetric relative ensemble-mean difference abs(A-B)/max((abs(A)+abs(B))/2,1).",
+    "collision_traffic_compatible_if": "Electron elastic and excitation differ by at most 5%; electron ionization and both ion channels differ by at most 10%; zero-versus-nonzero fails.",
+    "wall_traffic_compatible_if": "Each species/side absorption mean differs by at most 10%; a both-means-below-20 endpoint is low-count inconclusive.",
+    "population_compatible_if": "Each final population mean differs by at most 1% of its shared initial population and both mean net-change signs agree.",
+    "field_compatible_if": "Ensemble-mean final field-profile relative RMS is at most 5% and the ratio of mean field-energy proxies is in [0.90,1.10].",
+    "four_period_support_if": "Integrity, collision, population, and field gates pass and no wall endpoint fails.",
+    "localized_discrepancy_if": "Integrity passes but a substantive physics gate fails; preserve all failures without tolerance retuning.",
+    "inconclusive_if": "Integrity fails or fewer than three valid members exist for either code."
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_member": 480
+  },
+  "claim_boundary": "A pass supports four-period collision-enabled stochastic consistency for one mature 1D argon CCP state. It is not steady-state or published Turner validation, experimental agreement, formal convergence, or validation of other states, gases, geometries, or dimensions.",
+  "physics_claim": "none_until_binaries_are_locked_and_all_six_members_and_prospective_gates_are_complete"
+}
