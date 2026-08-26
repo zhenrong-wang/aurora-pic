@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_phase_mean_poisson_source_attribution",
+  "question": "Is the mature critical-window grid-field deficit attributable to the imposed boundary drive, electron space charge, ion space charge, or a mixture of the charge-source terms?",
+  "basis": {
+    "grid_field_sampling_result_sha256": "529009df1637c33e37e67864d4400d05c7417d6c5b45665351f4151902304f71",
+    "observed_before_declaration": "The prospective grid-field discriminator supports a lower AuroraPIC phase-mean grid field and does not support a differential particle-sampling deficit. No discrete Poisson reconstruction, source-component substitution, or source attribution has been evaluated for this question.",
+    "post_hoc_status": "This rule is prospective with respect to every declared Poisson reconstruction and source-attribution reduction, but reuses already generated locked production outputs."
+  },
+  "locked_inputs": {
+    "aurorapic_members": [
+      {
+        "id": "microstate_51949_cycle36000",
+        "runner_report_sha256": "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+        "spatial_phase_fields_sha256": "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50",
+        "spatial_phase_moments_sha256": "7418580793b8181d03a04296534fdce33cdc56ef87ec54d997a3a03a3731b733"
+      },
+      {
+        "id": "microstate_63059_cycle36000",
+        "runner_report_sha256": "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704",
+        "spatial_phase_fields_sha256": "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7",
+        "spatial_phase_moments_sha256": "f4073abf0cf163a735790875919545f0f227c508e7496cdf58b615d8fab2c095"
+      }
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa",
+    "native_members": [
+      {
+        "seed": 13507,
+        "ne_xt_sha256": "1aa0e9e694ed01056140919de807aaed4809d77474ed0cf885b01ec506ad56ca",
+        "ni_xt_sha256": "18a5d476355eee4c5b89538c5f7183959bfa1160b8d4325179db763692bab6a2",
+        "pot_xt_sha256": "3c8c14f1dd2a9ab965781113e9afc5f7367a1bbfe4f7a978e36d3896a72e472c",
+        "efield_xt_sha256": "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c"
+      },
+      {
+        "seed": 24601,
+        "ne_xt_sha256": "e4551f0f03e2217ebd6cc6afa164db8db5649c115406dfaeb253f44b9b4b1636",
+        "ni_xt_sha256": "aa06b389a10b960de240d117dbae738fd12101977529d05920a749aa6259ebb9",
+        "pot_xt_sha256": "59e4d0502358c99b5de9ebed5a32bf683d84658abca217b2ba2dbf642ae72a57",
+        "efield_xt_sha256": "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451"
+      },
+      {
+        "seed": 35713,
+        "ne_xt_sha256": "805e83840fbc09e3567fa43668148f5978ba76c3017f31924a83f0a2d774fb76",
+        "ni_xt_sha256": "e2a8be975a559fee0e23a643614dffa6ede27adc71936feeb78c1110aa0ec89b",
+        "pot_xt_sha256": "16b63b4e7f86da328430d64937ffea879ecfaeb852e3d97e0162a1a4b5a05fa1",
+        "efield_xt_sha256": "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+      }
+    ]
+  },
+  "discrete_operator_contract": {
+    "length_m": 0.025,
+    "nodes": 400,
+    "phase_bins": 200,
+    "phase_centers": "(phase_bin + 0.5) / 200",
+    "critical_x_over_L": [0.2, 0.4],
+    "critical_phase_bins": [50, 75],
+    "permittivity_F_m": 8.85418781e-12,
+    "elementary_charge_C": 1.60217662e-19,
+    "charge_density_C_m3": "e * (ion_number_density - electron_number_density)",
+    "interior_poisson": "phi[i-1] - 2*phi[i] + phi[i+1] = -rho[i]*dx^2/epsilon0",
+    "interior_field": "E[i] = -(phi[i+1] - phi[i-1])/(2*dx)",
+    "left_endpoint_field": "E[0] = -(phi[1]-phi[0])/dx - rho[0]*dx/(2*epsilon0)",
+    "right_endpoint_field": "E[n-1] = -(phi[n-1]-phi[n-2])/dx + rho[n-1]*dx/(2*epsilon0)",
+    "component_decomposition": "solve the identical linear operator for observed boundary potentials with zero charge, positive ion charge with zero boundaries, and negative electron charge with zero boundaries; their fields sum to the reconstruction",
+    "native_ensemble_reference": "elementwise arithmetic mean of the three native phase-space matrices"
+  },
+  "attribution_contract": {
+    "response": "critical-window spatially integrated and phase-averaged mean squared reconstructed field",
+    "factors": ["boundary_drive", "ion_space_charge", "electron_space_charge"],
+    "substitution": "for each AuroraPIC member, replace a selected subset of its component fields with the corresponding native ensemble-mean components",
+    "allocation": "exact three-factor Shapley value: average each factor's marginal response change over all six replacement orders",
+    "normalized_fraction": "factor Shapley value divided by native-mean response minus AuroraPIC response",
+    "closure": "the three Shapley values must sum to the response gap within numerical tolerance"
+  },
+  "prospective_decision_rule": {
+    "operator_reconstruction_gate": "reported-versus-reconstructed field relative RMS error no greater than 0.005 for every member over the full phase-space matrix",
+    "attribution_closure_gate": "absolute Shapley closure residual no greater than 1e-10 of the larger of the response magnitudes and absolute response gap",
+    "positive_field_gap_gate": "native ensemble critical mean squared field exceeds each AuroraPIC member",
+    "boundary_drive_parity_gate": "each AuroraPIC/native critical boundary-drive mean-squared-field ratio lies in [0.99, 1.01]",
+    "electron_space_charge_dominant_if": "both electron-space-charge normalized Shapley fractions are at least 0.50",
+    "ion_space_charge_dominant_if": "both ion-space-charge normalized Shapley fractions are at least 0.50",
+    "boundary_drive_dominant_if": "both boundary-drive normalized Shapley fractions are at least 0.50",
+    "otherwise": "mixed_space_charge_attribution",
+    "interpretation_requires_all_hash_shape_operator_boundary_gap_and_closure_gates": true
+  },
+  "claim_boundary": "This prospective algebraic attribution explains the mature phase-mean field-energy gap of one localized region/window using the common discrete Poisson operator. Component substitutions are diagnostic counterfactuals, not independently evolved plasma states. The result cannot identify the first temporal divergence, validate against experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_locked_inputs_and_gates_are_evaluated"
+}
