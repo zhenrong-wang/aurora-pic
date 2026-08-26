@@ -3720,6 +3720,20 @@ It locks the cache time level, boundary-removal behavior, restart contract,
 early-horizon improvement thresholds, resource envelope, and claim boundary
 before the control implementation or any control output exists.
 
+The completed [`control result`](../benchmarks/ccp/edupic-ion-density-refresh-control-result-20260826.json)
+passes every integrity and initial-parity gate and gives
+`strong_ion_density_refresh_mechanism_support`. At horizons 1, 2, and 5,
+the critical-field log-error is only `9.4e-6`, `1.4e-5`, and `2.9e-5` of
+the corresponding baseline error, while full-field relative RMS falls from
+approximately `5e-4` to `5e-9--2e-8`. Populations match native at every
+locked early horizon. The stricter through-horizon-20 explanation gate does
+not pass: the regional field-energy ratio becomes `1.03438` precisely at the
+next ion-cache refresh boundary. Thus the pre-push density time level is a
+causally supported explanation for the immediate discrepancy, while a
+one-base-step refresh-cadence alignment remains to be prospectively tested.
+The checksum and resource envelope are preserved in the
+[`execution record`](../benchmarks/ccp/edupic-ion-density-refresh-control-execution-20260826.json).
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

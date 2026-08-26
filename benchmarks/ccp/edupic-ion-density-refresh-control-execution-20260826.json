@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "execution_record_for_held_density_control",
+  "artifacts": {
+    "execution_lock_sha256": "68879efd32c3e300d3932fa696b0cca315e0316e0bf70811d54651911fcbedcc",
+    "result_sha256": "ca6488b15a2037ce596776ed74df7dfdd91191d0e3b1359a8e4d529cbf7f68b4",
+    "analyzer_sha256": "15e73578a3e8dc01309b19550beaec28d052293f76ece12ae683e3618b5dd3da",
+    "runner_sha256": "e6127e1359fe945989f609d563b6b60e9d00f5edbca39ae49b47f48df2fbc499",
+    "aurorapic_binary_sha256": "3e9a94adf57622966d1a041ddfe485f2a616f0708d5801c0bcd03eac42636670",
+    "control_report_sha256": "7f471d00d6bfd0696e8b7117200526ee0ad07c32a069669cfb309fed38d7b1de"
+  },
+  "resources": {
+    "serial_horizons_completed": 15,
+    "sum_reported_wall_seconds": 74.94,
+    "maximum_member_wall_seconds": 19.41,
+    "maximum_peak_resident_set_kib": 16196,
+    "all_resource_gates_passed": true
+  },
+  "outcome": {
+    "integrity_gate_passed": true,
+    "initial_parity_gate_passed": true,
+    "strong_mechanism_support_gate_passed": true,
+    "early_divergence_explained_through_horizon_20": false,
+    "formal_outcome": "strong_ion_density_refresh_mechanism_support",
+    "remaining_question": "one-base-step ion-cache refresh cadence alignment at horizon 20"
+  }
+}
