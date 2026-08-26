@@ -3845,6 +3845,45 @@ outcome. It supports four-period integrated stochastic consistency for this
 state; steady-state published-profile validation remains the next distinct
 scientific claim.
 
+### Corrected-cadence phase-resolved EEDF closure
+
+An older four-cycle argon comparison found AuroraPIC/native-eduPIC ratios of
+`0.85296` for the EEDF-folded ionization frequency and `0.87182` for the
+electron fraction above 15.8 eV in the critical interior phase window. That
+run predated the held-ion-density cadence correction and began from an
+independently evolved AuroraPIC trajectory. It therefore could not distinguish
+a collision/heating defect from the already identified field-staggering error.
+
+The new
+[`prospective rule`](../benchmarks/ccp/edupic-corrected-cadence-phase-eedf-rule-20260826.json)
+exports the exact native cycle-2620 checkpoint as a half-step APS state and
+runs three corrected AuroraPIC continuations for the same four-cycle window.
+Each member samples 200 RF phase bins, seven spatial regions, and 320 energy
+bins every two electron steps. The
+[`execution record`](../benchmarks/ccp/edupic-corrected-cadence-phase-eedf-execution-20260826.json)
+shows more than 1.03 million macro-observations in every critical
+region/phase bin, zero histogram overflow, approximately 206 MiB peak RSS,
+and all three members completed within the frozen resource envelope.
+
+The checksum-bound
+[`result`](../benchmarks/ccp/edupic-corrected-cadence-phase-eedf-result-20260826.json)
+yields `strong_corrected_cadence_phase_eedf_closure`. The corrected critical
+folded-ionization ratio is `1.01714`, the above-15.8-eV tail ratio is
+`0.995780`, and the three critical phase-slice folded-ionization ratios are
+`1.04277`, `1.00525`, and `1.01737`. Critical histogram total-variation
+distance is only `0.001764`, compared with approximately `0.0482` previously.
+Candidate folded-ionization and tail relative ranges are `0.0297` and
+`0.0178`, so the closure is repeatable across the three independent random
+streams.
+
+This resolves the old regional energetic-tail deficit as overwhelmingly a
+state/charge-refresh staggering artifact rather than a missing AuroraPIC
+collision-heating mechanism. Together with collision traffic, population,
+wall-loss, and field closure, it substantially strengthens the numerical and
+physical implementation case for this 1D argon CCP. It does not turn the
+separate helium Turner density discrepancy into a pass; that published-profile
+claim must be reevaluated prospectively with the corrected semantics.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

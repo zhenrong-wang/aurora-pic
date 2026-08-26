@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "scope": "corrected_cadence_common_state_phase_eedf_result",
+  "rule_sha256": "cbc2c8bfe65ff133de2e5f5ef82e5bb7e985efe5beb04ad0d9c8d0544a5a560c",
+  "execution_lock_sha256": "2537eb64227be6eeb402056e3898338be8262c1f5f479da7de37c4e3d1f33a08",
+  "execution_report_sha256": "cc309f46a9de32800435c71caf132e1dcbee1e53fc6bfbaf4d6e5c0af040100e",
+  "integrity": {
+    "rule_hash_matches_lock": true,
+    "rule_hash_matches_report": true,
+    "lock_hash_matches_report": true,
+    "analyzer_hash_matches_lock": true,
+    "binary_hash_matches": true,
+    "particle_state_hash_matches": true,
+    "all_three_members_complete": true,
+    "all_resource_gates_passed": true,
+    "ionization_table_hash_matches": true,
+    "candidate_seed_set_matches": true,
+    "candidate_13507_histogram_hash_matches": true,
+    "candidate_13507_moments_hash_matches": true,
+    "candidate_24601_histogram_hash_matches": true,
+    "candidate_24601_moments_hash_matches": true,
+    "candidate_35713_histogram_hash_matches": true,
+    "candidate_35713_moments_hash_matches": true,
+    "native_13507_histogram_hash_matches": true,
+    "native_13507_moments_hash_matches": true,
+    "native_24601_histogram_hash_matches": true,
+    "native_24601_moments_hash_matches": true,
+    "native_35713_histogram_hash_matches": true,
+    "native_35713_moments_hash_matches": true
+  },
+  "integrity_passed": true,
+  "measurement_gates": {
+    "candidate_observation_population": true,
+    "candidate_histogram_overflow": true,
+    "candidate_folded_ionization_repeatability": true,
+    "candidate_tail_repeatability": true
+  },
+  "measurement_gates_passed": true,
+  "candidate_members": [
+    {
+      "seed": 13507,
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034883,
+      "maximum_histogram_overflow_fraction": 0.0
+    },
+    {
+      "seed": 24601,
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034841,
+      "maximum_histogram_overflow_fraction": 0.0
+    },
+    {
+      "seed": 35713,
+      "critical_minimum_macro_observations_per_region_phase_bin": 1036188,
+      "maximum_histogram_overflow_fraction": 0.0
+    }
+  ],
+  "native_members": [
+    {
+      "seed": 13507
+    },
+    {
+      "seed": 24601
+    },
+    {
+      "seed": 35713
+    }
+  ],
+  "candidate_repeatability": {
+    "candidate_critical_folded_ionization_relative_range": 0.029711048932314923,
+    "candidate_critical_tail_relative_range": 0.017847457003108153
+  },
+  "comparisons": {
+    "critical_x020_to_x060_phase_0p125_to_0p5": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7355438811743047,
+        "fraction_11p5_to_15p8_eV": 0.011240902364901564,
+        "fraction_15p8_to_30_eV": 0.003518562649491713,
+        "fraction_at_or_above_30_eV": 2.7784059781471074e-05,
+        "fraction_at_or_above_15p8_eV": 0.0035463467092731837,
+        "eedf_folded_ionization_frequency_s-1": 80015.6374438152
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7390287676375313,
+        "fraction_11p5_to_15p8_eV": 0.01134734007504238,
+        "fraction_15p8_to_30_eV": 0.0035335667209579324,
+        "fraction_at_or_above_30_eV": 2.7810533213506724e-05,
+        "fraction_at_or_above_15p8_eV": 0.003561377254171439,
+        "eedf_folded_ionization_frequency_s-1": 78667.27520142966
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9979960731368689,
+        "fraction_11p5_to_15p8_eV": 0.9906200299420904,
+        "fraction_15p8_to_30_eV": 0.9957538451510682,
+        "fraction_at_or_above_30_eV": 0.9990480789479149,
+        "fraction_at_or_above_15p8_eV": 0.9957795695806588,
+        "eedf_folded_ionization_frequency_s-1": 1.017140065407541
+      },
+      "total_variation_distance": 0.00176361801745924
+    },
+    "upstream_x010_to_x020_phase_0p125_to_0p5": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 5.161587958712473,
+        "fraction_11p5_to_15p8_eV": 0.057964153232367456,
+        "fraction_15p8_to_30_eV": 0.022184743550903805,
+        "fraction_at_or_above_30_eV": 0.00018127910940748945,
+        "fraction_at_or_above_15p8_eV": 0.02236602266031129,
+        "eedf_folded_ionization_frequency_s-1": 550440.3094622347
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 5.162833841883834,
+        "fraction_11p5_to_15p8_eV": 0.05819238638193187,
+        "fraction_15p8_to_30_eV": 0.021191706743648963,
+        "fraction_at_or_above_30_eV": 0.0002005092307688979,
+        "fraction_at_or_above_15p8_eV": 0.021392215974417858,
+        "eedf_folded_ionization_frequency_s-1": 537675.7244191611
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9997586823032627,
+        "fraction_11p5_to_15p8_eV": 0.9960779551457736,
+        "fraction_15p8_to_30_eV": 1.0468596899375484,
+        "fraction_at_or_above_30_eV": 0.9040935856784937,
+        "fraction_at_or_above_15p8_eV": 1.0455215433061247,
+        "eedf_folded_ionization_frequency_s-1": 1.0237403037990285
+      },
+      "total_variation_distance": 0.005557883243153313
+    },
+    "x020_to_x040_phase_0p125_to_0p5": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 2.1090418319459414,
+        "fraction_11p5_to_15p8_eV": 0.016981587732847633,
+        "fraction_15p8_to_30_eV": 0.005935541918901878,
+        "fraction_at_or_above_30_eV": 5.0510591275200455e-05,
+        "fraction_at_or_above_15p8_eV": 0.005986052510177079,
+        "eedf_folded_ionization_frequency_s-1": 140981.2030906907
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 2.1159399906740277,
+        "fraction_11p5_to_15p8_eV": 0.017301937108847813,
+        "fraction_15p8_to_30_eV": 0.005918980790937794,
+        "fraction_at_or_above_30_eV": 5.305851031123165e-05,
+        "fraction_at_or_above_15p8_eV": 0.005972039301249025,
+        "eedf_folded_ionization_frequency_s-1": 138361.04650407154
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9967399081455571,
+        "fraction_11p5_to_15p8_eV": 0.9814847682091989,
+        "fraction_15p8_to_30_eV": 1.0027979695405398,
+        "fraction_at_or_above_30_eV": 0.951979069501093,
+        "fraction_at_or_above_15p8_eV": 1.0023464696431457,
+        "eedf_folded_ionization_frequency_s-1": 1.018937097202008
+      },
+      "total_variation_distance": 0.002709239524244719
+    },
+    "x040_to_x060_phase_0p125_to_0p5": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.5420088500971378,
+        "fraction_11p5_to_15p8_eV": 0.008266280914718488,
+        "fraction_15p8_to_30_eV": 0.0022661584541904378,
+        "fraction_at_or_above_30_eV": 1.600805924535075e-05,
+        "fraction_at_or_above_15p8_eV": 0.0022821665134357886,
+        "eedf_folded_ionization_frequency_s-1": 48425.29644679336
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.54386338172609,
+        "fraction_11p5_to_15p8_eV": 0.008264048765493442,
+        "fraction_15p8_to_30_eV": 0.002298384202434277,
+        "fraction_at_or_above_30_eV": 1.4737050579424288e-05,
+        "fraction_at_or_above_15p8_eV": 0.002313121253013701,
+        "eedf_folded_ionization_frequency_s-1": 47757.36584764542
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9987987721900116,
+        "fraction_11p5_to_15p8_eV": 1.0002701035882515,
+        "fraction_15p8_to_30_eV": 0.9859789550373222,
+        "fraction_at_or_above_30_eV": 1.0862457965436472,
+        "fraction_at_or_above_15p8_eV": 0.9866177618066574,
+        "eedf_folded_ionization_frequency_s-1": 1.0139859179268547
+      },
+      "total_variation_distance": 0.0017899191369550923
+    },
+    "critical_phase_0p125_to_0p25": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.702958937140395,
+        "fraction_11p5_to_15p8_eV": 0.009887694990750606,
+        "fraction_15p8_to_30_eV": 0.002528447339291787,
+        "fraction_at_or_above_30_eV": 1.9338419952248608e-05,
+        "fraction_at_or_above_15p8_eV": 0.0025477857592440356,
+        "eedf_folded_ionization_frequency_s-1": 53716.90938279534
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7073083308194017,
+        "fraction_11p5_to_15p8_eV": 0.010008621339651351,
+        "fraction_15p8_to_30_eV": 0.0024901093181323355,
+        "fraction_at_or_above_30_eV": 1.5862546339361445e-05,
+        "fraction_at_or_above_15p8_eV": 0.002505971864471697,
+        "eedf_folded_ionization_frequency_s-1": 51513.49362718046
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9974524849434084,
+        "fraction_11p5_to_15p8_eV": 0.9879177816007816,
+        "fraction_15p8_to_30_eV": 1.0153961197126102,
+        "fraction_at_or_above_30_eV": 1.2191245679303142,
+        "fraction_at_or_above_15p8_eV": 1.0166857000132976,
+        "eedf_folded_ionization_frequency_s-1": 1.0427735647588126
+      },
+      "total_variation_distance": 0.0022594332207346653
+    },
+    "critical_phase_0p25_to_0p375": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7790909084148254,
+        "fraction_11p5_to_15p8_eV": 0.012017315839155315,
+        "fraction_15p8_to_30_eV": 0.004414106701502962,
+        "fraction_at_or_above_30_eV": 5.385724870344539e-05,
+        "fraction_at_or_above_15p8_eV": 0.004467963950206408,
+        "eedf_folded_ionization_frequency_s-1": 113446.13606736274
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7827145430327063,
+        "fraction_11p5_to_15p8_eV": 0.012120166809449273,
+        "fraction_15p8_to_30_eV": 0.004454260854906734,
+        "fraction_at_or_above_30_eV": 5.6404216178163184e-05,
+        "fraction_at_or_above_15p8_eV": 0.004510665071084896,
+        "eedf_folded_ionization_frequency_s-1": 112853.1659610652
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9979673500549805,
+        "fraction_11p5_to_15p8_eV": 0.9915140631386549,
+        "fraction_15p8_to_30_eV": 0.9909852263457946,
+        "fraction_at_or_above_30_eV": 0.9548443778267793,
+        "fraction_at_or_above_15p8_eV": 0.9905332982596692,
+        "eedf_folded_ionization_frequency_s-1": 1.005254350653327
+      },
+      "total_variation_distance": 0.002259340309515866
+    },
+    "critical_phase_0p375_to_0p5": {
+      "aurorapic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7246246507467486,
+        "fraction_11p5_to_15p8_eV": 0.011832725084685492,
+        "fraction_15p8_to_30_eV": 0.0036199190754657323,
+        "fraction_at_or_above_30_eV": 9.977510906807334e-06,
+        "fraction_at_or_above_15p8_eV": 0.0036298965863725396,
+        "eedf_folded_ionization_frequency_s-1": 72940.4079430449
+      },
+      "native_edupic_ensemble_mean": {
+        "histogram_mean_energy_eV": 1.7270855002970247,
+        "fraction_11p5_to_15p8_eV": 0.011927922013321686,
+        "fraction_15p8_to_30_eV": 0.003663689428783264,
+        "fraction_at_or_above_30_eV": 1.1017200895173087e-05,
+        "fraction_at_or_above_15p8_eV": 0.0036747066296784377,
+        "eedf_folded_ionization_frequency_s-1": 71695.28989045587
+      },
+      "aurorapic_to_native_edupic_ratio": {
+        "histogram_mean_energy_eV": 0.9985751431820528,
+        "fraction_11p5_to_15p8_eV": 0.9920189846538338,
+        "fraction_15p8_to_30_eV": 0.9880529302037295,
+        "fraction_at_or_above_30_eV": 0.9056302959110722,
+        "fraction_at_or_above_15p8_eV": 0.9878058174919342,
+        "eedf_folded_ionization_frequency_s-1": 1.0173668040744583
+      },
+      "total_variation_distance": 0.002198699236112875
+    }
+  },
+  "primary_reduction": {
+    "critical_folded_ionization_ratio": 1.017140065407541,
+    "critical_ionizing_tail_ratio": 0.9957795695806588,
+    "critical_phase_slice_folded_ionization_ratios": [
+      1.0427735647588126,
+      1.005254350653327,
+      1.0173668040744583
+    ],
+    "critical_total_variation_distance": 0.00176361801745924,
+    "absolute_log_error_fraction_of_previous": 0.1068556807581618
+  },
+  "strong_closure_gate_passed": true,
+  "major_cadence_support_gate_passed": false,
+  "formal_outcome": "strong_corrected_cadence_phase_eedf_closure",
+  "claim_boundary": "This control can determine whether the corrected ion-density cadence removes the old four-cycle regional phase-EEDF discrepancy for one mature 1D argon CCP state. It is not a published Turner helium pass, experimental validation, long-window stationarity, or validation of other gases, geometries, or dimensions."
+}

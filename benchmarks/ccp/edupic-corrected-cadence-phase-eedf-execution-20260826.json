@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "scope": "corrected_cadence_common_state_phase_eedf_execution",
+  "rule_sha256": "cbc2c8bfe65ff133de2e5f5ef82e5bb7e985efe5beb04ad0d9c8d0544a5a560c",
+  "execution_lock_sha256": "2537eb64227be6eeb402056e3898338be8262c1f5f479da7de37c4e3d1f33a08",
+  "aurorapic_binary_sha256": "af6cc19a473c9b53ab72cad0c00f9281195db143c1ef76a4b687c94eac4abb00",
+  "particle_state_sha256": "a22309eeef57658c2b9bbe709b1cb7757ba06049816cd11ad48cff81450dd870",
+  "members": [
+    {
+      "seed": 13507,
+      "phase_eedf_sha256": "a8017775524fa5fc1d8a7c3c0b106bce1a4ab017fa9ada8b60eba2f0ec1f9c0d",
+      "phase_eedf_moments_sha256": "18e3f39c95dc501b9cba21ddc22fb32f026e7004bf9841fbb7de15ddb625742a",
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034883,
+      "maximum_histogram_overflow_fraction": 0.0,
+      "wall_seconds": 323.87,
+      "peak_resident_set_kib": 205976,
+      "orchestration_wall_seconds": 323.97332112099684
+    },
+    {
+      "seed": 24601,
+      "phase_eedf_sha256": "1fa1918b9b1e9d58443b5254f948f8f6c6bae9997ff50f8ddbb7d24f800d8e4b",
+      "phase_eedf_moments_sha256": "f22d21a1541d42b6769f1792efe97d8bc67cc8909025b69b560c9527bd8fed01",
+      "critical_minimum_macro_observations_per_region_phase_bin": 1034841,
+      "maximum_histogram_overflow_fraction": 0.0,
+      "wall_seconds": 313.45,
+      "peak_resident_set_kib": 206192,
+      "orchestration_wall_seconds": 313.55249862599885
+    },
+    {
+      "seed": 35713,
+      "phase_eedf_sha256": "c43f2d937b198c8583f66560498598ae611487fd6e8478e09f5296f836559460",
+      "phase_eedf_moments_sha256": "c32ce64ed4539bf8e275ab74c87445af9b23a57c497fc10878d337e3f6e9d9c6",
+      "critical_minimum_macro_observations_per_region_phase_bin": 1036188,
+      "maximum_histogram_overflow_fraction": 0.0,
+      "wall_seconds": 309.93,
+      "peak_resident_set_kib": 206152,
+      "orchestration_wall_seconds": 310.0220319190048
+    }
+  ],
+  "all_three_members_complete": true,
+  "all_resource_gates_passed": true,
+  "total_member_wall_seconds": 947.25
+}
