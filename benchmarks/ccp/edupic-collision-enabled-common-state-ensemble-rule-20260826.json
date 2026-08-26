@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_collision_enabled_common_state_ensemble_pilot",
+  "question": "Starting from the same mature particle state and the now-closed deterministic field/mover trajectory, do eduPIC and AuroraPIC produce compatible one-period stochastic collision traffic, boundary losses, populations, and electrostatic response?",
+  "basis": {
+    "collision_free_cadence_result_sha256": "0510aef17871bbea20304b5014679d472d67a8ae1bf3cbf86fb8bd6b7206a78d",
+    "collision_free_cadence_execution_sha256": "3d080b665f178fe06a61ab90827b2f4c086752b08318198da3df0d384a8be4a1",
+    "observed_before_declaration": "The collision-free common-state trace closes through horizon 3999 with identical populations and no material field-divergence flag. Frozen-state collision-rate and collision-product audits already support the channel contracts. No collision-enabled common-state ensemble member or aggregate result has been generated or observed."
+  },
+  "locked_inputs": {
+    "edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "edupic_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+    "aurorapic_particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "aurorapic_particle_state_signature": 14415241886702705324,
+    "electron_gas_manifest_sha256": "bcf8773f8f392acb256480390b8576aaa322bbd8e1bfaad2ff958d93a3665bb6",
+    "ion_gas_manifest_sha256": "b7ac195eae2f5a93a31d57663612f0ec464ed736f61ab28e0221864714f72731",
+    "initial_populations": {
+      "electrons": 108586,
+      "ions": 114005
+    }
+  },
+  "physics_contract": {
+    "gas": "argon",
+    "neutral_density_m3": 2.0694208669001848e+21,
+    "neutral_temperature_K": 350.0,
+    "electron_target_approximation": "cold_gas_in_both_codes",
+    "nodes": 400,
+    "length_m": 0.025,
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "ion_timestep_multiplier": 20,
+    "macro_weight_aurorapic_1d": 700000000,
+    "electrode_voltage_amplitude_V": 250.0,
+    "rf_frequency_hz": 13560000.0,
+    "aurorapic_initial_phase_rad": 1.5723671231216914,
+    "collision_velocity_sampling": "leapfrog_half_step",
+    "subcycle_charge_deposition": "pre_push_held_with_upcoming_due_refresh",
+    "particle_boundaries": "absorbing_dirichlet_electrodes"
+  },
+  "ensemble_contract": {
+    "random_generators": {
+      "edupic": "std::mt19937",
+      "aurorapic": "std::mt19937_64"
+    },
+    "interpretation": "Seeds identify independent members within each implementation; members are not paired trajectories because the generators and random-consumption patterns differ.",
+    "seeds_each_implementation": [13507, 24601, 35713, 51949, 63059],
+    "electron_pushes": 3999,
+    "endpoint_alignment": "eduPIC pre-push step 4000 equals AuroraPIC post-step horizon 3999",
+    "members_each_implementation": 5
+  },
+  "instrumentation_contract": {
+    "edupic": "Seed MTgen immediately after checkpoint load, count the already-selected electron elastic/excitation/ionization and ion isotropic/backward branches without adding random draws, record cumulative boundary absorption, write the pre-push-step-4000 field, and stop before that push.",
+    "aurorapic": "Use production collision diagnostics, boundary-loss diagnostics, scalar populations, and fields_3999.csv without modifying the solver.",
+    "accepted_collision_mapping": {
+      "electron_elastic": "elastic",
+      "electron_excitation": "excitation",
+      "electron_ionization": "ionization",
+      "ion_isotropic": "isotropic",
+      "ion_backward": "backward"
+    },
+    "random_draws_added_by_instrumentation": 0
+  },
+  "primary_observables": [
+    "accepted_collision_count_for_each_of_five_channels",
+    "absorbed_left_and_right_particle_counts_for_each_species",
+    "final_electron_and_ion_populations",
+    "ensemble_mean_final_electric_field_profile",
+    "ensemble_mean_final_field_energy_proxy"
+  ],
+  "prospective_decision_rule": {
+    "integrity_gate": "All source, state, gas, instrumenter, binary, rule, output-shape, finite-value, endpoint-alignment, serial-execution, and resource hashes/checks pass.",
+    "count_scale": "For every count observable, compare ensemble means using symmetric relative difference abs(A-B)/max((abs(A)+abs(B))/2,1).",
+    "collision_traffic_compatible_if": "Every electron elastic/excitation count differs by at most 5%; electron ionization and each ion channel differ by at most 10%. Zero-versus-nonzero for any channel fails.",
+    "wall_traffic_compatible_if": "Each of the four species/side absorption means differs by at most 10%; if both means are below 20 events, classify that endpoint as low-count inconclusive instead of failed.",
+    "population_compatible_if": "Each final population ensemble mean differs by at most 0.5% of the shared initial population and the signs of both mean population changes agree.",
+    "field_compatible_if": "The relative RMS difference between ensemble-mean final electric-field profiles is at most 0.02 and the ratio of their mean field-energy proxies lies in [0.95,1.05].",
+    "pilot_support_if": "Integrity, collision traffic, population, and field gates pass, and wall traffic has no failed endpoint. Low-count wall endpoints may remain explicitly inconclusive.",
+    "localized_discrepancy_if": "Integrity passes but one or more substantive physics gates fail; report every failing observable without retuning tolerances.",
+    "inconclusive_if": "Integrity fails or fewer than five valid members exist for either implementation."
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_member": 180
+  },
+  "claim_boundary": "A passing pilot supports one-period collision-enabled stochastic consistency for this mature 1D argon CCP state. It is not seedwise trajectory identity, a steady-state Turner benchmark pass, experimental validation, a convergence proof, validation in other states/gases/dimensions, or general PIC correctness.",
+  "physics_claim": "none_until_both_binaries_are_locked_and_all_ten_members_and_prospective_gates_are_complete"
+}
