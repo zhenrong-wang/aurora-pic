@@ -68,6 +68,7 @@ PYTHONPATH=scripts python3 scripts/test_analyze_edupic_coupled_evolution.py
 PYTHONPATH=scripts python3 scripts/test_instrument_edupic_cycle_history.py
 PYTHONPATH=scripts python3 scripts/test_instrument_edupic_promotion_band_work.py
 PYTHONPATH=scripts python3 scripts/test_instrument_edupic_mover_decomposition.py
+PYTHONPATH=scripts python3 scripts/test_instrument_edupic_phase_snapshots.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_mover_decomposition_native.py
 PYTHONPATH=scripts python3 scripts/test_synthesize_edupic_ionization_exposure.py
 PYTHONPATH=scripts python3 scripts/test_localize_edupic_field_push_promotions.py

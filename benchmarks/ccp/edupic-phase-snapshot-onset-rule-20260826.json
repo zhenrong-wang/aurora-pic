@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_four_cycle_phase_snapshot_onset_comparison",
+  "question": "Is the localized phase-0.3 field deficit already present in the first locked measurement cycle, or does it emerge during the four-cycle window?",
+  "basis": {
+    "net_charge_sheath_result_sha256": "7315e980bd5cf5462a96be279e4e9d9ba29ec1dcc9cb541d1c34574fdae1ccd8",
+    "observed_before_declaration": "Mature phase averages localize the remaining discrepancy to detailed net-charge organization but cannot establish onset. Existing AuroraPIC snapshots have not been compared cycle-by-cycle with native snapshots, and no native production snapshot output exists.",
+    "post_hoc_status": "The phase-0.3 focus follows the previously localized phase 0.25--0.375 window. This rule is prospective for all cycle-resolved native outputs and all declared onset reductions."
+  },
+  "instrumentation": {
+    "smoke_result_sha256": "bdee3abedbc7f6d936284ddb22b065aeffb89cd1e3c5751e549fdc518814a94f",
+    "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "instrumenter_sha256": "7fab3eab56c0a1502c3c16dbc7b7e2c7d57c0972c6ddc90dd1cde417cad57a67",
+    "instrumented_source_sha256": "95c4f8b20e85b4ebbb72c8211c5b7eadf2017ba393dbc78cab881a002990558a",
+    "instrumented_binary_sha256": "9ac20779439466357bbb4460302a21f849006015422760b5b2dbba2d05755223",
+    "passivity_requirement": "final checkpoint and every pre-existing diagnostic must remain byte-identical to the locked mover-decomposition production member"
+  },
+  "locked_inputs": {
+    "native_input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "native_seeds": [13507, 24601, 35713],
+    "expected_passive_native_checkpoint_sha256": {
+      "13507": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+      "24601": "8935e4313ddef5c171a55f4631c9aab2665a772e799a20edaa297ee9ec78c2fd",
+      "35713": "92bd734fc3710139ae9c212bce23f2f7559bb7e5a17599dca21e0b9a4eacf267"
+    },
+    "aurorapic_members": [
+      {
+        "id": "microstate_51949_cycle36000",
+        "snapshot_set_sha256": "b7a86b8f05b0386f3912d9e34eef23931f6ce6fdb46a458bfa8f2b249e6927a0"
+      },
+      {
+        "id": "microstate_63059_cycle36000",
+        "snapshot_set_sha256": "11e540634ee0cc0771e063c0af50c664bd9f8e7fca447dffa85cb76ee7d13bac"
+      }
+    ],
+    "snapshot_set_hash_algorithm": "SHA-256 over each UTF-8 filename, one NUL byte, and raw file bytes in ascending step order"
+  },
+  "execution_contract": {
+    "native_cycles": 4,
+    "steps_per_cycle": 4000,
+    "snapshot_interval_steps": 400,
+    "snapshots_per_cycle": 10,
+    "nodes": 400,
+    "expected_rows_per_member": 16000,
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "address_space_limit_kib": 262144,
+    "maximum_peak_resident_set_kib": 131072,
+    "timeout_seconds_per_member": 600
+  },
+  "reduction_contract": {
+    "length_m": 0.025,
+    "critical_x_over_L": [0.2, 0.4],
+    "primary_phase_fraction": 0.3,
+    "phase_neighborhood": [0.2, 0.3, 0.4],
+    "metrics": ["regional_mean_squared_field_V2_m2", "regional_charge_density_rms_C_m3"],
+    "spatial_reduction": "piecewise-linear boundary interpolation and trapezoidal integration over x/L=0.2--0.4",
+    "native_reference": "per-cycle arithmetic mean of three seed metrics",
+    "aurorapic_cycle_mapping": "cycle 1 is steps 36400--40000, cycle 2 is 40400--44000, cycle 3 is 44400--48000, and cycle 4 is 48400--52000"
+  },
+  "prospective_decision_rule": {
+    "integrity_gate": "all source, binary, input, snapshot-set, output-shape, coordinate, phase, passive-checkpoint, and prior-diagnostic hashes match",
+    "repeatability_gate": "at every declared cycle/phase/metric, AuroraPIC two-member relative range is no greater than 0.15 and native three-member relative range is no greater than 0.20",
+    "cycle_stability_gate": "within each code/member, the four-cycle relative range of the primary phase field metric is no greater than 0.20",
+    "deficit_present_in_cycle_one_if": "both cycle-1 AuroraPIC/native primary-phase field-energy ratios are at most 0.90",
+    "deficit_persists_all_cycles_if": "both AuroraPIC/native primary-phase field-energy ratios are at most 0.90 in all four cycles",
+    "deficit_emerges_within_window_if": "both cycle-1 ratios lie in [0.95,1.05] and both ratios are at most 0.90 in at least one later cycle",
+    "phase_neighborhood_deficit_if": "both AuroraPIC/native field-energy ratios are at most 0.90 at phases 0.2, 0.3, and 0.4 when averaged over four cycles",
+    "otherwise": "mixed_or_intermediate_snapshot_onset_result",
+    "interpretation_requires_all_integrity_repeatability_and_cycle_stability_gates": true
+  },
+  "claim_boundary": "This comparison can establish onset or persistence only within the four-cycle locked measurement window of independently evolved states. It cannot identify divergence from a common initial condition, establish causation, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_three_native_members_and_all_joint_gates_complete"
+}

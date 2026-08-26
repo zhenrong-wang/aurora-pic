@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "native_cycle_phase_grid_snapshot_passivity_smoke",
+  "inputs": {
+    "source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "input_checkpoint_sha256": "3a914d71c9740ae12c67daebb45d6199b32f42e45941ed27af1433a7b28f9dc4",
+    "seed": 13507,
+    "cycles": 1,
+    "instrumenter_sha256": "7fab3eab56c0a1502c3c16dbc7b7e2c7d57c0972c6ddc90dd1cde417cad57a67",
+    "instrumented_source_sha256": "95c4f8b20e85b4ebbb72c8211c5b7eadf2017ba393dbc78cab881a002990558a",
+    "instrumented_binary_sha256": "9ac20779439466357bbb4460302a21f849006015422760b5b2dbba2d05755223",
+    "instrumentation_audit_sha256": "70f3499d3a343d9ff1d3119ee41e4627b9e5c4ffdb9eb50a3e26ccafa496786c"
+  },
+  "passivity": {
+    "reference": "mover-decomposition one-cycle instrumented smoke",
+    "final_checkpoint_sha256": "93ed640d2f9dbf0f117539969a9d9541c97ad4f694b92decd2211111b9c5663f",
+    "stdout_sha256": "a327c0e5dd0f710b51008791228b05de0fc39dad893cdba0e955c8de8d843016",
+    "phase_eedf_sha256": "9e9091c338f5b2a49798f525fe222cb9d48f134cf91ea29a9630b9352937bc7b",
+    "phase_eedf_moments_sha256": "684dbdba0ed94f67f6a531343971aaa0af687de3d1bb186039ccac36849d739e",
+    "phase_eedf_history_sha256": "da36c0f4032facc2f730adee498cdb4a7b7b318595e0f2a693ba2ecf75273e44",
+    "threshold_crossings_sha256": "7d9d95112f6be4f54db8af62fce9beac603c549daafd89116f7308ca36a4ad21",
+    "field_push_thresholds_sha256": "236c3c9b4be2f218729e9205a0ac51e5cb87a8650770b8a25c83076c14333f16",
+    "promotion_band_work_sha256": "4fd92bbd0e223855e370397d0ed5124e2b07bd5f7895df1261d832d05f0a9a2f",
+    "mover_decomposition_sha256": "eca820c8587240fb57d0e2e72ec366b8c2e4e6b64488e2f9301f5d0e3fe9f04b",
+    "trajectory_and_all_existing_diagnostics_exact": true
+  },
+  "new_ledger": {
+    "sha256": "3fb13ba49f53f03adc798621a0072574cd53ebc709d62751f28fcebc823f593d",
+    "rows": 4000,
+    "cycles": 1,
+    "phase_snapshots_per_cycle": 10,
+    "nodes_per_snapshot": 400
+  },
+  "resources": {
+    "maximum_simultaneous_processes": 1,
+    "wall_seconds": 28.11,
+    "peak_resident_set_kib": 80420,
+    "address_space_limit_kib": 262144
+  },
+  "claim_boundary": "This one-cycle smoke proves passive native snapshot instrumentation and its shape on one locked continuation. It is not a cross-code physics result."
+}
