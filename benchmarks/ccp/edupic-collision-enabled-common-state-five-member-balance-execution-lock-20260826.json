@@ -1,8 +1,10 @@
 {
   "schema_version": 1,
   "scope": "five_member_four_period_electron_balance_execution_lock",
-  "rule_sha256": "7daa90533e52686d82ca1afd1d092ac8219dc18a89bc13be6838dc1c76dd76fe",
-  "implementation_commit": "1564da9964753cf77000b4f5d7811d6cd7445ea3",
+  "rule_sha256": "d98f48279fae91b61bffea4150411535ba8f0c0d6153738f85d2c38bfea8fd53",
+  "implementation_commit": "ea675e8d06c3e3b455512617e27ec463dad2ede0",
+  "supersedes_preflight_failure_rule_sha256": "7daa90533e52686d82ca1afd1d092ac8219dc18a89bc13be6838dc1c76dd76fe",
+  "preflight_failure_record": "edupic-collision-enabled-common-state-five-member-balance-preflight-failure-20260826.json",
   "parent_execution_sha256": "49f2471863652e1e7e03eb01c72ea87264d88045f7ddbd026f89d65fe4ffa29f",
   "runner_sha256": "1ec359c75c3fcb738cc6ff3d093ae2c8bc31aebc1b61c5dbb3507af48e9e7aae",
   "base_analyzer_sha256": "0be4f904151174734ed0bf49083871b723b81becea30331c15860b4e2aee2492",
@@ -24,5 +26,6 @@
     "maximum_peak_resident_set_kib": 262144,
     "timeout_seconds_each_member": 480
   },
-  "new_seed_outputs_observed_before_lock": false
+  "valid_new_seed_outputs_observed_before_corrected_lock": false,
+  "thresholds_changed_after_preflight_failure": false
 }
