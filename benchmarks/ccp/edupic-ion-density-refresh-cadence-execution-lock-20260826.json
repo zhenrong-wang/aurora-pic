@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "pre_execution_lock_for_upcoming_due_refresh_control",
+  "cadence_rule_sha256": "5a701f664730f29d77f40d8ae2f3e079256233d38077adc8d82c0a3b1cbec64c",
+  "aurorapic_commit": "fdb1f743f6a073785c00fa82fd1fa04a6a247ee2",
+  "aurorapic_binary_sha256": "af6cc19a473c9b53ab72cad0c00f9281195db143c1ef76a4b687c94eac4abb00",
+  "runner_sha256": "e6127e1359fe945989f609d563b6b60e9d00f5edbca39ae49b47f48df2fbc499",
+  "particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+  "execution": {
+    "subcycle_charge_deposition": "pre_push_held",
+    "refresh_cadence": "before_field_solve_for_upcoming_due_push",
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_horizon": 180
+  },
+  "status": "locked_before_any_upcoming_due_control_execution"
+}
