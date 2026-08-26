@@ -1,0 +1,141 @@
+{
+  "all_integrity_population_repeatability_and_closure_gates_passed": true,
+  "aurorapic_ensemble_mean_to_native_mean_ratios": {
+    "mean_origin_energy_eV": 0.9968819826941434,
+    "mean_positive_linear_work_eV": 0.8836098060539811,
+    "mean_quadratic_work_eV": 0.802373819539018,
+    "origin_longitudinal_energy_fraction": 0.9939986794727314
+  },
+  "aurorapic_ensemble_means": {
+    "mean_origin_energy_eV": 13.224410516933027,
+    "mean_positive_linear_work_eV": 0.010367960477448547,
+    "mean_quadratic_work_eV": 6.254071506292217e-05,
+    "origin_longitudinal_energy_fraction": 0.35053250553116605
+  },
+  "aurorapic_member_to_native_mean_ratios": [
+    {
+      "mean_origin_energy_eV": 0.9967108520061441,
+      "mean_positive_linear_work_eV": 0.8799344471953102,
+      "mean_quadratic_work_eV": 0.7796483459548599,
+      "origin_longitudinal_energy_fraction": 0.9943557325572125
+    },
+    {
+      "mean_origin_energy_eV": 0.9970531133821429,
+      "mean_positive_linear_work_eV": 0.8872851649126519,
+      "mean_quadratic_work_eV": 0.8250992931231761,
+      "origin_longitudinal_energy_fraction": 0.99364162638825
+    }
+  ],
+  "aurorapic_members": [
+    {
+      "band_promotion_probability": 0.0014556551167311327,
+      "band_supply_fraction": 0.01805031700287623,
+      "field_push_macro_observations": 61617422,
+      "field_push_promotion_band_observations": 1112214,
+      "field_push_promotion_band_promotions": 1619,
+      "linear_work_closure_residual_eV": 6.366462912410498e-12,
+      "linear_work_sum_eV": 4608.581234653908,
+      "mean_origin_energy_eV": 13.22214033599944,
+      "mean_positive_linear_work_eV": 0.010324835135101665,
+      "mean_positive_work_eV": 0.010362432007614527,
+      "mean_quadratic_work_eV": 6.076938686964519e-05,
+      "negative_linear_work_sum_eV": 6874.844950298061,
+      "negative_macro_work_sum_eV": 6849.072155415242,
+      "origin_energy_sum_eV": 14705849.59166328,
+      "origin_longitudinal_energy_fraction": 0.3506584198959389,
+      "origin_longitudinal_energy_sum_eV": 5156729.981039984,
+      "positive_linear_work_sum_eV": 11483.426184951963,
+      "positive_macro_work_sum_eV": 11525.241952916984,
+      "quadratic_work_sum_eV": 67.58856284783556,
+      "signed_macro_work_sum_eV": 4676.169797501749,
+      "signed_work_closure_residual_eV": 7.275957614183426e-12,
+      "total_work_decomposition_closure_residual_eV": 5.4569682106375694e-12
+    },
+    {
+      "band_promotion_probability": 0.0015118900477268415,
+      "band_supply_fraction": 0.01756764500099695,
+      "field_push_macro_observations": 61482629,
+      "field_push_promotion_band_observations": 1080105,
+      "field_push_promotion_band_promotions": 1633,
+      "linear_work_closure_residual_eV": 2.7284841053187847e-12,
+      "linear_work_sum_eV": 4559.951042743343,
+      "mean_origin_energy_eV": 13.226680697866614,
+      "mean_positive_linear_work_eV": 0.010411085819795428,
+      "mean_positive_work_eV": 0.010450526800970139,
+      "mean_quadratic_work_eV": 6.431204325619915e-05,
+      "negative_linear_work_sum_eV": 6685.1148066468,
+      "negative_macro_work_sum_eV": 6658.251448137287,
+      "origin_energy_sum_eV": 14286203.95516922,
+      "origin_longitudinal_energy_fraction": 0.3504065911663932,
+      "origin_longitudinal_energy_sum_eV": 5005980.028638691,
+      "positive_linear_work_sum_eV": 11245.065849390141,
+      "positive_macro_work_sum_eV": 11287.666250361852,
+      "quadratic_work_sum_eV": 69.46375948123698,
+      "signed_macro_work_sum_eV": 4629.414802224573,
+      "signed_work_closure_residual_eV": 8.185452315956354e-12,
+      "total_work_decomposition_closure_residual_eV": -7.275957614183426e-12
+    }
+  ],
+  "aurorapic_relative_ranges": {
+    "mean_origin_energy_eV": 0.00034333189077586724,
+    "mean_positive_linear_work_eV": 0.008318963491553399,
+    "mean_quadratic_work_eV": 0.05664560091757334,
+    "origin_longitudinal_energy_fraction": 0.0007184176233928906
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective comparison decomposes one previously established near-threshold work discrepancy in one matched argon CCP. It does not identify the first self-consistent field divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "ensemble_mean_ratio_classification": {
+    "mean_origin_energy_eV": "parity",
+    "mean_positive_linear_work_eV": "aurorapic_lower",
+    "mean_quadratic_work_eV": "aurorapic_lower",
+    "origin_longitudinal_energy_fraction": "parity"
+  },
+  "gates": {
+    "aurorapic_closures": true,
+    "aurorapic_member_count": true,
+    "aurorapic_repeatability": true,
+    "aurorapic_reports_linked_and_passing": true,
+    "finite_metrics": true,
+    "native_member_count": true,
+    "native_repeatability": true,
+    "native_result_linked_and_passing": true,
+    "origin_energy_partition": true,
+    "population_floors": true
+  },
+  "interpretation_note": "The exact decomposition supports simultaneous sampled-field and favorable-alignment deficits in the locked scope. These are associations within one evolved discharge, not independent causal effects or identification of the first field divergence.",
+  "native_edupic_ensemble_means": {
+    "mean_origin_energy_eV": 13.265773428057281,
+    "mean_positive_linear_work_eV": 0.011733641259312996,
+    "mean_quadratic_work_eV": 7.794461077861842e-05,
+    "origin_longitudinal_energy_fraction": 0.3526488644000078
+  },
+  "native_edupic_relative_ranges": {
+    "mean_origin_energy_eV": 0.0014572236911049219,
+    "mean_positive_linear_work_eV": 0.035506215569554564,
+    "mean_quadratic_work_eV": 0.038662931266442796,
+    "origin_longitudinal_energy_fraction": 0.023950299197680238
+  },
+  "prospective_decision_outcome": {
+    "favorable_alignment_deficit_supported": true,
+    "field_strength_deficit_supported": true,
+    "interpretation_allowed": true,
+    "longitudinal_energy_partition_deficit_supported": false,
+    "lower_origin_energy_distribution_supported": false,
+    "result": "field_strength_and_favorable_alignment_deficits_supported_origin_energy_and_longitudinal_partition_deficits_not_supported",
+    "supported_associations": [
+      "field_strength_deficit",
+      "favorable_alignment_deficit"
+    ]
+  },
+  "provenance": {
+    "analyzer_sha256": "e758d198a7045e35151a303049ef67c3e610e91a03a9073b03138730808e00fb",
+    "aurorapic_runner_report_sha256": [
+      "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+      "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704"
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa"
+  },
+  "rule_sha256": "e9ff35fec7486e109e661bf26eb8ec54449b9cdebad02ce12cbb9a84b03854ae",
+  "schema_version": 1,
+  "scope": "aurorapic_edupic_near_threshold_mover_decomposition_result"
+}

@@ -3518,6 +3518,27 @@ energy fraction, `3.55%` for positive linear work, and `3.87%` for quadratic
 work. The native half is therefore qualified and repeatable. Cross-code
 interpretation remains forbidden until both locked AuroraPIC members complete.
 
+Both AuroraPIC members have now completed and the
+[`prospective mover-decomposition result`](../benchmarks/ccp/edupic-mover-decomposition-result-20260826.json)
+passes every joint integrity, population, closure, and repeatability gate. The
+two AuroraPIC/native quadratic-work ratios are `0.7796` and `0.8251`, so the
+locked sampled-field-strength deficit is supported. The positive-linear-work
+ratios are `0.8799` and `0.8873`, so the favorable-alignment deficit is also
+supported. In contrast, origin-energy ratios `0.9967/0.9971` and longitudinal
+energy-fraction ratios `0.9944/0.9936` are in the declared parity interval;
+their deficit rules are not supported. AuroraPIC relative ranges are at most
+`5.66%` for the four declared metrics.
+
+This sharpens the previous localization: the near-threshold population enters
+the mover with nearly the same mean energy and longitudinal partition, but
+experiences a smaller squared velocity increment and less favorable positive
+linear work. Under the locked half-step convention these correspond to weaker
+particle-sampled field strength and weaker energizing velocity--field
+alignment. They are simultaneous associations in an already evolved
+self-consistent discharge, not independent causal effects and not proof of
+where the two solvers first diverge. The result remains one solver-to-solver
+CCP comparison, not experimental or general PIC validation.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

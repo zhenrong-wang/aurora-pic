@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "near_threshold_mover_decomposition_execution_record",
+  "rule_sha256": "e9ff35fec7486e109e661bf26eb8ec54449b9cdebad02ce12cbb9a84b03854ae",
+  "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa",
+  "result_sha256": "254ab2713443c32ec4bfaf7893c4336918a93214eaed152ef9187211626863f6",
+  "runner_sha256": "f25e359fb89f48f5e5dca3854d84dd0840310bbb3966aa43c805c18116a2d194",
+  "formal_outcome": "field_strength_and_favorable_alignment_deficits_supported_origin_energy_and_longitudinal_partition_deficits_not_supported",
+  "aurorapic_members": [
+    {
+      "id": "microstate_51949_cycle36000",
+      "wall_seconds": 419.73696543299593,
+      "peak_resident_set_kib": 215188,
+      "maximum_total_live_particles": 242922,
+      "all_runner_gates_passed": true,
+      "runner_report_sha256": "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+      "input_deck_sha256": "3b4f3a1bd3d98ea5f1a5b7a8344922e292cba5004fea234f0a50eb7530a163a3",
+      "threshold_crossings_sha256": "f6a9b764b6b459cab5a87f4dc03f3ed4d606edb741951539bcbe20deb7aab0ba",
+      "final_checkpoint_sha256": "6d741562a6d7713ff38966b31c791a2be865d3b7b7abc63605f7379850fd5742"
+    },
+    {
+      "id": "microstate_63059_cycle36000",
+      "wall_seconds": 414.2445626769986,
+      "peak_resident_set_kib": 215260,
+      "maximum_total_live_particles": 242975,
+      "all_runner_gates_passed": true,
+      "runner_report_sha256": "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704",
+      "input_deck_sha256": "18c44d4fd4d4b1650ccc88057a5299fc7af755c6cccfe59e106b57ea0759b427",
+      "threshold_crossings_sha256": "316e33ee8378d890b5b502318b62615b735444034093cd9756f106ec3f89c20e",
+      "final_checkpoint_sha256": "2fbe89c0245ed2f7a15ae1a09242be1622fd4c15faa377278be0419a5a441914"
+    }
+  ],
+  "resource_contract": {
+    "maximum_simultaneous_processes": 1,
+    "serial_execution": true,
+    "low_priority": true,
+    "all_resource_gates_passed": true
+  },
+  "provenance_note": "The two AuroraPIC members were run only after the rule, diagnostic implementation, passive native smoke, and native ensemble were committed. Both completed before the cross-code analyzer was run; no metric, scope, threshold, or outcome rule changed after production output was observed."
+}
