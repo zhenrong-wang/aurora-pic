@@ -14,6 +14,7 @@ import tempfile
 
 
 MAGIC = "AuroraPIC-particle-state-v2"
+MAGIC_V3 = "AuroraPIC-particle-state-v3"
 CHECKPOINT_MAGICS = {
     "AuroraPIC-checkpoint-v14", "AuroraPIC-checkpoint-v15",
     "AuroraPIC-checkpoint-v16"}
@@ -148,14 +149,23 @@ def parse_checkpoint(path: Path, expected_step: int) -> dict[str, object]:
 
 
 def state_signature(units: str,
-                    species: dict[str, list[tuple[float, float, float, float]]]) -> int:
+                    species: dict[str, list[tuple[float, float, float, float]]],
+                    *, version: int = 2,
+                    velocity_staggering: str = "time_centered") -> int:
+    if version not in {2, 3}:
+        raise ExportError("particle-state signature version must be 2 or 3")
+    if (version == 2 and velocity_staggering != "time_centered") or \
+            velocity_staggering not in {"time_centered", "leapfrog_half_step"}:
+        raise ExportError("particle-state velocity staggering is invalid")
     total = sum(len(records) for records in species.values())
     value = FNV_OFFSET
-    value = hash_string(value, MAGIC)
-    value = hash_uint64(value, 2)
+    value = hash_string(value, MAGIC if version == 2 else MAGIC_V3)
+    value = hash_uint64(value, version)
     value = hash_uint64(value, 1)
     value = hash_uint64(value, 3)
     value = hash_string(value, units)
+    if version == 3:
+        value = hash_string(value, velocity_staggering)
     value = hash_uint64(value, total)
     value = hash_uint64(value, len(species))
     for name in sorted(species):

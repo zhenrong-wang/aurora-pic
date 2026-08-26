@@ -13,6 +13,13 @@
 
 namespace pic {
 
+enum class ExternalVelocityStaggering {
+    TimeCentered,
+    LeapfrogHalfStep,
+};
+
+std::string to_string(ExternalVelocityStaggering staggering);
+
 struct ExternalParticleRecord {
     Vec3 position{};
     Vec3 velocity{};
@@ -23,6 +30,8 @@ struct ExternalParticleState {
     std::size_t spatial_dimension{0};
     std::size_t velocity_dimensions{0};
     UnitSystem unit_system{UnitSystem::Normalized};
+    ExternalVelocityStaggering velocity_staggering{
+        ExternalVelocityStaggering::TimeCentered};
     std::map<std::string, std::vector<ExternalParticleRecord>>
         species;
     std::size_t particle_count{0};
@@ -34,6 +43,8 @@ struct ExternalParticleStateMetadata {
     std::size_t spatial_dimension{0};
     std::size_t velocity_dimensions{0};
     UnitSystem unit_system{UnitSystem::Normalized};
+    ExternalVelocityStaggering velocity_staggering{
+        ExternalVelocityStaggering::TimeCentered};
     std::size_t particle_count{0};
     std::uint64_t signature{0};
 };

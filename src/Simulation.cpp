@@ -959,6 +959,10 @@ void Simulation::initialize() {
             species_[phase_eedf_species_id_].particles().size(), {});
     }
     deposit_and_solve(time_);
+    const bool imported_half_step =
+        !cfg_.initial_state_path.empty() &&
+        initial_state_metadata_.velocity_staggering ==
+            ExternalVelocityStaggering::LeapfrogHalfStep;
     for (std::size_t species_id = 0;
          species_id < species_.size(); ++species_id) {
         auto& sp = species_[species_id];
@@ -967,7 +971,14 @@ void Simulation::initialize() {
         auto& particles = sp.particles();
         runtime_parallel_for(std::size_t{0}, particles.size(), cfg_.runtime, [&](std::size_t particle_id) {
             auto& p = particles[particle_id];
-            if (p.alive) initialize_leapfrog_half_step(p, interpolate_electric(grid_, p.x), qm, timestep);
+            if (!p.alive) return;
+            if (imported_half_step) {
+                synchronize_leapfrog(
+                    p, interpolate_electric(grid_, p.x), qm, timestep);
+            } else {
+                initialize_leapfrog_half_step(
+                    p, interpolate_electric(grid_, p.x), qm, timestep);
+            }
         });
     }
     initialized_ = true;

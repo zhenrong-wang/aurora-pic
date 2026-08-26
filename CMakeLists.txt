@@ -103,6 +103,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
   scripts/run_aurorapic_edupic_pilot.py
   scripts/extend_aurorapic_edupic_horizon.py
   scripts/export_checkpoint_particle_state.py
+  scripts/export_edupic_checkpoint_particle_state.py
   scripts/run_aurorapic_initialization_ab.py
   scripts/run_aurorapic_initialization_followup.py
   scripts/run_aurorapic_density_bracket.py

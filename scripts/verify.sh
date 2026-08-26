@@ -85,6 +85,7 @@ PYTHONPATH=scripts python3 scripts/test_split_particle_state.py
 PYTHONPATH=scripts python3 scripts/test_randomize_particle_state.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_post_trend_horizon.py
 python3 scripts/test_export_checkpoint_particle_state.py
+PYTHONPATH=scripts python3 scripts/test_export_edupic_checkpoint_particle_state.py
 python3 scripts/test_prepare_quasineutral_particle_state.py
 PYTHONPATH=scripts python3 scripts/test_augment_neutral_particle_pairs.py
 PYTHONPATH=scripts python3 scripts/test_aurorapic_initialization_followup.py

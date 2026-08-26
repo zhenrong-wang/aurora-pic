@@ -77,12 +77,15 @@ void write_particle_state(
     std::size_t particle_count,
     const std::string& records,
     const std::string& units = "normalized",
-    std::size_t velocity_dimensions = 0) {
+    std::size_t velocity_dimensions = 0,
+    const std::string& velocity_staggering = "time_centered") {
     std::ofstream output(path);
     output
         << (velocity_dimensions == 0
                 ? "AuroraPIC-particle-state-v1\n"
-                : "AuroraPIC-particle-state-v2\n")
+                : velocity_staggering == "time_centered"
+                    ? "AuroraPIC-particle-state-v2\n"
+                    : "AuroraPIC-particle-state-v3\n")
         << "dimension " << dimension << '\n';
     if (velocity_dimensions != 0) {
         output << "velocity_dimensions "
@@ -91,7 +94,7 @@ void write_particle_state(
     output
         << "units " << units << '\n'
         << "weighting species_constant\n"
-        << "velocity_staggering time_centered\n"
+        << "velocity_staggering " << velocity_staggering << '\n'
         << "particle_count " << particle_count << '\n'
         << "records\n"
         << records
@@ -887,6 +890,50 @@ int main() {
                     imported_1d3v[1].velocity_z == -2.5,
                 "1D3V simulation external initialization changed transverse velocities");
             std::filesystem::remove(state_1d3v_path);
+            const auto half_step_path = std::filesystem::path(
+                "test_external_particle_state_half_step.aps");
+            write_particle_state(
+                half_step_path, 1, 2,
+                "particle electrons 0.25 0 0 1.5 2.5 3.5\n"
+                "particle electrons 0.75 0 0 -0.5 -1.5 -2.5\n",
+                "normalized", 3, "leapfrog_half_step");
+            const auto half_step_state =
+                pic::load_external_particle_state(half_step_path, 2);
+            require(
+                half_step_state.version == 3 &&
+                    half_step_state.velocity_staggering ==
+                        pic::ExternalVelocityStaggering::LeapfrogHalfStep,
+                "v3 external state lost half-step staggering metadata");
+            auto centered_state = half_step_state;
+            centered_state.velocity_staggering =
+                pic::ExternalVelocityStaggering::TimeCentered;
+            require(
+                pic::external_particle_state_signature(centered_state) !=
+                    half_step_state.signature,
+                "v3 semantic signature ignored velocity staggering");
+            pic::Config half_step_config = state_1d3v_config;
+            half_step_config.initial_state_path = half_step_path;
+            half_step_config.initial_state_signature =
+                half_step_state.signature;
+            half_step_config.species.front().charge = -1.0;
+            half_step_config.boundary = pic::Boundary::Dirichlet;
+            half_step_config.phi_left = 0.0;
+            half_step_config.phi_right = 1.0;
+            pic::Simulation half_step_simulation(half_step_config);
+            half_step_simulation.initialize();
+            const auto& imported_half_steps =
+                half_step_simulation.species().front().particles();
+            require_near(
+                imported_half_steps[0].v_half, 1.5, 1e-15,
+                "1D v3 import changed the declared half-step velocity");
+            require_near(
+                imported_half_steps[1].v_half, -0.5, 1e-15,
+                "1D v3 import changed the second half-step velocity");
+            require(
+                imported_half_steps[0].v != imported_half_steps[0].v_half ||
+                    imported_half_steps[1].v != imported_half_steps[1].v_half,
+                "1D v3 import did not synchronize public velocities");
+            std::filesystem::remove(half_step_path);
             std::size_t rejected_consumer_calls = 0;
             require_throws(
                 [&] {

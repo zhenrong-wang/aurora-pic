@@ -768,6 +768,11 @@ void Simulation2D::initialize() {
                     particle.alive = true;
                 },
                 cfg_.initial_state_signature);
+        if (initial_state_metadata_.velocity_staggering !=
+            ExternalVelocityStaggering::TimeCentered) {
+            throw std::runtime_error(
+                "2D simulation supports only time-centered external velocities");
+        }
     }
     deposit_and_solve();
     for (auto& sp : species_) {

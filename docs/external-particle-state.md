@@ -54,6 +54,20 @@ must be zero; a 1V file also requires `vy = vz = 0`. Structured 1D3V imports
 retain all three time-centered velocity components, solve the initial field,
 and derive the longitudinal leapfrog half-step from that field.
 
+## Version 3 half-step interchange
+
+Version 3 retains the version 2 dimensional grammar and additionally permits
+`velocity_staggering leapfrog_half_step`. The staggering label is bound into
+the canonical semantic signature. The first supported consumer is structured
+1D electrostatic PIC: imported longitudinal values populate the active
+half-step state exactly, and the public time-centered diagnostic velocity is
+derived after the initial self-consistent field solve. Version 1 and version 2
+remain time-centered-only and retain their existing signatures.
+
+Structured 2D/3D and imported 2D currently reject half-step input explicitly.
+Their Boris/electromagnetic staggering needs a separate portable contract;
+version 3 must not be used to bypass that distinction.
+
 ## Version 1 compatibility
 
 Version 1 remains readable and writable. Its file is whitespace-delimited and
@@ -145,6 +159,15 @@ the canonical APS signature. This supports controlled initialization studies;
 it is not a restart conversion. Simulation time, RNG state, fields, leapfrog
 half-step velocities, collision counters, and accumulated diagnostics are
 deliberately not exported.
+
+`export_edupic_checkpoint_particle_state.py` converts a hash-pinned native
+eduPIC 1.0 binary checkpoint to APS v3 without changing its stored positions
+or velocity components. It validates the exact binary layout, time, cycle and
+species counts, emits `leapfrog_half_step`, refuses overwrite, and records the
+output hash and staggering-aware semantic signature. This enables controlled
+common-particle-state 1D comparisons. eduPIC's RNG, collision counters,
+fields, and diagnostics are not present in the particle-state export, so it is
+still an initialization interchange rather than a deterministic restart.
 
 ## Quasi-neutral bulk transform
 

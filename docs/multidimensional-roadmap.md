@@ -158,12 +158,14 @@ acceptance gates now form the fourth slice: generated and restarted states can
 enforce normalized global charge and charge-weighted drift-current residuals,
 plus explicit opposite-charge species-pair balance, with a machine-readable
 audit written before any time integration. Portable external particle state
-now forms the fifth slice: a strict `.aps` version 1 backend loads
+now forms the fifth slice: strict `.aps` version 1--3 backends load
 time-centered records across structured 1D/2D/3D and imported 2D, validates
 units/species/counts/geometry, rebuilds the self-consistent half step, and
 feeds the same audits and acceptance gates. Deterministic writing, canonical
 semantic signatures, optional signature pinning, and explicit source
-provenance now harden that interchange contract. A validated record-consumer
+provenance now harden that interchange contract. Version 3 additionally binds
+explicit leapfrog-half-step staggering for structured electrostatic 1D input;
+multidimensional/Boris consumers reject it pending their own contract. A validated record-consumer
 path now populates simulation-owned arrays without retaining a second
 particle-sized state, establishing the bounded-memory adapter boundary for a
 future chunked openPMD/HDF5 backend. Native chunked storage remains the next

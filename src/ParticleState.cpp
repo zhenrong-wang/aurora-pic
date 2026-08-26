@@ -15,6 +15,15 @@ constexpr const char* particle_state_magic_v1 =
     "AuroraPIC-particle-state-v1";
 constexpr const char* particle_state_magic_v2 =
     "AuroraPIC-particle-state-v2";
+constexpr const char* particle_state_magic_v3 =
+    "AuroraPIC-particle-state-v3";
+
+const char* particle_state_magic(std::size_t version) {
+    if (version == 1) return particle_state_magic_v1;
+    if (version == 2) return particle_state_magic_v2;
+    if (version == 3) return particle_state_magic_v3;
+    throw std::invalid_argument("external particle-state version is unsupported");
+}
 
 std::size_t inferred_velocity_dimensions(
     std::size_t version, std::size_t spatial_dimension,
@@ -63,13 +72,18 @@ void validate_structure(
     const auto velocity_dimensions = inferred_velocity_dimensions(
         state.version, state.spatial_dimension,
         state.velocity_dimensions);
-    if ((state.version != 1 && state.version != 2) ||
+    if ((state.version != 1 && state.version != 2 && state.version != 3) ||
         state.spatial_dimension == 0 ||
         state.spatial_dimension > 3 ||
         (velocity_dimensions != 1 && velocity_dimensions != 3) ||
         state.particle_count == 0) {
         throw std::invalid_argument(
             context + " has invalid particle-state metadata");
+    }
+    if (state.version < 3 && state.velocity_staggering !=
+            ExternalVelocityStaggering::TimeCentered) {
+        throw std::invalid_argument(
+            context + " requires particle-state v3 for non-centered velocities");
     }
     std::size_t count = 0;
     for (const auto& [species, records] : state.species) {
@@ -153,6 +167,8 @@ ParticleStateScan scan_external_particle_state(
         scan.metadata.version = 1;
     } else if (magic == particle_state_magic_v2) {
         scan.metadata.version = 2;
+    } else if (magic == particle_state_magic_v3) {
+        scan.metadata.version = 3;
     } else {
         throw std::runtime_error(
             "invalid external particle-state magic in: " +
@@ -165,7 +181,7 @@ ParticleStateScan scan_external_particle_state(
         throw std::runtime_error(
             "external particle state has invalid dimension");
     }
-    if (scan.metadata.version == 2) {
+    if (scan.metadata.version >= 2) {
         require_key(input, "velocity_dimensions", path);
         input >> scan.metadata.velocity_dimensions;
         if (!input ||
@@ -197,9 +213,16 @@ ParticleStateScan scan_external_particle_state(
     require_key(input, "velocity_staggering", path);
     std::string velocity_staggering;
     input >> velocity_staggering;
-    if (velocity_staggering != "time_centered") {
+    if (velocity_staggering == "time_centered") {
+        scan.metadata.velocity_staggering =
+            ExternalVelocityStaggering::TimeCentered;
+    } else if (scan.metadata.version == 3 &&
+               velocity_staggering == "leapfrog_half_step") {
+        scan.metadata.velocity_staggering =
+            ExternalVelocityStaggering::LeapfrogHalfStep;
+    } else {
         throw std::runtime_error(
-            "external particle state supports only time_centered velocities");
+            "external particle state has unsupported velocity staggering");
     }
 
     require_key(input, "particle_count", path);
@@ -216,12 +239,15 @@ ParticleStateScan scan_external_particle_state(
     hash_uint64(fingerprint, scan.metadata.version);
     hash_uint64(
         fingerprint, scan.metadata.spatial_dimension);
-    if (scan.metadata.version == 2) {
+    if (scan.metadata.version >= 2) {
         hash_uint64(
             fingerprint, scan.metadata.velocity_dimensions);
     }
     hash_string(
         fingerprint, to_string(scan.metadata.unit_system));
+    if (scan.metadata.version == 3) {
+        hash_string(fingerprint, velocity_staggering);
+    }
     hash_uint64(
         fingerprint, scan.metadata.particle_count);
 
@@ -279,6 +305,16 @@ ParticleStateScan scan_external_particle_state(
 
 } // namespace
 
+std::string to_string(ExternalVelocityStaggering staggering) {
+    switch (staggering) {
+        case ExternalVelocityStaggering::TimeCentered:
+            return "time_centered";
+        case ExternalVelocityStaggering::LeapfrogHalfStep:
+            return "leapfrog_half_step";
+    }
+    throw std::invalid_argument("invalid external velocity staggering");
+}
+
 ExternalParticleState load_external_particle_state(
     const std::filesystem::path& path,
     std::size_t max_particles) {
@@ -296,6 +332,8 @@ ExternalParticleState load_external_particle_state(
     state.velocity_dimensions =
         scan.metadata.velocity_dimensions;
     state.unit_system = scan.metadata.unit_system;
+    state.velocity_staggering =
+        scan.metadata.velocity_staggering;
     state.particle_count =
         scan.metadata.particle_count;
     state.signature =
@@ -311,7 +349,7 @@ void validate_external_particle_state(
     const std::vector<ExternalSpeciesExpectation>& expected_species,
     const std::string& context) {
     validate_structure(state, context);
-    if (state.version != 1 && state.version != 2) {
+    if (state.version != 1 && state.version != 2 && state.version != 3) {
         throw std::invalid_argument(
             context + " external particle-state version is unsupported");
     }
@@ -466,7 +504,8 @@ load_validated_external_particle_state_bounded(
         [](const std::string&, std::size_t,
            const ExternalParticleRecord&) {});
     if ((baseline.metadata.version != 1 &&
-         baseline.metadata.version != 2) ||
+         baseline.metadata.version != 2 &&
+         baseline.metadata.version != 3) ||
         baseline.metadata.spatial_dimension != spatial_dimension) {
         throw std::invalid_argument(
             context +
@@ -513,15 +552,17 @@ load_validated_external_particle_state_bounded(
     std::uint64_t signature = 14695981039346656037ULL;
     hash_string(
         signature,
-        baseline.metadata.version == 1
-            ? particle_state_magic_v1
-            : particle_state_magic_v2);
+        particle_state_magic(baseline.metadata.version));
     hash_uint64(signature, baseline.metadata.version);
     hash_uint64(signature, spatial_dimension);
-    if (baseline.metadata.version == 2) {
+    if (baseline.metadata.version >= 2) {
         hash_uint64(signature, velocity_dimensions);
     }
     hash_string(signature, to_string(unit_system));
+    if (baseline.metadata.version == 3) {
+        hash_string(signature, to_string(
+            baseline.metadata.velocity_staggering));
+    }
     hash_uint64(signature, expected_total);
     hash_uint64(signature, canonical_species.size());
 
@@ -599,15 +640,16 @@ std::uint64_t external_particle_state_signature(
     std::uint64_t hash = 14695981039346656037ULL;
     hash_string(
         hash,
-        state.version == 1
-            ? particle_state_magic_v1
-            : particle_state_magic_v2);
+        particle_state_magic(state.version));
     hash_uint64(hash, state.version);
     hash_uint64(hash, state.spatial_dimension);
-    if (state.version == 2) {
+    if (state.version >= 2) {
         hash_uint64(hash, state.velocity_dimensions);
     }
     hash_string(hash, to_string(state.unit_system));
+    if (state.version == 3) {
+        hash_string(hash, to_string(state.velocity_staggering));
+    }
     hash_uint64(hash, state.particle_count);
     hash_uint64(hash, state.species.size());
     for (const auto& [species, records] : state.species) {
@@ -640,6 +682,7 @@ ExternalParticleStateMetadata external_particle_state_metadata(
             state.version, state.spatial_dimension,
             state.velocity_dimensions),
         state.unit_system,
+        state.velocity_staggering,
         state.particle_count,
         realized_signature};
 }
@@ -665,18 +708,17 @@ void write_external_particle_state(
             "cannot write external particle state: " +
             path.string());
     }
-    output << (state.version == 1
-                   ? particle_state_magic_v1
-                   : particle_state_magic_v2) << '\n'
+    output << particle_state_magic(state.version) << '\n'
            << "dimension " << state.spatial_dimension << '\n';
-    if (state.version == 2) {
+    if (state.version >= 2) {
         output << "velocity_dimensions "
                << state.velocity_dimensions << '\n';
     }
     output
            << "units " << to_string(state.unit_system) << '\n'
            << "weighting species_constant\n"
-           << "velocity_staggering time_centered\n"
+           << "velocity_staggering "
+           << to_string(state.velocity_staggering) << '\n'
            << "particle_count " << state.particle_count << '\n'
            << "records\n"
            << std::setprecision(17);
@@ -704,7 +746,8 @@ void write_external_particle_state_metadata(
     const std::filesystem::path& source_path,
     const ExternalParticleStateMetadata& metadata,
     std::optional<std::uint64_t> expected_signature) {
-    if ((metadata.version != 1 && metadata.version != 2) ||
+    if ((metadata.version != 1 && metadata.version != 2 &&
+         metadata.version != 3) ||
         metadata.spatial_dimension == 0 ||
         metadata.spatial_dimension > 3 ||
         (metadata.velocity_dimensions != 1 &&
@@ -712,6 +755,11 @@ void write_external_particle_state_metadata(
         metadata.particle_count == 0) {
         throw std::invalid_argument(
             "external particle-state metadata is invalid");
+    }
+    if (metadata.version < 3 && metadata.velocity_staggering !=
+            ExternalVelocityStaggering::TimeCentered) {
+        throw std::invalid_argument(
+            "external particle-state metadata requires v3 for non-centered velocities");
     }
     const auto parent = path.parent_path();
     if (!parent.empty()) {
@@ -731,6 +779,8 @@ void write_external_particle_state_metadata(
            << "velocity_dimensions "
            << metadata.velocity_dimensions << '\n'
            << "units " << to_string(metadata.unit_system) << '\n'
+           << "velocity_staggering "
+           << to_string(metadata.velocity_staggering) << '\n'
            << "particle_count " << metadata.particle_count << '\n'
            << "signature " << metadata.signature << '\n'
            << "expected_signature ";

@@ -1132,6 +1132,11 @@ void UnstructuredSimulation2D::initialize() {
                         *location, true};
                 },
                 config_.initial_state_signature);
+        if (initial_state_metadata_.velocity_staggering !=
+            ExternalVelocityStaggering::TimeCentered) {
+            throw std::runtime_error(
+                "unstructured 2D simulation supports only time-centered external velocities");
+        }
     }
     for (std::size_t species_id = 0; species_id < species_.size(); ++species_id) {
         auto& particles = species_[species_id].particles();

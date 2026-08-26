@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "real_checkpoint_half_step_particle_state_interchange_smoke",
+  "source": {
+    "checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+    "format": "eduPIC-1.0-native-binary",
+    "cycles": 2624,
+    "time_s": 0.00019351032443933784,
+    "electrons": 108586,
+    "ions": 114005
+  },
+  "export": {
+    "exporter_sha256": "7166a7a5957039906176b362fdd82ff409b5313b555b30c1a38260e4bec03404",
+    "particle_state_version": 3,
+    "velocity_staggering": "leapfrog_half_step",
+    "particle_count": 222591,
+    "particle_state_bytes": 22209895,
+    "particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "particle_state_signature": 14415241886702705324,
+    "manifest_sha256": "476e7ebaa662d6139ec54e9eba57d5767da5e676edc9fe93308247d7fa228f6e",
+    "wall_seconds": 2.49,
+    "peak_resident_set_kib": 26748
+  },
+  "aurorapic_load": {
+    "particle_state_reader_sha256": "a93efc658f8b4108429011348ffcb3595a4de9e3d6449f265e7ca01d1554759f",
+    "structured_1d_initializer_sha256": "eaf4c3d4808cfd3166a3bcad735cfc89f2435f858f07881888ba3553e6f894d6",
+    "binary_sha256": "831f00b2dcff18fface2dcedf88b847fa35d6907f0ff758a86ba64797d0f3e21",
+    "realized_signature": 14415241886702705324,
+    "signature_matches_exporter": true,
+    "velocity_staggering": "leapfrog_half_step",
+    "particle_count": 222591,
+    "metadata_sha256": "7baac9c47f5282e7fb01d0772826acbc504f49126c791a43f7f03cd4833e297b",
+    "initialization_audit_sha256": "7ee9503e574023dceb4721e90dceb2d9f36b3d234aad16ce4eeac9759a6865b5",
+    "peak_resident_set_kib": 16216
+  },
+  "all_integrity_shape_population_staggering_and_resource_gates_passed": true,
+  "claim_boundary": "This smoke proves bounded conversion and independent AuroraPIC loading of one real eduPIC half-step particle state with matching semantic signature. It does not compare time evolution, preserve RNG streams, include collisions, or establish a physics-validation result."
+}
