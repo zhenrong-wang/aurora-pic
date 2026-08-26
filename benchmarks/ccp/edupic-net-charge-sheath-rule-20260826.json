@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_net_charge_and_sheath_structure_comparison",
+  "question": "Which stable net-charge or sheath-structure association accompanies AuroraPIC's weaker mature critical-window field?",
+  "basis": {
+    "poisson_source_attribution_result_sha256": "d5d9a2717f33e7fae36bd7f7e52923dd346d56f0d85dabf5cf9303297d235301",
+    "observed_before_declaration": "The discrete Poisson reconstruction closes and the boundary drive is at parity. Independent electron/ion Shapley terms are strongly cancellation-conditioned, so only their net-charge combination is suitable for the next physical comparison. No metric declared below has been evaluated on the locked phase-space outputs.",
+    "post_hoc_status": "This rule is prospective for all declared net-charge, field-cancellation, and phase-resolved sheath-edge reductions; it reuses locked production outputs."
+  },
+  "locked_inputs": {
+    "poisson_source_rule_sha256": "b709974cf7b9f49c725e6b49004f9554a3d49ff850020cb30ebc2762e33f39ee",
+    "aurorapic_members": [
+      {
+        "id": "microstate_51949_cycle36000",
+        "runner_report_sha256": "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+        "spatial_phase_fields_sha256": "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50",
+        "spatial_phase_moments_sha256": "7418580793b8181d03a04296534fdce33cdc56ef87ec54d997a3a03a3731b733"
+      },
+      {
+        "id": "microstate_63059_cycle36000",
+        "runner_report_sha256": "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704",
+        "spatial_phase_fields_sha256": "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7",
+        "spatial_phase_moments_sha256": "f4073abf0cf163a735790875919545f0f227c508e7496cdf58b615d8fab2c095"
+      }
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa",
+    "native_members": [
+      {
+        "seed": 13507,
+        "ne_xt_sha256": "1aa0e9e694ed01056140919de807aaed4809d77474ed0cf885b01ec506ad56ca",
+        "ni_xt_sha256": "18a5d476355eee4c5b89538c5f7183959bfa1160b8d4325179db763692bab6a2",
+        "pot_xt_sha256": "3c8c14f1dd2a9ab965781113e9afc5f7367a1bbfe4f7a978e36d3896a72e472c",
+        "efield_xt_sha256": "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c"
+      },
+      {
+        "seed": 24601,
+        "ne_xt_sha256": "e4551f0f03e2217ebd6cc6afa164db8db5649c115406dfaeb253f44b9b4b1636",
+        "ni_xt_sha256": "aa06b389a10b960de240d117dbae738fd12101977529d05920a749aa6259ebb9",
+        "pot_xt_sha256": "59e4d0502358c99b5de9ebed5a32bf683d84658abca217b2ba2dbf642ae72a57",
+        "efield_xt_sha256": "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451"
+      },
+      {
+        "seed": 35713,
+        "ne_xt_sha256": "805e83840fbc09e3567fa43668148f5978ba76c3017f31924a83f0a2d774fb76",
+        "ni_xt_sha256": "e2a8be975a559fee0e23a643614dffa6ede27adc71936feeb78c1110aa0ec89b",
+        "pot_xt_sha256": "16b63b4e7f86da328430d64937ffea879ecfaeb852e3d97e0162a1a4b5a05fa1",
+        "efield_xt_sha256": "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+      }
+    ]
+  },
+  "reduction_contract": {
+    "length_m": 0.025,
+    "nodes": 400,
+    "phase_bins": 200,
+    "critical_x_over_L": [0.2, 0.4],
+    "critical_phase_bins": [50, 75],
+    "permittivity_F_m": 8.85418781e-12,
+    "elementary_charge_C": 1.60217662e-19,
+    "bounded_charge_separation": "(ni-ne)/(ni+ne), required finite where ni+ne is positive",
+    "critical_charge_separation_rms": "space/phase RMS of bounded charge separation using piecewise-linear boundary interpolation and trapezoidal integration",
+    "space_charge_field": "field from e*(ni-ne), zero Dirichlet boundaries, and the locked common discrete Poisson operator",
+    "boundary_drive_field": "field from zero charge and observed endpoint potentials",
+    "drive_space_charge_cancellation_fraction": "-2*critical_mean(boundary_drive_field*space_charge_field)/critical_mean(boundary_drive_field^2)",
+    "sheath_proxy_thresholds_ne_over_ni": [0.8, 0.9, 0.95],
+    "left_sheath_width": "first left-to-right linearly interpolated ne/ni threshold crossing, measured from x=0, separately in every critical phase bin",
+    "threshold_summary": "arithmetic mean of the 25 phase-bin sheath widths",
+    "positive_sheath_charge_C_m2": "phase mean of the trapezoidal integral of max(e*(ni-ne),0) from x=0 through the threshold crossing",
+    "native_reference": "arithmetic mean of the three member metrics; no elementwise species substitution"
+  },
+  "prospective_decision_rule": {
+    "shape_and_crossing_gate": "all matrices have the locked shape, all values are finite, every critical phase has all three crossings, and widths are nondecreasing from threshold 0.8 through 0.95",
+    "positive_metric_gate": "charge-separation RMS, cancellation fraction, sheath widths, and positive sheath charges are positive for every member",
+    "aurorapic_repeatability_gate": "relative two-member range no greater than 0.10 for every declared summary metric",
+    "native_repeatability_gate": "relative three-member range no greater than 0.15 for every declared summary metric",
+    "stronger_space_charge_cancellation_supported_if": "both AuroraPIC/native cancellation-fraction ratios are at least 1.10",
+    "larger_charge_separation_supported_if": "both AuroraPIC/native critical charge-separation-RMS ratios are at least 1.10",
+    "wider_left_sheath_supported_if": "both AuroraPIC/native mean-width ratios are at least 1.10 at all three thresholds",
+    "lower_positive_sheath_charge_supported_if": "both AuroraPIC/native mean positive-sheath-charge ratios are at most 0.90 at all three thresholds",
+    "multiple_supported_associations": "allowed",
+    "otherwise": "mixed_or_intermediate_net_charge_sheath_result",
+    "interpretation_requires_all_hash_shape_crossing_positive_and_repeatability_gates": true
+  },
+  "claim_boundary": "These threshold-sensitive sheath proxies and net-charge metrics characterize one mature left-sheath phase/window. They do not define a unique sheath edge, identify the first temporal divergence, turn algebraic association into causation, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_locked_inputs_and_gates_are_evaluated"
+}
