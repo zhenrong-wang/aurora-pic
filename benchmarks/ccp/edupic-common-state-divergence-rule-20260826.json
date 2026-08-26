@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_collision_free_common_particle_state_divergence_trace",
+  "question": "Starting from identical mature particle positions and leapfrog half-step velocities, when do the self-consistent charge and field trajectories first differ materially?",
+  "basis": {
+    "phase_snapshot_onset_result_sha256": "34c7cd00cf934626c3c2c974197df77816e362ec65d39ec1bc6f6d65f9a49d54",
+    "half_step_interchange_smoke_sha256": "f61568d85eb85ba0e63d23751183682fa62c71ec40ead141581c10506312761f",
+    "observed_before_declaration": "The independently evolved phase-0.3 field deficit is present in the first measured cycle and persists, but that experiment cannot locate divergence from a common state. No output from this collision-free common-state trace has been observed."
+  },
+  "locked_inputs": {
+    "source_checkpoint_sha256": "7b88021958430ed2157cc0dba4b3d20fd23ec03593c1e3f29b4c66ba540b13cd",
+    "source_cycles": 2624,
+    "source_time_s": 0.00019351032443933784,
+    "source_populations": {"electrons": 108586, "ions": 114005},
+    "particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "particle_state_signature": 14415241886702705324,
+    "particle_state_version": 3,
+    "velocity_staggering": "leapfrog_half_step",
+    "export_manifest_sha256": "476e7ebaa662d6139ec54e9eba57d5767da5e676edc9fe93308247d7fa228f6e",
+    "edupic_source_sha256": "7c7679c0f0c98844940ea911bbb7581ec33f818e8d14427c9837ffdcf1ecea41",
+    "instrumenter_sha256": "b66928eb5c93e08b1c99dede283155525b52428e8c989105b387495ff7d6c71c",
+    "instrumented_edupic_source_sha256": "b423fe256ab2d4757041886737215f56f45c9d49d61ebf9913b32e8226bd5c13",
+    "instrumented_edupic_binary_sha256": "2556a5f25237840e9578255d6e46afadb1856ecee3981879c9d600b8d91b5fa9",
+    "aurorapic_commit": "70abb1a",
+    "aurorapic_binary_sha256": "831f00b2dcff18fface2dcedf88b847fa35d6907f0ff758a86ba64797d0f3e21"
+  },
+  "physics_contract": {
+    "collisions": "disabled_in_both_codes",
+    "nodes": 400,
+    "length_m": 0.025,
+    "electron_timestep_s": 1.8436578171091445e-11,
+    "ion_timestep_multiplier": 20,
+    "macro_weight_aurorapic_1d": 700000000,
+    "electrode_voltage_amplitude_V": 250,
+    "rf_frequency_hz": 13560000,
+    "aurorapic_initial_phase_rad": 1.5723671231216914,
+    "phase_reason": "AuroraPIC retained field at horizon zero must equal eduPIC's first pre-push field after eduPIC advances Time by one electron timestep.",
+    "endpoint_field": "charged half-cell Gauss correction enabled in both codes",
+    "particle_boundaries": "absorbing Dirichlet electrodes"
+  },
+  "sampling_contract": {
+    "edupic_pre_push_steps": [1, 2, 3, 6, 11, 21, 51, 101, 201, 401, 801, 1601, 2401, 3201, 4000],
+    "matching_aurorapic_post_step_horizons": [0, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800, 1600, 2400, 3200, 3999],
+    "mapping": "eduPIC pre-push step k and AuroraPIC retained field after k-1 completed steps use the same particle time level and RF field time.",
+    "profiles": ["charge_density_C_m3", "electric_field_V_m"],
+    "regions_x_over_L": {"full": [0.0, 1.0], "critical": [0.2, 0.4]}
+  },
+  "reduction_contract": {
+    "profile_relative_rms": "sqrt(integral((A-N)^2) / max(integral(N^2),1e-300)) with trapezoidal endpoint integration",
+    "critical_field_energy_ratio": "regional mean-square AuroraPIC field divided by regional mean-square eduPIC field",
+    "population_comparison": "live electron and ion macro-particle counts at every matched horizon",
+    "material_field_divergence": "full-domain field relative RMS greater than 0.01 or critical field-energy ratio outside [0.98,1.02]",
+    "sustained_divergence": "material field divergence at a sample and the next two samples",
+    "initial_parity_gate": "at horizon zero, charge and field relative RMS are each at most 2e-6 and the critical field-energy ratio lies in [0.995,1.005]"
+  },
+  "prospective_decision_rule": {
+    "integrity_gate": "all hashes, signatures, source transforms, output shapes, coordinates, phases, populations, finite values, and resource limits match",
+    "initial_state_or_deposition_mismatch_if": "the initial parity gate fails",
+    "one_step_mover_or_boundary_mismatch_if": "initial parity passes but sustained material divergence begins at AuroraPIC horizon 1 or 2",
+    "later_nonlinear_divergence_if": "initial parity passes, horizons through 20 are below material thresholds, and sustained divergence begins later",
+    "collision_free_trajectory_agreement_if": "initial parity passes and no sustained material divergence occurs through horizon 3999",
+    "otherwise": "mixed_or_transient_common_state_divergence_result"
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_edupic": 180,
+    "timeout_seconds_each_aurorapic_horizon": 180
+  },
+  "claim_boundary": "This experiment isolates deterministic collision-free 1D electrostatic evolution from one mature common particle state. It cannot test collision-kernel equivalence, preserve RNG trajectories, establish experimental agreement, establish a published benchmark pass, validate other states or dimensions, or prove general PIC correctness.",
+  "physics_claim": "none_until_all_outputs_and_joint_gates_complete"
+}
