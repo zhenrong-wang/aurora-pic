@@ -3978,7 +3978,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         }
         if (stored_count == 0) in >> key;
     } else if (cfg_.subcycle_charge_deposition ==
-               SubcycleChargeDeposition1D::PrePushHeld) {
+                   SubcycleChargeDeposition1D::PrePushHeld &&
+               std::any_of(
+                   species_.begin(), species_.end(),
+                   [](const Species& species) {
+                       return species.config().timestep_multiplier > 1;
+                   })) {
         throw std::runtime_error(
             "legacy checkpoint cannot restore held subcycle charge density");
     }

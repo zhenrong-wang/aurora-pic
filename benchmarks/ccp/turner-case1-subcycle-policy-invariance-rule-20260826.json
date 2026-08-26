@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_paired_subcycle_charge_policy_invariance_control",
+  "observed_before_declaration": "The corrected argon/eduPIC phase-EEDF campaign established that held pre-push ion charge is required when ions are subcycled. Inspection of the locked Turner Case 1 deck shows that neither species declares timestep_multiplier, so both use the production default of one.",
+  "pre_execution_amendment": "The initial rule transcribed the already measured source-checkpoint SHA-256 with one incorrect hexadecimal character (dfb2 instead of dfd2); the hash gate rejected it before creating output. The next attempt used the noncanonical alias current_positions; config parsing rejected it before checkpoint loading. Inspection then identified an overly strict legacy-checkpoint guard that rejected pre_push_held even with zero subcycled species. The guard and its regression test were corrected before either branch advanced a physics step; the rebuilt solver hash is locked below. A subsequent admission attempt reached the conservative static large-run estimate and was rejected before checkpoint loading because restart decks express an absolute final step. The runner now supplies the standard explicit CLI acknowledgement while retaining its stricter serial, timeout, memory, and nice limits.",
+  "hypothesis": "Changing only subcycle_charge_deposition from current_positions to pre_push_held is physically inert when every species has timestep_multiplier = 1.",
+  "locked_inputs": {
+    "solver_parent_commit": "7326d8f73b7027f0b0d480ce04d5066d5e629b81",
+    "solver_change": "Allow legacy checkpoints under pre_push_held only when no configured species has timestep_multiplier greater than one; regression covered before execution.",
+    "solver_binary_sha256": "f6b3aa8257522b9c0b814bf956c3070d48b1996cff343fc816835ff2c53860c0",
+    "source_checkpoint": "tmp/turner-case1-spatial-collision-32cycle-v1/output/checkpoint_770400.apc",
+    "source_checkpoint_sha256": "594098c8dfd2a525df8815deb7590c1eedfe901343c08b3bf212cc86c8b76734",
+    "source_step": 770400,
+    "turner_case_manifest_sha256": "fdfcf67e61620d0bab6a85411aeeb40f16d486fdb427f3ca9c3d30a3fd58af18",
+    "electron_gas_manifest_sha256": "c439675b5ebd6798d472ac58b8d03e4dd76cd943b0b9c563b581c82e6113ad62",
+    "ion_gas_manifest_sha256": "32688254fd2d82ff79488096aa5337ab95c973f3ffaff65bfc8f489e1974b48f"
+  },
+  "paired_contract": {
+    "seed": 13507,
+    "steps": 400,
+    "rf_cycles": 1,
+    "start_step": 770401,
+    "end_step": 770800,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "branch_a_subcycle_charge_deposition": "current_position",
+    "branch_b_subcycle_charge_deposition": "pre_push_held",
+    "only_permitted_deck_differences": [
+      "output_dir",
+      "subcycle_charge_deposition"
+    ],
+    "species_timestep_multipliers": {
+      "electrons": 1,
+      "ions": 1
+    }
+  },
+  "acceptance": {
+    "required_identical_csv_outputs": [
+      "fields_770800.csv",
+      "scalars.csv",
+      "collisions.csv",
+      "boundary_losses.csv",
+      "power_transfer.csv",
+      "spatial_average.csv"
+    ],
+    "maximum_numeric_absolute_difference": 0.0,
+    "all_runs_must_complete": true,
+    "maximum_peak_resident_set_kib_each": 524288
+  },
+  "execution_contract": {
+    "maximum_concurrent_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib": 1048576,
+    "timeout_seconds_each": 300
+  },
+  "decision_rule": {
+    "pass": "All preregistered physical CSV outputs are byte-identical and both runs satisfy execution/resource gates. Conclude that the held-density correction is inactive for Turner Case 1 and cannot change the existing published-duration result.",
+    "fail": "Any physical output differs or either run fails. Investigate policy leakage before making any statement about Turner reevaluation."
+  },
+  "claim_boundary": "This is an implementation invariance control over one late RF cycle. Passing does not resolve the existing Turner density discrepancy, establish a Turner benchmark pass, or validate helium collision physics."
+}

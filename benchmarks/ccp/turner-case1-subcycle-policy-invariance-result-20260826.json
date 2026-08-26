@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "scope": "prospective_paired_subcycle_charge_policy_invariance_control",
+  "rule_sha256": "cbeb8e9ceac21f56aa72d061fdb3a85b302c26cffe1c9603492ff0baca93ea69",
+  "locked_input_hashes_passed": true,
+  "branches": {
+    "current_position": {
+      "policy": "current_position",
+      "config_sha256": "6c0a8032c4353d60d0e3c6eec49ad2e7a2a9448d8fa6f816542d6db1dc7837be",
+      "wall_seconds": 3.774860509998689,
+      "peak_resident_set_kib": 11912
+    },
+    "pre_push_held": {
+      "policy": "pre_push_held",
+      "config_sha256": "bca7c96807638462ccbfebb16fa3675ebd946a2d7f6e6d27a414852b44f7118a",
+      "wall_seconds": 3.824054654003703,
+      "peak_resident_set_kib": 12028
+    }
+  },
+  "comparisons": [
+    {
+      "path": "fields_770800.csv",
+      "byte_identical": true,
+      "current_position_sha256": "225bdf1ef3238ed96672219ba587531604d9a567a4ed2a4984dee4b4c03a2a5a",
+      "pre_push_held_sha256": "225bdf1ef3238ed96672219ba587531604d9a567a4ed2a4984dee4b4c03a2a5a"
+    },
+    {
+      "path": "scalars.csv",
+      "byte_identical": true,
+      "current_position_sha256": "736692701b7c855a93e39ba8117fb98592fc3d3fbea6b34426d3c1a8438fb28a",
+      "pre_push_held_sha256": "736692701b7c855a93e39ba8117fb98592fc3d3fbea6b34426d3c1a8438fb28a"
+    },
+    {
+      "path": "collisions.csv",
+      "byte_identical": true,
+      "current_position_sha256": "aa2e1f9f1183238a26e8c4f0f910383b0519efdcc7b92ff9b2b423e0edac063b",
+      "pre_push_held_sha256": "aa2e1f9f1183238a26e8c4f0f910383b0519efdcc7b92ff9b2b423e0edac063b"
+    },
+    {
+      "path": "boundary_losses.csv",
+      "byte_identical": true,
+      "current_position_sha256": "d082ed2a215a4ab902853674d419889db21db1bef950808225552a0231f1171a",
+      "pre_push_held_sha256": "d082ed2a215a4ab902853674d419889db21db1bef950808225552a0231f1171a"
+    },
+    {
+      "path": "power_transfer.csv",
+      "byte_identical": true,
+      "current_position_sha256": "672b2b4117a5fd1d1858344be71b770ff3e4ca1d0d7dabe50a2b7dcd0055a71b",
+      "pre_push_held_sha256": "672b2b4117a5fd1d1858344be71b770ff3e4ca1d0d7dabe50a2b7dcd0055a71b"
+    },
+    {
+      "path": "spatial_average.csv",
+      "byte_identical": true,
+      "current_position_sha256": "a2981a5b502298a98fa79424c3b456a7fa452d6af86766fcfdb52c7f00292f2b",
+      "pre_push_held_sha256": "a2981a5b502298a98fa79424c3b456a7fa452d6af86766fcfdb52c7f00292f2b"
+    }
+  ],
+  "all_required_physical_outputs_byte_identical": true,
+  "all_resource_gates_passed": true,
+  "passed": true,
+  "classification": "turner_subcycle_policy_invariance_established",
+  "interpretation": "The held-density correction is inactive when all Turner species advance every electron step; the existing published-duration density discrepancy remains unchanged and unresolved.",
+  "claim_boundary": "This is an implementation invariance control over one late RF cycle. Passing does not resolve the existing Turner density discrepancy, establish a Turner benchmark pass, or validate helium collision physics."
+}

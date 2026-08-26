@@ -3882,7 +3882,36 @@ collision-heating mechanism. Together with collision traffic, population,
 wall-loss, and field closure, it substantially strengthens the numerical and
 physical implementation case for this 1D argon CCP. It does not turn the
 separate helium Turner density discrepancy into a pass; that published-profile
-claim must be reevaluated prospectively with the corrected semantics.
+claim remains a separate unresolved result.
+
+### Turner subcycle-policy invariance control
+
+Inspection of the exact Turner Case 1 deck shows why the argon cadence fix
+cannot be transferred to the helium result: neither Turner species declares a
+`timestep_multiplier`, so both advance on every electron step. The
+[`prospective invariance rule`](../benchmarks/ccp/turner-case1-subcycle-policy-invariance-rule-20260826.json)
+therefore continued one identical late Turner checkpoint for one RF cycle
+under `current_position` and `pre_push_held`, changing only that policy and the
+output directory.
+
+The checksum-bound
+[`result`](../benchmarks/ccp/turner-case1-subcycle-policy-invariance-result-20260826.json)
+classifies the control as `turner_subcycle_policy_invariance_established`.
+Final fields, scalar history, collision counters, boundary losses, power
+transfer, and the one-cycle spatial average are byte-identical. Both serial
+branches completed in approximately 3.8 seconds with about 12 MiB peak RSS.
+This formally closes the cadence ambiguity without wasting three new
+512,000-step runs: the existing three-seed Turner mean density bias of
+`+2.237%` is unchanged and remains unresolved.
+
+The control also exposed an overly strict restart guard. Checkpoints predating
+the held-charge-cache record were rejected under `pre_push_held` even when all
+species had unit cadence and no cache was required. The loader now permits
+that physically equivalent case while continuing to reject legacy restarts
+with any genuinely subcycled species; both paths have regression coverage.
+The next Turner discriminator must target helium collision/sheath-transport
+conventions or an independent matched implementation, not the subcycle charge
+policy.
 
 ## Bounded execution ladder
 

@@ -3929,7 +3929,42 @@ int main() {
                     incompatible.load_checkpoint(checkpoint_path);
                 },
                 "checkpoint accepted changed subcycle charge-deposition policy");
+
+            const auto unit_checkpoint_path = std::filesystem::path(
+                "test_output_1d_unit_cadence_v24.apc");
+            const auto unit_legacy_path = std::filesystem::path(
+                "test_output_1d_unit_cadence_v23.apc");
+            auto unit_cfg = current_cfg;
+            unit_cfg.species[0].timestep_multiplier = 1;
+            pic::Simulation unit_current(unit_cfg);
+            unit_current.initialize();
+            unit_current.save_checkpoint(unit_checkpoint_path);
+            {
+                std::istringstream input(read_file_text(unit_checkpoint_path));
+                std::ofstream legacy(unit_legacy_path);
+                std::string line;
+                bool first = true;
+                while (std::getline(input, line)) {
+                    if (first) {
+                        legacy << "AuroraPIC-checkpoint-v23\n";
+                        first = false;
+                    } else if (!line.starts_with(
+                                   "subcycle_charge_deposition")) {
+                        legacy << line << '\n';
+                    }
+                }
+            }
+            auto unit_held_cfg = unit_cfg;
+            unit_held_cfg.subcycle_charge_deposition =
+                pic::SubcycleChargeDeposition1D::PrePushHeld;
+            pic::Simulation unit_held(unit_held_cfg);
+            unit_held.load_checkpoint(unit_legacy_path);
+            require_species_close(
+                unit_current.species(), unit_held.species(),
+                "unit-cadence legacy checkpoint under held policy");
             std::filesystem::remove(checkpoint_path);
+            std::filesystem::remove(unit_checkpoint_path);
+            std::filesystem::remove(unit_legacy_path);
         }
         {
             const auto output_dir =

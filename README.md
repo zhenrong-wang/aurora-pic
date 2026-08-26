@@ -75,6 +75,10 @@ numerical-sensitivity, energy-closure, phase, and EEDF evidence into one
 fail-closed scientific status. It distinguishes numerical integrity and
 descriptive scalar agreement from the unresolved published ion-density
 failure, and never promotes post-benchmark diagnostics into formal passes.
+The prospective Turner subcycle-policy invariance control additionally proves
+that the held-density correction is inactive for this unit-cadence helium
+case: six physical diagnostic outputs remain byte-identical, so the existing
+three-seed density discrepancy is preserved rather than silently reclassified.
 `compare_edupic_phase_space.py` checksum-locks the public eduPIC Figure 11 raw
 matrices and directly compares AuroraPIC over position and RF phase. It covers
 potential, electric field, electron/ion density, current density, ohmic power,
