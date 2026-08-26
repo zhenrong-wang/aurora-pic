@@ -207,6 +207,7 @@ def main() -> int:
                 line for line in legacy_lines
                 if not line.startswith((
                     "species_timestep_multipliers",
+                    "subcycle_charge_deposition", "subcycle_charge_cache",
                     "collision_energy_totals",
                     "spatial_moments", "spatial_energy", "spatial_fields",
                     "spatial_phase", "phase_bin", "phase_species",

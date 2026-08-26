@@ -65,6 +65,21 @@ enum class CollisionVelocitySampling1D {
     LeapfrogHalfStep
 };
 
+enum class SubcycleChargeDeposition1D {
+    CurrentPosition,
+    PrePushHeld
+};
+
+inline std::string to_string(SubcycleChargeDeposition1D policy) {
+    switch (policy) {
+        case SubcycleChargeDeposition1D::CurrentPosition:
+            return "current_position";
+        case SubcycleChargeDeposition1D::PrePushHeld:
+            return "pre_push_held";
+    }
+    return "unknown";
+}
+
 inline std::string to_string(CollisionVelocitySampling1D sampling) {
     switch (sampling) {
         case CollisionVelocitySampling1D::TimeCentered:
@@ -294,6 +309,8 @@ struct Config {
     std::size_t max_particles_per_species{10000000};
     CollisionVelocitySampling1D collision_velocity_sampling{
         CollisionVelocitySampling1D::TimeCentered};
+    SubcycleChargeDeposition1D subcycle_charge_deposition{
+        SubcycleChargeDeposition1D::CurrentPosition};
     CollisionConfig collisions{};
     std::vector<NamedCollisionConfig> collision_models{};
     bool checkpoint_output{false};

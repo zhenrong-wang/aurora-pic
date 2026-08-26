@@ -230,6 +230,7 @@ private:
     };
     void apply_collisions();
     void deposit_and_solve(double field_time);
+    void refresh_held_charge(std::size_t species_id);
     bool species_due(std::size_t species_id) const;
     double species_timestep(std::size_t species_id) const;
     std::uint64_t collision_signature() const;
@@ -283,6 +284,7 @@ private:
     Grid grid_;
     FieldSolver solver_;
     std::vector<Species> species_;
+    std::vector<std::vector<double>> held_charge_density_{};
     std::vector<MccRuntime> mcc_models_;
     bool legacy_bgk_enabled_{false};
     CollisionDiagnostics collision_totals_{};

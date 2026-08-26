@@ -44,6 +44,7 @@ constexpr const char* kCheckpointMagicV20 = "AuroraPIC-checkpoint-v20";
 constexpr const char* kCheckpointMagicV21 = "AuroraPIC-checkpoint-v21";
 constexpr const char* kCheckpointMagicV22 = "AuroraPIC-checkpoint-v22";
 constexpr const char* kCheckpointMagicV23 = "AuroraPIC-checkpoint-v23";
+constexpr const char* kCheckpointMagicV24 = "AuroraPIC-checkpoint-v24";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -875,13 +876,38 @@ double Simulation::species_timestep(std::size_t species_id) const {
 
 void Simulation::deposit_and_solve(double field_time) {
     grid_.clear_charge();
-    for (const auto& sp : species_) sp.deposit_charge(grid_);
+    for (std::size_t species_id = 0; species_id < species_.size();
+         ++species_id) {
+        const auto& sp = species_[species_id];
+        if (cfg_.subcycle_charge_deposition ==
+                SubcycleChargeDeposition1D::PrePushHeld &&
+            sp.config().timestep_multiplier > 1) {
+            if (held_charge_density_.size() != species_.size() ||
+                held_charge_density_[species_id].size() != grid_.nx()) {
+                throw std::logic_error("held subcycle charge cache is missing");
+            }
+            for (std::size_t node = 0; node < grid_.nx(); ++node) {
+                grid_.rho()[node] += held_charge_density_[species_id][node];
+            }
+        } else {
+            sp.deposit_charge(grid_);
+        }
+    }
     solver_.solve(
         grid_,
         electrode_potential(
             cfg_.phi_left, cfg_.phi_left_drive, field_time),
         electrode_potential(
             cfg_.phi_right, cfg_.phi_right_drive, field_time));
+}
+
+void Simulation::refresh_held_charge(std::size_t species_id) {
+    if (species_id >= species_.size()) {
+        throw std::logic_error("held subcycle charge species is invalid");
+    }
+    Grid scratch(grid_.nx(), grid_.length(), grid_.boundary());
+    species_[species_id].deposit_charge(scratch);
+    held_charge_density_[species_id] = std::move(scratch.rho());
 }
 
 void Simulation::initialize() {
@@ -957,6 +983,17 @@ void Simulation::initialize() {
     if (cfg_.phase_eedf.history_enabled) {
         phase_eedf_particle_histories_.assign(
             species_[phase_eedf_species_id_].particles().size(), {});
+    }
+    held_charge_density_.assign(
+        species_.size(), std::vector<double>(grid_.nx(), 0.0));
+    if (cfg_.subcycle_charge_deposition ==
+        SubcycleChargeDeposition1D::PrePushHeld) {
+        for (std::size_t species_id = 0; species_id < species_.size();
+             ++species_id) {
+            if (species_[species_id].config().timestep_multiplier > 1) {
+                refresh_held_charge(species_id);
+            }
+        }
     }
     deposit_and_solve(time_);
     const bool imported_half_step =
@@ -1381,6 +1418,11 @@ void Simulation::step() {
             chunk_power.begin(), chunk_power.end(),
             SpeciesPower1D{});
         if (!species_due(species_id)) continue;
+        if (cfg_.subcycle_charge_deposition ==
+                SubcycleChargeDeposition1D::PrePushHeld &&
+            sp.config().timestep_multiplier > 1) {
+            refresh_held_charge(species_id);
+        }
         const double timestep = species_timestep(species_id);
         if (species_id == phase_eedf_species_id_ &&
             phase_eedf_history_active()) {
@@ -3339,7 +3381,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV23 << '\n';
+    out << kCheckpointMagicV24 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -3351,6 +3393,27 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
         out << ' ' << species.config().timestep_multiplier;
     }
     out << "\n";
+    const bool held = cfg_.subcycle_charge_deposition ==
+        SubcycleChargeDeposition1D::PrePushHeld;
+    const auto held_count = held ? static_cast<std::size_t>(std::count_if(
+        species_.begin(), species_.end(), [](const Species& species) {
+            return species.config().timestep_multiplier > 1;
+        })) : 0;
+    out << "subcycle_charge_deposition "
+        << to_string(cfg_.subcycle_charge_deposition) << ' '
+        << held_count << ' ' << grid_.nx() << "\n";
+    if (held) {
+        for (std::size_t species_id = 0; species_id < species_.size();
+             ++species_id) {
+            if (species_[species_id].config().timestep_multiplier == 1) continue;
+            out << "subcycle_charge_cache " << species_id << ' '
+                << species_[species_id].name();
+            for (const double value : held_charge_density_[species_id]) {
+                out << ' ' << value;
+            }
+            out << "\n";
+        }
+    }
     const bool collisions_enabled =
         legacy_bgk_enabled_ || !mcc_models_.empty();
     const std::uint64_t configured_collision_signature =
@@ -3742,7 +3805,8 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v23 = magic == kCheckpointMagicV23;
+    const bool checkpoint_v24 = magic == kCheckpointMagicV24;
+    const bool checkpoint_v23 = magic == kCheckpointMagicV23 || checkpoint_v24;
     const bool checkpoint_v22 =
         magic == kCheckpointMagicV22 || checkpoint_v23;
     const bool checkpoint_v21 =
@@ -3854,6 +3918,63 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         throw std::runtime_error(
             "legacy checkpoint without species timestep metadata "
             "requires timestep_multiplier = 1");
+    }
+    held_charge_density_.assign(
+        species_.size(), std::vector<double>(grid_.nx(), 0.0));
+    if (checkpoint_v24) {
+        std::string stored_policy;
+        std::size_t stored_count = 0;
+        std::size_t stored_nx = 0;
+        in >> stored_policy >> stored_count >> stored_nx;
+        const auto expected_policy = to_string(cfg_.subcycle_charge_deposition);
+        const auto expected_count =
+            cfg_.subcycle_charge_deposition ==
+                    SubcycleChargeDeposition1D::PrePushHeld
+                ? static_cast<std::size_t>(std::count_if(
+                      species_.begin(), species_.end(), [](const Species& species) {
+                          return species.config().timestep_multiplier > 1;
+                      }))
+                : 0;
+        if (key != "subcycle_charge_deposition" ||
+            stored_policy != expected_policy || stored_count != expected_count ||
+            stored_nx != grid_.nx()) {
+            throw std::runtime_error(
+                "checkpoint subcycle charge-deposition policy does not match 1D config");
+        }
+        std::vector<bool> cache_seen(species_.size(), false);
+        for (std::size_t row = 0; row < stored_count; ++row) {
+            std::size_t species_id = 0;
+            std::string stored_name;
+            in >> key >> species_id >> stored_name;
+            if (key != "subcycle_charge_cache" || species_id >= species_.size() ||
+                species_[species_id].config().timestep_multiplier == 1 ||
+                cache_seen[species_id] ||
+                stored_name != species_[species_id].name()) {
+                throw std::runtime_error("checkpoint held charge cache metadata is invalid");
+            }
+            for (double& value : held_charge_density_[species_id]) {
+                in >> value;
+                if (!std::isfinite(value)) {
+                    throw std::runtime_error("checkpoint held charge cache is invalid");
+                }
+            }
+            cache_seen[species_id] = true;
+            in >> key;
+        }
+        for (std::size_t species_id = 0; species_id < species_.size();
+             ++species_id) {
+            if (species_[species_id].config().timestep_multiplier > 1 &&
+                cfg_.subcycle_charge_deposition ==
+                    SubcycleChargeDeposition1D::PrePushHeld &&
+                !cache_seen[species_id]) {
+                throw std::runtime_error("checkpoint held charge cache is incomplete");
+            }
+        }
+        if (stored_count == 0) in >> key;
+    } else if (cfg_.subcycle_charge_deposition ==
+               SubcycleChargeDeposition1D::PrePushHeld) {
+        throw std::runtime_error(
+            "legacy checkpoint cannot restore held subcycle charge density");
     }
     if (key == "collision_model") {
         std::string model;

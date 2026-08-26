@@ -3092,6 +3092,7 @@ int main() {
                     << "nx = 16\n"
                     << "velocity_dimensions = 3\n"
                     << "collision_velocity_sampling = leapfrog_half_step\n"
+                    << "subcycle_charge_deposition = pre_push_held\n"
                     << "length = 2.0\n"
                     << "dt = 0.01\n"
                     << "output_interval = 2\n"
@@ -3134,6 +3135,10 @@ int main() {
                 cfg.collision_velocity_sampling ==
                     pic::CollisionVelocitySampling1D::LeapfrogHalfStep,
                 "1D config did not load collision velocity sampling");
+            require(
+                cfg.subcycle_charge_deposition ==
+                    pic::SubcycleChargeDeposition1D::PrePushHeld,
+                "1D config did not load subcycle charge-deposition policy");
             require(
                 cfg.spatial_average.sampling_order ==
                     pic::SpatialAverageSamplingOrder1D::PreCollision,
@@ -3540,6 +3545,21 @@ int main() {
                 }
                 std::filesystem::remove(path);
             }, "invalid collision velocity sampling did not throw");
+            require_throws([] {
+                const auto path = std::filesystem::path(
+                    "test_invalid_subcycle_charge_deposition.ini");
+                {
+                    std::ofstream out(path);
+                    out << "subcycle_charge_deposition = extrapolated\n";
+                }
+                try {
+                    (void)pic::load_config(path.string());
+                } catch (...) {
+                    std::filesystem::remove(path);
+                    throw;
+                }
+                std::filesystem::remove(path);
+            }, "invalid subcycle charge-deposition policy did not throw");
         {
             const auto config_3d_path = std::filesystem::path("test_config_3d.ini");
             {
@@ -3840,6 +3860,72 @@ int main() {
             std::filesystem::remove(staggering_checkpoint);
         }
         {
+            const auto checkpoint_path = std::filesystem::path(
+                "test_output_1d_held_subcycle_charge.apc");
+            std::filesystem::remove(checkpoint_path);
+            pic::Config held_cfg;
+            held_cfg.nx = 8;
+            held_cfg.length = 1.0;
+            held_cfg.dt = 0.1;
+            held_cfg.boundary = pic::Boundary::Periodic;
+            held_cfg.subcycle_charge_deposition =
+                pic::SubcycleChargeDeposition1D::PrePushHeld;
+            pic::SpeciesConfig slow;
+            slow.name = "slow";
+            slow.charge = 1.0;
+            slow.mass = 1.0e30;
+            slow.weight = 1.0;
+            slow.particles = 1;
+            slow.density = 1.0;
+            slow.drift_velocity = 1.0;
+            slow.thermal_velocity = 0.0;
+            slow.timestep_multiplier = 3;
+            held_cfg.species = {slow};
+
+            pic::Simulation held(held_cfg);
+            held.initialize();
+            const auto initial_rho = held.grid().rho();
+            const double initial_x = held.species()[0].particles()[0].x;
+            held.step();
+            require(
+                held.species()[0].particles()[0].x != initial_x,
+                "held-density test particle did not move");
+            require(
+                held.grid().rho() == initial_rho,
+                "pre-push held density changed after a due species push");
+
+            auto current_cfg = held_cfg;
+            current_cfg.subcycle_charge_deposition =
+                pic::SubcycleChargeDeposition1D::CurrentPosition;
+            pic::Simulation current(current_cfg);
+            current.initialize();
+            current.step();
+            require(
+                current.grid().rho() != initial_rho,
+                "current-position deposition unexpectedly retained pre-push charge");
+
+            held.save_checkpoint(checkpoint_path);
+            held.step();
+            held.step();
+            pic::Simulation restarted(held_cfg);
+            restarted.load_checkpoint(checkpoint_path);
+            restarted.step();
+            restarted.step();
+            require_species_close(
+                held.species(), restarted.species(),
+                "held subcycle charge checkpoint restart");
+            require(
+                held.grid().rho() == restarted.grid().rho(),
+                "held subcycle charge cache changed across restart");
+            require_throws(
+                [&] {
+                    pic::Simulation incompatible(current_cfg);
+                    incompatible.load_checkpoint(checkpoint_path);
+                },
+                "checkpoint accepted changed subcycle charge-deposition policy");
+            std::filesystem::remove(checkpoint_path);
+        }
+        {
             const auto output_dir =
                 std::filesystem::path(
                     "test_output_1d_boundary_losses");
@@ -3988,8 +4074,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v23\n") == 0,
-                "1D wall-impact checkpoint did not use v23");
+                    "AuroraPIC-checkpoint-v24\n") == 0,
+                "1D wall-impact checkpoint did not use v24");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4077,6 +4163,8 @@ int main() {
                                << remainder << '\n';
                     } else if (
                         line.starts_with("species_timestep_multipliers") ||
+                        line.starts_with("subcycle_charge_deposition") ||
+                        line.starts_with("subcycle_charge_cache") ||
                         line.starts_with("power_transfer") ||
                         line.starts_with("collision_energy_totals") ||
                         line.starts_with("spatial_moments") ||
@@ -4145,6 +4233,8 @@ int main() {
                                << remainder << '\n';
                     } else if (
                         line.starts_with("species_timestep_multipliers") ||
+                        line.starts_with("subcycle_charge_deposition") ||
+                        line.starts_with("subcycle_charge_cache") ||
                         line.starts_with(
                             "boundary_loss") ||
                         line.starts_with(
@@ -4815,7 +4905,7 @@ int main() {
                     "1D threshold-crossing ledger was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v23\n") == 0,
+                    "AuroraPIC-checkpoint-v24\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);

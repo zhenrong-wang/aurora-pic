@@ -150,6 +150,21 @@ CollisionVelocitySampling1D parse_collision_velocity_sampling(
         "invalid collision_velocity_sampling value: '" + value + "'");
 }
 
+SubcycleChargeDeposition1D parse_subcycle_charge_deposition(
+    const KeyValue& values,
+    SubcycleChargeDeposition1D default_policy) {
+    const auto value = lower(trim(as<std::string>(
+        values, "subcycle_charge_deposition", to_string(default_policy))));
+    if (value == "current_position") {
+        return SubcycleChargeDeposition1D::CurrentPosition;
+    }
+    if (value == "pre_push_held") {
+        return SubcycleChargeDeposition1D::PrePushHeld;
+    }
+    throw std::runtime_error(
+        "invalid subcycle_charge_deposition value: '" + value + "'");
+}
+
 std::vector<PhaseEedfRegion1DConfig> parse_phase_eedf_regions(
     const KeyValue& values) {
     const auto found = values.find("phase_eedf_regions");
@@ -1735,7 +1750,7 @@ Config load_config(const std::string& path) {
         "wall_impact_energy_bins",
         "wall_impact_energy_max",
         "max_particles_per_species",
-        "collision_velocity_sampling",
+        "collision_velocity_sampling", "subcycle_charge_deposition",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
         "phi_left_amplitude", "phi_left_frequency", "phi_left_phase",
         "phi_right_amplitude", "phi_right_frequency", "phi_right_phase",
@@ -1896,6 +1911,9 @@ Config load_config(const std::string& path) {
     cfg.collision_velocity_sampling =
         parse_collision_velocity_sampling(
             global, cfg.collision_velocity_sampling);
+    cfg.subcycle_charge_deposition =
+        parse_subcycle_charge_deposition(
+            global, cfg.subcycle_charge_deposition);
     cfg.boundary = parse_boundary(global, cfg.boundary);
     cfg.mode = parse_mode(global, cfg.mode);
     cfg.collisions.enabled = parse_bool(collision, "enabled", cfg.collisions.enabled);
