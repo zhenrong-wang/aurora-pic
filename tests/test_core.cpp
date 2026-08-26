@@ -3906,7 +3906,13 @@ int main() {
 
             held.save_checkpoint(checkpoint_path);
             held.step();
+            require(
+                held.grid().rho() == initial_rho,
+                "held density refreshed before its upcoming due boundary");
             held.step();
+            require(
+                held.grid().rho() != initial_rho,
+                "held density did not refresh for the upcoming due push");
             pic::Simulation restarted(held_cfg);
             restarted.load_checkpoint(checkpoint_path);
             restarted.step();

@@ -1418,11 +1418,6 @@ void Simulation::step() {
             chunk_power.begin(), chunk_power.end(),
             SpeciesPower1D{});
         if (!species_due(species_id)) continue;
-        if (cfg_.subcycle_charge_deposition ==
-                SubcycleChargeDeposition1D::PrePushHeld &&
-            sp.config().timestep_multiplier > 1) {
-            refresh_held_charge(species_id);
-        }
         const double timestep = species_timestep(species_id);
         if (species_id == phase_eedf_species_id_ &&
             phase_eedf_history_active()) {
@@ -1556,6 +1551,17 @@ void Simulation::step() {
                  wall_impact_chunks_[species_id]) {
                 add_wall_impact_side(total.left, chunk.left);
                 add_wall_impact_side(total.right, chunk.right);
+            }
+        }
+    }
+    if (cfg_.subcycle_charge_deposition ==
+        SubcycleChargeDeposition1D::PrePushHeld) {
+        for (std::size_t species_id = 0; species_id < species_.size();
+             ++species_id) {
+            const auto multiplier =
+                species_[species_id].config().timestep_multiplier;
+            if (multiplier > 1 && (step_ + 1) % multiplier == 0) {
+                refresh_held_charge(species_id);
             }
         }
     }
