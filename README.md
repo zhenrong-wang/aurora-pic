@@ -131,6 +131,11 @@ microstates support weaker particle-sampled field strength and less favorable
 positive alignment; origin energy and longitudinal energy partition remain at
 parity. This is a one-case discrepancy localization, not experimental or
 general PIC validation.
+The separately preregistered grid-field discriminator then finds an AuroraPIC
+grid mean-square field ratio of `0.6710` and particle-sampling-factor ratio of
+`1.1957`; all gates pass. Weaker grid fields are therefore supported, while
+differential avoidance of strong-field locations is not. This remains a
+bounded diagnosis in one evolved CCP state.
 The prospectively declared later-window discriminator is summarized in
 `benchmarks/ccp/edupic-argon-heating-trend-cycle80-to116-20260812.json`.
 The subsequent strict continuation and cycle-148 horizon-sufficiency decision

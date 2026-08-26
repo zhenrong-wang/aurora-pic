@@ -53,6 +53,7 @@ PYTHONPATH=scripts python3 scripts/test_run_aurorapic_promotion_band_work.py
 PYTHONPATH=scripts python3 scripts/test_run_aurorapic_mover_decomposition.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_promotion_band_work.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_mover_decomposition.py
+PYTHONPATH=scripts python3 scripts/test_analyze_edupic_grid_field_sampling.py
 PYTHONPATH=scripts python3 scripts/test_analyze_edupic_matched_half_step_replication.py
 PYTHONPATH=scripts python3 scripts/test_audit_edupic_mover_contract.py
 PYTHONPATH=scripts python3 scripts/test_run_aurorapic_phase_aligned_mover.py

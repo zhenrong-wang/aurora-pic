@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "grid_field_vs_particle_sampling_execution_record",
+  "rule_sha256": "2160f9080757215be86c34136b07e7ac08a893b9b3eb0838d9a3d553cca6ce6d",
+  "mover_decomposition_result_sha256": "254ab2713443c32ec4bfaf7893c4336918a93214eaed152ef9187211626863f6",
+  "result_sha256": "529009df1637c33e37e67864d4400d05c7417d6c5b45665351f4151902304f71",
+  "analyzer_sha256": "4969dda0e2054a1423cebd550e8d012f11bd4ad99d3cb06c38e7d0dc197d9749",
+  "formal_outcome": "grid_field_deficit_supported_particle_sampling_deficit_not_supported",
+  "aurorapic_members": [
+    {
+      "id": "microstate_51949_cycle36000",
+      "runner_report_sha256": "192034343ce4daab6924c5cfdbebd9f2b93171bf72ea6de2066cab13560f0686",
+      "spatial_phase_fields_sha256": "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50"
+    },
+    {
+      "id": "microstate_63059_cycle36000",
+      "runner_report_sha256": "94ece822000fdbf54c2de3196d03dc6ec7415c750fca006a1d83939bf61b2704",
+      "spatial_phase_fields_sha256": "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7"
+    }
+  ],
+  "native_members": [
+    {
+      "seed": 13507,
+      "efield_xt_sha256": "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c"
+    },
+    {
+      "seed": 24601,
+      "efield_xt_sha256": "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451"
+    },
+    {
+      "seed": 35713,
+      "efield_xt_sha256": "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+    }
+  ],
+  "resource_contract": {
+    "new_simulation_runs": 0,
+    "analysis_processes": 1,
+    "serial_execution": true
+  },
+  "provenance_note": "The prospective rule was committed before the critical grid-field and sampling-factor reductions were calculated. The analysis reuses checksum-locked production outputs; no simulation was launched and no scope, threshold, metric, or decision rule changed after observing the result."
+}

@@ -3539,6 +3539,41 @@ self-consistent discharge, not independent causal effects and not proof of
 where the two solvers first diverge. The result remains one solver-to-solver
 CCP comparison, not experimental or general PIC validation.
 
+### Grid-field versus particle-sampling discriminator
+
+The quadratic mover term establishes a particle-sampled field-strength
+difference, but by itself cannot distinguish a weaker grid field from a
+different distribution of band electrons within that field. Before reducing
+the existing field outputs, the
+[`grid-field sampling rule`](../benchmarks/ccp/edupic-grid-field-sampling-rule-20260826.json)
+locked both AuroraPIC members, all three native members, exact hashes, the
+`x/L=0.2--0.4` and phase `0.25--0.375` window, spatial boundary interpolation,
+phase reduction, repeatability gates, and `0.90` decision thresholds.
+
+The
+[`prospective result`](../benchmarks/ccp/edupic-grid-field-sampling-result-20260826.json)
+passes every hash, shape, positivity, and repeatability gate. The two
+AuroraPIC/native grid-mean-square-field ratios are `0.6653` and `0.6766`, and
+the ensemble ratio is `0.6710`; the corresponding RMS fields are approximately
+`2.00/2.02 kV/m` versus `2.44--2.47 kV/m` natively. Both members therefore
+satisfy the locked grid-field-deficit rule. In contrast, their conditional
+particle-sampling-factor ratios are `1.1719` and `1.2195`, with an ensemble
+ratio of `1.1957`, so the locked differential-sampling-deficit rule is not
+supported. AuroraPIC relative ranges are `1.69%` and `3.98%`, and native
+ranges are `1.74%` and `2.13%`, respectively.
+
+This is a meaningful diagnostic localization: the approximately `0.8024`
+ensemble quadratic-work ratio is associated with a substantially weaker
+self-consistent phase-mean grid field, not with AuroraPIC band electrons
+preferentially avoiding strong-field positions inside the already localized
+window. Indeed, conditional sampling is modestly higher in AuroraPIC and
+partly offsets the grid-field difference. This does not yet identify when or
+why the grid fields first diverge. The next prospective discriminator should
+compare the charge-density/Poisson inputs and sheath-edge evolution at earlier
+matched checkpoints and phases, before the mature field deficit is present.
+As before, this one-case solver comparison is neither experimental validation
+nor proof of general PIC correctness.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

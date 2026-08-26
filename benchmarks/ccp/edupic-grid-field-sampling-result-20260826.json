@@ -1,0 +1,104 @@
+{
+  "all_hash_shape_repeatability_and_metric_gates_passed": true,
+  "aurorapic_ensemble_mean_to_native_mean_ratios": {
+    "grid_mean_squared_field_V2_m2": 0.6709643951198907,
+    "particle_sampling_factor": 1.1957246155801684
+  },
+  "aurorapic_ensemble_means": {
+    "grid_mean_squared_field_V2_m2": 4045641.743098098,
+    "particle_sampling_factor": 0.5170713433605154
+  },
+  "aurorapic_member_to_native_mean_ratios": [
+    {
+      "grid_mean_squared_field_V2_m2": 0.6652991525102572,
+      "particle_sampling_factor": 1.1719486802057686
+    },
+    {
+      "grid_mean_squared_field_V2_m2": 0.6766296377295241,
+      "particle_sampling_factor": 1.2195005509545682
+    }
+  ],
+  "aurorapic_members": [
+    {
+      "grid_mean_squared_field_V2_m2": 4011482.6399429804,
+      "grid_rms_field_V_m": 2002.8686027652889,
+      "id": "microstate_51949_cycle36000",
+      "particle_sampled_mean_squared_field_V2_m2": 2032978.6177820272,
+      "particle_sampling_factor": 0.5067898331502998
+    },
+    {
+      "grid_mean_squared_field_V2_m2": 4079800.846253215,
+      "grid_rms_field_V_m": 2019.8516891725528,
+      "id": "microstate_63059_cycle36000",
+      "particle_sampled_mean_squared_field_V2_m2": 2151494.6182719166,
+      "particle_sampling_factor": 0.5273528535707311
+    }
+  ],
+  "aurorapic_relative_ranges": {
+    "grid_mean_squared_field_V2_m2": 0.0168868650880385,
+    "particle_sampling_factor": 0.03976824607372271
+  },
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "claim_boundary": "This prospective reduction distinguishes grid-field amplitude from conditional particle sampling in one previously localized region/phase window of one matched argon CCP. It does not identify the first temporal divergence, compare experiment, establish a published benchmark pass, or prove general PIC correctness.",
+  "gates": {
+    "aurorapic_repeatability": true,
+    "finite_positive_metrics": true,
+    "locked_hashes_and_reports": true,
+    "member_counts": true,
+    "native_repeatability": true
+  },
+  "interpretation_note": "Grid fields use squared phase-mean fields in both codes. The particle metric is an exact kick-derived mean E-squared. Their ratio localizes conditional spatial sampling but does not identify the first temporal source of any grid-field divergence.",
+  "native_edupic_ensemble_means": {
+    "grid_mean_squared_field_V2_m2": 6029592.289133622,
+    "particle_sampling_factor": 0.4324334688967085
+  },
+  "native_edupic_members": [
+    {
+      "grid_mean_squared_field_V2_m2": 6029791.574764941,
+      "grid_rms_field_V_m": 2455.5633925364136,
+      "particle_sampled_mean_squared_field_V2_m2": 2611213.970993318,
+      "particle_sampling_factor": 0.43305211110802133,
+      "seed": 13507
+    },
+    {
+      "grid_mean_squared_field_V2_m2": 6081890.4165848065,
+      "grid_rms_field_V_m": 2466.148903976564,
+      "particle_sampled_mean_squared_field_V2_m2": 2656138.587339587,
+      "particle_sampling_factor": 0.4367291097676669,
+      "seed": 24601
+    },
+    {
+      "grid_mean_squared_field_V2_m2": 5977094.876051119,
+      "grid_rms_field_V_m": 2444.809783204231,
+      "particle_sampled_mean_squared_field_V2_m2": 2555322.734945019,
+      "particle_sampling_factor": 0.4275191858144372,
+      "seed": 35713
+    }
+  ],
+  "native_edupic_relative_ranges": {
+    "grid_mean_squared_field_V2_m2": 0.017380203421473086,
+    "particle_sampling_factor": 0.021297898094538012
+  },
+  "prospective_decision_outcome": {
+    "differential_particle_sampling_deficit_supported": false,
+    "grid_field_deficit_supported": true,
+    "interpretation_allowed": true,
+    "result": "grid_field_deficit_supported_particle_sampling_deficit_not_supported"
+  },
+  "provenance": {
+    "analyzer_sha256": "4969dda0e2054a1423cebd550e8d012f11bd4ad99d3cb06c38e7d0dc197d9749",
+    "aurorapic_field_sha256": [
+      "efe3800c7d7cf06d9cfc0e193ae9d88e4dc2745d8b25eef529a26599446d9d50",
+      "53cea70d6916e9b24120666fb2611c22521fb07edee02059e0d2ff184a56f0b7"
+    ],
+    "native_field_sha256": [
+      "2fea5037d7f4ed5fba4cb7e4cd8756a70f9db261d90ed7c7ab5fe5d3a5832c3c",
+      "a1f679aca4f0a25e78bae0898a0166615b324271a97cf28f63d2f90ed61ea451",
+      "41c650eec7414b44dece3e8449bc48320f56ab3e56285a37f8af743871c33e5d"
+    ],
+    "native_result_sha256": "3e2345564c7e5133f45c7e42634ad497811e046ca010892df57474f5079408aa"
+  },
+  "rule_sha256": "2160f9080757215be86c34136b07e7ac08a893b9b3eb0838d9a3d553cca6ce6d",
+  "schema_version": 1,
+  "scope": "aurorapic_edupic_grid_field_vs_particle_sampling_result"
+}
