@@ -3714,6 +3714,12 @@ departure. It is not yet a causal result: the next prospectively locked control
 must make AuroraPIC retain the pre-push ion density and test whether the trace
 collapses toward eduPIC.
 
+That causal test is now prospectively fixed in the
+[`held-density control rule`](../benchmarks/ccp/edupic-ion-density-refresh-control-rule-20260826.json).
+It locks the cache time level, boundary-removal behavior, restart contract,
+early-horizon improvement thresholds, resource envelope, and claim boundary
+before the control implementation or any control output exists.
+
 ## Bounded execution ladder
 
 Case 1 remains the smallest whole-discharge target, but shortening it changes

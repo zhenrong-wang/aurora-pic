@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "case_id": "edupic-1.0-default-argon-ccp",
+  "scope": "prospective_collision_free_ion_density_refresh_control",
+  "question": "Does retaining each subcycled species' pre-push charge density remove the immediate common-state field divergence from eduPIC?",
+  "basis": {
+    "common_state_rule_sha256": "88c7c12718d087cb442b544c394dae07546d0bcf76642951429dfcb3647547d0",
+    "common_state_result_sha256": "f303d59f2e38374a64d5bceaa4db14ab7cea4da529bfc5cd5fc9287e8cc97f49",
+    "common_state_execution_sha256": "6409881d828b431a171050887e2ee73c55dca1e903066f38865cf94b43215c3c",
+    "aurorapic_parent_commit": "aa6eebeb82eb7b47a435991881c18f532f3e4655",
+    "observed_before_declaration": "Initial common-state charge and field parity passed. The localized field metric diverged at horizon 1 while populations remained identical through horizon 100. Source inspection found that eduPIC retains pre-push ion density across the 20-step ion subcycle while AuroraPIC deposits moved ions. No held-density AuroraPIC implementation or output has been produced or observed."
+  },
+  "locked_inputs": {
+    "particle_state_sha256": "8cb8812fcd017d6e228dc42ec2430a783c948f52367144c2f1fa339f2af9d49a",
+    "particle_state_signature": 14415241886702705324,
+    "native_trace_sha256": "72b4e6ba19eb9c518aa920ea461943d3611de6c09ce328a59fef382964c49cda",
+    "native_population_sha256": "415984f10ff3d02af1c77a092661795286ee238521e53458ede73a80363cc520",
+    "baseline_aurorapic_report_sha256": "d1b3c0b0a2d16981629fb0d4dd6e270b23c2388a41c17a70456a995645b13717",
+    "baseline_result_sha256": "f303d59f2e38374a64d5bceaa4db14ab7cea4da529bfc5cd5fc9287e8cc97f49"
+  },
+  "implementation_contract": {
+    "configuration": "Add an explicit 1D-only subcycle charge-deposition policy; the production default remains deposition from current particle positions and the control selects pre_push_held.",
+    "pre_push_held_semantics": "For every species with timestep_multiplier greater than one, cache its deposited charge immediately before each due particle push and use that cache in every field solve until its next due push. Species with multiplier one are deposited from current post-push positions.",
+    "initialization": "Initialize every held charge cache from the imported common-state positions before the first push.",
+    "boundaries": "A particle removed during a subcycled push remains represented in the held cache until the next cache refresh, matching the declared density time level.",
+    "restart": "The policy and held per-species nodal charge arrays are checkpointed and restored exactly; changing the policy across restart is rejected.",
+    "default_invariance": "With the default current-position policy, existing deterministic tests and the full conservative regression must remain unchanged.",
+    "scope_limit": "Do not change 2D, 3D, imported-mesh, collision, pusher, boundary, field-solver, or diagnostic semantics."
+  },
+  "sampling_contract": {
+    "edupic_pre_push_steps": [1, 2, 3, 6, 11, 21, 51, 101, 201, 401, 801, 1601, 2401, 3201, 4000],
+    "matching_aurorapic_post_step_horizons": [0, 1, 2, 5, 10, 20, 50, 100, 200, 400, 800, 1600, 2400, 3200, 3999],
+    "early_control_horizons": [1, 2, 5],
+    "same_reductions_as_common_state_result": true
+  },
+  "prospective_decision_rule": {
+    "integrity_gate": "All locked hashes, output shapes, coordinates, populations, finite values, implementation tests, checkpoint tests, and resource limits pass; the control binary hash is recorded before execution.",
+    "initial_parity_gate": "The horizon-zero charge and field relative RMS are each at most 2e-6 and the critical field-energy ratio lies in [0.995,1.005].",
+    "strong_mechanism_support_if": "At each of horizons 1, 2, and 5, absolute critical-field log-ratio error is at most 20% of baseline and full-domain field relative RMS does not exceed baseline; populations match native at those horizons.",
+    "early_divergence_explained_if": "Strong mechanism support passes and no material field-divergence flag occurs through horizon 20.",
+    "partial_mechanism_support_if": "Strong support fails, but the median early absolute critical-field log-ratio error is at most 50% of the baseline median and no early full-domain field relative RMS exceeds 120% of baseline.",
+    "mechanism_not_supported_if": "The partial-support rule fails after all integrity and initial-parity gates pass.",
+    "inconclusive_if": "Any integrity or initial-parity gate fails.",
+    "material_field_divergence": "Unchanged from the parent rule: full-domain field relative RMS greater than 0.01 or critical field-energy ratio outside [0.98,1.02]."
+  },
+  "execution_contract": {
+    "serial": true,
+    "maximum_simultaneous_processes": 1,
+    "address_space_limit_kib": 524288,
+    "maximum_peak_resident_set_kib": 262144,
+    "timeout_seconds_each_aurorapic_horizon": 180,
+    "run_order": "Execute focused unit and checkpoint tests, record the control binary hash, then execute horizons in ascending order."
+  },
+  "claim_boundary": "This control can causally attribute the immediate deterministic collision-free 1D common-state discrepancy to charge-density refresh staggering if its prospective gates pass. It cannot establish collision equivalence, experimental agreement, a published Turner benchmark pass, correctness in other states or dimensions, or general PIC validity.",
+  "physics_claim": "none_until_control_outputs_and_all_gates_complete"
+}
