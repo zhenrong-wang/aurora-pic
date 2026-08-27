@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_three_seed_corrected_schedule_density_stationarity_discriminator",
+  "observed_before_declaration": {
+    "fresh_ensemble_result_sha256": "e871185517baf1dfc84fa66ec3d47e69903262f193eb33eddc9728c2491c92ad",
+    "fresh_ensemble_classification": "published_profile_confirmation_failed",
+    "fresh_member_integrated_bias_percent": [-2.9165764271151584, -1.2227854967634677, -2.0216769316105054],
+    "fresh_member_x_squared": [640.6733935375286, 162.30387199290456, 329.693731818571],
+    "continuation_windows_observed": false
+  },
+  "locked_software": {
+    "solver_source_commit": "0ce60b23733576b8c2f42242c5a6fc16ce844fb5",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "window_preparer_sha256": "ee796ba002373b61ac3a5bd840a9332df2d70cf1ff97eb09aa23708ebb250184",
+    "density_block_analyzer_sha256": "143054b434470b7f4823bc8eef0ad4d48a629550ec6f2303ad759d335ec5fe5d",
+    "turner_comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c",
+    "balance_analyzer_sha256": "8268cec6b89f8ed1c1a9c0c1cef2861d680482ab26e846ecdc8957477a04fa40"
+  },
+  "locked_reference": {
+    "published_profile_sha256": "7bd2f942a29a1431a02dd19724c35ae34f982ab82a2e7b03cb790fefc7400014",
+    "normalization_audit_sha256": "29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740"
+  },
+  "locked_initial_states": [
+    {
+      "seed": 162631810,
+      "base_config_sha256": "98ce739c50fd86ffaaa0c90eb22c4e455a46c52bc2131e3e90296440a50883a3",
+      "checkpoint_step": 512000,
+      "checkpoint_sha256": "8fcd5a1ec25bf956ac95dc9ceabe51b5bcfc522183c620603148e79ce0c6ae3b"
+    },
+    {
+      "seed": 500474954,
+      "base_config_sha256": "2896d449985ceaae8eb1e05a48aa67dcb00cfbbbf691251e7299cf2ea7326db4",
+      "checkpoint_step": 512000,
+      "checkpoint_sha256": "d8ef80793bf80a0d673a3878c76549797f67f08d6f9697119e8c55eb67d57c69"
+    },
+    {
+      "seed": 3662142586,
+      "base_config_sha256": "d5e7d88a7380371577ebba6ba16d5241821b18c7380493ca3b281c78f53210d2",
+      "checkpoint_step": 512000,
+      "checkpoint_sha256": "af03cf817e7b11dc16c8019d1bdc2212d571303ab971d86ea87bd00d6b4fe19c"
+    }
+  ],
+  "continuation_contract": {
+    "collision_opportunity_sampling": "single_bernoulli",
+    "blocks_per_seed": 16,
+    "rf_cycles_per_block": 32,
+    "steps_per_rf_cycle": 400,
+    "steps_per_block": 12800,
+    "first_window_start_step": 512001,
+    "final_window_end_step": 716800,
+    "spatial_average_interval": 1,
+    "reset_average_on_every_restart": true,
+    "contiguous_checkpoint_chain_required": true,
+    "published_acceptance_applicable": false
+  },
+  "per_seed_stationarity_gates": {
+    "minimum_total_blocks": 16,
+    "minimum_ar1_effective_blocks": 8.0,
+    "maximum_absolute_projected_fractional_drift": 0.01,
+    "maximum_absolute_split_half_fractional_change": 0.01,
+    "maximum_adjacent_profile_relative_l2": 0.025,
+    "basis": "Existing analyze_turner_density_blocks.py version-2 thresholds, declared before these corrected-schedule windows."
+  },
+  "cross_seed_discriminator": {
+    "density_equivalence_fraction": 0.01,
+    "slow_mode_resolved_toward_reference": "All three per-seed stationarity screens pass, the absolute combined 48-window integrated-density bias is at most 1 percent, and the maximum difference among the three seed-mean integrated biases is at most 1 percentage point.",
+    "stationary_persistent_model_bias_supported": "All three per-seed stationarity screens pass, every seed-mean integrated bias has the same sign, and the absolute combined 48-window integrated-density bias exceeds 1 percent.",
+    "slow_mode_not_resolved": "Any per-seed stationarity screen fails or remains incomplete.",
+    "mixed_stationary_outcome": "All stationarity screens pass but neither resolved nor persistent-bias conditions hold."
+  },
+  "integrity_gates": {
+    "exact_species_source_loss_balance_every_block": true,
+    "all_profiles_and_metadata_finite": true,
+    "all_windows_complete_and_contiguous": true,
+    "all_checkpoint_and_tool_hashes_match": true
+  },
+  "execution_contract": {
+    "maximum_concurrent_processes": 1,
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_kib_each": 1048576,
+    "maximum_peak_resident_set_kib_each": 262144,
+    "maximum_wall_seconds_each_block": 600,
+    "minimum_available_memory_kib_before_each_block": 2097152,
+    "minimum_free_disk_gib_before_each_block": 10,
+    "stop_after_integrity_failure": true,
+    "continue_after_diagnostic_threshold_failure": true
+  },
+  "repair_policy": "Do not modify collision rates, cross sections, particle weights, boundary physics, or acceptance thresholds during this campaign. If stationary persistent bias is supported, audit the next independently specified Turner algorithm mismatch before changing code. If slow nonstationarity remains, improve equilibration/uncertainty methodology rather than tune physics.",
+  "claim_boundary": "These post-published-duration windows diagnose slow stochastic state evolution and persistent amplitude bias. They cannot replace or retrospectively change any published-duration acceptance result and do not establish experimental or general PIC validation."
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-27T05:30:31Z",
+  "status": "preregistered_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-corrected-density-continuation-rule-20260827.json",
+    "sha256": "d2481dd5b99bbf4109f7b9cd30a5c621a106aedfd253d70d512fd18bab3c4b76"
+  },
+  "work_directory": "tmp/turner-case1-corrected-density-continuation-20260827",
+  "work_directory_absent": true,
+  "execution_order": {
+    "seeds": [162631810, 500474954, 3662142586],
+    "blocks_each": 16,
+    "block_order": "ascending within each seed",
+    "maximum_concurrent_processes": 1
+  },
+  "command_identity": {
+    "window_preparer": "scripts/prepare_turner_density_window.py",
+    "window_preparer_sha256": "ee796ba002373b61ac3a5bd840a9332df2d70cf1ff97eb09aa23708ebb250184",
+    "solver_binary": "build/aurorapic_cli",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283",
+    "turner_comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c",
+    "balance_analyzer_sha256": "8268cec6b89f8ed1c1a9c0c1cef2861d680482ab26e846ecdc8957477a04fa40",
+    "density_block_analyzer_sha256": "143054b434470b7f4823bc8eef0ad4d48a629550ec6f2303ad759d335ec5fe5d"
+  },
+  "resource_envelope": {
+    "available_memory_gib_before_campaign": 17,
+    "available_disk_gib_before_campaign": 90,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "timeout_seconds_each": 600
+  },
+  "recovery_boundary": "A block is admitted to the chain only after its solver exits zero, final checkpoint and exact averaging artifacts exist, its post-benchmark comparison and exact balance reports are written, and its hashes are recorded. Any incomplete block directory is excluded and must be recovered from the preceding admitted checkpoint without changing physics."
+}
