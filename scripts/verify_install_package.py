@@ -180,6 +180,10 @@ def smoke_install_tree(
     )
     require_file(
         prefix / "share" / "aurorapic" / "scripts" /
+        "prepare_turner_density_window.py"
+    )
+    require_file(
+        prefix / "share" / "aurorapic" / "scripts" /
         "prepare_turner_ensemble.py"
     )
     require_file(

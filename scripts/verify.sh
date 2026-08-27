@@ -121,6 +121,7 @@ python3 scripts/test_hall_runtime_qualification.py build/aurorapic_cli
 python3 scripts/test_turner_balance.py
 python3 scripts/test_compare_turner.py
 python3 scripts/test_turner_density_blocks.py
+python3 scripts/test_prepare_turner_density_window.py
 python3 scripts/test_prepare_turner_ensemble.py
 python3 scripts/test_attach_turner_ensemble_result.py
 python3 scripts/test_analyze_turner_ensemble.py
