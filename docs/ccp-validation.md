@@ -472,6 +472,35 @@ multi-seed coverage, asymptotic convergence, or evidence for every gas,
 geometry, dimension, and plasma regime. The checksum-pinned decision record is
 [`turner-case1-single-bernoulli-full-result-20260826.json`](../benchmarks/ccp/turner-case1-single-bernoulli-full-result-20260826.json).
 
+### Fresh-seed robustness result
+
+The individual acceptance was followed by a prospectively locked ensemble of
+three previously unused, deterministically derived seeds. The confirmation
+rule required at least two members inside the published 95% interval, all
+three inside the 99% interval, exact source/loss balance, less than 1.5%
+population change over every final window, and less than 3% differences in
+electron power, ion power, and mean ion current.
+
+The three `X²` values are `640.673`, `162.304`, and `329.694`: one member
+passes at 95%, one passes at 99% only, and one fails at 99%. The preregistered
+profile confirmation therefore **fails**. All execution, provenance,
+resource, balance, population-drift, and power/current gates pass, so the
+negative result cannot be attributed to an incomplete trajectory or failed
+integrity check. Integrated density biases are all negative, from -2.917% to
+-1.223%, with a mean of -2.054%; the corrected ensemble-mean profile has
+2.730% relative L2 error.
+
+The earlier seed-13507 result remains a valid individual published-statistic
+acceptance, but it cannot be promoted to seed-robust verification. The
+collision scheduling correction removed the old ensemble's uniformly positive
+density bias and revealed a remaining negative amplitude bias plus material
+seed-to-seed spread. The next discriminator is a preregistered sequence of
+consecutive 32-cycle density windows continued from these exact final states,
+which can distinguish a slow finite-duration density mode from a persistent
+model discrepancy more efficiently than launching additional fresh 1,280-cycle
+seeds. The complete negative decision record is
+[`turner-case1-single-bernoulli-confirmation-ensemble-result-20260827.json`](../benchmarks/ccp/turner-case1-single-bernoulli-confirmation-ensemble-result-20260827.json).
+
 ## Post-benchmark source/wall diagnostic
 
 Checkpoint v6 wall accounting was introduced after the exact 1,280-cycle run,

@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_fresh_seed_full_length_confirmation_ensemble",
+  "formal_classification": "published_profile_confirmation_failed",
+  "physics_claim": "fresh_seed_robustness_not_established",
+  "preregistration": {
+    "rule_path": "benchmarks/ccp/turner-case1-single-bernoulli-confirmation-ensemble-rule-20260826.json",
+    "rule_sha256": "e6e0a481b7148f3b4a8b419a20c5dd0f19566952034a01d8e1570d52da2e2fa5",
+    "execution_lock_path": "benchmarks/ccp/turner-case1-single-bernoulli-confirmation-ensemble-execution-lock-20260826.json",
+    "execution_lock_sha256": "e8075a618bb5ba3885ce66bacde8e0d46a99216db6b678b46d1dc17387bfe34c",
+    "committed_before_launch": "9b94e63",
+    "fresh_seed_outcomes_observed_before_declaration": false
+  },
+  "ensemble_execution": {
+    "expected_members": 3,
+    "completed_members": 3,
+    "verified_members": 3,
+    "sequential_only": true,
+    "collision_opportunity_sampling": "single_bernoulli",
+    "steps_each": 512000,
+    "rf_cycles_each": 1280,
+    "averaging_samples_each": 12800,
+    "all_exit_status_zero": true,
+    "all_resource_gates_passed": true,
+    "all_provenance_gates_passed": true
+  },
+  "members": [
+    {
+      "seed": 162631810,
+      "x_squared": 640.6733935375286,
+      "accepted_95_percent": false,
+      "accepted_99_percent": false,
+      "relative_l2": 0.03747967590602164,
+      "integrated_ion_density_bias_percent": -2.9165764271151584,
+      "source_loss_balance_exact": true,
+      "final_window_population_change_fraction": -0.004578091034846188,
+      "electron_power_relative_difference": -0.015999102392228015,
+      "ion_power_relative_difference": -0.00695824883742846,
+      "mean_ion_current_relative_difference": -0.011891607253612158,
+      "elapsed_wall_time": "1:12:41",
+      "peak_resident_set_kib": 15688,
+      "checkpoint_sha256": "8fcd5a1ec25bf956ac95dc9ceabe51b5bcfc522183c620603148e79ce0c6ae3b",
+      "profile_sha256": "3a9ce8ae3f81096d98d698db228e8ac226fb4d3f102b180cdbb225dfd28e59a3",
+      "comparison_sha256": "f4375fe3f0d0ecc7e39ce8d159a8ad97033e95aedaed7acfce04d659d03a78d1",
+      "balance_sha256": "f599af5501ef6e4681b6851634d26a1d369bc38d116763469675036d6c3657a7",
+      "attachment_sha256": "148c65e9b8285e16ca252e5c7493a26ce71b23bef848b9ad67cbbaaa96c19cf4"
+    },
+    {
+      "seed": 500474954,
+      "x_squared": 162.30387199290456,
+      "accepted_95_percent": true,
+      "accepted_99_percent": true,
+      "relative_l2": 0.021663978049781762,
+      "integrated_ion_density_bias_percent": -1.2227854967634677,
+      "source_loss_balance_exact": true,
+      "final_window_population_change_fraction": -0.005306928129955035,
+      "electron_power_relative_difference": -0.009029072447229503,
+      "ion_power_relative_difference": 0.0020449016221186778,
+      "mean_ion_current_relative_difference": -0.001181724440249221,
+      "elapsed_wall_time": "1:10:43",
+      "peak_resident_set_kib": 15680,
+      "checkpoint_sha256": "d8ef80793bf80a0d673a3878c76549797f67f08d6f9697119e8c55eb67d57c69",
+      "profile_sha256": "36cee6025cd744cbec73d95f424da2ce203f9318fc3bb5f5f47a1d03daefe889",
+      "comparison_sha256": "868776e70ce55898cee6bec6bf2106f947712b9c6ec8c5a5f2f9bb4e1e3bdbf3",
+      "balance_sha256": "229cdf0bb5c43171a59d0849049e2501612e7a43f85e16fdd0470debb16eca32",
+      "attachment_sha256": "897439cd9270825052853d321b6bf1b7d5a91563fa15800bc395cead7e25d3fe"
+    },
+    {
+      "seed": 3662142586,
+      "x_squared": 329.693731818571,
+      "accepted_95_percent": false,
+      "accepted_99_percent": true,
+      "relative_l2": 0.026087091659378198,
+      "integrated_ion_density_bias_percent": -2.0216769316105054,
+      "source_loss_balance_exact": true,
+      "final_window_population_change_fraction": 0.012471954599445612,
+      "electron_power_relative_difference": -0.007032125263783606,
+      "ion_power_relative_difference": -0.006466585154641602,
+      "mean_ion_current_relative_difference": -0.010796278329519127,
+      "elapsed_wall_time": "1:11:31",
+      "peak_resident_set_kib": 15624,
+      "checkpoint_sha256": "af03cf817e7b11dc16c8019d1bdc2212d571303ab971d86ea87bd00d6b4fe19c",
+      "profile_sha256": "0a87e7f11c2e5d4b1209fa4f0fb87560a4b2c046f5de5522ccf97cc9a5b6d176",
+      "comparison_sha256": "2e8bbada750af8f369cbe5a81f88ee60de54c106b7add138fea5315e850652d0",
+      "balance_sha256": "550802ee311fce3effec9bfe0453cb8f582e5c8d11d88c1b82907fbb8b675be8",
+      "attachment_sha256": "ab013d9bbd8404caa28eb2a83170dd5bc1914ed5ad7216d2aad21599dedef266"
+    }
+  ],
+  "published_profile_ensemble": {
+    "members_within_95_percent": 1,
+    "required_members_within_95_percent": 2,
+    "members_within_99_percent": 2,
+    "required_members_within_99_percent": 3,
+    "x_squared_mean": 377.55699911633474,
+    "x_squared_minimum": 162.30387199290456,
+    "x_squared_maximum": 640.6733935375286,
+    "ensemble_mean_profile_relative_l2": 0.02730395647305903,
+    "integrated_bias_percent_mean": -2.053679618496377,
+    "integrated_bias_percent_sample_stddev": 0.8473488407446769,
+    "all_integrated_biases_negative": true,
+    "primary_rule_passed": false
+  },
+  "supplemental_integrity": {
+    "all_source_loss_balances_exact": true,
+    "maximum_absolute_population_change_fraction": 0.012471954599445612,
+    "population_change_limit": 0.015,
+    "maximum_absolute_electron_power_relative_difference": 0.015999102392228015,
+    "maximum_absolute_ion_power_relative_difference": 0.00695824883742846,
+    "maximum_absolute_mean_ion_current_relative_difference": 0.011891607253612158,
+    "power_and_current_limit": 0.03,
+    "all_supplemental_gates_passed": true
+  },
+  "combined_corrected_schedule_context": {
+    "includes_prior_preregistered_seed_13507": true,
+    "total_full_length_seeds": 4,
+    "members_within_95_percent": 2,
+    "members_within_99_percent": 3,
+    "members_outside_99_percent": 1,
+    "interpretation": "The earlier seed-13507 acceptance remains valid as an individual result, but the fresh ensemble demonstrates that it cannot be promoted to a seed-robust verification claim."
+  },
+  "artifact_provenance": {
+    "ensemble_manifest_sha256": "a23de421edb3c0ecdad061e09dc8e35997f50f1272abc81726187d16871fb360",
+    "generic_ensemble_analysis_sha256": "2ddcdf232173dbc199d8c070d8008d9a8c824f31a87e81fdc87a04e25a19527d",
+    "averaging_metadata_sha256_each": "e9329918fc5a726e460d0f7ebc05fdd1d488ef681eb049b95588bc37054d0c0a",
+    "solver_binary_sha256": "9e6475224529d60776c367b7375318fffb1976fea2a89fcf86116383f0517283"
+  },
+  "scientific_interpretation": {
+    "established": [
+      "All three fresh full-length corrected-schedule simulations executed reproducibly with exact source/loss balance and close independent power/current observables.",
+      "The collision-schedule correction removed the prior ensemble's uniformly positive density bias; all fresh corrected members instead have negative integrated density bias."
+    ],
+    "not_established": [
+      "Seed-robust statistical consistency with the Turner Case 1 published density ensemble.",
+      "Whether the remaining profile spread is a slow finite-duration density mode, a residual physical-model mismatch, or both."
+    ],
+    "next_discriminator": "Continue the three checksum-pinned final states through multiple consecutive 32-cycle density windows under the unchanged corrected physics. Predeclare drift and between-window variability gates before execution; do not launch more fresh 1280-cycle seeds until the slow-mode hypothesis is resolved."
+  },
+  "claim_boundary": "This complete negative result rejects the preregistered fresh-seed robustness claim for Turner Case 1 while retaining the valid individual acceptance and strong conservation/global-observable evidence. It neither proves a specific remaining defect nor invalidates AuroraPIC outside this benchmark."
+}
