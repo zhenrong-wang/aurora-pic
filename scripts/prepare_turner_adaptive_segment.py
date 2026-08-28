@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare (but never launch) the first locked Turner adaptive segment."""
+"""Prepare, but never launch, a locked Turner adaptive segment."""
 
 from __future__ import annotations
 
@@ -91,6 +91,9 @@ def prepare(args: argparse.Namespace) -> dict:
     deck = args.output_config.resolve()
     report_path = args.report.resolve()
     output_dir = args.output_dir.resolve()
+    prior_progress_arg = getattr(args, "prior_progress", None)
+    prior_progress_path = (prior_progress_arg.resolve()
+                           if prior_progress_arg is not None else None)
     for path, label in ((rule_path, "rule"), (lock_path, "execution lock"),
                         (base, "base config"), (checkpoint, "checkpoint"),
                         (solver, "solver")):
@@ -114,16 +117,7 @@ def prepare(args: argparse.Namespace) -> dict:
     initial = next((value for value in rule.get("locked_initial_states", [])
                     if value.get("seed") == args.seed), None)
     require(isinstance(initial, dict), "seed has no locked initial state")
-    require(initial.get("base_config_sha256") == sha256(base),
-            "base config hash differs from the locked state")
-    require(initial.get("checkpoint_sha256") == sha256(checkpoint),
-            "checkpoint hash differs from the locked state")
     magic, source_step = checkpoint_step(checkpoint)
-    require(source_step == initial.get("checkpoint_step"),
-            "checkpoint step differs from the locked state")
-    require(magic.startswith("AuroraPIC-checkpoint-v") and magic !=
-            "AuroraPIC-checkpoint-v25",
-            "first adaptive segment requires the locked pre-v25 checkpoint")
 
     rf = rule["rf_contract"]
     adaptive = rule["adaptive_equilibration"]
@@ -131,10 +125,72 @@ def prepare(args: argparse.Namespace) -> dict:
     cycles_per_block = int(rf["cycles_per_block"])
     segment_blocks = int(adaptive["execution_segment_blocks"])
     maximum_blocks = int(adaptive["maximum_blocks_per_seed"])
+    initial_step = int(initial["checkpoint_step"])
+    segment_index = 1
+    completed_blocks = 0
+    imports_prior_samples = False
+    if prior_progress_path is None:
+        require(initial.get("base_config_sha256") == sha256(base),
+                "base config hash differs from the locked state")
+        require(initial.get("checkpoint_sha256") == sha256(checkpoint),
+                "checkpoint hash differs from the locked state")
+        require(source_step == initial_step,
+                "checkpoint step differs from the locked state")
+        require(magic.startswith("AuroraPIC-checkpoint-v") and magic !=
+                "AuroraPIC-checkpoint-v25",
+                "first segment requires the locked pre-v25 checkpoint")
+    else:
+        require(prior_progress_path.is_file(),
+                f"prior progress does not exist: {prior_progress_path}")
+        progress = load_json(prior_progress_path, "prior progress")
+        require(progress.get("case_id") == rule.get("case_id"),
+                "prior progress case differs from the rule")
+        require(progress.get("rule", {}).get("sha256") == sha256(rule_path),
+                "prior progress does not match the rule")
+        require(progress.get("execution_lock", {}).get("sha256") ==
+                sha256(lock_path),
+                "prior progress does not match the execution lock")
+        admitted = sorted(
+            (value for value in progress.get("admitted_segments", [])
+             if value.get("seed") == args.seed),
+            key=lambda value: value.get("segment", 0))
+        require(admitted, "prior progress has no admitted segment for seed")
+        require([value.get("segment") for value in admitted] ==
+                list(range(1, len(admitted) + 1)),
+                "prior admitted segment sequence is not contiguous")
+        require(all(value.get("integrity", {}).get("admitted") is True
+                    for value in admitted),
+                "prior progress contains an unadmitted segment")
+        previous = admitted[-1]
+        require(previous.get("classification") ==
+                "admitted_horizon_incomplete",
+                "prior segment does not authorize continuation")
+        completed_blocks = sum(int(value.get("blocks", 0))
+                               for value in admitted)
+        require(0 < completed_blocks < maximum_blocks,
+                "prior block count cannot be continued")
+        require(previous.get("generated_deck_sha256") == sha256(base),
+                "base config does not match the prior admitted deck")
+        require(previous.get("output_checkpoint_sha256") ==
+                sha256(checkpoint),
+                "checkpoint does not match the prior admitted output")
+        require(source_step == previous.get("end_step"),
+                "checkpoint step differs from prior admitted endpoint")
+        require(source_step == initial_step + completed_blocks *
+                cycles_per_block * steps_per_cycle,
+                "prior endpoint is inconsistent with its block count")
+        require(magic == "AuroraPIC-checkpoint-v25",
+                "continuation requires a v25 convergence checkpoint")
+        segment_index = int(previous["segment"]) + 1
+        imports_prior_samples = True
+
     require(source_step % steps_per_cycle == 0,
             "checkpoint is not at the locked RF phase")
-    target_step = source_step + segment_blocks * cycles_per_block * steps_per_cycle
-    maximum_step = source_step + maximum_blocks * cycles_per_block * steps_per_cycle
+    blocks_this_segment = min(segment_blocks, maximum_blocks - completed_blocks)
+    target_step = (source_step + blocks_this_segment * cycles_per_block *
+                   steps_per_cycle)
+    maximum_step = (initial_step + maximum_blocks * cycles_per_block *
+                    steps_per_cycle)
 
     text = base.read_text(encoding="utf-8")
     require(global_value(text, "config_version") == "1" and
@@ -164,7 +220,8 @@ def prepare(args: argparse.Namespace) -> dict:
         "spatial_average_rf_frequency": str(int(rf["frequency_hz"])),
         "spatial_average_rf_cycles": str(cycles_per_block),
         "periodic_convergence": "true",
-        "periodic_convergence_reset_on_restart": "true",
+        "periodic_convergence_reset_on_restart": (
+            "false" if imports_prior_samples else "true"),
         "periodic_convergence_rf_frequency": str(int(rf["frequency_hz"])),
         "periodic_convergence_cycles_per_block": str(cycles_per_block),
         "periodic_convergence_minimum_blocks": str(
@@ -184,7 +241,7 @@ def prepare(args: argparse.Namespace) -> dict:
     report = {
         "schema_version": 1,
         "case_id": rule["case_id"],
-        "scope": "locked_adaptive_convergence_first_segment_preflight",
+        "scope": "locked_adaptive_convergence_segment_preflight",
         "rule": {"path": str(rule_path), "sha256": sha256(rule_path)},
         "execution_lock": {"path": str(lock_path),
                            "sha256": sha256(lock_path)},
@@ -194,14 +251,21 @@ def prepare(args: argparse.Namespace) -> dict:
                    "checkpoint": str(checkpoint),
                    "checkpoint_sha256": sha256(checkpoint),
                    "checkpoint_magic": magic, "source_step": source_step},
-        "segment": {"index": 1, "blocks": segment_blocks,
+        "segment": {"index": segment_index, "blocks": blocks_this_segment,
+                    "prior_admitted_blocks": completed_blocks,
+                    "target_cumulative_blocks": (
+                        completed_blocks + blocks_this_segment),
                     "start_step": source_step + 1,
                     "target_step": target_step,
                     "maximum_campaign_step": maximum_step},
         "generated_deck": str(deck),
         "generated_deck_sha256": sha256(deck),
         "output_dir": str(output_dir),
-        "periodic_convergence_epoch_imports_prior_samples": False,
+        "prior_progress": ({"path": str(prior_progress_path),
+                            "sha256": sha256(prior_progress_path)}
+                           if prior_progress_path is not None else None),
+        "periodic_convergence_epoch_imports_prior_samples":
+            imports_prior_samples,
         "launched": False,
         "physics_claim": "none_preparation_only"
     }
@@ -217,6 +281,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--base-config", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument("--prior-progress", type=Path)
     parser.add_argument("--solver", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--output-config", type=Path, required=True)

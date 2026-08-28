@@ -93,6 +93,7 @@ def main() -> None:
         args = argparse.Namespace(
             rule=rule_path, execution_lock=lock_path, seed=7,
             base_config=base, checkpoint=checkpoint, solver=solver,
+            prior_progress=None,
             output_dir=root / "run", output_config=root / "segment.cfg",
             report=root / "preflight.json",
             acknowledge_cost=subject.ACKNOWLEDGEMENT)
@@ -105,6 +106,65 @@ def main() -> None:
         assert "periodic_convergence_reset_on_restart = true" in deck
         assert "spatial_average_start_step = 103201" in deck
         assert "periodic_convergence_minimum_effective_blocks = 8.0" in deck
+
+        continuation_checkpoint = root / "checkpoint_103200.apc"
+        continuation_checkpoint.write_text(
+            "AuroraPIC-checkpoint-v25\ndimension 1\nstep 103200\n",
+            encoding="utf-8")
+        progress_path = root / "progress.json"
+        progress = {
+            "case_id": rule["case_id"],
+            "rule": {"sha256": subject.sha256(rule_path)},
+            "execution_lock": {"sha256": subject.sha256(lock_path)},
+            "admitted_segments": [{
+                "seed": 7,
+                "segment": 1,
+                "blocks": 8,
+                "end_step": 103200,
+                "generated_deck_sha256": subject.sha256(args.output_config),
+                "output_checkpoint_sha256": subject.sha256(
+                    continuation_checkpoint),
+                "integrity": {"admitted": True},
+                "classification": "admitted_horizon_incomplete",
+            }],
+        }
+        progress_path.write_text(json.dumps(progress), encoding="utf-8")
+        continuation = argparse.Namespace(
+            rule=rule_path, execution_lock=lock_path, seed=7,
+            base_config=args.output_config,
+            checkpoint=continuation_checkpoint, solver=solver,
+            prior_progress=progress_path,
+            output_dir=root / "run_2",
+            output_config=root / "segment_2.cfg",
+            report=root / "preflight_2.json",
+            acknowledge_cost=subject.ACKNOWLEDGEMENT)
+        continuation_report = subject.prepare(continuation)
+        assert continuation_report["segment"]["index"] == 2
+        assert continuation_report["segment"]["prior_admitted_blocks"] == 8
+        assert continuation_report["segment"]["target_step"] == 205600
+        assert continuation_report[
+            "periodic_convergence_epoch_imports_prior_samples"] is True
+        continuation_deck = continuation.output_config.read_text(
+            encoding="utf-8")
+        assert "max_steps = 205600" in continuation_deck
+        assert "periodic_convergence_reset_on_restart = false" in (
+            continuation_deck)
+
+        tampered_checkpoint = root / "tampered_checkpoint.apc"
+        tampered_checkpoint.write_text(
+            "AuroraPIC-checkpoint-v25\ndimension 1\nstep 103200\nextra 1\n",
+            encoding="utf-8")
+        tampered = argparse.Namespace(**vars(continuation))
+        tampered.checkpoint = tampered_checkpoint
+        tampered.output_dir = root / "tampered_run"
+        tampered.output_config = root / "tampered.cfg"
+        tampered.report = root / "tampered.json"
+        rejected_tamper = False
+        try:
+            subject.prepare(tampered)
+        except subject.PreparationError:
+            rejected_tamper = True
+        assert rejected_tamper, "continuation must reject checkpoint tampering"
 
         rejected = False
         try:
