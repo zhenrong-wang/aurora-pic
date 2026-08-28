@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_three_seed_corrected_schedule_density_stationarity_discriminator",
+  "formal_classification": "slow_mode_not_resolved",
+  "physics_claim": "persistent_model_bias_not_yet_identified",
+  "preregistration": {
+    "rule_sha256": "d2481dd5b99bbf4109f7b9cd30a5c621a106aedfd253d70d512fd18bab3c4b76",
+    "execution_lock_sha256": "f0a03d6a3849408dfc262434777f77bae111f9adcc7f1ad79f013ed7ab006148",
+    "committed_before_execution": "2cb4cae"
+  },
+  "execution": {
+    "seeds": [162631810, 500474954, 3662142586],
+    "blocks_per_seed": 16,
+    "total_blocks": 48,
+    "rf_cycles_per_block": 32,
+    "total_continuation_rf_cycles": 1536,
+    "total_continuation_steps": 614400,
+    "all_blocks_complete": true,
+    "all_species_balances_exact": true,
+    "checksum_artifacts_verified": 384,
+    "checksum_failures": 0,
+    "checksum_audit_sha256": "fb5391a596400f6c07bc3f8df32d28fd6b0558cb0609652cba86c5aacfcea013",
+    "aggregate_wall_seconds": 5182.08,
+    "maximum_peak_resident_set_kib": 12188,
+    "maximum_concurrent_processes": 1,
+    "all_execution_and_integrity_gates_passed": true
+  },
+  "members": [
+    {
+      "seed": 162631810,
+      "classification": "internal_stationarity_screen_failed",
+      "mean_integrated_density_bias_percent": -1.9133588898468168,
+      "lag_one_integrated_density_correlation": 0.562893888984654,
+      "ar1_effective_blocks": 4.474838519452556,
+      "projected_fractional_drift": -0.00096194577209566,
+      "split_half_fractional_change": -0.0036312360400212714,
+      "maximum_adjacent_profile_relative_l2": 0.024183941744435226,
+      "diagnostic_x_squared_minimum": 109.94802333118153,
+      "diagnostic_x_squared_mean": 347.0486148204628,
+      "diagnostic_x_squared_maximum": 536.9911156581215,
+      "failed_gates": ["minimum_ar1_effective_blocks"],
+      "analysis_sha256": "1751240d5d3b295072e452be1ced1ae33bf9cdec6db49a9bb2638da27896dd22",
+      "final_checkpoint_step": 716800,
+      "final_checkpoint_sha256": "5806823c85815b8685b9540f9d2b33fc6e503fc31ef913328e881c85db57987c"
+    },
+    {
+      "seed": 500474954,
+      "classification": "internal_stationarity_screen_failed",
+      "mean_integrated_density_bias_percent": -2.2053617932929037,
+      "lag_one_integrated_density_correlation": 0.6788912832291503,
+      "ar1_effective_blocks": 3.0601978339251112,
+      "projected_fractional_drift": 0.010127094402719817,
+      "split_half_fractional_change": 0.008239853327028871,
+      "maximum_adjacent_profile_relative_l2": 0.02187558837447282,
+      "diagnostic_x_squared_minimum": 125.31991590919439,
+      "diagnostic_x_squared_mean": 418.2682190590898,
+      "diagnostic_x_squared_maximum": 918.4234404986648,
+      "failed_gates": [
+        "minimum_ar1_effective_blocks",
+        "maximum_absolute_projected_fractional_drift"
+      ],
+      "analysis_sha256": "accf8bb30580849c90423b6881d8d9df8b97bafacda78aab5518ba675bf4f976",
+      "final_checkpoint_step": 716800,
+      "final_checkpoint_sha256": "3745c94957bbaef4138491d49e9d6e179b3b8a3f44e65aebb7299a84b390f37e"
+    },
+    {
+      "seed": 3662142586,
+      "classification": "internal_stationarity_screen_failed",
+      "mean_integrated_density_bias_percent": -0.9847917648840188,
+      "lag_one_integrated_density_correlation": 0.6024828347121624,
+      "ar1_effective_blocks": 3.9690126513884527,
+      "projected_fractional_drift": 0.003169639286919264,
+      "split_half_fractional_change": -0.001546923667036468,
+      "maximum_adjacent_profile_relative_l2": 0.021997314209483847,
+      "diagnostic_x_squared_minimum": 90.952275873935,
+      "diagnostic_x_squared_mean": 153.39749209980607,
+      "diagnostic_x_squared_maximum": 260.3423264853186,
+      "failed_gates": ["minimum_ar1_effective_blocks"],
+      "analysis_sha256": "d5c6b258ae1f38f09d1e3cb3cdd5e98dc430a90b42fa4d9c38036021a3d1ec16",
+      "final_checkpoint_step": 716800,
+      "final_checkpoint_sha256": "f6d5a36877a2e1bda6950cdbac075f4d04b4fcd5ad18df5ebe7e513ddab07951"
+    }
+  ],
+  "cross_seed_result": {
+    "combined_48_window_integrated_density_bias_percent": -1.701170816007913,
+    "seed_mean_bias_range_percentage_points": 1.2205700284088876,
+    "diagnostic_x_squared_minimum": 90.952275873935,
+    "diagnostic_x_squared_mean": 306.2381086597862,
+    "diagnostic_x_squared_maximum": 918.4234404986648,
+    "all_seed_stationarity_screens_passed": false,
+    "slow_mode_resolved_toward_reference": false,
+    "stationary_persistent_model_bias_supported": false,
+    "slow_mode_not_resolved": true
+  },
+  "interpretation": {
+    "finding": "All three corrected trajectories retain strong positive block-to-block density autocorrelation. Sixteen nominal 32-cycle windows provide only 3.06 to 4.47 AR(1)-effective blocks per seed, so the apparent density bias and published-window pass/fail variability cannot yet be treated as independent stationary samples.",
+    "repair_implication": "Do not tune collision physics to the Turner profile. The supported software improvement is autocorrelation-aware equilibration and uncertainty reporting, plus longer or adaptively terminated measurement windows.",
+    "next_physics_gate": "Only after effective-sample stationarity is demonstrated should a persistent same-sign residual justify auditing another Turner algorithm mismatch."
+  },
+  "claim_boundary": "This post-duration diagnostic proves slow correlated density evolution under otherwise exact, conservative executions. It does not alter published-duration results, prove the absence of a physical-model error, or validate other plasma regimes."
+}

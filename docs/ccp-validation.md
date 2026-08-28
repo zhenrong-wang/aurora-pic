@@ -501,6 +501,29 @@ model discrepancy more efficiently than launching additional fresh 1,280-cycle
 seeds. The complete negative decision record is
 [`turner-case1-single-bernoulli-confirmation-ensemble-result-20260827.json`](../benchmarks/ccp/turner-case1-single-bernoulli-confirmation-ensemble-result-20260827.json).
 
+### Corrected-schedule slow-mode discriminator
+
+Each fresh ensemble state was then continued through 16 contiguous,
+restart-reset 32-cycle density windows without changing physics. All 48
+species-balance audits close exactly and all 384 recorded artifact checksums
+verify. The seed-mean integrated-density biases are -1.913%, -2.205%, and
+-0.985%, giving a combined -1.701% bias.
+
+None of the three series passes the preregistered stationarity screen. Their
+lag-one density correlations are `0.563`, `0.679`, and `0.602`; consequently,
+16 nominal blocks provide only `4.47`, `3.06`, and `3.97` AR(1)-effective
+blocks, below the required eight. The second seed also narrowly exceeds the
+1% projected-drift limit at 1.013%. Across individual diagnostic windows,
+descriptive `X²` spans `90.95--918.42` even though conservation and global
+power/current behavior remain sound.
+
+The formal classification is `slow_mode_not_resolved`. A persistent physical
+model bias is not yet identified, so collision physics must not be tuned to
+the reference profile. The supported platform improvement is
+autocorrelation-aware equilibration, effective-sample estimation, and adaptive
+measurement termination. The checksum-pinned result is
+[`turner-case1-corrected-density-continuation-result-20260828.json`](../benchmarks/ccp/turner-case1-corrected-density-continuation-result-20260828.json).
+
 ## Post-benchmark source/wall diagnostic
 
 Checkpoint v6 wall accounting was introduced after the exact 1,280-cycle run,
