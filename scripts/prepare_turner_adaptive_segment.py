@@ -112,8 +112,8 @@ def prepare(args: argparse.Namespace) -> dict:
             "execution lock does not match the rule")
     require(lock.get("command_identity", {}).get("solver_binary_sha256") ==
             sha256(solver), "solver binary does not match execution lock")
-    require(args.seed in lock.get("execution_order", {}).get("seeds", []),
-            "seed is not in the locked execution order")
+    seed_order = lock.get("execution_order", {}).get("seeds", [])
+    require(args.seed in seed_order, "seed is not in the locked execution order")
     initial = next((value for value in rule.get("locked_initial_states", [])
                     if value.get("seed") == args.seed), None)
     require(isinstance(initial, dict), "seed has no locked initial state")
@@ -129,17 +129,9 @@ def prepare(args: argparse.Namespace) -> dict:
     segment_index = 1
     completed_blocks = 0
     imports_prior_samples = False
-    if prior_progress_path is None:
-        require(initial.get("base_config_sha256") == sha256(base),
-                "base config hash differs from the locked state")
-        require(initial.get("checkpoint_sha256") == sha256(checkpoint),
-                "checkpoint hash differs from the locked state")
-        require(source_step == initial_step,
-                "checkpoint step differs from the locked state")
-        require(magic.startswith("AuroraPIC-checkpoint-v") and magic !=
-                "AuroraPIC-checkpoint-v25",
-                "first segment requires the locked pre-v25 checkpoint")
-    else:
+    progress = None
+    admitted = []
+    if prior_progress_path is not None:
         require(prior_progress_path.is_file(),
                 f"prior progress does not exist: {prior_progress_path}")
         progress = load_json(prior_progress_path, "prior progress")
@@ -150,11 +142,35 @@ def prepare(args: argparse.Namespace) -> dict:
         require(progress.get("execution_lock", {}).get("sha256") ==
                 sha256(lock_path),
                 "prior progress does not match the execution lock")
+        all_admitted = progress.get("admitted_segments", [])
+        require(isinstance(all_admitted, list),
+                "prior progress admitted_segments is not a list")
+        for earlier_seed in seed_order[:seed_order.index(args.seed)]:
+            earlier = sorted(
+                (value for value in all_admitted
+                 if value.get("seed") == earlier_seed),
+                key=lambda value: value.get("segment", 0))
+            require(earlier and earlier[-1].get("classification") ==
+                    "admitted_converged",
+                    f"earlier seed {earlier_seed} has not converged")
         admitted = sorted(
-            (value for value in progress.get("admitted_segments", [])
+            (value for value in all_admitted
              if value.get("seed") == args.seed),
             key=lambda value: value.get("segment", 0))
-        require(admitted, "prior progress has no admitted segment for seed")
+    require(seed_order.index(args.seed) == 0 or progress is not None,
+            "later seeds require prior progress proving execution order")
+
+    if not admitted:
+        require(initial.get("base_config_sha256") == sha256(base),
+                "base config hash differs from the locked state")
+        require(initial.get("checkpoint_sha256") == sha256(checkpoint),
+                "checkpoint hash differs from the locked state")
+        require(source_step == initial_step,
+                "checkpoint step differs from the locked state")
+        require(magic.startswith("AuroraPIC-checkpoint-v") and magic !=
+                "AuroraPIC-checkpoint-v25",
+                "first segment requires the locked pre-v25 checkpoint")
+    else:
         require([value.get("segment") for value in admitted] ==
                 list(range(1, len(admitted) + 1)),
                 "prior admitted segment sequence is not contiguous")

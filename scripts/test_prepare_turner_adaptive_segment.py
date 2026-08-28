@@ -50,12 +50,16 @@ def main() -> None:
         root = Path(temporary)
         base = root / "base.cfg"
         checkpoint = root / "checkpoint_800.apc"
+        second_checkpoint = root / "checkpoint_second_800.apc"
         solver = root / "aurorapic_cli"
         rule_path = root / "rule.json"
         lock_path = root / "lock.json"
         base.write_text(BASE, encoding="utf-8")
         checkpoint.write_text(
             "AuroraPIC-checkpoint-v24\ndimension 1\nstep 800\n",
+            encoding="utf-8")
+        second_checkpoint.write_text(
+            "AuroraPIC-checkpoint-v24\ndimension 1\nstep 800\nseed 9\n",
             encoding="utf-8")
         solver.write_bytes(b"synthetic solver")
         rule = {
@@ -64,6 +68,11 @@ def main() -> None:
                 "seed": 7,
                 "checkpoint_step": 800,
                 "checkpoint_sha256": subject.sha256(checkpoint),
+                "base_config_sha256": subject.sha256(base),
+            }, {
+                "seed": 9,
+                "checkpoint_step": 800,
+                "checkpoint_sha256": subject.sha256(second_checkpoint),
                 "base_config_sha256": subject.sha256(base),
             }],
             "rf_contract": {
@@ -85,7 +94,7 @@ def main() -> None:
         lock = {
             "status": "preregistered_not_launched",
             "rule": {"sha256": subject.sha256(rule_path)},
-            "execution_order": {"seeds": [7]},
+            "execution_order": {"seeds": [7, 9]},
             "command_identity": {
                 "solver_binary_sha256": subject.sha256(solver)},
         }
@@ -165,6 +174,30 @@ def main() -> None:
         except subject.PreparationError:
             rejected_tamper = True
         assert rejected_tamper, "continuation must reject checkpoint tampering"
+
+        later_seed = argparse.Namespace(
+            rule=rule_path, execution_lock=lock_path, seed=9,
+            base_config=base, checkpoint=second_checkpoint, solver=solver,
+            prior_progress=progress_path,
+            output_dir=root / "later_run",
+            output_config=root / "later.cfg",
+            report=root / "later.json",
+            acknowledge_cost=subject.ACKNOWLEDGEMENT)
+        rejected_order = False
+        try:
+            subject.prepare(later_seed)
+        except subject.PreparationError:
+            rejected_order = True
+        assert rejected_order, "later seed must wait for earlier convergence"
+        progress["admitted_segments"][0]["classification"] = (
+            "admitted_converged")
+        progress_path.write_text(json.dumps(progress), encoding="utf-8")
+        later_report = subject.prepare(later_seed)
+        assert later_report["segment"]["index"] == 1
+        assert later_report[
+            "periodic_convergence_epoch_imports_prior_samples"] is False
+        assert "periodic_convergence_reset_on_restart = true" in (
+            later_seed.output_config.read_text(encoding="utf-8"))
 
         rejected = False
         try:
