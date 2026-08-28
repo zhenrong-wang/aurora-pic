@@ -3971,7 +3971,9 @@ int main() {
                         legacy << "AuroraPIC-checkpoint-v23\n";
                         first = false;
                     } else if (!line.starts_with(
-                                   "subcycle_charge_deposition")) {
+                                   "subcycle_charge_deposition") &&
+                               !line.starts_with(
+                                   "periodic_convergence")) {
                         legacy << line << '\n';
                     }
                 }
@@ -4137,8 +4139,8 @@ int main() {
                 "1D checkpoint lost wall-impact spectra");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v24\n") == 0,
-                "1D wall-impact checkpoint did not use v24");
+                    "AuroraPIC-checkpoint-v25\n") == 0,
+                "1D wall-impact checkpoint did not use v25");
             auto mismatched_spectrum = cfg;
             mismatched_spectrum.wall_impact_spectrum.energy_max =
                 100.0;
@@ -4239,6 +4241,7 @@ int main() {
                         line.starts_with("spatial_collision") ||
                         line.starts_with("phase_eedf") ||
                         line.starts_with("phase_surface_flux") ||
+                        line.starts_with("periodic_convergence") ||
                         line.starts_with("wall_impact") ||
                         line.starts_with("phase_fields")) {
                         continue;
@@ -4312,6 +4315,7 @@ int main() {
                         line.starts_with("spatial_collision") ||
                         line.starts_with("phase_eedf") ||
                         line.starts_with("phase_surface_flux") ||
+                        line.starts_with("periodic_convergence") ||
                         line.starts_with("wall_impact") ||
                         line.starts_with("phase_fields")) {
                         continue;
@@ -4968,7 +4972,7 @@ int main() {
                     "1D threshold-crossing ledger was not populated");
             require(
                 read_file_text(checkpoint_path).find(
-                    "AuroraPIC-checkpoint-v24\n") == 0,
+                    "AuroraPIC-checkpoint-v25\n") == 0,
                 "1D3V checkpoint did not use the sampling-order-aware "
                 "format");
             pic::Simulation output_simulation(cfg);

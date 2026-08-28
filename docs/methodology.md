@@ -318,9 +318,10 @@ The bounded smoke/performance envelope for the checked-in examples is documented
 ## Periodic statistical convergence
 
 Periodically driven plasmas require complete drive-cycle blocks rather than
-adjacent instantaneous-energy windows. AuroraPIC's convergence library accepts
-contiguous, phase-aligned samples, forms means over a configured integer number
-of complete RF cycles, and retains partial-block state for exact checkpoint
+adjacent instantaneous-energy windows. The 1D runtime samples represented
+species populations and total energy at the time-zero drive phase after every
+complete RF cycle, then forms means over a configured integer number of
+contiguous cycles. Partial-block state is retained for exact checkpoint
 continuation. Each observable is screened independently using a minimum
 nominal block count, lag-one autocorrelation-corrected effective block count,
 projected linear drift, split-half change, and relative standard error.
@@ -331,10 +332,12 @@ count is `N*(1-rho)/(1+rho)`, bounded to `[1,N]` after bounding `rho` to
 `[-0.99,0.99]`. This definition reproduces the preregistered corrected Turner
 Case 1 continuation analysis. Passing these gates establishes internal
 sampling readiness only; it does not by itself validate the physics against an
-experiment or independent code. The generic statistical component is now
-available for solver integration; driven steady-state termination remains
-disabled until its configuration, diagnostic output, and checkpoint format are
-wired through the 1D runtime.
+experiment or independent code. Driven 1D steady-state runs may use this
+controller when the configured frequency matches every active electrode drive
+and the RF period contains an integer number of timesteps. Checkpoint v25 binds
+the complete convergence contract and history. The runtime rewrites
+`periodic_convergence_blocks.csv` and `periodic_convergence_status.csv` after
+every completed block and at orderly termination.
 
 ## Verification included
 

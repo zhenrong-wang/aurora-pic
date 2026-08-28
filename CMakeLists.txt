@@ -212,6 +212,15 @@ if(AURORA_BUILD_TESTS)
     -Wall -Wextra -Wpedantic -O2)
   add_test(NAME aurorapic_convergence COMMAND aurorapic_convergence_tests)
 
+  add_executable(aurorapic_periodic_convergence_runtime_tests
+    tests/test_periodic_convergence_runtime.cpp)
+  target_link_libraries(aurorapic_periodic_convergence_runtime_tests
+    PRIVATE aurorapic)
+  target_compile_options(aurorapic_periodic_convergence_runtime_tests PRIVATE
+    -Wall -Wextra -Wpedantic -O2)
+  add_test(NAME aurorapic_periodic_convergence_runtime
+    COMMAND aurorapic_periodic_convergence_runtime_tests)
+
   add_executable(aurorapic_initialization_tests tests/test_initialization.cpp)
   target_link_libraries(aurorapic_initialization_tests PRIVATE aurorapic)
   target_compile_options(aurorapic_initialization_tests PRIVATE -Wall -Wextra -Wpedantic -O2)

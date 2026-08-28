@@ -706,13 +706,15 @@ void validate_config(const Config& cfg) {
             "sinusoidal electrode drives require boundary = "
             "dirichlet");
     }
-    if (cfg.mode == RunMode::SteadyState && driven) {
+    if (cfg.mode == RunMode::SteadyState && driven &&
+        !cfg.periodic_convergence.enabled) {
         throw std::runtime_error(
-            "sinusoidal electrode drives require mode = transient "
-            "until cycle-averaged convergence is implemented");
+            "sinusoidal electrode drives in steady-state mode require "
+            "periodic_convergence");
     }
     if (cfg.output_interval == 0) throw std::runtime_error("output_interval must be positive");
     validate_spatial_average_1d(cfg);
+    validate_periodic_convergence_1d(cfg);
     validate_positive(cfg.steady_tolerance, "steady_tolerance");
     if (cfg.steady_window == 0) throw std::runtime_error("steady_window must be positive");
     if (cfg.mode == RunMode::SteadyState && cfg.max_steps == 0) throw std::runtime_error("max_steps must be positive for steady-state mode");
@@ -1745,6 +1747,72 @@ void validate_spatial_average_1d(const Config& cfg) {
     }
 }
 
+void validate_periodic_convergence_1d(const Config& cfg) {
+    const auto& convergence = cfg.periodic_convergence;
+    if (!convergence.enabled) {
+        if (convergence.rf_frequency != 0.0 ||
+            convergence.cycles_per_block != 0) {
+            throw std::runtime_error(
+                "disabled periodic_convergence cannot configure an RF "
+                "frequency or cycles per block");
+        }
+        return;
+    }
+    if (!std::isfinite(convergence.rf_frequency) ||
+        convergence.rf_frequency <= 0.0 ||
+        convergence.cycles_per_block == 0 ||
+        convergence.minimum_blocks < 2 ||
+        !std::isfinite(convergence.minimum_effective_blocks) ||
+        convergence.minimum_effective_blocks <= 0.0 ||
+        !std::isfinite(
+            convergence.maximum_absolute_projected_fractional_drift) ||
+        convergence.maximum_absolute_projected_fractional_drift < 0.0 ||
+        !std::isfinite(
+            convergence.maximum_absolute_split_half_fractional_change) ||
+        convergence.maximum_absolute_split_half_fractional_change < 0.0 ||
+        !std::isfinite(convergence.maximum_relative_standard_error) ||
+        convergence.maximum_relative_standard_error < 0.0) {
+        throw std::runtime_error(
+            "periodic_convergence requires a positive finite RF frequency, "
+            "positive block length, at least two blocks, and finite "
+            "non-negative statistical thresholds");
+    }
+    const double steps_per_cycle_value =
+        1.0 / (convergence.rf_frequency * cfg.dt);
+    if (!std::isfinite(steps_per_cycle_value) ||
+        steps_per_cycle_value >
+            static_cast<double>(std::numeric_limits<long long>::max())) {
+        throw std::runtime_error(
+            "periodic-convergence RF steps per cycle are invalid");
+    }
+    const auto steps_per_cycle = static_cast<std::size_t>(
+        std::llround(steps_per_cycle_value));
+    if (steps_per_cycle == 0 ||
+        std::abs(steps_per_cycle_value -
+                 static_cast<double>(steps_per_cycle)) >
+            1e-10 * std::max(1.0, steps_per_cycle_value)) {
+        throw std::runtime_error(
+            "periodic-convergence RF period must contain an integer "
+            "number of timesteps");
+    }
+    if (convergence.cycles_per_block >
+        std::numeric_limits<std::size_t>::max() / steps_per_cycle) {
+        throw std::runtime_error(
+            "periodic-convergence block step count overflows");
+    }
+    for (const auto& drive :
+         {cfg.phi_left_drive, cfg.phi_right_drive}) {
+        if (drive.amplitude == 0.0) continue;
+        if (std::abs(drive.frequency - convergence.rf_frequency) >
+            1e-12 * std::max(
+                drive.frequency, convergence.rf_frequency)) {
+            throw std::runtime_error(
+                "periodic-convergence RF frequency does not match "
+                "the electrode drive");
+        }
+    }
+}
+
 Config load_config(const std::string& path) {
     static const std::unordered_set<std::string> global_keys{
         "nx", "length", "velocity_dimensions", "dt", "steps",
@@ -1765,6 +1833,13 @@ Config load_config(const std::string& path) {
         "wall_impact_spectrum", "wall_impact_reset_on_restart",
         "wall_impact_energy_bins",
         "wall_impact_energy_max",
+        "periodic_convergence", "periodic_convergence_rf_frequency",
+        "periodic_convergence_cycles_per_block",
+        "periodic_convergence_minimum_blocks",
+        "periodic_convergence_minimum_effective_blocks",
+        "periodic_convergence_maximum_absolute_projected_fractional_drift",
+        "periodic_convergence_maximum_absolute_split_half_fractional_change",
+        "periodic_convergence_maximum_relative_standard_error",
         "max_particles_per_species",
         "collision_velocity_sampling", "subcycle_charge_deposition",
         "phi_left", "phi_right", "steady_tolerance", "steady_window", "max_steps",
@@ -1899,6 +1974,36 @@ Config load_config(const std::string& path) {
     cfg.wall_impact_spectrum.energy_max = as<double>(
         global, "wall_impact_energy_max",
         cfg.wall_impact_spectrum.energy_max);
+    cfg.periodic_convergence.enabled = parse_bool(
+        global, "periodic_convergence",
+        cfg.periodic_convergence.enabled);
+    cfg.periodic_convergence.rf_frequency = as<double>(
+        global, "periodic_convergence_rf_frequency",
+        cfg.periodic_convergence.rf_frequency);
+    cfg.periodic_convergence.cycles_per_block = as<std::size_t>(
+        global, "periodic_convergence_cycles_per_block",
+        cfg.periodic_convergence.cycles_per_block);
+    cfg.periodic_convergence.minimum_blocks = as<std::size_t>(
+        global, "periodic_convergence_minimum_blocks",
+        cfg.periodic_convergence.minimum_blocks);
+    cfg.periodic_convergence.minimum_effective_blocks = as<double>(
+        global, "periodic_convergence_minimum_effective_blocks",
+        cfg.periodic_convergence.minimum_effective_blocks);
+    cfg.periodic_convergence.maximum_absolute_projected_fractional_drift =
+        as<double>(
+            global,
+            "periodic_convergence_maximum_absolute_projected_fractional_drift",
+            cfg.periodic_convergence
+                .maximum_absolute_projected_fractional_drift);
+    cfg.periodic_convergence.maximum_absolute_split_half_fractional_change =
+        as<double>(
+            global,
+            "periodic_convergence_maximum_absolute_split_half_fractional_change",
+            cfg.periodic_convergence
+                .maximum_absolute_split_half_fractional_change);
+    cfg.periodic_convergence.maximum_relative_standard_error = as<double>(
+        global, "periodic_convergence_maximum_relative_standard_error",
+        cfg.periodic_convergence.maximum_relative_standard_error);
     cfg.output_dir = as<std::string>(global, "output_dir", cfg.output_dir);
     cfg.seed = as<unsigned>(global, "seed", cfg.seed);
     cfg.phi_left = as<double>(global, "phi_left", cfg.phi_left);

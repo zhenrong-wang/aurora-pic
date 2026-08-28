@@ -45,6 +45,7 @@ constexpr const char* kCheckpointMagicV21 = "AuroraPIC-checkpoint-v21";
 constexpr const char* kCheckpointMagicV22 = "AuroraPIC-checkpoint-v22";
 constexpr const char* kCheckpointMagicV23 = "AuroraPIC-checkpoint-v23";
 constexpr const char* kCheckpointMagicV24 = "AuroraPIC-checkpoint-v24";
+constexpr const char* kCheckpointMagicV25 = "AuroraPIC-checkpoint-v25";
 
 void validate_runtime_config(const Config& cfg) {
     if (cfg.velocity_dimensions != 1 &&
@@ -104,10 +105,11 @@ void validate_runtime_config(const Config& cfg) {
             "sinusoidal electrode drives require a Dirichlet "
             "boundary");
     }
-    if (cfg.mode == RunMode::SteadyState && driven) {
+    if (cfg.mode == RunMode::SteadyState && driven &&
+        !cfg.periodic_convergence.enabled) {
         throw std::invalid_argument(
-            "sinusoidal electrode drives require transient mode "
-            "until cycle-averaged convergence is implemented");
+            "sinusoidal electrode drives in steady-state mode require "
+            "periodic_convergence");
     }
     if (cfg.checkpoint_output && cfg.checkpoint_interval == 0) {
         throw std::invalid_argument("checkpoint_interval must be positive when checkpoint_output is enabled");
@@ -119,6 +121,7 @@ void validate_runtime_config(const Config& cfg) {
             throw std::invalid_argument("steady_tolerance must be positive and finite");
         }
     }
+    validate_periodic_convergence_1d(cfg);
     validate_runtime_policy(cfg.runtime);
     if (!std::isfinite(cfg.collisions.frequency) || cfg.collisions.frequency < 0.0) {
         throw std::invalid_argument("collision frequency must be non-negative and finite");
@@ -766,6 +769,7 @@ Simulation::Simulation(Config cfg)
             chunk = make_surfaces();
         }
     }
+    reset_periodic_convergence();
 }
 
 std::uint64_t Simulation::collision_signature() const {
@@ -913,6 +917,8 @@ void Simulation::refresh_held_charge(std::size_t species_id) {
 void Simulation::initialize() {
     time_ = 0.0;
     step_ = 0;
+    reset_periodic_convergence();
+    periodic_convergence_block_closed_ = false;
     boundary_loss_origin_step_ = 0;
     std::fill(
         species_boundary_losses_.begin(),
@@ -1019,6 +1025,132 @@ void Simulation::initialize() {
         });
     }
     initialized_ = true;
+}
+
+void Simulation::reset_periodic_convergence() {
+    periodic_convergence_.reset();
+    periodic_convergence_steps_per_cycle_ = 0;
+    if (!cfg_.periodic_convergence.enabled) return;
+
+    periodic_convergence_steps_per_cycle_ =
+        static_cast<std::size_t>(std::llround(
+            1.0 / (cfg_.periodic_convergence.rf_frequency * cfg_.dt)));
+    BlockConvergenceCriteria criteria;
+    criteria.minimum_blocks =
+        cfg_.periodic_convergence.minimum_blocks;
+    criteria.minimum_effective_blocks =
+        cfg_.periodic_convergence.minimum_effective_blocks;
+    criteria.maximum_absolute_projected_fractional_drift =
+        cfg_.periodic_convergence
+            .maximum_absolute_projected_fractional_drift;
+    criteria.maximum_absolute_split_half_fractional_change =
+        cfg_.periodic_convergence
+            .maximum_absolute_split_half_fractional_change;
+    criteria.maximum_relative_standard_error =
+        cfg_.periodic_convergence.maximum_relative_standard_error;
+    std::vector<std::string> observables;
+    observables.reserve(species_.size() + 1);
+    for (const auto& species : species_) {
+        observables.push_back(
+            "represented_population:" + species.name());
+    }
+    observables.push_back("phase_total_energy");
+    // The controller receives one phase-consistent observation per complete
+    // RF cycle, so one controller sample is one physical drive cycle.
+    periodic_convergence_.emplace(
+        1, cfg_.periodic_convergence.cycles_per_block, 0,
+        std::move(observables), criteria);
+}
+
+bool Simulation::sample_periodic_convergence() {
+    if (!periodic_convergence_ || step_ == 0 ||
+        step_ % periodic_convergence_steps_per_cycle_ != 0) {
+        return false;
+    }
+    std::vector<double> values;
+    values.reserve(species_.size() + 1);
+    for (const auto& species : species_) {
+        values.push_back(
+            static_cast<double>(species.live_count()) * species.weight());
+    }
+    values.push_back(sample().total_energy);
+    const std::size_t completed_cycle =
+        step_ / periodic_convergence_steps_per_cycle_;
+    return periodic_convergence_->observe(completed_cycle, values);
+}
+
+void Simulation::write_periodic_convergence() const {
+    if (!periodic_convergence_) return;
+    const auto output_dir = std::filesystem::path(cfg_.output_dir);
+    std::filesystem::create_directories(output_dir);
+    const auto blocks_path = output_dir / "periodic_convergence_blocks.csv";
+    const auto status_path = output_dir / "periodic_convergence_status.csv";
+    std::ofstream blocks(blocks_path);
+    std::ofstream status(status_path);
+    if (!blocks || !status) {
+        throw std::runtime_error(
+            "cannot write periodic convergence diagnostics");
+    }
+    blocks << std::setprecision(17);
+    status << std::setprecision(17);
+    blocks << "block,end_cycle,end_step,observable,mean\n";
+    const auto& state = periodic_convergence_->state();
+    for (std::size_t observable = 0;
+         observable < state.observable_names.size(); ++observable) {
+        for (std::size_t block = 0;
+             block < state.completed_block_means[observable].size(); ++block) {
+            const std::size_t end_cycle =
+                (block + 1) * state.cycles_per_block;
+            blocks << block + 1 << ',' << end_cycle << ','
+                   << end_cycle * periodic_convergence_steps_per_cycle_ << ','
+                   << state.observable_names[observable] << ','
+                   << state.completed_block_means[observable][block] << '\n';
+        }
+    }
+    status << "observable,classification,blocks,mean,sample_standard_deviation,"
+              "lag_one_correlation,effective_blocks,projected_fractional_drift,"
+              "split_half_fractional_change,relative_standard_error,"
+              "minimum_blocks_required,minimum_blocks_passed,"
+              "minimum_effective_blocks_required,minimum_effective_blocks_passed,"
+              "maximum_absolute_projected_fractional_drift,drift_passed,"
+              "maximum_absolute_split_half_fractional_change,split_half_passed,"
+              "maximum_relative_standard_error,relative_standard_error_passed,"
+              "converged\n";
+    const auto results = periodic_convergence_->evaluate();
+    const auto optional = [](const std::optional<double>& value) {
+        if (!value) return std::string{};
+        std::ostringstream stream;
+        stream << std::setprecision(17) << *value;
+        return stream.str();
+    };
+    for (std::size_t observable = 0; observable < results.size();
+         ++observable) {
+        const auto& result = results[observable];
+        status << state.observable_names[observable] << ','
+               << to_string(result.classification) << ',' << result.blocks
+               << ',' << result.mean << ',' << result.sample_standard_deviation
+               << ',' << optional(result.lag_one_correlation)
+               << ',' << optional(result.effective_blocks)
+               << ',' << optional(result.projected_fractional_drift)
+               << ',' << optional(result.split_half_fractional_change)
+               << ',' << optional(result.relative_standard_error)
+               << ',' << cfg_.periodic_convergence.minimum_blocks
+               << ',' << (result.minimum_blocks_passed ? 1 : 0)
+               << ',' << cfg_.periodic_convergence.minimum_effective_blocks
+               << ',' << (result.minimum_effective_blocks_passed ? 1 : 0)
+               << ',' << cfg_.periodic_convergence
+                              .maximum_absolute_projected_fractional_drift
+               << ',' << (result.drift_passed ? 1 : 0)
+               << ',' << cfg_.periodic_convergence
+                              .maximum_absolute_split_half_fractional_change
+               << ',' << (result.split_half_passed ? 1 : 0)
+               << ',' << cfg_.periodic_convergence
+                              .maximum_relative_standard_error
+               << ',' << (result.relative_standard_error_passed ? 1 : 0)
+               << ',' << (result.converged() ? 1 : 0) << '\n';
+    }
+    require_stream(blocks, "failed while writing periodic convergence blocks");
+    require_stream(status, "failed while writing periodic convergence status");
 }
 
 void Simulation::apply_collisions() {
@@ -1620,6 +1752,8 @@ void Simulation::step() {
         SpatialAverageSamplingOrder1D::PostCollision) {
         accumulate_spatial_average(step_);
     }
+    periodic_convergence_block_closed_ =
+        sample_periodic_convergence();
 }
 
 DiagnosticSample Simulation::sample() const {
@@ -3387,7 +3521,7 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
     std::ofstream out(path);
     if (!out) throw std::runtime_error("cannot open checkpoint for writing: " + path.string());
     out << std::setprecision(17);
-    out << kCheckpointMagicV24 << '\n';
+    out << kCheckpointMagicV25 << '\n';
     out << "dimension 1\n";
     out << "units " << to_string(cfg_.units.system) << ' '
         << cfg_.units.relative_permittivity << ' '
@@ -3759,6 +3893,43 @@ void Simulation::save_checkpoint(const std::filesystem::path& path) const {
             }
         }
     }
+    out << "periodic_convergence "
+        << (periodic_convergence_ ? 1 : 0);
+    if (periodic_convergence_) {
+        const auto& configured = cfg_.periodic_convergence;
+        const auto& state = periodic_convergence_->state();
+        out << ' ' << configured.rf_frequency
+            << ' ' << periodic_convergence_steps_per_cycle_
+            << ' ' << state.cycles_per_block
+            << ' ' << configured.minimum_blocks
+            << ' ' << configured.minimum_effective_blocks
+            << ' ' << configured.maximum_absolute_projected_fractional_drift
+            << ' ' << configured.maximum_absolute_split_half_fractional_change
+            << ' ' << configured.maximum_relative_standard_error
+            << ' ' << state.origin_step << ' ' << state.last_step
+            << ' ' << state.samples_in_current_block
+            << ' ' << state.observable_names.size()
+            << ' ' << periodic_convergence_->completed_blocks();
+    }
+    out << "\n";
+    if (periodic_convergence_) {
+        const auto& state = periodic_convergence_->state();
+        out << std::setprecision(
+            std::numeric_limits<long double>::max_digits10);
+        for (std::size_t observable = 0;
+             observable < state.observable_names.size(); ++observable) {
+            out << "periodic_convergence_observable " << observable << ' '
+                << state.observable_names[observable] << ' '
+                << state.current_sums[observable] << ' '
+                << state.completed_block_means[observable].size();
+            for (const double value :
+                 state.completed_block_means[observable]) {
+                out << ' ' << value;
+            }
+            out << "\n";
+        }
+        out << std::setprecision(17);
+    }
     out << "step " << step_ << "\n";
     out << "time " << time_ << "\n";
     out << "species_count " << species_.size() << "\n";
@@ -3811,7 +3982,9 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     const bool checkpoint_v10 = magic == kCheckpointMagicV10;
     const bool checkpoint_v11 = magic == kCheckpointMagicV11;
     const bool checkpoint_v12 = magic == kCheckpointMagicV12;
-    const bool checkpoint_v24 = magic == kCheckpointMagicV24;
+    const bool checkpoint_v25 = magic == kCheckpointMagicV25;
+    const bool checkpoint_v24 =
+        magic == kCheckpointMagicV24 || checkpoint_v25;
     const bool checkpoint_v23 = magic == kCheckpointMagicV23 || checkpoint_v24;
     const bool checkpoint_v22 =
         magic == kCheckpointMagicV22 || checkpoint_v23;
@@ -5371,8 +5544,115 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
             "legacy checkpoint cannot restore enabled 1D "
             "spatial averaging");
     }
+    if (checkpoint_v25) {
+        int stored_enabled = 0;
+        in >> stored_enabled;
+        if (key != "periodic_convergence" ||
+            (stored_enabled != 0 && stored_enabled != 1) ||
+            (stored_enabled == 1) !=
+                cfg_.periodic_convergence.enabled) {
+            throw std::runtime_error(
+                "checkpoint periodic-convergence enablement does not "
+                "match 1D config");
+        }
+        if (stored_enabled == 1) {
+            double stored_frequency = 0.0;
+            std::size_t stored_physical_steps = 0;
+            std::size_t stored_cycles_per_block = 0;
+            std::size_t stored_minimum_blocks = 0;
+            double stored_minimum_effective = 0.0;
+            double stored_maximum_drift = 0.0;
+            double stored_maximum_split = 0.0;
+            double stored_maximum_error = 0.0;
+            PeriodicBlockState state;
+            std::size_t observable_count = 0;
+            std::size_t block_count = 0;
+            in >> stored_frequency >> stored_physical_steps >>
+                stored_cycles_per_block >> stored_minimum_blocks >>
+                stored_minimum_effective >> stored_maximum_drift >>
+                stored_maximum_split >> stored_maximum_error >>
+                state.origin_step >> state.last_step >>
+                state.samples_in_current_block >> observable_count >>
+                block_count;
+            const auto& configured = cfg_.periodic_convergence;
+            if (stored_frequency != configured.rf_frequency ||
+                stored_physical_steps !=
+                    periodic_convergence_steps_per_cycle_ ||
+                stored_cycles_per_block != configured.cycles_per_block ||
+                stored_minimum_blocks != configured.minimum_blocks ||
+                stored_minimum_effective !=
+                    configured.minimum_effective_blocks ||
+                stored_maximum_drift != configured
+                    .maximum_absolute_projected_fractional_drift ||
+                stored_maximum_split != configured
+                    .maximum_absolute_split_half_fractional_change ||
+                stored_maximum_error !=
+                    configured.maximum_relative_standard_error ||
+                !periodic_convergence_ ||
+                observable_count !=
+                    periodic_convergence_->state().observable_names.size()) {
+                throw std::runtime_error(
+                    "checkpoint periodic-convergence contract does not "
+                    "match 1D config");
+            }
+            state.steps_per_cycle = 1;
+            state.cycles_per_block = stored_cycles_per_block;
+            state.observable_names.resize(observable_count);
+            state.current_sums.resize(observable_count);
+            state.completed_block_means.assign(
+                observable_count, std::vector<double>(block_count));
+            const auto expected_names =
+                periodic_convergence_->state().observable_names;
+            for (std::size_t observable = 0;
+                 observable < observable_count; ++observable) {
+                std::size_t stored_observable = 0;
+                std::size_t stored_blocks = 0;
+                in >> key >> stored_observable >>
+                    state.observable_names[observable] >>
+                    state.current_sums[observable] >> stored_blocks;
+                if (key != "periodic_convergence_observable" ||
+                    stored_observable != observable ||
+                    state.observable_names[observable] !=
+                        expected_names[observable] ||
+                    stored_blocks != block_count) {
+                    throw std::runtime_error(
+                        "checkpoint periodic-convergence observable "
+                        "metadata are invalid");
+                }
+                for (double& value :
+                     state.completed_block_means[observable]) {
+                    in >> value;
+                }
+            }
+            BlockConvergenceCriteria criteria;
+            criteria.minimum_blocks = configured.minimum_blocks;
+            criteria.minimum_effective_blocks =
+                configured.minimum_effective_blocks;
+            criteria.maximum_absolute_projected_fractional_drift =
+                configured.maximum_absolute_projected_fractional_drift;
+            criteria.maximum_absolute_split_half_fractional_change =
+                configured.maximum_absolute_split_half_fractional_change;
+            criteria.maximum_relative_standard_error =
+                configured.maximum_relative_standard_error;
+            periodic_convergence_.emplace(std::move(state), criteria);
+            in >> key;
+        } else {
+            in >> key;
+        }
+    } else if (cfg_.periodic_convergence.enabled) {
+        throw std::runtime_error(
+            "legacy checkpoint cannot restore periodic convergence state");
+    }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
+    if (periodic_convergence_ &&
+        periodic_convergence_->state().last_step !=
+            step_ / periodic_convergence_steps_per_cycle_) {
+        throw std::runtime_error(
+            "checkpoint periodic-convergence cycle count does not match "
+            "its simulation step");
+    }
+    periodic_convergence_block_closed_ = false;
     if (checkpoint_v14 && wall_impact_origin_step_ > step_) {
         throw std::runtime_error(
             "checkpoint wall-impact origin exceeds its step");
@@ -5681,6 +5961,11 @@ RunSummary Simulation::run() {
     summary.final_sample = s0;
     while (step_ < limit) {
         step();
+        const bool periodic_block_closed =
+            periodic_convergence_block_closed_;
+        if (periodic_block_closed) {
+            write_periodic_convergence();
+        }
         const bool at_output = step_ % cfg_.output_interval == 0 || step_ == limit;
         bool reached_steady = false;
         if (at_output) {
@@ -5702,11 +5987,14 @@ RunSummary Simulation::run() {
                 power_transfer_origin_step_, species_,
                 species_power_transfer_);
             summary.final_sample = s;
-            reached_steady = cfg_.mode == RunMode::SteadyState &&
-                             adjacent_energy_windows_converged(diag.history(), cfg_.steady_window, cfg_.steady_tolerance);
-            if (reached_steady) {
-                summary.steady_state_reached = true;
-            }
+        }
+        if (cfg_.mode == RunMode::SteadyState) {
+            reached_steady = periodic_convergence_
+                ? periodic_block_closed && periodic_convergence_->converged()
+                : at_output && adjacent_energy_windows_converged(
+                    diag.history(), cfg_.steady_window,
+                    cfg_.steady_tolerance);
+            summary.steady_state_reached = reached_steady;
         }
         if (cfg_.checkpoint_output &&
             (step_ % cfg_.checkpoint_interval == 0 || step_ == limit || reached_steady)) {
@@ -5719,6 +6007,7 @@ RunSummary Simulation::run() {
     if (summary.final_sample.step != step_) summary.final_sample = sample();
     write_wall_impact_spectrum();
     write_spatial_average();
+    write_periodic_convergence();
     return summary;
 }
 }

@@ -524,6 +524,15 @@ autocorrelation-aware equilibration, effective-sample estimation, and adaptive
 measurement termination. The checksum-pinned result is
 [`turner-case1-corrected-density-continuation-result-20260828.json`](../benchmarks/ccp/turner-case1-corrected-density-continuation-result-20260828.json).
 
+AuroraPIC now contains the first production implementation of that platform
+improvement. The 1D periodic convergence controller collects phase-consistent
+species populations and total energy after complete RF cycles, evaluates the
+same preregistered AR(1) effective-block estimator plus drift, split-half, and
+uncertainty gates, and preserves its partial history in checkpoint v25. This
+does not change the `slow_mode_not_resolved` result or retroactively extend the
+published-duration comparison. It provides the restart-safe termination
+mechanism required for the next prospectively locked continuation.
+
 ## Post-benchmark source/wall diagnostic
 
 Checkpoint v6 wall accounting was introduced after the exact 1,280-cycle run,

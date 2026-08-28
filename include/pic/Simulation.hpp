@@ -1,6 +1,7 @@
 #pragma once
 #include "pic/Collision.hpp"
 #include "pic/Config.hpp"
+#include "pic/Convergence.hpp"
 #include "pic/Diagnostics.hpp"
 #include "pic/FieldSolver.hpp"
 #include "pic/ParticleState.hpp"
@@ -8,6 +9,7 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <random>
 
 namespace pic {
@@ -175,6 +177,12 @@ public:
     std::size_t power_transfer_origin_step() const {
         return power_transfer_origin_step_;
     }
+    std::vector<BlockConvergenceResult>
+    periodic_convergence_results() const {
+        return periodic_convergence_
+            ? periodic_convergence_->evaluate()
+            : std::vector<BlockConvergenceResult>{};
+    }
     const std::vector<std::vector<double>>&
     spatial_collision_energy_sums() const {
         return spatial_collision_energy_sums_;
@@ -279,6 +287,9 @@ private:
         double represented_energy) const;
     void write_spatial_average() const;
     void write_wall_impact_spectrum() const;
+    void reset_periodic_convergence();
+    bool sample_periodic_convergence();
+    void write_periodic_convergence() const;
     std::size_t expected_spatial_average_samples() const;
     Config cfg_;
     Grid grid_;
@@ -343,6 +354,9 @@ private:
         phase_surface_flux_accumulators_{};
     std::vector<std::vector<std::vector<PhaseSurfaceFluxAccumulator1D>>>
         phase_surface_flux_chunks_{};
+    std::optional<PeriodicBlockConvergence> periodic_convergence_{};
+    std::size_t periodic_convergence_steps_per_cycle_{0};
+    bool periodic_convergence_block_closed_{false};
     std::mt19937_64 rng_;
     double time_{0.0};
     std::size_t step_{0};

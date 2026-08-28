@@ -754,6 +754,28 @@ All 1D, 2D, and 3D simulations support the same run controls:
 
 Steady-state convergence is an engineering termination criterion, not by itself proof of physical equilibrium. It is evaluated only when scalar diagnostics are sampled, so `output_interval`, `steady_window`, and `dt` jointly determine the physical duration represented by a convergence window. Run summaries and CLI output distinguish a converged steady run from one that exhausted `max_steps`. When checkpoint output is enabled, convergence forces a final checkpoint even when the regular checkpoint interval has not been reached.
 
+Periodically driven 1D cases use the stronger opt-in RF-cycle controller:
+
+```ini
+periodic_convergence = true
+periodic_convergence_rf_frequency = 13.56e6
+periodic_convergence_cycles_per_block = 32
+periodic_convergence_minimum_blocks = 16
+periodic_convergence_minimum_effective_blocks = 8
+periodic_convergence_maximum_absolute_projected_fractional_drift = 0.01
+periodic_convergence_maximum_absolute_split_half_fractional_change = 0.01
+periodic_convergence_maximum_relative_standard_error = 0.01
+```
+
+The RF period must contain an integer number of timesteps and its frequency
+must match every active sinusoidal electrode. AuroraPIC samples represented
+species populations and total energy at a consistent RF phase, groups them
+into complete-cycle blocks, and requires every observable to pass nominal
+block-count, autocorrelation-adjusted effective-sample, drift, split-half, and
+standard-error gates. This controller permits `mode = steady_state` for driven
+1D cases. Its complete history and thresholds are stored in checkpoint v25;
+the CSV decision record is written to the configured output directory.
+
 ## Runtime controls
 
 All 1D, 2D, and 3D configs accept runtime controls for the M4 scaling interface:

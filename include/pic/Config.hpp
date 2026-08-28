@@ -299,6 +299,17 @@ struct WallImpactSpectrum1DConfig {
     double energy_max{0.0};
 };
 
+struct PeriodicConvergence1DConfig {
+    bool enabled{false};
+    double rf_frequency{0.0};
+    std::size_t cycles_per_block{0};
+    std::size_t minimum_blocks{16};
+    double minimum_effective_blocks{8.0};
+    double maximum_absolute_projected_fractional_drift{0.01};
+    double maximum_absolute_split_half_fractional_change{0.01};
+    double maximum_relative_standard_error{0.01};
+};
+
 struct Config {
     UnitSystemConfig units{};
     std::size_t velocity_dimensions{1};
@@ -311,6 +322,7 @@ struct Config {
     PhaseEedf1DConfig phase_eedf{};
     PhaseSurfaceFlux1DConfig phase_surface_flux{};
     WallImpactSpectrum1DConfig wall_impact_spectrum{};
+    PeriodicConvergence1DConfig periodic_convergence{};
     Boundary boundary{Boundary::Periodic};
     RunMode mode{RunMode::Transient};
     double phi_left{0.0};
@@ -341,6 +353,7 @@ struct Config {
 };
 
 void validate_spatial_average_1d(const Config& cfg);
+void validate_periodic_convergence_1d(const Config& cfg);
 Config load_config(const std::string& path);
 Simulation2DConfig load_config_2d(const std::string& path);
 Simulation3DConfig load_config_3d(const std::string& path);
