@@ -287,7 +287,7 @@ private:
         double represented_energy) const;
     void write_spatial_average() const;
     void write_wall_impact_spectrum() const;
-    void reset_periodic_convergence();
+    void reset_periodic_convergence(std::size_t origin_cycle = 0);
     bool sample_periodic_convergence();
     void write_periodic_convergence() const;
     std::size_t expected_spatial_average_samples() const;

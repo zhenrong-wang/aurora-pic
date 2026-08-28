@@ -532,6 +532,11 @@ uncertainty gates, and preserves its partial history in checkpoint v25. This
 does not change the `slow_mode_not_resolved` result or retroactively extend the
 published-duration comparison. It provides the restart-safe termination
 mechanism required for the next prospectively locked continuation.
+Because the retained three-seed checkpoints predate v25, that continuation
+must explicitly set `periodic_convergence_reset_on_restart = true`. Their
+step-716,800 endpoints are exact 400-step RF boundaries, so a fresh epoch can
+begin without phase truncation; the prior 48 windows remain separate evidence
+and are not imported into the online decision.
 
 ## Post-benchmark source/wall diagnostic
 

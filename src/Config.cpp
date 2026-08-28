@@ -1750,11 +1750,12 @@ void validate_spatial_average_1d(const Config& cfg) {
 void validate_periodic_convergence_1d(const Config& cfg) {
     const auto& convergence = cfg.periodic_convergence;
     if (!convergence.enabled) {
-        if (convergence.rf_frequency != 0.0 ||
+        if (convergence.reset_on_restart ||
+            convergence.rf_frequency != 0.0 ||
             convergence.cycles_per_block != 0) {
             throw std::runtime_error(
-                "disabled periodic_convergence cannot configure an RF "
-                "frequency or cycles per block");
+                "disabled periodic_convergence cannot configure restart "
+                "reset, an RF frequency, or cycles per block");
         }
         return;
     }
@@ -1833,7 +1834,8 @@ Config load_config(const std::string& path) {
         "wall_impact_spectrum", "wall_impact_reset_on_restart",
         "wall_impact_energy_bins",
         "wall_impact_energy_max",
-        "periodic_convergence", "periodic_convergence_rf_frequency",
+        "periodic_convergence", "periodic_convergence_reset_on_restart",
+        "periodic_convergence_rf_frequency",
         "periodic_convergence_cycles_per_block",
         "periodic_convergence_minimum_blocks",
         "periodic_convergence_minimum_effective_blocks",
@@ -1977,6 +1979,9 @@ Config load_config(const std::string& path) {
     cfg.periodic_convergence.enabled = parse_bool(
         global, "periodic_convergence",
         cfg.periodic_convergence.enabled);
+    cfg.periodic_convergence.reset_on_restart = parse_bool(
+        global, "periodic_convergence_reset_on_restart",
+        cfg.periodic_convergence.reset_on_restart);
     cfg.periodic_convergence.rf_frequency = as<double>(
         global, "periodic_convergence_rf_frequency",
         cfg.periodic_convergence.rf_frequency);

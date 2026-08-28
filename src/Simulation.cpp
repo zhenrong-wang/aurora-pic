@@ -1027,7 +1027,7 @@ void Simulation::initialize() {
     initialized_ = true;
 }
 
-void Simulation::reset_periodic_convergence() {
+void Simulation::reset_periodic_convergence(std::size_t origin_cycle) {
     periodic_convergence_.reset();
     periodic_convergence_steps_per_cycle_ = 0;
     if (!cfg_.periodic_convergence.enabled) return;
@@ -1058,7 +1058,7 @@ void Simulation::reset_periodic_convergence() {
     // The controller receives one phase-consistent observation per complete
     // RF cycle, so one controller sample is one physical drive cycle.
     periodic_convergence_.emplace(
-        1, cfg_.periodic_convergence.cycles_per_block, 0,
+        1, cfg_.periodic_convergence.cycles_per_block, origin_cycle,
         std::move(observables), criteria);
 }
 
@@ -1099,7 +1099,7 @@ void Simulation::write_periodic_convergence() const {
          observable < state.observable_names.size(); ++observable) {
         for (std::size_t block = 0;
              block < state.completed_block_means[observable].size(); ++block) {
-            const std::size_t end_cycle =
+            const std::size_t end_cycle = state.origin_step +
                 (block + 1) * state.cycles_per_block;
             blocks << block + 1 << ',' << end_cycle << ','
                    << end_cycle * periodic_convergence_steps_per_cycle_ << ','
@@ -5547,10 +5547,12 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
     if (checkpoint_v25) {
         int stored_enabled = 0;
         in >> stored_enabled;
+        const bool reset =
+            cfg_.periodic_convergence.reset_on_restart;
         if (key != "periodic_convergence" ||
             (stored_enabled != 0 && stored_enabled != 1) ||
-            (stored_enabled == 1) !=
-                cfg_.periodic_convergence.enabled) {
+            (!reset && (stored_enabled == 1) !=
+                cfg_.periodic_convergence.enabled)) {
             throw std::runtime_error(
                 "checkpoint periodic-convergence enablement does not "
                 "match 1D config");
@@ -5575,22 +5577,27 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
                 state.samples_in_current_block >> observable_count >>
                 block_count;
             const auto& configured = cfg_.periodic_convergence;
-            if (stored_frequency != configured.rf_frequency ||
-                stored_physical_steps !=
-                    periodic_convergence_steps_per_cycle_ ||
-                stored_cycles_per_block != configured.cycles_per_block ||
-                stored_minimum_blocks != configured.minimum_blocks ||
-                stored_minimum_effective !=
-                    configured.minimum_effective_blocks ||
-                stored_maximum_drift != configured
-                    .maximum_absolute_projected_fractional_drift ||
-                stored_maximum_split != configured
-                    .maximum_absolute_split_half_fractional_change ||
-                stored_maximum_error !=
-                    configured.maximum_relative_standard_error ||
-                !periodic_convergence_ ||
+            const bool stored_shape_safe =
+                observable_count > 0 && observable_count <= 1024 &&
+                block_count <= 10000000 / observable_count;
+            const bool configured_contract_matches =
+                stored_frequency == configured.rf_frequency &&
+                stored_physical_steps ==
+                    periodic_convergence_steps_per_cycle_ &&
+                stored_cycles_per_block == configured.cycles_per_block &&
+                stored_minimum_blocks == configured.minimum_blocks &&
+                stored_minimum_effective ==
+                    configured.minimum_effective_blocks &&
+                stored_maximum_drift == configured
+                    .maximum_absolute_projected_fractional_drift &&
+                stored_maximum_split == configured
+                    .maximum_absolute_split_half_fractional_change &&
+                stored_maximum_error ==
+                    configured.maximum_relative_standard_error;
+            if (!stored_shape_safe || !periodic_convergence_ ||
                 observable_count !=
-                    periodic_convergence_->state().observable_names.size()) {
+                    periodic_convergence_->state().observable_names.size() ||
+                (!reset && !configured_contract_matches)) {
                 throw std::runtime_error(
                     "checkpoint periodic-convergence contract does not "
                     "match 1D config");
@@ -5639,13 +5646,23 @@ void Simulation::load_checkpoint(const std::filesystem::path& path) {
         } else {
             in >> key;
         }
-    } else if (cfg_.periodic_convergence.enabled) {
+    } else if (cfg_.periodic_convergence.enabled &&
+               !cfg_.periodic_convergence.reset_on_restart) {
         throw std::runtime_error(
             "legacy checkpoint cannot restore periodic convergence state");
     }
     in >> step_;
     if (key != "step") throw std::runtime_error("checkpoint missing step");
     if (periodic_convergence_ &&
+        cfg_.periodic_convergence.reset_on_restart) {
+        if (step_ % periodic_convergence_steps_per_cycle_ != 0) {
+            throw std::runtime_error(
+                "periodic-convergence restart reset requires an exact "
+                "RF-phase checkpoint");
+        }
+        reset_periodic_convergence(
+            step_ / periodic_convergence_steps_per_cycle_);
+    } else if (periodic_convergence_ &&
         periodic_convergence_->state().last_step !=
             step_ / periodic_convergence_steps_per_cycle_) {
         throw std::runtime_error(

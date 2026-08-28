@@ -338,6 +338,11 @@ and the RF period contains an integer number of timesteps. Checkpoint v25 binds
 the complete convergence contract and history. The runtime rewrites
 `periodic_convergence_blocks.csv` and `periodic_convergence_status.csv` after
 every completed block and at orderly termination.
+Strict restoration is the default. The explicit
+`periodic_convergence_reset_on_restart = true` option starts a new statistical
+epoch at the checkpoint cycle and permits legacy physical state to seed a new
+measurement campaign. It is accepted only when the checkpoint step is exactly
+at the configured RF phase; no earlier samples or partial cycles are inferred.
 
 ## Verification included
 

@@ -301,6 +301,7 @@ struct WallImpactSpectrum1DConfig {
 
 struct PeriodicConvergence1DConfig {
     bool enabled{false};
+    bool reset_on_restart{false};
     double rf_frequency{0.0};
     std::size_t cycles_per_block{0};
     std::size_t minimum_blocks{16};

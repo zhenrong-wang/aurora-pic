@@ -758,6 +758,7 @@ Periodically driven 1D cases use the stronger opt-in RF-cycle controller:
 
 ```ini
 periodic_convergence = true
+periodic_convergence_reset_on_restart = false
 periodic_convergence_rf_frequency = 13.56e6
 periodic_convergence_cycles_per_block = 32
 periodic_convergence_minimum_blocks = 16
@@ -775,6 +776,12 @@ block-count, autocorrelation-adjusted effective-sample, drift, split-half, and
 standard-error gates. This controller permits `mode = steady_state` for driven
 1D cases. Its complete history and thresholds are stored in checkpoint v25;
 the CSV decision record is written to the configured output directory.
+Strict restart restoration is the default. Set
+`periodic_convergence_reset_on_restart = true` only to begin a declared fresh
+statistical epoch from an older checkpoint or to discard an existing epoch.
+The checkpoint step must lie exactly on the configured RF phase; AuroraPIC
+rejects between-phase resets and never treats pre-checkpoint samples as part of
+the new convergence decision.
 
 ## Runtime controls
 
