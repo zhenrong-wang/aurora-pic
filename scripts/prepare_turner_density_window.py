@@ -93,6 +93,11 @@ def build_deck(base: str, checkpoint: Path, output_dir: Path,
 
     end_step = source_step + WINDOW_STEPS
     values = {
+        # A converged steady-state checkpoint may carry an already-satisfied
+        # periodic controller.  Profile windows are fixed-duration
+        # measurements, so they must not terminate from restored controller
+        # state before collecting any spatial samples.
+        "mode": "transient",
         "steps": str(end_step),
         "output_interval": str(STEPS_PER_CYCLE),
         "output_dir": str(output_dir),
@@ -106,6 +111,10 @@ def build_deck(base: str, checkpoint: Path, output_dir: Path,
         "spatial_average_end_step": str(end_step),
         "spatial_average_rf_frequency": "13560000",
         "spatial_average_rf_cycles": str(WINDOW_CYCLES),
+        "periodic_convergence": "false",
+        "periodic_convergence_reset_on_restart": "false",
+        "periodic_convergence_rf_frequency": "0",
+        "periodic_convergence_cycles_per_block": "0",
         "runtime_backend": "serial",
         "runtime_threads": "1",
     }
@@ -159,8 +168,10 @@ def prepare(args: argparse.Namespace) -> dict[str, object]:
             "reset_on_restart": True,
         },
         "execution": {
+            "mode": "transient",
             "runtime_backend": "serial",
             "runtime_threads": 1,
+            "periodic_convergence": False,
             "collision_opportunity_sampling": "single_bernoulli",
             "output_dir": str(output_dir),
             "launched": False,
