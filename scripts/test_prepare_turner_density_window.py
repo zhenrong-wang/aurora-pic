@@ -85,10 +85,10 @@ def main() -> int:
             "spatial_average_end_step = 524800\n",
             "spatial_average_interval = 1\n",
             "spatial_average_rf_cycles = 32\n",
-            "periodic_convergence = false\n",
+            "periodic_convergence = true\n",
             "periodic_convergence_reset_on_restart = false\n",
-            "periodic_convergence_rf_frequency = 0\n",
-            "periodic_convergence_cycles_per_block = 0\n",
+            "periodic_convergence_rf_frequency = 13560000\n",
+            "periodic_convergence_cycles_per_block = 32\n",
         )
         assert all(value in deck for value in required)
         assert deck.count("opportunity_sampling = single_bernoulli") == 2
@@ -102,7 +102,9 @@ def main() -> int:
         }
         assert report["execution"]["launched"] is False
         assert report["execution"]["mode"] == "transient"
-        assert report["execution"]["periodic_convergence"] is False
+        assert report["execution"]["periodic_convergence"] == (
+            "preserved_for_checkpoint_compatibility"
+        )
 
         rejected = run(
             root, BASE.replace(
