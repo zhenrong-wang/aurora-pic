@@ -81,6 +81,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
         scripts/analyze_turner_balance.py
         scripts/analyze_turner_density_blocks.py
         scripts/prepare_turner_density_window.py
+        scripts/prepare_turner_adaptive_segment.py
         scripts/digitize_charoy_figure6.py
   scripts/aggregate_hall_ensemble.py scripts/analyze_hall_pilot.py
   scripts/preflight_hall.py scripts/qualify_hall_runtime.py
