@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-28T23:15:26Z",
+  "scope": "prospective_seed1_spatial_profile_stationarity_extension",
+  "status": "preregistered_not_launched",
+  "observed_before_declaration": {
+    "result_path": "benchmarks/ccp/turner-case1-adaptive-profile-seed1-result-20260828.json",
+    "result_sha256": "45f450f19f735b6aedc415870eb3af81a1b3091a5d0a94b32345d18b739e31ad",
+    "blocks": 16,
+    "classification": "internal_stationarity_screen_failed",
+    "ar1_effective_blocks": 5.172957292470888,
+    "projected_fractional_drift": -0.012609810535745947,
+    "split_half_fractional_change": -0.0021694884621860037,
+    "maximum_adjacent_profile_relative_l2": 0.020497353013995575
+  },
+  "locked_initial_state": {
+    "seed": 162631810,
+    "checkpoint_step": 1126400,
+    "checkpoint_sha256": "42834c1151ca080091dfc5e97f55faa92d55b0018d72650003f8e1e202bb72a5"
+  },
+  "measurement_contract": {
+    "additional_consecutive_blocks": 16,
+    "total_blocks_at_decision": 32,
+    "rf_cycles_per_block": 32,
+    "steps_per_rf_cycle": 400,
+    "steps_per_block": 12800,
+    "spatial_average_interval": 1,
+    "spatial_average_reset_on_every_restart": true,
+    "decision_only_after_total_block_32": true,
+    "early_stopping": false
+  },
+  "unchanged_stationarity_gates": {
+    "minimum_ar1_effective_blocks": 8.0,
+    "maximum_absolute_projected_fractional_drift": 0.01,
+    "maximum_absolute_split_half_fractional_change": 0.01,
+    "maximum_adjacent_profile_relative_l2": 0.025
+  },
+  "integrity_gates": {
+    "all_blocks_complete_and_contiguous": true,
+    "exact_electron_and_ion_source_loss_balance_every_block": true,
+    "finite_profiles_and_metadata": true,
+    "checkpoint_hash_chain_recorded": true,
+    "turner_comparison_descriptive_until_stationarity_passes": true
+  },
+  "decision_rule": {
+    "stationary": "At total block 32 every unchanged stationarity gate passes.",
+    "persistent_slow_mode": "At total block 32 any unchanged stationarity gate fails.",
+    "next_seed_authorization": "Seed 2 profile measurement begins only if seed 1 is stationary.",
+    "formal_comparison_authorization": "No pooled Turner comparison is formal unless every seed subsequently passes its profile-stationarity gates."
+  },
+  "repair_policy": "Do not change physics, thresholds, particle weights, collision data, or discard blocks during this extension.",
+  "claim_boundary": "This extension tests spatial-profile stationarity for one already equilibrated seed; it does not itself validate Turner Case 1 or other plasma regimes."
+}
