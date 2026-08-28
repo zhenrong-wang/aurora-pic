@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "scope": "prospective_corrected_schedule_adaptive_equilibration_progress",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-adaptive-convergence-rule-20260828.json",
+    "sha256": "c2493618a14631a8409b99a403e0a160a22cf277ca5e21c66afd3866ec1df9d5"
+  },
+  "execution_lock": {
+    "path": "benchmarks/ccp/turner-case1-adaptive-convergence-execution-lock-20260828.json",
+    "sha256": "6adc763151214282a8b125a41a8cc9c90a3046a55ca0fa648b154f6dce055ab1"
+  },
+  "locked_solver_source_commit": "4529ab3117bd4761fdbdbefd8220b0f6af45abe8",
+  "orchestration_source_commit": "b4ed4573c42e16979d41d4006468ab4c3373d5bb",
+  "updated_utc": "2026-08-28T03:08:43Z",
+  "status": "seed_1_adaptive_equilibration_incomplete",
+  "admitted_segments": [
+    {
+      "seed": 162631810,
+      "segment": 1,
+      "blocks": 8,
+      "start_step": 716800,
+      "end_step": 819200,
+      "preflight_sha256": "ffe7304b35812176b5d71c243a8eef947defb113dff0a0a3d8b1240fd86ae4d7",
+      "generated_deck_sha256": "c374f41abe414368b6c40b8c27d8141c1c348c469ba1e48e13a40b2d47f543d4",
+      "input_checkpoint_sha256": "5806823c85815b8685b9540f9d2b33fc6e503fc31ef913328e881c85db57987c",
+      "output_checkpoint_sha256": "5d7d98aeb67e09e5940779901280f9be00bbce1354c629cf720c879e3957271e",
+      "periodic_blocks_sha256": "a5266458ae6b909cd858b6a774b230e16ab54e18f1bf0d4ed653f7e8be1cceb7",
+      "periodic_status_sha256": "d7753a0fe83a73dcf4b16860cded0d6ecb563d12c2b1e226b8cc08a4401526f2",
+      "balance_report_sha256": "f02e68838c51f1f47024aa60a0de8d15ce287f94f14f89ef77a8f90afdfe7199",
+      "solver_exit_status": 0,
+      "wall_seconds": 768.95,
+      "peak_resident_set_kib": 11280,
+      "integrity": {
+        "checkpoint_boundaries_valid": true,
+        "complete_contiguous_blocks": true,
+        "finite_observables": true,
+        "electron_population_balance_exact": true,
+        "ion_population_balance_exact": true,
+        "admitted": true
+      },
+      "observables": {
+        "represented_population:electrons": {
+          "blocks": 8,
+          "lag_one_correlation": 0.3478667840902252,
+          "effective_blocks": 3.8706093130706396,
+          "projected_fractional_drift": 0.003234505847194089,
+          "split_half_fractional_change": -0.0032788743234356483,
+          "relative_standard_error": 0.005398382378726833,
+          "all_magnitude_gates_passed": true,
+          "minimum_nominal_blocks_passed": false,
+          "minimum_effective_blocks_passed": false
+        },
+        "represented_population:ions": {
+          "blocks": 8,
+          "lag_one_correlation": 0.3600338938838119,
+          "effective_blocks": 3.76441268997292,
+          "projected_fractional_drift": 0.00235822221281534,
+          "split_half_fractional_change": -0.002248106363610142,
+          "relative_standard_error": 0.003744690008385008,
+          "all_magnitude_gates_passed": true,
+          "minimum_nominal_blocks_passed": false,
+          "minimum_effective_blocks_passed": false
+        },
+        "phase_total_energy": {
+          "blocks": 8,
+          "lag_one_correlation": 0.129961527513825,
+          "effective_blocks": 6.159774125410867,
+          "projected_fractional_drift": 0.004780181342155651,
+          "split_half_fractional_change": 0.0013005762784052467,
+          "relative_standard_error": 0.001372270784300802,
+          "all_magnitude_gates_passed": true,
+          "minimum_nominal_blocks_passed": false,
+          "minimum_effective_blocks_passed": false
+        }
+      },
+      "classification": "admitted_horizon_incomplete"
+    }
+  ],
+  "next_action": "Continue seed 162631810 with a second locked eight-block segment while importing the v25 convergence history.",
+  "scientific_observation": "All endpoint magnitude gates pass, but temporal correlation reduces eight nominal blocks to fewer than eight effective blocks for every observable. The seed is not converged and profile measurement remains unauthorized.",
+  "claim_boundary": "This is an admitted adaptive-equilibration segment, not a Turner profile comparison or a validation result."
+}
