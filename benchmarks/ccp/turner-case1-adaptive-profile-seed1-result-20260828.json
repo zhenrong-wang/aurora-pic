@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-28T13:46:06Z",
+  "seed": 162631810,
+  "status": "profile_stationarity_failed",
+  "solver_source_commit": "4529ab3117bd4761fdbdbefd8220b0f6af45abe8",
+  "orchestration_source_commit": "aba9b2b",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-adaptive-convergence-rule-20260828.json",
+    "sha256": "c2493618a14631a8409b99a403e0a160a22cf277ca5e21c66afd3866ec1df9d5"
+  },
+  "equilibration_progress": {
+    "path": "benchmarks/ccp/turner-case1-adaptive-convergence-progress-20260828.json",
+    "sha256": "49d1546a40512c49f9e06a8794623b943003229274724ea7ee627bd24f63c7a5"
+  },
+  "measurement": {
+    "blocks": 16,
+    "rf_cycles_per_block": 32,
+    "samples_per_block": 12800,
+    "all_blocks_complete": true,
+    "all_blocks_contiguous": true,
+    "spatial_average_reset_on_every_restart": true,
+    "electron_population_balance_exact_every_block": true,
+    "ion_population_balance_exact_every_block": true,
+    "final_step": 1126400,
+    "final_checkpoint_sha256": "42834c1151ca080091dfc5e97f55faa92d55b0018d72650003f8e1e202bb72a5"
+  },
+  "stationarity_audit": {
+    "path": "tmp/turner-case1-adaptive-profile-measurement-20260828/seed_162631810/blocks_01_16.json",
+    "sha256": "3e892462c29c59012ea0b637c72a771d0d4162091e041dd836681bbad377f699",
+    "classification": "internal_stationarity_screen_failed",
+    "ar1_effective_blocks": 5.172957292470888,
+    "projected_fractional_drift": -0.012609810535745947,
+    "split_half_fractional_change": -0.0021694884621860037,
+    "maximum_adjacent_profile_relative_l2": 0.020497353013995575,
+    "minimum_effective_blocks_passed": false,
+    "drift_passed": false,
+    "split_half_passed": true,
+    "adjacent_profile_passed": true
+  },
+  "turner_descriptive_comparison": {
+    "x_squared_by_block": [67.51334890639917, 84.7148725595394, 99.9691355076575, 188.1454244987629, 292.92950613644695, 131.94687502102093, 292.3115077614073, 249.71530465120455, 108.38597051308822, 182.51508010734273, 172.76429945895987, 169.45634850672138, 314.3223070355414, 369.8649068858762, 191.5729392948421, 186.3056368160458],
+    "published_95_percent_interval": [55.0, 303.0],
+    "blocks_inside_published_95_percent_interval": 14,
+    "formal_pooled_comparison_authorized": false
+  },
+  "scientific_observation": "Global represented-population and energy convergence did not guarantee spatial-profile stationarity. The 16 post-equilibration profiles retained a small coherent negative density drift and only 5.17 AR1-effective blocks while adjacent profile shape and split-half gates passed.",
+  "decision": "Do not admit a pooled Turner profile comparison and do not tune physics or thresholds. Predeclare any extended profile horizon or revised equilibration observable before further evidentiary runs.",
+  "claim_boundary": "This is an internal profile-stationarity failure for one seed, not a Turner validation result or a general PIC credibility failure."
+}
