@@ -11,8 +11,8 @@
     "sha256": "6adc763151214282a8b125a41a8cc9c90a3046a55ca0fa648b154f6dce055ab1"
   },
   "locked_solver_source_commit": "4529ab3117bd4761fdbdbefd8220b0f6af45abe8",
-  "orchestration_source_commit": "022dcfa4852d8219d1894c4d7e3f146b9c9541f2",
-  "updated_utc": "2026-08-28T06:55:38Z",
+  "orchestration_source_commit": "b45e7e80f0596ef8236b7f48f1389c482e844de7",
+  "updated_utc": "2026-08-28T07:37:23Z",
   "status": "seed_1_converged_seed_2_slow_mode_unresolved",
   "admitted_segments": [
     {
@@ -380,9 +380,70 @@
         }
       },
       "classification": "admitted_horizon_incomplete"
+    },
+    {
+      "seed": 500474954,
+      "segment": 5,
+      "blocks": 8,
+      "start_step": 1126400,
+      "end_step": 1228800,
+      "preflight_sha256": "972596e36f76fd5f8671df60db72f1dfe974b682b48011962bbc911e8872155d",
+      "generated_deck_sha256": "2a8042dbcbc740c0b6dbf851e9383fd1a74ec92c5345bb656b48463e5d891ad8",
+      "input_checkpoint_sha256": "17733ee65094fc9ff6c43f2427be0c517762b7c041e35c097b0476497aa05f64",
+      "output_checkpoint_sha256": "95d7ba3d66825e4623332b72199b480979aa081fc8b3b695dde5a9ec9db710b9",
+      "periodic_blocks_sha256": "c2de9cd5d9185ad9ecc4a553023b1f67b30acb3c939acd0e963c9df5f65ae6ee",
+      "periodic_status_sha256": "f6312403514c6b81a4d39376824aa8be6f319b61efdab6c5b37c9716b7b02702",
+      "balance_report_sha256": "cf03111a26e82bca2326f3ea1a1b87f110b46d249081bc5eafb8fa3d9a40788d",
+      "solver_exit_status": 0,
+      "wall_seconds": 783.77,
+      "peak_resident_set_kib": 11536,
+      "integrity": {
+        "checkpoint_boundaries_valid": true,
+        "complete_contiguous_blocks": true,
+        "finite_observables": true,
+        "electron_population_balance_exact": true,
+        "ion_population_balance_exact": true,
+        "admitted": true
+      },
+      "observables": {
+        "represented_population:electrons": {
+          "blocks": 40,
+          "lag_one_correlation": 0.7815774225999771,
+          "effective_blocks": 4.904026614375567,
+          "projected_fractional_drift": 0.01637439020246025,
+          "split_half_fractional_change": 0.01231957756941109,
+          "relative_standard_error": 0.0055851817687974275,
+          "all_magnitude_gates_passed": false,
+          "minimum_nominal_blocks_passed": true,
+          "minimum_effective_blocks_passed": false
+        },
+        "represented_population:ions": {
+          "blocks": 40,
+          "lag_one_correlation": 0.776579206730492,
+          "effective_blocks": 5.030359297758033,
+          "projected_fractional_drift": 0.011115361656536234,
+          "split_half_fractional_change": 0.008408345285804374,
+          "relative_standard_error": 0.0036703465500352575,
+          "all_magnitude_gates_passed": false,
+          "minimum_nominal_blocks_passed": true,
+          "minimum_effective_blocks_passed": false
+        },
+        "phase_total_energy": {
+          "blocks": 40,
+          "lag_one_correlation": 0.5712266863609394,
+          "effective_blocks": 10.915632158262962,
+          "projected_fractional_drift": 0.0032596091992432336,
+          "split_half_fractional_change": 0.0025306820985527643,
+          "relative_standard_error": 0.000803539243562934,
+          "all_magnitude_gates_passed": true,
+          "minimum_nominal_blocks_passed": true,
+          "minimum_effective_blocks_passed": true
+        }
+      },
+      "classification": "admitted_horizon_incomplete"
     }
   ],
   "next_action": "Continue seed 500474954 in locked eight-block increments. Do not advance to seed 3662142586 or profile measurement until seed 500474954 converges or exhausts 64 blocks.",
-  "scientific_observation": "Seed 162631810 passes every online gate at 16 blocks. At 32 blocks seed 500474954 passes every magnitude and uncertainty gate, and energy is converged with 9.12 effective blocks. Population correlation remains the sole blocker, with only 4.35 electron and 4.41 ion effective blocks. Exact source-loss balance and stable resource behavior exclude bookkeeping loss or numerical blow-up as the immediate explanation.",
+  "scientific_observation": "Seed 162631810 passes every online gate at 16 blocks. At 40 blocks seed 500474954 remains population-nonstationary: electron drift and split-half changes are +1.64 and +1.23 percent, ion drift is +1.11 percent, and effective population counts are 4.90 and 5.03. Energy remains converged with 10.92 effective blocks. Exact source-loss balance and stable resource behavior exclude bookkeeping loss or numerical blow-up as the immediate explanation.",
   "claim_boundary": "This establishes online sampling readiness for one seed and an admitted incomplete epoch for a second. It is not yet a cross-seed result, Turner profile comparison, or validation claim."
 }
