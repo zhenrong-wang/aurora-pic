@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-28T02:36:50Z",
+  "status": "preregistered_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-adaptive-convergence-rule-20260828.json",
+    "sha256": "c2493618a14631a8409b99a403e0a160a22cf277ca5e21c66afd3866ec1df9d5"
+  },
+  "work_directory": "tmp/turner-case1-adaptive-convergence-20260828",
+  "work_directory_absent_at_lock": true,
+  "execution_order": {
+    "seeds": [162631810, 500474954, 3662142586],
+    "seed_order": "ascending as listed",
+    "segment_blocks": 8,
+    "maximum_blocks_per_seed": 64,
+    "maximum_concurrent_solver_processes": 1,
+    "advance_next_seed_only_after_current_seed_converges_or_exhausts": true
+  },
+  "command_identity": {
+    "solver_binary": "build/aurorapic_cli",
+    "solver_binary_sha256": "eb6da8da33ddc5e76eeeccc2e9425504d431cf3b9034cedaca5382a79c573d59",
+    "solver_source_commit": "4529ab3117bd4761fdbdbefd8220b0f6af45abe8",
+    "build_options": {
+      "AURORA_BUILD_TESTS": true,
+      "AURORA_ENABLE_OPENMP": false
+    }
+  },
+  "resource_envelope": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "maximum_peak_resident_set_kib_each": 262144,
+    "minimum_available_memory_kib_before_segment": 2097152,
+    "minimum_free_disk_gib_before_segment": 30
+  },
+  "recovery_boundary": "A segment is admitted only after zero solver exit, valid v25 final checkpoint, complete periodic-convergence CSVs, exact checkpoint provenance, and resource-gate success. An interrupted segment restarts from its last admitted block-boundary checkpoint without importing uncommitted output.",
+  "launch_boundary": "This lock records the scientific and execution decision before any adaptive continuation step is run. Generator and runner implementation may be added only if they reproduce this rule byte-for-byte and do not weaken it."
+}

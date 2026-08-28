@@ -538,6 +538,15 @@ step-716,800 endpoints are exact 400-step RF boundaries, so a fresh epoch can
 begin without phase truncation; the prior 48 windows remain separate evidence
 and are not imported into the online decision.
 
+The next campaign is prospectively fixed by the
+[`adaptive convergence rule`](../benchmarks/ccp/turner-case1-adaptive-convergence-rule-20260828.json)
+and its
+[`execution lock`](../benchmarks/ccp/turner-case1-adaptive-convergence-execution-lock-20260828.json).
+Each seed may advance through at most 64 new 32-cycle blocks in restart-safe
+eight-block segments. Passing the online population/energy gates authorizes,
+but does not replace, a separate 16-block spatial-profile confirmation stage.
+At declaration time no adaptive continuation step had been launched.
+
 ## Post-benchmark source/wall diagnostic
 
 Checkpoint v6 wall accounting was introduced after the exact 1,280-cycle run,
