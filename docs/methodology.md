@@ -315,6 +315,27 @@ For credible runs, choose:
 
 The bounded smoke/performance envelope for the checked-in examples is documented in `docs/performance-envelope.md`; use it as an operability baseline, not as proof that arbitrary larger plasma cases are converged.
 
+## Periodic statistical convergence
+
+Periodically driven plasmas require complete drive-cycle blocks rather than
+adjacent instantaneous-energy windows. AuroraPIC's convergence library accepts
+contiguous, phase-aligned samples, forms means over a configured integer number
+of complete RF cycles, and retains partial-block state for exact checkpoint
+continuation. Each observable is screened independently using a minimum
+nominal block count, lag-one autocorrelation-corrected effective block count,
+projected linear drift, split-half change, and relative standard error.
+
+The lag-one estimator is explicitly
+`sum((x[i]-mean)*(x[i+1]-mean)) / sum((x[i]-mean)^2)`. Its AR(1) effective
+count is `N*(1-rho)/(1+rho)`, bounded to `[1,N]` after bounding `rho` to
+`[-0.99,0.99]`. This definition reproduces the preregistered corrected Turner
+Case 1 continuation analysis. Passing these gates establishes internal
+sampling readiness only; it does not by itself validate the physics against an
+experiment or independent code. The generic statistical component is now
+available for solver integration; driven steady-state termination remains
+disabled until its configuration, diagnostic output, and checkpoint format are
+wired through the 1D runtime.
+
 ## Verification included
 
 The automated test suite checks the periodic spectral Poisson solve against an analytic sinusoidal charge distribution, checks the imported finite-element solve against constant-potential, symmetric-source, and exact mixed-boundary linear solutions, verifies that repeated imported solves reuse one assembled operator without changing the numerical result, checks particle-location cache population, reuse, and cross-cell fallback, rejects singular or incomplete imported boundary specifications, exercises imported-domain multi-bounce reflection and label-attributed absorption, verifies bounded boundary injection, weight-aware secondary emission, species-resolved physical fluxes, deterministic serial/OpenMP behavior, source/emission restart, and runs a short neutral two-species structured PIC simulation.

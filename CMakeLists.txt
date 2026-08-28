@@ -13,6 +13,7 @@ set(AURORAPIC_USES_OPENMP OFF)
 add_library(aurorapic
   src/Collision.cpp
   src/Config.cpp
+  src/Convergence.cpp
   src/Diagnostics.cpp
   src/ResolvedDiagnostics2D.cpp
   src/FieldSolver.cpp
@@ -204,6 +205,12 @@ if(AURORA_BUILD_TESTS)
   target_compile_options(aurorapic_tests PRIVATE -Wall -Wextra -Wpedantic -O2)
   target_compile_definitions(aurorapic_tests PRIVATE AURORA_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_test(NAME aurorapic_core COMMAND aurorapic_tests)
+
+  add_executable(aurorapic_convergence_tests tests/test_convergence.cpp)
+  target_link_libraries(aurorapic_convergence_tests PRIVATE aurorapic)
+  target_compile_options(aurorapic_convergence_tests PRIVATE
+    -Wall -Wextra -Wpedantic -O2)
+  add_test(NAME aurorapic_convergence COMMAND aurorapic_convergence_tests)
 
   add_executable(aurorapic_initialization_tests tests/test_initialization.cpp)
   target_link_libraries(aurorapic_initialization_tests PRIVATE aurorapic)
