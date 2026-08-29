@@ -123,6 +123,23 @@ def relative_l2(left: list[float], right: list[float]) -> float:
     )
 
 
+def root_mean_square(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return math.sqrt(math.fsum(value * value for value in values) / len(values))
+
+
+def quantile(values: list[float], probability: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    position = probability * (len(ordered) - 1)
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    fraction = position - lower
+    return ordered[lower] + fraction * (ordered[upper] - ordered[lower])
+
+
 def linear_slope(values: list[float]) -> float:
     center = 0.5 * (len(values) - 1)
     denominator = math.fsum((index - center) ** 2 for index in range(len(values)))
@@ -287,6 +304,14 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
         relative_l2(left, right)
         for left, right in zip(profiles, profiles[1:])
     ]
+    normalized_profiles = [
+        [value / integral for value in profile]
+        for profile, integral in zip(profiles, integrals)
+    ]
+    normalized_movements = [
+        relative_l2(left, right)
+        for left, right in zip(normalized_profiles, normalized_profiles[1:])
+    ]
     changes = [
         (right - left) / left
         for left, right in zip(integrals, integrals[1:])
@@ -360,7 +385,7 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
     else:
         classification = "internal_stationarity_screen_failed"
     return {
-        "turner_density_block_analysis_version": 2,
+        "turner_density_block_analysis_version": 3,
         "case": case,
         "species": species,
         "block_contract": {
@@ -372,6 +397,8 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
         },
         "blocks": blocks,
         "adjacent_profile_relative_l2": movements,
+        "adjacent_integral_normalized_profile_relative_l2":
+            normalized_movements,
         "adjacent_integrated_density_fractional_change": changes,
         "series_metrics": {
             "mean_line_integrated_density_m-2": mean_integral,
@@ -381,6 +408,15 @@ def analyze(report_paths: list[Path], minimum_blocks: int) -> dict[str, object]:
             "lag_one_integrated_density_correlation": correlation,
             "ar1_effective_blocks": effective_blocks,
             "maximum_adjacent_profile_relative_l2": maximum_movement,
+            "rms_adjacent_profile_relative_l2":
+                root_mean_square(movements),
+            "p95_adjacent_profile_relative_l2": quantile(movements, 0.95),
+            "maximum_adjacent_integral_normalized_profile_relative_l2":
+                max(normalized_movements) if normalized_movements else None,
+            "rms_adjacent_integral_normalized_profile_relative_l2":
+                root_mean_square(normalized_movements),
+            "p95_adjacent_integral_normalized_profile_relative_l2":
+                quantile(normalized_movements, 0.95),
         },
         "diagnostic_series_ready": enough,
         "stationarity_screen": {

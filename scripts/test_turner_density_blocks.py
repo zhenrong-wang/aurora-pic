@@ -137,7 +137,7 @@ def main() -> int:
         )
         require(
             stable_run.returncode == 0
-            and stable_value["turner_density_block_analysis_version"] == 2
+            and stable_value["turner_density_block_analysis_version"] == 3
             and stable_value["classification"]
                 == "internal_stationarity_screen_passed"
             and stable_value["stationarity_screen"]["passed"] is True
@@ -148,6 +148,20 @@ def main() -> int:
                 ].values()
             ),
             "stationary 16-block fixture did not pass the internal screen",
+        )
+        require(
+            len(stable_value[
+                "adjacent_integral_normalized_profile_relative_l2"
+            ]) == 15
+            and stable_value["series_metrics"][
+                "rms_adjacent_integral_normalized_profile_relative_l2"
+            ] <= stable_value["series_metrics"][
+                "rms_adjacent_profile_relative_l2"
+            ]
+            and stable_value["series_metrics"][
+                "p95_adjacent_integral_normalized_profile_relative_l2"
+            ] is not None,
+            "amplitude-normalized shape diagnostics are missing or invalid",
         )
 
         drifting = work / "drifting"
