@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-29T03:18:38Z",
+  "status": "preregistered_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-heldout-profile-confirmation-rule-20260829.json",
+    "sha256": "2babfa999731117e455351cec115165026e4bd2848c926771675b5b7b2167716"
+  },
+  "work_directory": "tmp/turner-case1-heldout-profile-confirmation-20260829",
+  "work_directory_absent_at_lock": true,
+  "command_identity": {
+    "solver_binary_sha256": "eb6da8da33ddc5e76eeeccc2e9425504d431cf3b9034cedaca5382a79c573d59",
+    "solver_source_commit": "4529ab3117bd4761fdbdbefd8220b0f6af45abe8",
+    "orchestration_source_commit": "63c35d9bbc7bc029f43a8d9d071791e97608e511",
+    "density_window_preparer_sha256": "9baab6baeff6bd9dc1d53765d2475af9cfe2f12d381dbdb380668e5695ac3352",
+    "density_block_analyzer_sha256": "c388a037d91581d684c9eec662ba99aeb0a9b2db9757e320d95ab6df2c572f7d",
+    "turner_comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c"
+  },
+  "resource_envelope": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "maximum_peak_resident_set_kib_each": 262144,
+    "minimum_available_memory_kib_before_block": 2097152,
+    "minimum_free_disk_gib_before_block": 30,
+    "maximum_concurrent_solver_processes": 1
+  },
+  "recovery_boundary": "Admit only complete, exactly balanced, hash-chained blocks. Restart an interrupted block from the preceding admitted checkpoint without importing partial output.",
+  "launch_boundary": "Replace the rule hash placeholder, validate, commit, and push both locks before preparing held-out seed 500474954 block 1."
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-29T03:18:38Z",
+  "scope": "prospective_heldout_profile_stationarity_confirmation",
+  "status": "preregistered_not_launched",
+  "design_data": {
+    "seed": 162631810,
+    "excluded_from_confirmation": true,
+    "diagnosis_path": "benchmarks/ccp/turner-case1-profile-excursion-diagnosis-20260829.json",
+    "diagnosis_sha256": "b839faa385227d66604a328c8aefd81ff9cacff6c69af65b76b31342eeccd362",
+    "use": "The design seed motivated separating density amplitude from integral-normalized spatial shape and replacing a horizon-sensitive maximum with RMS and p95 summaries."
+  },
+  "heldout_initial_states": [
+    {
+      "seed": 500474954,
+      "checkpoint_step": 1497600,
+      "checkpoint_sha256": "eaca65ec74237fdc8397d73901a4f58d9b6f0651cccb7956a09b4451d01ca70b"
+    },
+    {
+      "seed": 3662142586,
+      "checkpoint_step": 1203200,
+      "checkpoint_sha256": "1d01329a46b8de81bae6106e473483bc505b95753c3362d59edd5584b2c95b01"
+    }
+  ],
+  "measurement_contract": {
+    "fixed_blocks_per_seed": 32,
+    "rf_cycles_per_block": 32,
+    "steps_per_rf_cycle": 400,
+    "steps_per_block": 12800,
+    "spatial_average_interval": 1,
+    "spatial_average_reset_on_every_restart": true,
+    "seed_order": [500474954, 3662142586],
+    "decision_only_after_all_32_blocks_for_a_seed": true,
+    "early_stopping": false
+  },
+  "primary_gates_per_seed": {
+    "density_amplitude": {
+      "minimum_ar1_effective_blocks": 8.0,
+      "maximum_absolute_projected_fractional_drift": 0.01,
+      "maximum_absolute_split_half_fractional_change": 0.01
+    },
+    "integral_normalized_shape": {
+      "maximum_rms_adjacent_relative_l2": 0.025,
+      "maximum_p95_adjacent_relative_l2": 0.025
+    }
+  },
+  "secondary_descriptive_metrics": [
+    "maximum_raw_adjacent_profile_relative_l2",
+    "maximum_integral_normalized_adjacent_profile_relative_l2",
+    "per_block_turner_x_squared",
+    "per_block_reference_relative_l2"
+  ],
+  "integrity_gates": {
+    "all_blocks_complete_and_contiguous": true,
+    "exact_electron_and_ion_source_loss_balance_every_block": true,
+    "finite_profiles_and_metadata": true,
+    "checkpoint_hash_chain_recorded": true,
+    "one_solver_process_at_a_time": true
+  },
+  "decision_rule": {
+    "protocol_confirmed": "Both held-out seeds pass every primary amplitude and normalized-shape gate.",
+    "protocol_not_confirmed": "Either held-out seed fails any primary gate.",
+    "formal_turner_pooling": "A separate preregistered pooling lock may be created only after protocol confirmation; this rule does not authorize a formal pooled comparison."
+  },
+  "repair_policy": "Do not change physics, thresholds, block selection, particle weights, or collision data after launch. The design seed is never promoted into held-out evidence.",
+  "claim_boundary": "Passing confirms the revised stationarity protocol on two held-out stochastic seeds. It does not alone validate Turner Case 1 or other plasma regimes."
+}
