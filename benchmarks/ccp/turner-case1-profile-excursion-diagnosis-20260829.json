@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-29T03:13:41Z",
+  "scope": "post_hoc_diagnosis_of_locked_block29_to_block30_profile_excursion",
+  "seed": 162631810,
+  "source_result": {
+    "path": "benchmarks/ccp/turner-case1-profile-extension-result-20260828.json",
+    "sha256": "20e1552a4cb42d01ae8ce3e04fc206345a248a3a9084dd0e76a9952de2a48a49"
+  },
+  "source_profiles": [
+    {
+      "block": 29,
+      "path": "tmp/turner-case1-adaptive-profile-extension-20260828/seed_162631810/block_29/output/spatial_average.csv",
+      "sha256": "a40ff535a337f148fc8d328ccf599494d49bb6ecd99dcabf7e0713a7b6b0235f",
+      "comparison_sha256": "314f64ce33bfecc9f22fc08a3f7172c61bc3403e3c6d508faffd412ce3e659fe",
+      "balance_sha256": "de745b0dc0fd555787967113991760e7cd8be582aff837acf383d43d7cb1eb2a"
+    },
+    {
+      "block": 30,
+      "path": "tmp/turner-case1-adaptive-profile-extension-20260828/seed_162631810/block_30/output/spatial_average.csv",
+      "sha256": "d51dd9f1cae7c7cc7882913b46d880f0549a898c203c93bf909309244bf47771",
+      "comparison_sha256": "36e34549753a1bc23e8dc075d2b3221132bac3cc57f7177561717b3c51ce0e9c",
+      "balance_sha256": "305567fd92d9bd526e1aeedd239407d5e4102943e4a97602499da1280ecbea2b"
+    }
+  ],
+  "profile_change": {
+    "ion_raw_relative_l2": 0.02525944898207978,
+    "ion_integrated_density_fractional_change": 0.01260573125658504,
+    "ion_integral_normalized_relative_l2": 0.01895824712965115,
+    "ion_least_squares_amplitude_removed_relative_l2": 0.018373877268324974,
+    "electron_raw_relative_l2": 0.027370773702955934,
+    "electron_integrated_density_fractional_change": 0.01913829963908209,
+    "fraction_of_ion_squared_change_in_central_20_to_80_percent": 0.979800672487965,
+    "fraction_of_electron_squared_change_in_central_20_to_80_percent": 0.9992183637571933
+  },
+  "field_and_energy_change": {
+    "potential_mean_relative_l2": 0.00032962305689188484,
+    "electric_field_mean_relative_l2": 0.0020294824330809643,
+    "electric_field_rms_relative_l2": 0.001560774509183105,
+    "electron_mean_kinetic_energy_profile_relative_l2": 0.00832236185457774,
+    "ion_mean_kinetic_energy_profile_relative_l2": 0.01930254040455094
+  },
+  "population_and_balance_context": {
+    "block29_ionizations": 24610,
+    "block30_ionizations": 24666,
+    "block29_net_ion_macro_particle_change": 75,
+    "block30_net_ion_macro_particle_change": 183,
+    "block29_net_electron_macro_particle_change": 99,
+    "block30_net_electron_macro_particle_change": 201,
+    "all_integer_source_loss_balances_exact": true,
+    "correlation_integrated_ion_density_to_mean_live_ion_count_across_32_blocks": 0.9997064852561316,
+    "correlation_integrated_ion_density_to_mean_live_electron_count_across_32_blocks": 0.9955886488260777
+  },
+  "series_context": {
+    "adjacent_pairs": 31,
+    "pairs_above_raw_2p5_percent_threshold": 1,
+    "median_raw_adjacent_relative_l2": 0.014917015742047646,
+    "mean_raw_adjacent_relative_l2": 0.01505123684818514,
+    "maximum_pair": [29, 30]
+  },
+  "diagnosis": "The sole threshold-crossing transition is a coherent stochastic bulk-population excursion. Density amplitude, macro-particle population, and exact ionization-minus-wall-loss accounting move together, while potential, electric field, power, and sheath-side density changes remain small. This evidence rejects conservation loss and field-solver instability as immediate causes.",
+  "methodological_observation": "A maximum-over-adjacent-pairs gate is horizon-sensitive: doubling the profile horizon increases the opportunity for one stochastic exceedance. Amplitude-normalized shape movement for the failed pair is below the original raw-profile threshold, but that post-hoc observation does not change the locked failure.",
+  "recommended_next_campaign": "Predeclare a multi-seed profile-variability study that separates integrated-density amplitude from normalized spatial shape and calibrates a horizon-aware excursion statistic. Reuse the completed trajectories only as design data, never as acceptance data.",
+  "claim_boundary": "This is post-hoc diagnostic evidence. It cannot convert the locked stationarity failure into a pass or authorize a Turner validation claim."
+}
