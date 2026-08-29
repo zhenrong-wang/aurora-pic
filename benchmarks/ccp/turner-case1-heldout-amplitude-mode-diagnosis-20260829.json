@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-29T13:02:46Z",
+  "scope": "post_protocol_exploratory_amplitude_mode_diagnosis",
+  "protocol_outcome": {
+    "path": "benchmarks/ccp/turner-case1-heldout-profile-confirmation-outcome-20260829.json",
+    "status": "protocol_not_confirmed",
+    "unchanged_by_this_diagnosis": true
+  },
+  "seed_diagnostics": [
+    {
+      "seed": 500474954,
+      "density_to_mean_live_ion_correlation": 0.967286,
+      "density_to_mean_live_electron_correlation": 0.972304,
+      "density_to_ionization_correlation": 0.541020,
+      "density_to_ion_wall_loss_correlation": 0.750136,
+      "starting_live_ions_to_net_ion_change_correlation": -0.384278,
+      "starting_live_ions_to_ionization_correlation": 0.151108,
+      "starting_live_ions_to_ion_wall_loss_correlation": 0.785344,
+      "mean_ionization_events_per_block": 24578.8125,
+      "mean_ion_wall_losses_per_block": 24576.0,
+      "net_ion_change_mean_per_block": 2.8125,
+      "net_ion_change_standard_deviation_per_block": 160.4231174516417,
+      "net_ion_change_range_per_block": [-341, 329],
+      "lag_one_integrated_density_correlation": 0.7597590233955702,
+      "raw_projected_fractional_drift": 0.021029471153484094,
+      "exploratory_ar1_adjusted_trend_t": 1.5011989912052437,
+      "exploratory_approximate_95_percent_fractional_drift_half_width": 0.027456562189491596
+    },
+    {
+      "seed": 3662142586,
+      "density_to_mean_live_ion_correlation": 0.916170,
+      "density_to_mean_live_electron_correlation": 0.928713,
+      "density_to_ionization_correlation": 0.455276,
+      "density_to_ion_wall_loss_correlation": 0.652897,
+      "starting_live_ions_to_net_ion_change_correlation": -0.500793,
+      "starting_live_ions_to_ionization_correlation": 0.004390,
+      "starting_live_ions_to_ion_wall_loss_correlation": 0.560048,
+      "mean_ionization_events_per_block": 24547.34375,
+      "mean_ion_wall_losses_per_block": 24552.4375,
+      "net_ion_change_mean_per_block": -5.09375,
+      "net_ion_change_standard_deviation_per_block": 149.09498149858874,
+      "net_ion_change_range_per_block": [-317, 248],
+      "lag_one_integrated_density_correlation": 0.5681120758877585,
+      "raw_projected_fractional_drift": 0.013672367110122213,
+      "exploratory_ar1_adjusted_trend_t": 2.1112600069814964,
+      "exploratory_approximate_95_percent_fractional_drift_half_width": 0.0126928182446618
+    }
+  ],
+  "seed_centered_pooled_correlations": {
+    "density_to_mean_live_ions": 0.952075,
+    "density_to_mean_live_electrons": 0.958960,
+    "density_to_ionization": 0.499826,
+    "density_to_ion_wall_loss": 0.677526,
+    "density_to_net_ion_change": 0.025671,
+    "density_to_mean_ion_current": 0.677526
+  },
+  "interpretation": "The global density amplitude is predominantly a live-particle population mode. Ion wall loss responds more strongly to population than ionization does, and net production is negatively correlated with starting population in both seeds, demonstrating restoring feedback rather than an unconstrained random walk. Finite birth-loss noise remains large compared with the small block-mean imbalance and produces correlated amplitude excursions. The locked deterministic one-percent projected-drift gate does not distinguish a statistically significant secular trend from a finite realization of a stationary correlated process.",
+  "exploratory_statistics_boundary": "The AR1-adjusted trend statistics use an approximate standard-error inflation and are diagnostic only. They were computed after observing the registered failures, are not replacement acceptance gates, and cannot rescue or reclassify the completed protocol.",
+  "recommended_next_design": [
+    "Fit and residual-check an AR1 or higher-order population model on design-only trajectories.",
+    "Calibrate trend and mean-density uncertainty with a prospective block bootstrap or parametric stationary null simulation.",
+    "Increase macro-particle population and test whether amplitude variance scales with inverse square root of population while normalized shape and mean observables remain invariant.",
+    "Track block-resolved ionization, wall loss, live populations, electrode current, and field-work observables in the prospective rule.",
+    "Freeze new uncertainty-aware stationarity gates before launching new independent seeds."
+  ],
+  "claim_boundary": "This diagnosis identifies a supported mechanism and a testable next experiment. It does not establish stationarity, validate Turner Case 1, or authorize formal pooling."
+}
