@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-29T13:02:46Z",
+  "status": "protocol_not_confirmed",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-heldout-profile-confirmation-rule-20260829.json",
+    "sha256": "2babfa999731117e455351cec115165026e4bd2848c926771675b5b7b2167716"
+  },
+  "heldout_results": [
+    {
+      "seed": 500474954,
+      "path": "benchmarks/ccp/turner-case1-heldout-profile-seed2-result-20260829.json",
+      "sha256": "3cd3bc93d27fe8494e035c07258c81b69558d7bcca2b027aa5880a352773e377",
+      "primary_passed": false,
+      "failed_gates": ["minimum_ar1_effective_blocks", "maximum_absolute_projected_fractional_drift", "maximum_absolute_split_half_fractional_change"]
+    },
+    {
+      "seed": 3662142586,
+      "path": "benchmarks/ccp/turner-case1-heldout-profile-seed3-result-20260829.json",
+      "sha256": "2e79774b4803e0d2a32afb2b9c23373172b811e67e5064270cc505cca0a734a3",
+      "primary_passed": false,
+      "failed_gates": ["maximum_absolute_projected_fractional_drift"]
+    }
+  ],
+  "joint_evidence": {
+    "complete_blocks": 64,
+    "complete_spatial_samples": 819200,
+    "exact_balance_blocks": 64,
+    "both_normalized_shape_rms_gates_passed": true,
+    "both_normalized_shape_p95_gates_passed": true,
+    "both_density_amplitude_stationarity_contracts_passed": false,
+    "formal_turner_pooling_authorized": false
+  },
+  "scientific_finding": "Across two prospectively held-out stochastic trajectories, AuroraPIC preserves exact source-loss accounting and a stable integral-normalized ion-density shape with mean per-window Turner relative-L2 discrepancies near two percent. Both trajectories nevertheless retain slow global-density-amplitude evolution at the locked horizon. The repeated failure is therefore specific evidence against the present equilibration and stationarity protocol, not evidence of a broad conservation or spatial-profile defect.",
+  "engineering_consequence": "Do not tune thresholds, select favorable windows, or pool these profiles. Return to design work on the density-amplitude mode using population, ionization, wall-loss, current, power, and controller-state diagnostics; then preregister a new independent-seed confirmation campaign.",
+  "claim_boundary": "AuroraPIC has meaningful conservation, boundedness, and descriptive Turner-profile evidence, but this campaign does not support a stationary Turner Case 1 validation claim or general PIC validation."
+}

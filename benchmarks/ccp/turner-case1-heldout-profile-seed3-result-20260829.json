@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-29T13:02:46Z",
+  "seed": 3662142586,
+  "status": "heldout_stationarity_confirmation_failed",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-heldout-profile-confirmation-rule-20260829.json",
+    "sha256": "2babfa999731117e455351cec115165026e4bd2848c926771675b5b7b2167716"
+  },
+  "execution_lock": {
+    "path": "benchmarks/ccp/turner-case1-heldout-profile-confirmation-execution-lock-20260829.json",
+    "sha256": "0b9ccd1887695dcc24c93b3937283d4e04f8b855aa36dcac8589df791181df8d"
+  },
+  "measurement": {
+    "blocks": 32,
+    "rf_cycles_per_block": 32,
+    "samples_per_block": 12800,
+    "all_blocks_complete_and_contiguous": true,
+    "electron_population_balance_exact_every_block": true,
+    "ion_population_balance_exact_every_block": true,
+    "maximum_peak_resident_set_kib": 11824,
+    "initial_step": 1203200,
+    "final_step": 1612800,
+    "initial_checkpoint_sha256": "1d01329a46b8de81bae6106e473483bc505b95753c3362d59edd5584b2c95b01",
+    "final_checkpoint_sha256": "fa1fac7811ce13e5cfa7610274da79efc34d291bc7375fb9cc1065dc55fcbdb1"
+  },
+  "stationarity_audit": {
+    "path": "tmp/turner-case1-heldout-profile-confirmation-20260829/seed_3662142586/blocks_01_32.json",
+    "sha256": "824cc353cce6bb092da1656065143e7920942170c2fea1b1444751d550d03364",
+    "ar1_effective_blocks": 8.813409311810542,
+    "minimum_effective_blocks": 8.0,
+    "effective_blocks_passed": true,
+    "projected_fractional_drift": 0.013672367110122213,
+    "maximum_absolute_projected_fractional_drift": 0.01,
+    "drift_passed": false,
+    "split_half_fractional_change": 0.007241509939271302,
+    "maximum_absolute_split_half_fractional_change": 0.01,
+    "split_half_passed": true,
+    "rms_adjacent_integral_normalized_profile_relative_l2": 0.013772496147196443,
+    "maximum_rms_adjacent_relative_l2": 0.025,
+    "normalized_shape_rms_passed": true,
+    "p95_adjacent_integral_normalized_profile_relative_l2": 0.016398227044074135,
+    "maximum_p95_adjacent_relative_l2": 0.025,
+    "normalized_shape_p95_passed": true
+  },
+  "secondary_descriptive_results": {
+    "lag_one_integrated_density_correlation": 0.5681120758877585,
+    "maximum_raw_adjacent_profile_relative_l2": 0.02438325323265349,
+    "maximum_integral_normalized_adjacent_profile_relative_l2": 0.01722785695412178,
+    "mean_turner_reference_relative_l2": 0.020914308030743248,
+    "turner_reference_relative_l2_range": [0.011285555568482602, 0.04020346978190818],
+    "blocks_inside_published_95_percent_x_squared_interval": 26,
+    "blocks_inside_published_99_percent_x_squared_interval": 30,
+    "x_squared_range": [89.89814687588178, 632.0092457423195],
+    "formal_pooled_comparison_authorized": false
+  },
+  "scientific_observation": "The second held-out trajectory preserves exact source-loss balance and stable integral-normalized profile shape, while 26 of 32 individual windows lie inside Turner's published 95-percent X-squared interval. It passes effective-sample and split-half gates but retains a positive 1.367-percent projected density-amplitude drift, independently reproducing the slow global-density mode.",
+  "decision": "This held-out seed fails the preregistered drift gate. Together with the other held-out failure, the profile-stationarity protocol is not confirmed and formal Turner pooling remains unauthorized.",
+  "claim_boundary": "This is strong descriptive Turner agreement and conservation evidence, not confirmation of steady density amplitude and not a Turner Case 1 validation claim."
+}
