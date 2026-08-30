@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "case_id": "turner-helium-ccp-2013-case-1",
-  "created_utc": "2026-08-30T08:42:00Z",
+  "created_utc": "2026-08-30T04:08:58Z",
   "seed": 500474954,
   "status": "late_stationarity_supported_for_this_seed",
   "rule": {

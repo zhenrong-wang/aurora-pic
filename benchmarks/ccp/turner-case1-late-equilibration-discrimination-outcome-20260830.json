@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T05:08:38Z",
+  "status": "mixed_or_underpowered",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-late-equilibration-discrimination-rule-20260830.json",
+    "sha256": "c1d2fe4ad1f87872b2c8f33bcf2f7351956d35e9a983b5a6bb2d621afbdd297e"
+  },
+  "execution_lock": {
+    "path": "benchmarks/ccp/turner-case1-late-equilibration-discrimination-execution-lock-20260830.json",
+    "sha256": "24c7cb3e88f42ea15f3462ee219249b28fe5833cd707ccaaf9ad9a7961ab6ebd"
+  },
+  "campaign_integrity": {
+    "seeds_complete": 2,
+    "extension_blocks_per_seed": 32,
+    "total_extension_blocks": 64,
+    "all_blocks_complete_and_contiguous": true,
+    "electron_population_balance_exact_every_block": true,
+    "ion_population_balance_exact_every_block": true,
+    "checkpoint_hash_chains_complete": true,
+    "maximum_concurrent_solver_processes": 1,
+    "maximum_observed_peak_resident_set_kib": 11764
+  },
+  "seed_results": [
+    {
+      "seed": 500474954,
+      "path": "benchmarks/ccp/turner-case1-late-equilibration-seed2-result-20260830.json",
+      "status": "late_stationarity_supported_for_this_seed",
+      "all_late_stationarity_gates_passed": true,
+      "ar1_effective_blocks": 8.411523405048971,
+      "stationary_ar1_null_p_value": 0.15314234288285586,
+      "stationary_ar1_null_95_percent_absolute_drift_quantile": 0.00955435744670704
+    },
+    {
+      "seed": 3662142586,
+      "path": "benchmarks/ccp/turner-case1-late-equilibration-seed3-result-20260830.json",
+      "status": "late_stationarity_not_supported_underpowered",
+      "all_late_stationarity_gates_passed": false,
+      "failed_gates": ["minimum_ar1_effective_blocks", "stationary_ar1_null_maximum_95_percent_absolute_drift_quantile"],
+      "ar1_effective_blocks": 4.64190244280245,
+      "stationary_ar1_null_p_value": 0.10579471026448678,
+      "stationary_ar1_null_95_percent_absolute_drift_quantile": 0.016666586318270334
+    }
+  ],
+  "locked_interpretation": {
+    "late_stationarity_supported": false,
+    "continued_secular_evolution_supported": false,
+    "mixed_or_underpowered": true,
+    "reason": "One seed passes every late-stationarity gate, while the other has inadequate effective sample size and a 95-percent stationary-null drift envelope wider than one percent. The second seed does not reject stationarity at the complete horizon, so the result is not evidence for common continued secular evolution."
+  },
+  "scientific_findings": [
+    "Every extension block has exact electron and ion source-loss accounting, excluding a detected population-ledger defect as the cause of density motion.",
+    "Integral-normalized profile-shape motion passes for both seeds, while density amplitude exhibits slow autocorrelation; the unresolved mode is predominantly global amplitude rather than spatial shape.",
+    "Mean ion current remains close to Turner Table III for both seeds, at 0.21818 and 0.21772 A/m2 versus 0.219 A/m2.",
+    "Longer histories reduce apparent secular drift, but seed-dependent correlation leaves the one-percent density-amplitude claim underpowered.",
+    "The evidence does not justify a Turner Case 1 validation claim, but it narrows the credibility problem to stochastic or feedback-driven amplitude uncertainty rather than gross conservation or profile instability."
+  ],
+  "next_stage": {
+    "action": "preregister_macro_particle_count_scaling_experiment",
+    "objective": "Determine whether the slow density-amplitude variance and correlation time decrease with macro-particle count as finite-particle noise predicts, or persist as a physical/numerical feedback mode.",
+    "required_discrimination": "Compare fixed-horizon late-window amplitude variance, AR1 correlation, effective blocks, normalized shape, balance, and Turner observables at the current particle weight and at one or more lower-weight higher-particle-count levels using fresh seeds.",
+    "decision_boundary": "Only after the scaling law and equilibration horizon are characterized should a new independent-seed Turner confirmation protocol be preregistered."
+  },
+  "claim_boundary": "This is a prospective design-stage mechanism diagnosis. The prior held-out confirmation failure remains immutable; no formal Turner validation or profile pooling is authorized."
+}

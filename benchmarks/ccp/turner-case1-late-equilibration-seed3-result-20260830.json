@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T05:08:38Z",
+  "seed": 3662142586,
+  "status": "late_stationarity_not_supported_underpowered",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-late-equilibration-discrimination-rule-20260830.json",
+    "sha256": "c1d2fe4ad1f87872b2c8f33bcf2f7351956d35e9a983b5a6bb2d621afbdd297e"
+  },
+  "execution_lock": {
+    "path": "benchmarks/ccp/turner-case1-late-equilibration-discrimination-execution-lock-20260830.json",
+    "sha256": "24c7cb3e88f42ea15f3462ee219249b28fe5833cd707ccaaf9ad9a7961ab6ebd"
+  },
+  "measurement": {
+    "blocks": 32,
+    "rf_cycles_per_block": 32,
+    "samples_per_block": 12800,
+    "all_blocks_complete_and_contiguous": true,
+    "electron_population_balance_exact_every_block": true,
+    "ion_population_balance_exact_every_block": true,
+    "maximum_peak_resident_set_kib": 11764,
+    "initial_step": 1612800,
+    "final_step": 2022400,
+    "initial_checkpoint_sha256": "fa1fac7811ce13e5cfa7610274da79efc34d291bc7375fb9cc1065dc55fcbdb1",
+    "final_checkpoint_sha256": "5534ae322210c47fe79aa34ed9891be9c02ba07e87b5892f321466c058027079"
+  },
+  "late_stationarity_audit": {
+    "path": "tmp/turner-case1-late-equilibration-discrimination-20260830/seed_3662142586/blocks_01_32.json",
+    "sha256": "0df0f4c72b80051b7dbd9032ed6288e34aadbd8eba6c32d33c1f0e48b61b4d0f",
+    "ar1_effective_blocks": 4.64190244280245,
+    "minimum_ar1_effective_blocks": 8.0,
+    "effective_blocks_passed": false,
+    "split_half_fractional_change": -0.005276060300395848,
+    "maximum_absolute_split_half_fractional_change": 0.01,
+    "split_half_passed": true,
+    "rms_adjacent_integral_normalized_profile_relative_l2": 0.013491795373834378,
+    "maximum_rms_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "normalized_shape_rms_passed": true,
+    "p95_adjacent_integral_normalized_profile_relative_l2": 0.015644263760312013,
+    "maximum_p95_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "normalized_shape_p95_passed": true,
+    "raw_projected_fractional_drift": -0.01361573996830146
+  },
+  "stationary_null_audit": {
+    "path": "tmp/turner-case1-late-equilibration-discrimination-20260830/seed_3662142586/amplitude_uncertainty_01_32.json",
+    "sha256": "63237300907d7c236e78e14100de7454dda4a4367cf6871f1aed0bc05ca683df",
+    "stationary_ar1_null_p_value": 0.10579471026448678,
+    "minimum_p_value": 0.05,
+    "null_not_rejected_passed": true,
+    "stationary_ar1_null_95_percent_absolute_drift_quantile": 0.016666586318270334,
+    "maximum_95_percent_absolute_drift_quantile": 0.01,
+    "uncertainty_power_gate_passed": false,
+    "residual_lag_one_correlation": 0.1838763132026639,
+    "maximum_absolute_residual_lag_one_correlation": 0.30,
+    "residual_lag_one_passed": true,
+    "residual_lag_two_correlation": -0.05293621154291042,
+    "maximum_absolute_residual_lag_two_correlation": 0.30,
+    "residual_lag_two_passed": true,
+    "fitted_ar1_phi": 0.6726541303295902,
+    "monte_carlo_replicates": 20000,
+    "monte_carlo_seed": 20260830
+  },
+  "secondary_descriptive_results": {
+    "mean_line_integrated_density_m-2": 4916476009187.697,
+    "late_last_16_to_first_16_fractional_change": -0.005276060300395848,
+    "previous_32_to_late_32_mean_density_fractional_change": -0.004050557209654082,
+    "mean_turner_reference_relative_l2": 0.025597181252133477,
+    "turner_reference_relative_l2_range": [0.009610323666100365, 0.03971398680311034],
+    "blocks_inside_published_95_percent_x_squared_interval": 15,
+    "blocks_inside_published_99_percent_x_squared_interval": 25,
+    "x_squared_range": [68.90493615216054, 717.8820638423401],
+    "mean_ion_current_A_per_m2": 0.21771839334201182,
+    "turner_table_iii_ion_current_A_per_m2": 0.219,
+    "net_ion_population_change_macro_particles": 72
+  },
+  "combined_64_block_context": {
+    "stationarity_path": "tmp/turner-case1-late-equilibration-discrimination-20260830/seed_3662142586/combined_blocks_01_64.json",
+    "stationarity_sha256": "6850537237326eeb7d1884239ed4d4d969922420173985e53bfcc8f3aeb0f0c4",
+    "uncertainty_path": "tmp/turner-case1-late-equilibration-discrimination-20260830/seed_3662142586/combined_amplitude_uncertainty_01_64.json",
+    "uncertainty_sha256": "3d872b4114843fb15bed22f72639999875474ad32bd8c3cfed481610d4a59faa",
+    "ar1_effective_blocks": 11.614692018126535,
+    "projected_fractional_drift": -0.0059660698348343345,
+    "split_half_fractional_change": -0.004058777364612211,
+    "stationary_ar1_null_p_value": 0.3991300434978251,
+    "stationary_ar1_null_95_percent_absolute_drift_quantile": 0.013905938625694088,
+    "prospective_one_percent_uncertainty_power_gate_passed": false,
+    "interpretation": "The complete 64-block history is descriptively compatible with a stationary AR1 process and passes the legacy screen, but its fitted long-memory variability cannot resolve a one-percent drift at 95 percent confidence."
+  },
+  "scientific_observation": "The severe downward trend in the first 16 extension blocks partially reverses, so the 32-block stationary AR1 null is not rejected and residual correlations are acceptable. The density amplitude nevertheless remains too autocorrelated and uncertain to satisfy the one-percent prospective target, while normalized profile shape, mean ion current, and exact population balance remain controlled.",
+  "decision": "This seed does not support the locked late-stationarity criterion because the effective-block and uncertainty-power gates fail. It also does not support continued secular evolution because the stationary null is not rejected at the full horizon.",
+  "claim_boundary": "This prospective experiment uses a former held-out seed already demoted to design status. It diagnoses equilibration and cannot validate Turner Case 1, reverse the failed held-out confirmation, or authorize formal profile pooling."
+}
