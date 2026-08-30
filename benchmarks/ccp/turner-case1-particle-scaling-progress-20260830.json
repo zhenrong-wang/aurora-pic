@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "campaign_status": "first_burn_in_arm_running",
+  "updated_utc": "2026-08-30T06:38:01Z",
+  "execution_lock": {
+    "path": "benchmarks/ccp/turner-case1-particle-scaling-execution-lock-20260830.json",
+    "sha256": "feabe7a565fa83803831845443a34d1fbc759c3f8f9bda90fabf9ec72b150e03"
+  },
+  "active_arm": {
+    "seed": 4043517607,
+    "level": "particles_1x",
+    "phase": "burn_in",
+    "target_steps": 1638400,
+    "target_rf_cycles": 4096,
+    "runtime_config_sha256": "ce8041fec886c5aa8055b663bdac68dd1cc745e389350d1900891bc46910f4e9",
+    "launched_utc": "2026-08-30T06:37:03Z",
+    "supervisor": {
+      "type": "systemd_user_service",
+      "unit": "aurorapic-turner-scaling-s1-1x.service",
+      "invocation_id": "cd918e9331fd46ec862c2736b3a4b850"
+    },
+    "initial_observation": {
+      "observed_utc": "2026-08-30T06:38:01Z",
+      "active": true,
+      "maximum_written_field_step": 2400,
+      "solver_resident_set_kib": 12416,
+      "service_memory_current_bytes": 21454848,
+      "solver_cpu_percent": 100,
+      "solver_nice": 10,
+      "stderr_bytes": 0
+    }
+  },
+  "completed_arms": [],
+  "resource_contract": {
+    "maximum_concurrent_solver_processes": 1,
+    "cpu_quota_percent": 100,
+    "nice_increment": 10,
+    "memory_max_bytes": 1073741824,
+    "address_space_limit_bytes": 1073741824
+  },
+  "recovery_note": "The supervised service and 12800-step checkpoints survive Codex/UI restarts. Admit the burn-in only after normal completion and final checkpoint verification; exclude partial terminal output after an interrupted stage."
+}
