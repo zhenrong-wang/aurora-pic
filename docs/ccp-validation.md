@@ -1632,6 +1632,26 @@ formal resolution requires either a multi-seed published-duration ensemble or
 enough consecutive blocks to estimate autocorrelation and effective sample
 size.
 
+The later prospectively held-out 32-block campaign showed why a raw drift
+threshold alone is incomplete. Both independent trajectories retained exact
+source/loss balance and stable integral-normalized shape, while their global
+density amplitudes remained correlated and failed at least one locked
+stationarity gate. The negative result remains authoritative. For subsequent
+design work, `scripts/analyze_turner_amplitude_uncertainty.py` fits stationary
+AR(1) errors to the linear-detrended amplitude from an already-completed
+version-3 block audit and generates a deterministic parametric distribution of
+absolute projected drift. Its result
+is explicitly exploratory: residual correlation is reported, failure to reject
+does not prove stationarity, and it cannot reinterpret a preregistered result.
+
+```sh
+python3 scripts/analyze_turner_amplitude_uncertainty.py \
+  density-block-analysis.json \
+  --replicates 20000 \
+  --random-seed 20260830 \
+  --output amplitude-uncertainty.json
+```
+
 The restart-safe sequential-block audit is now implemented by
 `scripts/analyze_turner_density_blocks.py`. It rejects profile or metadata
 hash drift, mixed cases/species, incomplete or non-reset windows, changed

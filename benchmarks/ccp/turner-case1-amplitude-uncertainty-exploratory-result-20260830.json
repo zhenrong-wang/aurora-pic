@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T02:37:58Z",
+  "scope": "post_protocol_exploratory_stationary_ar1_null_analysis",
+  "status": "slow_secular_component_supported_new_design_required",
+  "analyzer": {
+    "path": "scripts/analyze_turner_amplitude_uncertainty.py",
+    "sha256": "66a16dddceb570eb6c139f70ca54130f08aed83187fafc96a5229fc610a0801f",
+    "version": 1,
+    "replicates": 20000,
+    "random_seed": 20260830,
+    "alpha": 0.05
+  },
+  "series": [
+    {
+      "role": "design",
+      "seed": 162631810,
+      "version3_block_audit_path": "tmp/turner-case1-design-profile-v3-20260830.json",
+      "version3_block_audit_sha256": "eb9d5ab4ac7919bcb20f6572eee69d3496f8d05faa481a9c7f41d3b61bf0627d",
+      "uncertainty_report_path": "tmp/turner-amplitude-uncertainty-design-v2-20260830.json",
+      "uncertainty_report_sha256": "c0d4348e731f0b7a8cda209aa2eb0828202a9100916d74fdf9ad69cf064418ae",
+      "projected_fractional_drift": -0.009378333160010967,
+      "fitted_phi": 0.42553326164284583,
+      "residual_lag_one_correlation": -0.024908567742653168,
+      "residual_lag_two_correlation": -0.10154165388412399,
+      "stationary_null_absolute_drift_95_percent_quantile": 0.009889251376662724,
+      "stationary_null_p_value": 0.06269686515674217,
+      "stationary_null_rejected": false
+    },
+    {
+      "role": "previously_heldout_now_exploratory",
+      "seed": 500474954,
+      "uncertainty_report_path": "tmp/turner-amplitude-uncertainty-heldout-seed2-v2-20260830.json",
+      "uncertainty_report_sha256": "c3faf3a6d159aee9cf9798a7384c7128ad72aea13ac51257f4ceeb2df0114c54",
+      "projected_fractional_drift": 0.021029471153484094,
+      "fitted_phi": 0.6273565573685987,
+      "residual_lag_one_correlation": 0.19186180046461587,
+      "residual_lag_two_correlation": -0.24537264523630736,
+      "stationary_null_absolute_drift_95_percent_quantile": 0.018673672176626455,
+      "stationary_null_p_value": 0.027898605069746514,
+      "stationary_null_rejected": true
+    },
+    {
+      "role": "previously_heldout_now_exploratory",
+      "seed": 3662142586,
+      "uncertainty_report_path": "tmp/turner-amplitude-uncertainty-heldout-seed3-v2-20260830.json",
+      "uncertainty_report_sha256": "db0a9ccf7fb6868cf7590091493674f4dd67095157c824ec208627d03b4ddee8",
+      "projected_fractional_drift": 0.013672367110122213,
+      "fitted_phi": 0.2985899287638027,
+      "residual_lag_one_correlation": 0.166313726065121,
+      "residual_lag_two_correlation": -0.16866160129334293,
+      "stationary_null_absolute_drift_95_percent_quantile": 0.008627313404944971,
+      "stationary_null_p_value": 0.0023998800059997,
+      "stationary_null_rejected": true
+    }
+  ],
+  "finding": "The design trajectory is borderline but does not reject its fitted stationary Gaussian AR1 error null at five percent. Both formerly held-out trajectories reject after AR persistence is estimated from linear-detrended residuals, one strongly. Residual lag-one and lag-two correlations remain modest. Correlated finite-population noise is present but does not fully explain the repeated held-out drift; the evidence supports a slow secular density-amplitude component superimposed on that noise.",
+  "limitations": [
+    "Each AR1 error model is fitted to linear-detrended residuals from the same series being tested.",
+    "The Gaussian AR1 assumption is only a first-order approximation to the birth-loss process.",
+    "The previously held-out seeds became design evidence when this post-protocol analysis was performed and cannot be reused for future confirmation.",
+    "Failure to reject a stationary null is not proof of stationarity."
+  ],
+  "decision": "Retain the completed protocol_not_confirmed decision. Use these three trajectories only for designing an uncertainty-aware rule and require entirely new stochastic seeds for confirmation.",
+  "next_experiment": "Before a new confirmation campaign, prospectively separate equilibration duration from macro-particle-count scaling. Require any higher-population run to reduce innovation variance consistently with inverse particle count, while a longer-equilibration control must remove the secular component without shifting the mean Turner profile, current, or normalized shape.",
+  "claim_boundary": "This exploratory result supports a real slow density-amplitude component in addition to correlated finite-population noise. It does not identify its physical cause, validate Turner Case 1, prove stationarity, or authorize profile pooling."
+}

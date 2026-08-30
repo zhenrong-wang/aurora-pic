@@ -60,6 +60,13 @@ explicitly suppressing the ion-only acceptance ranges.
 post-benchmark profiles and quantifies density drift, adjacent profile motion,
 lag-one correlation, and an AR(1) effective block count without treating a
 diagnostic continuation as a published benchmark pass.
+`analyze_turner_amplitude_uncertainty.py` is a separate post-protocol design
+tool. It fits stationary AR(1) errors to the linear-detrended amplitude from a
+completed density-block audit and uses a fixed-seed parametric null ensemble to
+ask whether the observed absolute drift is unusual for that correlated process.
+It reports residual
+correlation and explicit model/decision boundaries; it cannot replace a locked
+gate, rescue a failed campaign, or establish stationarity.
 `prepare_turner_ensemble.py` atomically creates three or more distinct-seed,
 full-duration Turner decks and preflight reports behind a separate aggregate
 cost acknowledgement. It never launches a run and records a sequential-only

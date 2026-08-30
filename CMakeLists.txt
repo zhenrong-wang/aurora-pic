@@ -80,6 +80,7 @@ install(PROGRAMS scripts/compare_swarm.py scripts/compare_hall.py
         scripts/compare_turner.py
         scripts/analyze_turner_balance.py
         scripts/analyze_turner_density_blocks.py
+        scripts/analyze_turner_amplitude_uncertainty.py
         scripts/prepare_turner_density_window.py
         scripts/prepare_turner_adaptive_segment.py
         scripts/digitize_charoy_figure6.py

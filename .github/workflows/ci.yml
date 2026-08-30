@@ -137,6 +137,8 @@ jobs:
         run: python3 scripts/test_turner_balance.py
       - name: Validate Turner density-block analysis
         run: python3 scripts/test_turner_density_blocks.py
+      - name: Validate Turner amplitude uncertainty analysis
+        run: python3 scripts/test_turner_amplitude_uncertainty.py
       - name: Validate Turner density-window preparation
         run: python3 scripts/test_prepare_turner_density_window.py
       - name: Validate locked Turner adaptive-segment preparation
