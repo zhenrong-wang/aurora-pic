@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T05:16:39Z",
+  "status": "prepared_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-particle-scaling-rule-20260830.json",
+    "sha256": "e7d987147e46f33400f2073197aa3dd685296d1af572013064dba2c31843245d"
+  },
+  "prepared_manifest": {
+    "path": "tmp/turner-case1-particle-scaling-20260830/particle_scaling.json",
+    "sha256": "f507358e0353d9aa8bfec43274616a633efb83b8ef4c567c64379509672b0a2b",
+    "all_six_arms_prepared_before_launch": true
+  },
+  "command_identity": {
+    "preparer_sha256": "26700da96ffac460762343c8540fb2b3cdc20a47ae4ca5f7270d44c469d2f12b",
+    "solver_binary_sha256": "eb6da8da33ddc5e76eeeccc2e9425504d431cf3b9034cedaca5382a79c573d59",
+    "solver_source_commit": "e481633fe430eb36944d051dc87c8659ea33b39d",
+    "solver_sources_unchanged_from_source_commit_at_lock": true,
+    "density_window_preparer_sha256": "9baab6baeff6bd9dc1d53765d2475af9cfe2f12d381dbdb380668e5695ac3352",
+    "density_block_analyzer_sha256": "c388a037d91581d684c9eec662ba99aeb0a9b2db9757e320d95ab6df2c572f7d",
+    "amplitude_uncertainty_analyzer_sha256": "66a16dddceb570eb6c139f70ca54130f08aed83187fafc96a5229fc610a0801f",
+    "balance_analyzer_sha256": "8268cec6b89f8ed1c1a9c0c1cef2861d680482ab26e846ecdc8957477a04fa40",
+    "turner_comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c"
+  },
+  "burn_in_decks": [
+    {
+      "seed": 4043517607,
+      "level": "particles_1x",
+      "sha256": "ce8041fec886c5aa8055b663bdac68dd1cc745e389350d1900891bc46910f4e9"
+    },
+    {
+      "seed": 4043517607,
+      "level": "particles_2x",
+      "sha256": "783571b807ca33c08fae5fe259e0d08cff76bbda702a4435d7f70cf3e53281d8"
+    },
+    {
+      "seed": 2304641002,
+      "level": "particles_1x",
+      "sha256": "8e835d72852d261db8ffd8edf6d59210dda32b6a76ee3efa77beab772bb87762"
+    },
+    {
+      "seed": 2304641002,
+      "level": "particles_2x",
+      "sha256": "5ca1ce287a4eb2354c27a56a2a3e78c264a7f05da5b6912830c67ae767054f22"
+    },
+    {
+      "seed": 3809002602,
+      "level": "particles_1x",
+      "sha256": "3708625330f87d52de189a6f21353b58c26616562f320f012c7c2e29c1d67269"
+    },
+    {
+      "seed": 3809002602,
+      "level": "particles_2x",
+      "sha256": "368826d13e410cd02479c0da99771f72cdc9681727539e2da0ea799b97576255"
+    }
+  ],
+  "resource_envelope": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "maximum_peak_resident_set_kib_each": 524288,
+    "minimum_available_memory_kib_before_stage": 2097152,
+    "minimum_free_disk_gib_before_stage": 30,
+    "maximum_concurrent_solver_processes": 1
+  },
+  "recovery_boundary": "A burn-in arm is admitted only after normal solver completion, final checkpoint verification, and resource-report inspection. Measurement blocks are admitted only when complete, exactly balanced, and hash chained. Interrupted stages restart from their preceding admitted state; partial output is excluded.",
+  "launch_boundary": "Commit and push this execution lock before launching the first burn-in arm. Do not change thresholds, seeds, particle levels, arm order, or horizons after launch."
+}
