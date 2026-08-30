@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T05:15:26Z",
+  "scope": "prospective_fresh_seed_macro_particle_count_scaling",
+  "status": "preregistered_not_launched",
+  "motivation": {
+    "source_outcome": "benchmarks/ccp/turner-case1-late-equilibration-discrimination-outcome-20260830.json",
+    "source_status": "mixed_or_underpowered",
+    "unresolved_mechanism": "Slow seed-dependent density-amplitude variability may be finite-macro-particle noise or a persistent physical/numerical feedback mode.",
+    "prior_mean_sensitivity_boundary": "The completed seed-13507 2x particle sensitivity changed mean integrated density bias by only -0.075 percentage points, but its single final window did not test long-time variance or correlation."
+  },
+  "fresh_seed_contract": {
+    "derivation": "Unsigned big-endian first 32 bits of SHA-256('aurora-pic-turner-particle-scaling-20260830-N') for N=1,2,3.",
+    "seeds": [4043517607, 2304641002, 3809002602],
+    "seed_derivation_sha256": [
+      "f1032ea71224e6fa029011e30eb129bc9f575d92bea688679840259eb14ea713",
+      "895e07ea9ae26ae4e75b4dccf839b3b3f786caeab5fc6a605f021198de30649a",
+      "e308c46a96ce40229386107895e5c0cc85d5c3e7a56cfb1c1b2a0195d3cdc734"
+    ],
+    "selected_before_launch": true,
+    "prior_campaign_seed_overlap": false
+  },
+  "fixed_physics_and_numerics": {
+    "case_manifest": "examples/turner_helium_ccp_case1.case",
+    "case_manifest_sha256": "fdfcf67e61620d0bab6a85411aeeb40f16d486fdb427f3ca9c3d30a3fd58af18",
+    "normalization_audit_sha256": "29ed7dae41e329d8187e51a13b850f999d13e88ea291c56a2d633d253deca740",
+    "nodes": 129,
+    "steps_per_rf_cycle": 400,
+    "collision_opportunity_sampling": "single_bernoulli",
+    "runtime_backend": "serial",
+    "runtime_threads": 1
+  },
+  "particle_levels": [
+    {
+      "id": "particles_1x",
+      "particles_per_species": 65536,
+      "macro_weight": 261718750.00000003,
+      "factor": 1
+    },
+    {
+      "id": "particles_2x",
+      "particles_per_species": 131072,
+      "macro_weight": 130859375.00000001,
+      "factor": 2
+    }
+  ],
+  "trajectory_contract_per_arm": {
+    "burn_in_rf_cycles": 4096,
+    "burn_in_steps": 1638400,
+    "burn_in_measurements_acceptance_eligible": false,
+    "measurement_blocks": 64,
+    "rf_cycles_per_measurement_block": 32,
+    "steps_per_measurement_block": 12800,
+    "measurement_rf_cycles": 2048,
+    "total_rf_cycles": 6144,
+    "spatial_average_interval": 1,
+    "spatial_average_reset_on_every_measurement_restart": true,
+    "all_six_arms_required": true,
+    "early_stopping": false
+  },
+  "execution_order": [
+    "seed_4043517607/particles_1x",
+    "seed_4043517607/particles_2x",
+    "seed_2304641002/particles_2x",
+    "seed_2304641002/particles_1x",
+    "seed_3809002602/particles_1x",
+    "seed_3809002602/particles_2x"
+  ],
+  "arm_integrity_and_model_gates": {
+    "all_measurement_blocks_complete_and_contiguous": true,
+    "exact_electron_and_ion_source_loss_balance_every_block": true,
+    "finite_profiles_and_metadata": true,
+    "checkpoint_hash_chain_recorded": true,
+    "minimum_ar1_effective_blocks": 8.0,
+    "stationary_ar1_null_minimum_p_value": 0.05,
+    "maximum_absolute_residual_lag_one_correlation": 0.30,
+    "maximum_absolute_residual_lag_two_correlation": 0.30,
+    "maximum_rms_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "maximum_p95_adjacent_integral_normalized_profile_relative_l2": 0.025
+  },
+  "primary_scaling_observable": {
+    "name": "paired_innovation_variance_ratio",
+    "formula": "stationary_ar1_innovation_fractional_standard_deviation_2x_squared / stationary_ar1_innovation_fractional_standard_deviation_1x_squared",
+    "finite_independent_particle_noise_expectation": 0.5,
+    "per_seed_finite_particle_band": [0.25, 0.75],
+    "geometric_mean_finite_particle_band": [0.35, 0.65],
+    "persistent_mode_per_seed_minimum": 0.80,
+    "persistent_mode_geometric_mean_minimum": 0.90
+  },
+  "secondary_scaling_observables": [
+    "stationary_ar1_phi",
+    "stationary_fractional_variance",
+    "ar1_effective_blocks",
+    "mean_line_integrated_density",
+    "mean_turner_reference_relative_l2",
+    "integral_normalized_profile_shape_motion",
+    "mean_ion_current",
+    "ionization_and_wall_loss_statistics"
+  ],
+  "interpretation_rule": {
+    "finite_particle_noise_supported": "All six arms pass integrity/model gates; every paired innovation-variance ratio is within 0.25-0.75; their geometric mean is within 0.35-0.65; and each 2x-to-1x mean-density shift has magnitude at most one percent.",
+    "persistent_feedback_mode_supported": "All six arms pass integrity/model gates; every paired innovation-variance ratio is at least 0.80; and their geometric mean is at least 0.90.",
+    "mixed_or_unresolved": "Any other complete result, including a failed arm model gate, inconsistent seed ratios, or a material mean-density shift.",
+    "no_post_hoc_threshold_tuning": true
+  },
+  "next_stage_rule": {
+    "if_finite_particle_noise_supported": "Select a production particle count from the observed scaling law and preregister a new independent-seed Turner confirmation at the established burn-in horizon.",
+    "if_persistent_feedback_mode_supported": "Diagnose ionization-wall-loss feedback, physical relaxation time, and timestep/grid coupling before another validation campaign.",
+    "if_mixed_or_unresolved": "Add a preregistered 4x particle level or extend the measurement horizon according to the specific failed power/model gate; do not choose based on favorable Turner agreement."
+  },
+  "resource_policy": {
+    "maximum_concurrent_solver_processes": 1,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "minimum_available_memory_kib_before_stage": 2097152,
+    "minimum_free_disk_gib_before_stage": 30,
+    "maximum_peak_resident_set_kib_each": 524288
+  },
+  "claim_boundary": "This experiment diagnoses macro-particle scaling outside the published Turner numerical contract. It cannot reverse the failed held-out confirmation, classify a published Turner acceptance interval, or by itself validate AuroraPIC."
+}
