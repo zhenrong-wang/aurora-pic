@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T03:03:30Z",
+  "scope": "prospective_exploratory_late_equilibration_discrimination",
+  "status": "preregistered_not_launched",
+  "prior_evidence_boundary": {
+    "heldout_confirmation_status": "protocol_not_confirmed",
+    "heldout_confirmation_path": "benchmarks/ccp/turner-case1-heldout-profile-confirmation-outcome-20260829.json",
+    "amplitude_diagnosis_path": "benchmarks/ccp/turner-case1-heldout-amplitude-mode-diagnosis-20260829.json",
+    "uncertainty_diagnosis_path": "benchmarks/ccp/turner-case1-amplitude-uncertainty-exploratory-result-20260830.json",
+    "former_heldout_seeds_are_now_design_data": true,
+    "completed_validation_decision_is_immutable": true
+  },
+  "continuation_initial_states": [
+    {
+      "seed": 500474954,
+      "checkpoint_step": 1907200,
+      "checkpoint_sha256": "89247e1293c49a7e5d6ca815b97157971ab5256b33810e8e7023df476bb16f0a"
+    },
+    {
+      "seed": 3662142586,
+      "checkpoint_step": 1612800,
+      "checkpoint_sha256": "fa1fac7811ce13e5cfa7610274da79efc34d291bc7375fb9cc1065dc55fcbdb1"
+    }
+  ],
+  "measurement_contract": {
+    "fixed_extension_blocks_per_seed": 32,
+    "rf_cycles_per_block": 32,
+    "steps_per_rf_cycle": 400,
+    "steps_per_block": 12800,
+    "spatial_average_interval": 1,
+    "spatial_average_reset_on_every_restart": true,
+    "seed_order": [500474954, 3662142586],
+    "decision_only_after_all_extension_blocks_for_both_seeds": true,
+    "early_stopping": false,
+    "threshold_or_physics_tuning_after_launch": false
+  },
+  "integrity_gates": {
+    "all_blocks_complete_and_contiguous": true,
+    "exact_electron_and_ion_source_loss_balance_every_block": true,
+    "finite_profiles_and_metadata": true,
+    "checkpoint_hash_chain_recorded": true,
+    "one_solver_process_at_a_time": true
+  },
+  "late_stationarity_gates_per_seed": {
+    "minimum_ar1_effective_blocks": 8.0,
+    "maximum_absolute_split_half_fractional_change": 0.01,
+    "maximum_rms_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "maximum_p95_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "stationary_ar1_null_minimum_p_value": 0.05,
+    "stationary_ar1_null_maximum_95_percent_absolute_drift_quantile": 0.01,
+    "maximum_absolute_residual_lag_one_correlation": 0.30,
+    "maximum_absolute_residual_lag_two_correlation": 0.30
+  },
+  "secondary_descriptive_metrics": [
+    "raw_projected_fractional_drift",
+    "mean_turner_reference_relative_l2",
+    "turner_x_squared_interval_counts",
+    "mean_ion_current",
+    "ionization_and_wall_loss_statistics",
+    "first_32_to_extension_32_mean_density_change",
+    "combined_64_block_trend"
+  ],
+  "interpretation_rule": {
+    "late_stationarity_supported": "Both seeds pass every integrity and late-stationarity gate on their fixed extension blocks.",
+    "continued_secular_evolution_supported": "Both seeds pass integrity and uncertainty-model residual gates but reject their fitted stationary AR1 null at p < 0.05.",
+    "mixed_or_underpowered": "Any other complete outcome, including a null 95-percent drift quantile above one percent, conflicting seed classifications, or an inadequate residual model."
+  },
+  "next_stage_rule": {
+    "if_late_stationarity_supported": "Design a new independent-seed confirmation campaign from the later equilibration horizon; do not reuse these seeds.",
+    "if_continued_secular_evolution_supported": "Prioritize physical and numerical feedback diagnosis before increasing particle count.",
+    "if_mixed_or_underpowered": "Run a separately preregistered macro-particle-count scaling experiment before choosing a new validation rule."
+  },
+  "resource_policy": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "minimum_available_memory_kib_before_block": 2097152,
+    "minimum_free_disk_gib_before_block": 30,
+    "maximum_concurrent_solver_processes": 1
+  },
+  "claim_boundary": "This experiment discriminates late equilibration from continued secular evolution using data already demoted to design status. No outcome can validate Turner Case 1, restore the failed confirmation, or authorize formal profile pooling."
+}

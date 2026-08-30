@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-30T03:03:30Z",
+  "status": "preregistered_not_launched",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-late-equilibration-discrimination-rule-20260830.json",
+    "sha256": "c1d2fe4ad1f87872b2c8f33bcf2f7351956d35e9a983b5a6bb2d621afbdd297e"
+  },
+  "work_directory": "tmp/turner-case1-late-equilibration-discrimination-20260830",
+  "work_directory_absent_at_lock": true,
+  "command_identity": {
+    "solver_binary_sha256": "eb6da8da33ddc5e76eeeccc2e9425504d431cf3b9034cedaca5382a79c573d59",
+    "solver_source_commit": "e481633fe430eb36944d051dc87c8659ea33b39d",
+    "density_window_preparer_sha256": "9baab6baeff6bd9dc1d53765d2475af9cfe2f12d381dbdb380668e5695ac3352",
+    "density_block_analyzer_sha256": "c388a037d91581d684c9eec662ba99aeb0a9b2db9757e320d95ab6df2c572f7d",
+    "amplitude_uncertainty_analyzer_sha256": "66a16dddceb570eb6c139f70ca54130f08aed83187fafc96a5229fc610a0801f",
+    "turner_comparator_sha256": "084cd9195e74c22d8285597fc510cda93e6df0d86739f94e46955ec19472453c"
+  },
+  "resource_envelope": {
+    "runtime_backend": "serial",
+    "runtime_threads": 1,
+    "nice_increment": 10,
+    "address_space_limit_bytes_each": 1073741824,
+    "maximum_peak_resident_set_kib_each": 262144,
+    "minimum_available_memory_kib_before_block": 2097152,
+    "minimum_free_disk_gib_before_block": 30,
+    "maximum_concurrent_solver_processes": 1
+  },
+  "recovery_boundary": "Admit only complete, exactly balanced, hash-chained blocks. Restart an interrupted block from the preceding admitted checkpoint and exclude partial output.",
+  "launch_boundary": "Validate, commit, and push this rule and execution lock before preparing seed 500474954 extension block 1."
+}
