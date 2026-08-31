@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-31T22:46:51Z",
+  "seed": 4043517607,
+  "status": "finite_particle_noise_scaling_supported_for_this_seed",
+  "arms": {
+    "particles_1x": "benchmarks/ccp/turner-case1-particle-scaling-seed1-1x-result-20260831.json",
+    "particles_2x": "benchmarks/ccp/turner-case1-particle-scaling-seed1-2x-result-20260831.json",
+    "both_arms_pass_all_integrity_and_model_gates": true
+  },
+  "primary_scaling_result": {
+    "innovation_standard_deviation_1x": 0.0049764503224216175,
+    "innovation_standard_deviation_2x": 0.0038078673850684094,
+    "innovation_standard_deviation_ratio_2x_to_1x": 0.765177413288322,
+    "innovation_variance_ratio_2x_to_1x": 0.5854964738066075,
+    "finite_particle_noise_expected_variance_ratio": 0.5,
+    "preregistered_per_seed_finite_particle_band": [0.25, 0.75],
+    "per_seed_finite_particle_gate_passed": true,
+    "preregistered_persistent_mode_minimum_ratio": 0.80,
+    "persistent_mode_gate_passed": false
+  },
+  "paired_secondary_results": {
+    "mean_density_fractional_shift_2x_to_1x": -0.0003010220785086837,
+    "maximum_absolute_allowed_mean_density_shift": 0.01,
+    "mean_density_shift_gate_passed": true,
+    "stationary_fractional_standard_deviation_ratio_2x_to_1x": 0.5897568603652056,
+    "ar1_phi_1x": 0.753557830425355,
+    "ar1_phi_2x": 0.5220467722786646,
+    "ar1_phi_change": -0.23151105814669037,
+    "effective_blocks_1x": 8.290920111926724,
+    "effective_blocks_2x": 20.29257746168238,
+    "stationary_null_95_percent_absolute_drift_quantile_1x": 0.01561068426996922,
+    "stationary_null_95_percent_absolute_drift_quantile_2x": 0.00646156717498593,
+    "mean_ion_current_A_per_m2_1x": 0.21781459402768039,
+    "mean_ion_current_A_per_m2_2x": 0.21764613871446428
+  },
+  "scientific_observation": "Doubling macro-particle count reduces innovation variance by 41.45 percent, close to the 50 percent inverse-count expectation, while shifting mean density by only -0.0301 percent. It also reduces long-memory correlation and narrows the 95-percent stationary drift envelope from 1.56 to 0.65 percent.",
+  "decision": "This fresh-seed pair supports finite-macro-particle noise as a material contributor to the slow density-amplitude uncertainty. The preregistered campaign requires the same classification across all three pairs before a campaign-level conclusion.",
+  "claim_boundary": "One paired seed is mechanism evidence, not an asymptotic convergence proof, Turner validation, or campaign-level particle-scaling classification."
+}
