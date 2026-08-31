@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "case_id": "turner-helium-ccp-2013-case-1",
+  "created_utc": "2026-08-31T01:26:04Z",
+  "seed": 4043517607,
+  "particle_level": "particles_1x",
+  "status": "arm_complete_all_integrity_and_model_gates_passed",
+  "rule": {
+    "path": "benchmarks/ccp/turner-case1-particle-scaling-rule-20260830.json",
+    "sha256": "e7d987147e46f33400f2073197aa3dd685296d1af572013064dba2c31843245d"
+  },
+  "execution_lock": {
+    "path": "benchmarks/ccp/turner-case1-particle-scaling-execution-lock-20260830.json",
+    "sha256": "feabe7a565fa83803831845443a34d1fbc759c3f8f9bda90fabf9ec72b150e03"
+  },
+  "particle_contract": {
+    "initial_particles_per_species": 65536,
+    "macro_weight": 261718750.00000003,
+    "burn_in_rf_cycles": 4096,
+    "measurement_blocks": 64,
+    "rf_cycles_per_measurement_block": 32,
+    "measurement_rf_cycles": 2048
+  },
+  "measurement_integrity": {
+    "initial_step": 1638400,
+    "final_step": 2457600,
+    "all_blocks_complete_and_contiguous": true,
+    "spatial_average_samples_per_block": 12800,
+    "spatial_average_reset_every_block": true,
+    "electron_population_balance_exact_every_block": true,
+    "ion_population_balance_exact_every_block": true,
+    "net_electron_population_change_macro_particles": 49,
+    "net_ion_population_change_macro_particles": 0,
+    "maximum_peak_resident_set_kib": 11896,
+    "final_checkpoint_sha256": "1484181fa4a1b04959f80db6059b57a8866b3db33d7cee31881bf2c6b00747c3",
+    "final_checkpoint_bytes": 13478577
+  },
+  "stationarity_audit": {
+    "path": "tmp/turner-case1-particle-scaling-20260830/results/seed_4043517607/particles_1x/measurement/blocks_01_64.json",
+    "sha256": "33281a72fcbc5b15bb160950aef9a9deea372cc64c4c345e8239ecca4eb1a79d",
+    "ar1_effective_blocks": 8.290920111926724,
+    "minimum_ar1_effective_blocks": 8.0,
+    "effective_blocks_passed": true,
+    "projected_fractional_drift": 0.0065279653171030965,
+    "split_half_fractional_change": 0.0031520194454448982,
+    "rms_adjacent_integral_normalized_profile_relative_l2": 0.014361694872182878,
+    "maximum_rms_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "normalized_shape_rms_passed": true,
+    "p95_adjacent_integral_normalized_profile_relative_l2": 0.017772593299202624,
+    "maximum_p95_adjacent_integral_normalized_profile_relative_l2": 0.025,
+    "normalized_shape_p95_passed": true
+  },
+  "stationary_ar1_audit": {
+    "path": "tmp/turner-case1-particle-scaling-20260830/results/seed_4043517607/particles_1x/measurement/amplitude_uncertainty_01_64.json",
+    "sha256": "1b818f7f776424bed6147e07cc88c1429ecf6195f43898be590d4bab00e5413e",
+    "stationary_ar1_null_p_value": 0.407979601019949,
+    "minimum_p_value": 0.05,
+    "null_not_rejected_passed": true,
+    "innovation_fractional_standard_deviation": 0.0049764503224216175,
+    "innovation_fractional_variance": 0.000024765057811530222,
+    "stationary_fractional_standard_deviation": 0.0075701086859331045,
+    "fitted_ar1_phi": 0.753557830425355,
+    "residual_lag_one_correlation": 0.11275880280768187,
+    "residual_lag_two_correlation": -0.09783152770295414,
+    "residual_correlation_gates_passed": true,
+    "stationary_null_95_percent_absolute_drift_quantile": 0.01561068426996922,
+    "one_percent_drift_resolution_achieved": false,
+    "monte_carlo_replicates": 20000,
+    "monte_carlo_seed": 20260830
+  },
+  "secondary_descriptive_results": {
+    "mean_line_integrated_density_m-2": 4927829843311.311,
+    "mean_turner_reference_relative_l2": 0.023235349873911,
+    "turner_reference_relative_l2_range": [0.009542943585821013, 0.038849153009261186],
+    "blocks_inside_published_95_percent_x_squared_interval": 42,
+    "blocks_inside_published_99_percent_x_squared_interval": 52,
+    "x_squared_range": [65.81514011750684, 660.1527471741623],
+    "mean_ion_current_A_per_m2": 0.21781459402768039,
+    "turner_table_iii_ion_current_A_per_m2": 0.219
+  },
+  "scientific_observation": "After the fixed 4096-cycle burn-in, the complete 64-block 1x series is compatible with a stationary AR1 amplitude process and passes every preregistered arm integrity and residual-model gate. Exact population accounting, stable normalized shape, and Turner-like ion current coexist with a 0.4976-percent innovation standard deviation and a long correlation coefficient of 0.754.",
+  "decision": "This arm establishes the locked 1x innovation-variance baseline. No particle-scaling mechanism is classified until its paired 2x arm and all three fresh-seed pairs complete.",
+  "claim_boundary": "This post-benchmark particle-scaling arm changes the published acceptance context. Its Turner comparisons are descriptive only and cannot validate Turner Case 1 or AuroraPIC."
+}
