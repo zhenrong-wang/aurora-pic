@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "case_id": "turner-helium-ccp-2013-case-1",
-  "campaign_status": "first_arm_measurement_running",
-  "updated_utc": "2026-08-30T11:15:39Z",
+  "campaign_status": "first_seed_paired_2x_burn_in_running",
+  "updated_utc": "2026-08-31T01:27:31Z",
   "execution_lock": {
     "path": "benchmarks/ccp/turner-case1-particle-scaling-execution-lock-20260830.json",
     "sha256": "feabe7a565fa83803831845443a34d1fbc759c3f8f9bda90fabf9ec72b150e03"
@@ -57,7 +57,7 @@
       "final_live_ions": 18968
     },
     "measurement_series": {
-      "status": "running",
+      "status": "complete_all_integrity_and_model_gates_passed",
       "launched_utc": "2026-08-30T11:15:37Z",
       "target_blocks": 64,
       "rf_cycles_per_block": 32,
@@ -66,10 +66,37 @@
         "type": "systemd_user_service",
         "unit": "aurorapic-turner-scaling-s1-1x-measure.service",
         "invocation_id": "af602347a0f64ac39fe000b15f8baea7"
-      }
+      },
+      "completed_utc": "2026-08-30T13:08:56Z",
+      "completed_blocks": 64,
+      "series_sha256": "33281a72fcbc5b15bb160950aef9a9deea372cc64c4c345e8239ecca4eb1a79d",
+      "uncertainty_sha256": "1b818f7f776424bed6147e07cc88c1429ecf6195f43898be590d4bab00e5413e",
+      "all_integrity_and_model_gates_passed": true
     }
   },
-  "completed_arms": [],
+  "active_paired_arm": {
+    "seed": 4043517607,
+    "level": "particles_2x",
+    "phase": "burn_in",
+    "target_steps": 1638400,
+    "target_rf_cycles": 4096,
+    "runtime_config_sha256": "783571b807ca33c08fae5fe259e0d08cff76bbda702a4435d7f70cf3e53281d8",
+    "launched_utc": "2026-08-31T01:27:23Z",
+    "supervisor": {
+      "type": "systemd_user_service",
+      "unit": "aurorapic-turner-scaling-s1-2x.service",
+      "invocation_id": "2f84522c2a164c498aefa781fa7b05fe"
+    }
+  },
+  "completed_arms": [
+    {
+      "seed": 4043517607,
+      "level": "particles_1x",
+      "result_path": "benchmarks/ccp/turner-case1-particle-scaling-seed1-1x-result-20260831.json",
+      "result_sha256": "af979e0eb8e938c061c81f4d928dea979d8120d7ec82d151ff9756df1bd23ac2",
+      "all_integrity_and_model_gates_passed": true
+    }
+  ],
   "resource_contract": {
     "maximum_concurrent_solver_processes": 1,
     "cpu_quota_percent": 100,
