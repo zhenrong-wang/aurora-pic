@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "case_id": "turner-helium-ccp-2013-case-1",
-  "campaign_status": "first_seed_paired_2x_burn_in_running",
-  "updated_utc": "2026-08-31T01:27:31Z",
+  "campaign_status": "first_seed_paired_2x_measurement_running",
+  "updated_utc": "2026-08-31T13:48:16Z",
   "execution_lock": {
     "path": "benchmarks/ccp/turner-case1-particle-scaling-execution-lock-20260830.json",
     "sha256": "feabe7a565fa83803831845443a34d1fbc759c3f8f9bda90fabf9ec72b150e03"
@@ -86,6 +86,34 @@
       "type": "systemd_user_service",
       "unit": "aurorapic-turner-scaling-s1-2x.service",
       "invocation_id": "2f84522c2a164c498aefa781fa7b05fe"
+    },
+    "burn_in_completion": {
+      "completed_utc": "2026-08-31T08:36:42Z",
+      "normal_exit": true,
+      "elapsed_wall_seconds": 25758,
+      "final_step": 1638400,
+      "final_rf_cycles": 4096,
+      "final_checkpoint_sha256": "8548f6bce4bb086eaee1a0f328ef5fad91f7b483740757003b9fd2e96fed489c",
+      "final_checkpoint_bytes": 26866997,
+      "peak_resident_set_kib": 25088,
+      "stderr_bytes": 0,
+      "spatial_average_complete": true,
+      "spatial_average_samples": 12800,
+      "burn_in_average_acceptance_eligible": false,
+      "final_live_electrons": 23501,
+      "final_live_ions": 37305
+    },
+    "measurement_series": {
+      "status": "running",
+      "launched_utc": "2026-08-31T13:48:14Z",
+      "target_blocks": 64,
+      "rf_cycles_per_block": 32,
+      "runner_sha256": "b087a4fa746305ad40580170d4c9273c14da22692b2b134a8745b05db0ea3753",
+      "supervisor": {
+        "type": "systemd_user_service",
+        "unit": "aurorapic-turner-scaling-s1-2x-measure.service",
+        "invocation_id": "2812d680f6704985bd539663ea3f432d"
+      }
     }
   },
   "completed_arms": [
