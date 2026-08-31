@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "case_id": "turner-helium-ccp-2013-case-1",
-  "campaign_status": "first_seed_paired_2x_measurement_running",
-  "updated_utc": "2026-08-31T13:48:16Z",
+  "campaign_status": "second_seed_2x_burn_in_running",
+  "updated_utc": "2026-08-31T22:48:25Z",
   "execution_lock": {
     "path": "benchmarks/ccp/turner-case1-particle-scaling-execution-lock-20260830.json",
     "sha256": "feabe7a565fa83803831845443a34d1fbc759c3f8f9bda90fabf9ec72b150e03"
@@ -104,7 +104,7 @@
       "final_live_ions": 37305
     },
     "measurement_series": {
-      "status": "running",
+      "status": "complete_all_integrity_and_model_gates_passed",
       "launched_utc": "2026-08-31T13:48:14Z",
       "target_blocks": 64,
       "rf_cycles_per_block": 32,
@@ -113,7 +113,26 @@
         "type": "systemd_user_service",
         "unit": "aurorapic-turner-scaling-s1-2x-measure.service",
         "invocation_id": "2812d680f6704985bd539663ea3f432d"
-      }
+      },
+      "completed_utc": "2026-08-31T17:37:27Z",
+      "completed_blocks": 64,
+      "series_sha256": "b0488df06abc6e8e6389e3880b2c771867a93caecc30ef2e6436419151a3d33d",
+      "uncertainty_sha256": "a3d697484cb4f7277b15e6f11acc41024b5e5c30b3636841fb5aaa1e75c0df27",
+      "all_integrity_and_model_gates_passed": true
+    }
+  },
+  "current_arm": {
+    "seed": 2304641002,
+    "level": "particles_2x",
+    "phase": "burn_in",
+    "target_steps": 1638400,
+    "target_rf_cycles": 4096,
+    "runtime_config_sha256": "5ca1ce287a4eb2354c27a56a2a3e78c264a7f05da5b6912830c67ae767054f22",
+    "launched_utc": "2026-08-31T22:48:23Z",
+    "supervisor": {
+      "type": "systemd_user_service",
+      "unit": "aurorapic-turner-scaling-s2-2x.service",
+      "invocation_id": "b1b9da2ed16b4ef893702586eafe4d2c"
     }
   },
   "completed_arms": [
@@ -123,6 +142,22 @@
       "result_path": "benchmarks/ccp/turner-case1-particle-scaling-seed1-1x-result-20260831.json",
       "result_sha256": "af979e0eb8e938c061c81f4d928dea979d8120d7ec82d151ff9756df1bd23ac2",
       "all_integrity_and_model_gates_passed": true
+    },
+    {
+      "seed": 4043517607,
+      "level": "particles_2x",
+      "result_path": "benchmarks/ccp/turner-case1-particle-scaling-seed1-2x-result-20260831.json",
+      "result_sha256": "06da6898cfc687b93050072b301ae31952d39fa24f8651386f604b6db9fda8ae",
+      "all_integrity_and_model_gates_passed": true
+    }
+  ],
+  "completed_pairs": [
+    {
+      "seed": 4043517607,
+      "result_path": "benchmarks/ccp/turner-case1-particle-scaling-seed1-pair-result-20260831.json",
+      "result_sha256": "592dad00ee3a1375b3488209cb124a1f2f4a3b2f477b0ef90e53a1abef6687d5",
+      "classification": "finite_particle_noise_scaling_supported_for_this_seed",
+      "innovation_variance_ratio_2x_to_1x": 0.5854964738066075
     }
   ],
   "resource_contract": {
